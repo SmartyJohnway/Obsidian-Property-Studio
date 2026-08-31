@@ -1,0 +1,25 @@
+{
+  "milestone": "M005",
+  "status": "PASS",
+  "verified_at": "2026-08-31T21:26:30+08:00",
+  "donor_harvested": "Agent A (read-only donor)",
+  "donor_files_inspected": [
+    "AgentA_workspace-01a05750-5684-7ca8-85d9-94758fa56fb8/app/core/refactor.py",
+    "AgentA_workspace-01a05750-5684-7ca8-85d9-94758fa56fb8/tests/test_refactor.py"
+  ],
+  "capabilities_verified": [
+    "Refactor ambiguity propagation for duplicate keys and parse failures across all refactor operations",
+    "Fail-closed merge conflict detection",
+    "Coherent affected note counts distinct from duplicate occurrences"
+  ],
+  "regressions_verified": {
+    "INT-R2-001": "PASS",
+    "INT-R2-002": "PASS",
+    "INT-R2-007": "PASS"
+  },
+  "full_test_suite": {
+    "total": 88,
+    "passed": 88,
+    "failed": 0
+  }
+}
