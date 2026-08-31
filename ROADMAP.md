@@ -894,11 +894,13 @@ Produce a truthful formal v1.0.0 release from the integrated lineage.
 
 ### Verification / Evidence
 
-- `evidence/integration/m011_release_closure.json` (Release verdict: PROPERTY_STUDIO_V1_RELEASE_PASS)
+- `evidence/integration/m011_release_closure.json` (Release verdict: `PROPERTY_STUDIO_V1_RELEASE_PASS_WITH_LIMITATIONS`)
+- `RELEASE_MANIFEST.json` (Source snapshot + Full Git bundle verified)
+- Accepted Release Limitation: Windows 11 native verification: `NOT YET VERIFIED` — no Windows 11 test machine currently available.
 
 ### Result
 
-`PASS`
+`PASS` (`PROPERTY_STUDIO_V1_RELEASE_PASS_WITH_LIMITATIONS`)
 
 ---
 

@@ -42,9 +42,9 @@ Project State: `COMPLETE`
 Current Milestone: `NONE`  
 Current Milestone Status: `PASS`  
 Current Task: `NONE`  
-Last Verified Gate: `M011 — v1.0.0 Release Closure PASS (PROPERTY_STUDIO_V1_RELEASE_PASS)`  
+Last Verified Gate: `M011 — v1.0.0 Release Closure PASS (PROPERTY_STUDIO_V1_RELEASE_PASS_WITH_LIMITATIONS)`  
 Current Blocker: `None`  
-Next Action: `None — Formal v1.0.0 integration and verification complete. Release verified and closed.`
+Next Action: `None — Formal v1.0.0 integration, closure repair, and packaging complete. Release verified and closed with accepted limitation (Windows 11 NOT YET VERIFIED).`
 
 ---
 
@@ -258,13 +258,13 @@ Formal integration verification and narrow repairs completed (`95 passed in 12.8
 - `M008`: Cross-module canonical consistency gate verified (`tests/test_consistency_gate.py`, 6/6 PASS) (`4cb1094`).
 - `M009`: Full formal test suite (95/95 PASS) and 5,000-note benchmark (5,040 notes in 5.136s total analysis, Vault 100% untouched) verified (`323454e`).
 - `M010`: Windows native launch & 15-step UI smoke verified on native Windows 10 Build 19045 AMD64 (`432f9e2`, `41215a3`).
-- `M011`: Release closure & four-file consistency gate verified (`PROPERTY_STUDIO_V1_RELEASE_PASS`) (`41215a3`).
+- `M011`: Release closure, artifact generation (`Obsidian-Property-Studio-v1.0.0-source.zip`, `Obsidian-Property-Studio-v1.0.0.bundle`, `RELEASE_MANIFEST.json`) & four-file consistency gate verified (`PROPERTY_STUDIO_V1_RELEASE_PASS_WITH_LIMITATIONS`).
  
 ---
  
  ## Verification Not Yet Performed
  
- `None` — All planned milestone tasks, regression checks, performance benchmarks, and release verification gates have been executed with evidence recorded under `evidence/integration/`.
+- `Windows 11 native execution`: `NOT YET VERIFIED` — no Windows 11 machine available in current environment (accepted non-blocking release limitation). All core features, CLI/launchers, and UI smoke are natively verified on Windows 10 Build 19045 AMD64.
 
 ---
 
