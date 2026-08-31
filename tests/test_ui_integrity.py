@@ -79,3 +79,12 @@ def test_ui_states_the_safety_contract(html):
     for phrase in ("read-only", "never changes it", "no vault"):
         assert phrase.lower() in html.lower()
     assert "Verify vault untouched" in html
+
+
+def test_copy_buttons_fail_closed_on_invalid_fill(html, script):
+    """UI must fail closed on invalid/ambiguous fill: buttons disabled by default,
+    enabled only when valid, and click handlers refuse copying invalid state."""
+    assert 'id="copyFmBtn" disabled' in html
+    assert 'id="copyYamlBtn" disabled' in html
+    assert "!S.fill.valid" in script
+    assert "canCopy" in script or ("d.valid" in script and "disabled" in script)

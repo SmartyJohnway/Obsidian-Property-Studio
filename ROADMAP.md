@@ -818,11 +818,11 @@ Status: `PASS`
 
 ### Objective
 
-Close the limitation that Arena candidates were not all natively verified on the user's Windows 11 environment.
+Close the limitation that Arena candidates were not all natively verified on the user's Windows environment.
 
 ### Tasks
 
-- [x] `M010-T01` Verify clean install on Windows 11.
+- [x] `M010-T01` Verify clean install on Windows (Windows 10 Build 19045 AMD64).
 - [x] `M010-T02` Verify `run_windows.bat` or accepted launcher.
 - [x] `M010-T03` Open actual GUI/local Web UI.
 - [x] `M010-T04` Select a test Vault with spaces + Traditional Chinese path/value.

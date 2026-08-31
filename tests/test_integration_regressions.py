@@ -132,7 +132,8 @@ def test_int_r2_005_no_false_confirmed_ambiguity(main_vault: str) -> None:
 
 
 def test_int_r2_006_equipment_goal_does_not_route_to_reading() -> None:
-    """INT-R2-006: Equipment/procurement prompt does not incorrectly route to Reading/Books."""
+    """INT-R2-006: Equipment/procurement prompt does not incorrectly route to Reading/Books,
+    and proposes vendor, procurement_status, review_date, project properties."""
     prompt = "I want to manage equipment by project, vendor, procurement status, and review date."
     recipes = design.suggest_recipes(prompt)
     assert recipes[0]["id"] == "equipment", f"Expected equipment recipe first, got {recipes[0]['id']}"
@@ -140,6 +141,12 @@ def test_int_r2_006_equipment_goal_does_not_route_to_reading() -> None:
     schema = design.build_schema(prompt)
     assert schema.name == "equipment"
     assert "reading" not in schema.name.lower() and "book" not in schema.name.lower()
+    
+    prop_names = [p.name for p in schema.properties]
+    assert "vendor" in prop_names, f"Expected 'vendor' property in {prop_names}"
+    assert "procurement_status" in prop_names, f"Expected 'procurement_status' property in {prop_names}"
+    assert "review_date" in prop_names, f"Expected 'review_date' property in {prop_names}"
+    assert "project" in prop_names, f"Expected 'project' property in {prop_names}"
 
 
 def test_int_r2_007_normalize_counts_affected_notes_coherently(main_vault: str) -> None:

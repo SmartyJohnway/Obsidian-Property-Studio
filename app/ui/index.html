@@ -213,8 +213,8 @@
       <h3 style="margin-top:0">Frontmatter preview</h3>
       <pre id="fillPreview">Design or load a schema first.</pre>
       <div class="row">
-        <div class="fixed"><button class="primary" id="copyFmBtn">Copy frontmatter</button></div>
-        <div class="fixed"><button class="ghost" id="copyYamlBtn">Copy properties only</button></div>
+        <div class="fixed"><button class="primary" id="copyFmBtn" disabled>Copy frontmatter</button></div>
+        <div class="fixed"><button class="ghost" id="copyYamlBtn" disabled>Copy properties only</button></div>
       </div>
       <div id="fillStatus" style="margin-top:12px"></div>
     </div>
@@ -683,19 +683,30 @@ function updatePreview(){
       const d = await api("/api/fill/preview", {schema:S.schema, values:S.fillValues});
       S.fill = d;
       $("fillPreview").textContent = d.frontmatter || "(nothing filled in yet)";
+      const canCopy = Boolean(d.valid && (!d.errors || !d.errors.length) && d.frontmatter);
+      if($("copyFmBtn")) $("copyFmBtn").disabled = !canCopy;
+      if($("copyYamlBtn")) $("copyYamlBtn").disabled = !canCopy;
       const rt = d.roundtrip;
       $("fillStatus").innerHTML =
-        (d.errors.length?`<div class="reuse exact_existing"><strong>Fix before copying:</strong><br>${d.errors.map(esc).join("<br>")}</div>`:"") +
+        (d.errors.length?`<div class="reuse exact_existing"><strong>Fix before copying (Copying disabled):</strong><br>${d.errors.map(esc).join("<br>")}</div>`:"") +
         (d.warnings.length?`<div class="reuse possible_overlap"><strong>Check these:</strong><br>${d.warnings.map(esc).join("<br>")}</div>`:"") +
         `<div class="small ${rt.matches?"ok":"bad"}" style="margin-top:8px">
           ${rt.matches?"✔ Verified: this YAML parses back to exactly the values shown above."
             :"✖ Round-trip problem: "+esc((rt.differences||[]).join("; "))}</div>
          <div class="small muted">Properties only — no note body or template is generated.</div>`;
-    }catch(e){ $("fillStatus").innerHTML = `<div class="bad small">${esc(e.message)}</div>`; }
+    }catch(e){
+      if($("copyFmBtn")) $("copyFmBtn").disabled = true;
+      if($("copyYamlBtn")) $("copyYamlBtn").disabled = true;
+      $("fillStatus").innerHTML = `<div class="bad small">${esc(e.message)}</div>`;
+    }
   }, 180);
 }
 $("copyFmBtn").onclick = async ()=>{
   if(!S.fill || !S.fill.frontmatter){ toast("Nothing to copy yet.", true); return; }
+  if(!S.fill.valid || (S.fill.errors && S.fill.errors.length)){
+    toast("Cannot copy: fix errors/ambiguities first (" + (S.fill.errors[0] || "invalid") + ")", true);
+    return;
+  }
   const shown = $("fillPreview").textContent;
   if(shown !== S.fill.frontmatter){ toast("Preview is out of date — try again.", true); return; }
   toast(await copyText(S.fill.frontmatter) ? "Frontmatter copied — paste it at the very top of a note."
@@ -703,6 +714,10 @@ $("copyFmBtn").onclick = async ()=>{
 };
 $("copyYamlBtn").onclick = async ()=>{
   if(!S.fill || !S.fill.yaml){ toast("Nothing to copy yet.", true); return; }
+  if(!S.fill.valid || (S.fill.errors && S.fill.errors.length)){
+    toast("Cannot copy: fix errors/ambiguities first (" + (S.fill.errors[0] || "invalid") + ")", true);
+    return;
+  }
   toast(await copyText(S.fill.yaml) ? "Properties copied (without the --- lines)." : "Copy failed.", false);
 };
 

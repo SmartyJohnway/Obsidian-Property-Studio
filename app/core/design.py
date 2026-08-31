@@ -330,6 +330,25 @@ INTENTS: tuple[Intent, ...] = (
         (PropTemplate("cost", T.NUMBER, C.PLAIN,
                       "A number property lets you sum and compare amounts."),),
     ),
+    Intent(
+        "track_vendor", "Track vendor or supplier",
+        ("vendor", "supplier", "廠商", "供應商", "賣家"),
+        (PropTemplate("vendor", T.TEXT, C.NOTE_LINK,
+                      "Links to a vendor note so you can see all equipment and purchases from them."),),
+    ),
+    Intent(
+        "track_procurement", "Track procurement or purchasing status",
+        ("procurement", "procurement status", "purchasing", "採購", "採購狀態", "進貨"),
+        (PropTemplate("procurement_status", T.TEXT, C.SINGLE_CHOICE,
+                      "Tracks procurement progress (requested, approved, ordered, delivered).",
+                      allowed_values=("requested", "approved", "ordered", "delivered")),),
+    ),
+    Intent(
+        "track_review_date", "Track review or audit date",
+        ("review date", "review_date", "next review", "audit date", "審查日期", "複查日期", "檢視日期"),
+        (PropTemplate("review_date", T.DATE, C.PLAIN,
+                      "Date scheduled for next review or audit."),),
+    ),
 )
 
 
@@ -455,7 +474,13 @@ def build_schema(
         for template in recipe.properties:
             add(template, origin)
 
-    for intent_id in intent_ids:
+    active_intent_ids = list(intent_ids)
+    if goal_text.strip():
+        for detected_id in detect_intents(goal_text):
+            if detected_id not in active_intent_ids:
+                active_intent_ids.append(detected_id)
+
+    for intent_id in active_intent_ids:
         intent = next((i for i in INTENTS if i.id == intent_id), None)
         if intent is None:
             continue

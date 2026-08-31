@@ -48,16 +48,12 @@ These are deliberate boundaries or honest gaps. Nothing here is hidden behind a 
 
 ## Measured performance (not a guarantee)
 
-`evidence/benchmark.json` records a 5,040-note synthetic vault run with the environment, fixture
+`evidence/integration/m009_benchmark.json` records a 5,040-note synthetic vault run with the environment, fixture
 size and per-stage timings. PROJECT.md deliberately sets **no accepted seconds threshold** for v1,
 so these numbers are evidence, not a pass/fail gate. Runtime scales roughly linearly with note
 count; the dominant cost is reading and YAML-parsing each note's frontmatter.
 
 ## Platform verification status
 
-* Automated suite executed on Linux (Python 3.13.14) in the development environment — see
-  `evidence/test-run.txt`.
-* Windows-specific behaviour (drive-letter paths, `run_windows.bat`, `py` launcher) is implemented
-  and covered by path-handling tests, but the suite has **not** been executed on a Windows 11
-  machine in this environment. Unicode filenames, spaces in paths, nested folders and CRLF notes are
-  covered by fixtures and tests on the platform that was available.
+* Automated test suite, performance benchmark, and end-to-end UI smoke executed natively on Windows (Windows 10 Build 19045, Python 3.13.7 AMD64) — see evidence recorded under `evidence/integration/`.
+* Windows-native behavior (drive-letter paths, `run_windows.bat`, `py` / `python` launcher, loopback binding) is fully implemented and tested. Unicode filenames, Traditional Chinese values, spaces in paths, nested folders and CRLF notes are verified by fixtures and live server smoke tests.

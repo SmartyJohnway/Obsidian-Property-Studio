@@ -945,7 +945,7 @@ Exact formal versions verified in M001:
 Current:
 
 ```text
-Python version: Python 3.13.7 (Windows 11 AMD64)
+Python version: Python 3.13.7 (Windows 10 Build 19045 AMD64)
 Package manager: uv 0.12.7 / pip 26.2.1
 Virtual environment: System / local virtualenv
 Install command: pip install -r requirements-dev.txt
