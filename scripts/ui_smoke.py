@@ -156,7 +156,11 @@ def main() -> int:
         "vault_unchanged_after_smoke": steps[-1]["unchanged"],
     }
     os.makedirs(EVIDENCE, exist_ok=True)
+    os.makedirs(os.path.join(EVIDENCE, "integration"), exist_ok=True)
     with open(os.path.join(EVIDENCE, "ui-smoke.json"), "w", encoding="utf-8", newline="\n") as fh:
+        json.dump(record, fh, indent=2, ensure_ascii=False)
+        fh.write("\n")
+    with open(os.path.join(EVIDENCE, "integration", "m010_windows_native_acceptance.json"), "w", encoding="utf-8", newline="\n") as fh:
         json.dump(record, fh, indent=2, ensure_ascii=False)
         fh.write("\n")
     print("steps:", len(steps), "| vault unchanged:", record["vault_unchanged_after_smoke"])

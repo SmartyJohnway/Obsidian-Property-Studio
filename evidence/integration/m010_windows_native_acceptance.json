@@ -1,0 +1,184 @@
+{
+  "case": "local application launch + end-to-end UI API smoke",
+  "app_version": "1.0.0",
+  "environment": {
+    "python": "3.13.7",
+    "platform": "Windows-10-10.0.19045-SP0",
+    "bind_default": "127.0.0.1 (loopback only)",
+    "bound_for_this_run": "127.0.0.1:13205",
+    "hostname": "C04N06"
+  },
+  "vault": "D:\\Antigravity-Workspace\\Obsidian-Property-Studio\\Obsidian-Property-Studio-v1.0.0\\fixtures\\vaults\\main_vault",
+  "steps": [
+    {
+      "step": "GET / (UI)",
+      "http_status": 200,
+      "bytes": 52587,
+      "title_present": true,
+      "external_resource_references": 0
+    },
+    {
+      "step": "POST /api/meta",
+      "http_status": 200,
+      "version": "1.0.0",
+      "vault_write_capability": false,
+      "requires_network": false,
+      "requires_api_key": false
+    },
+    {
+      "step": "POST /api/scan",
+      "http_status": 200,
+      "summary": {
+        "vault_path": "D:\\Antigravity-Workspace\\Obsidian-Property-Studio\\Obsidian-Property-Studio-v1.0.0\\fixtures\\vaults\\main_vault",
+        "note_count": 22,
+        "notes_with_properties": 17,
+        "notes_without_properties": 2,
+        "notes_with_parse_failure": 3,
+        "skipped_path_count": 2,
+        "issue_count": 5
+      },
+      "scan_seconds": 0.0174
+    },
+    {
+      "step": "POST /api/design/build",
+      "http_status": 200,
+      "properties": [
+        "type",
+        "status",
+        "serial_number",
+        "location",
+        "owner",
+        "purchase_date",
+        "last_service_date",
+        "project",
+        "tags"
+      ],
+      "reuse_counts": {
+        "new": 0,
+        "exact_existing": 8,
+        "case_variant_exists": 0,
+        "possible_overlap": 1
+      }
+    },
+    {
+      "step": "POST /api/fill/preview",
+      "http_status": 200,
+      "frontmatter": "---\ntype: equipment\nstatus: in use\nlocation: lab\nowner: '[[Ada Lovelace]]'\n---\n",
+      "roundtrip_matches": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "step": "POST /api/refactor/plan (rename)",
+      "http_status": 200,
+      "apply_supported": false,
+      "summary": {
+        "source_usage_count": 1,
+        "target_existing_usage_count": 6,
+        "notes_to_change": 1,
+        "conflicts": 0,
+        "excluded_ambiguous": 0,
+        "notes_with_parse_failure": 3
+      }
+    },
+    {
+      "step": "POST /api/refactor/plan (merge)",
+      "http_status": 200,
+      "apply_supported": false,
+      "summary": {
+        "notes_to_change": 1,
+        "conflicts": 1,
+        "manual_review": 0,
+        "excluded_ambiguous": 0,
+        "usage": {
+          "project_name": 2,
+          "project": 6
+        }
+      }
+    },
+    {
+      "step": "POST /api/refactor/plan (normalize)",
+      "http_status": 200,
+      "apply_supported": false,
+      "summary": {
+        "usage_count": 9,
+        "distinct_values": 6,
+        "groups_to_normalize": 1,
+        "notes_to_change": 2,
+        "values_left_untouched": 3,
+        "excluded_ambiguous": 1
+      }
+    },
+    {
+      "step": "POST /api/refactor/plan (convert_type)",
+      "http_status": 200,
+      "apply_supported": false,
+      "summary": {
+        "values_examined": 6,
+        "convertible": 4,
+        "ambiguous": 1,
+        "unresolved": 1,
+        "already_target_type": 0,
+        "excluded_ambiguous": 0,
+        "feasible_without_manual_work": false
+      }
+    },
+    {
+      "step": "POST /api/relationships",
+      "http_status": 200,
+      "summary": {
+        "total_items": 7,
+        "by_kind": {
+          "ambiguous_link": 1,
+          "broken_link": 1,
+          "link_upgrade_candidate": 3,
+          "relationship_drift": 2
+        },
+        "auto_resolved": 0,
+        "scope": "property values only (no note body links are analysed or changed)"
+      }
+    },
+    {
+      "step": "POST /api/health",
+      "http_status": 200,
+      "score": 41.5,
+      "finding_count": 27
+    },
+    {
+      "step": "POST /api/proposal/import (valid)",
+      "http_status": 200,
+      "valid": true,
+      "vault_modified": false,
+      "comparison_statuses": [
+        "exact_existing",
+        "exact_existing",
+        "possible_overlap"
+      ]
+    },
+    {
+      "step": "POST /api/proposal/import (unsupported version)",
+      "http_status": 200,
+      "valid": false,
+      "errors": [
+        "Unsupported proposal_version '9.9'. Supported: 1.0."
+      ]
+    },
+    {
+      "step": "POST /api/export into the vault (must be refused)",
+      "http_status": 400,
+      "error": "Refusing to write inside the selected vault. Choose a folder outside the vault (D:\\Antigravity-Workspace\\Obsidian-Property-Studio\\Obsidian-Property-Studio-v1.0.0\\fixtures\\vaults\\main_vault).",
+      "folder_created": false
+    },
+    {
+      "step": "POST /api/vault/verify",
+      "http_status": 200,
+      "unchanged": true,
+      "files_checked": 27,
+      "files_created": 0,
+      "files_modified": 0,
+      "files_deleted": 0
+    }
+  ],
+  "all_http_ok": true,
+  "vault_unchanged_after_smoke": true
+}
