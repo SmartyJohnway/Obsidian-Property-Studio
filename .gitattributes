@@ -3,3 +3,9 @@
 *.bat text eol=crlf
 *.cmd text eol=crlf
 *.ps1 text eol=crlf
+
+# Explicitly preserve CRLF fixtures across all checkouts and platforms
+fixtures/**/CRLF* text eol=crlf
+fixtures/**/CRLF*.md text eol=crlf
+"fixtures/vaults/main_vault/Meetings/CRLF Note.md" text eol=crlf
+fixtures/vaults/main_vault/Meetings/CRLF\ Note.md text eol=crlf
