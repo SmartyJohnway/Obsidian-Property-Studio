@@ -1,0 +1,35 @@
+{
+  "proposal_version": "1.0",
+  "schema_name": "equipment",
+  "description": "Proposed by an external agent after reading the vault.",
+  "generated_by": "Obsidian Property Architect Skill (example)",
+  "properties": [
+    {
+      "name": "project",
+      "storage_type": "text",
+      "ui_control": "note_link",
+      "required": false,
+      "reason": "Relate this record to an existing project note",
+      "allowed_values": null,
+      "confidence": 0.82
+    },
+    {
+      "name": "location",
+      "storage_type": "text",
+      "ui_control": "single_choice",
+      "required": true,
+      "reason": "Know where the equipment physically is",
+      "allowed_values": ["lab", "office", "storage"],
+      "confidence": 0.6
+    },
+    {
+      "name": "last_service_date",
+      "storage_type": "date",
+      "ui_control": "plain",
+      "required": false,
+      "reason": "Find equipment overdue for maintenance",
+      "allowed_values": null,
+      "confidence": null
+    }
+  ]
+}

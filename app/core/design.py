@@ -1,0 +1,580 @@
+"""Beginner-oriented property/schema design (M004).
+
+Deterministic recipes only — no LLM, no network (REQ-005 / REQ-013).
+A user describes *what they want to manage* and *what they want to filter or
+group by*; the product proposes properties with plain-language reasons.
+"""
+
+from __future__ import annotations
+
+import re
+from dataclasses import dataclass
+from typing import Any
+
+from .inventory import Inventory, key_tokens, normalize_key
+from .model import (
+    Schema,
+    SchemaProperty,
+    StorageType,
+    UIControl,
+)
+
+import difflib
+
+
+@dataclass(frozen=True)
+class PropTemplate:
+    name: str
+    storage_type: StorageType
+    ui_control: UIControl
+    reason: str
+    required: bool = False
+    allowed_values: tuple[str, ...] | None = None
+
+    def to_schema_property(self, origin: str) -> SchemaProperty:
+        return SchemaProperty(
+            name=self.name,
+            storage_type=self.storage_type,
+            ui_control=self.ui_control,
+            required=self.required,
+            reason=self.reason,
+            allowed_values=self.allowed_values,
+            origin=origin,
+        )
+
+
+T = StorageType
+C = UIControl
+
+#: Properties proposed for every schema — they are what make a vault filterable.
+BASE_TEMPLATES: tuple[PropTemplate, ...] = (
+    PropTemplate(
+        "type", T.TEXT, C.SINGLE_CHOICE,
+        "Marks what kind of note this is, so you can filter one kind of note out "
+        "of the whole vault.",
+        required=True,
+    ),
+    PropTemplate(
+        "status", T.TEXT, C.SINGLE_CHOICE,
+        "Tracks where this item currently is, so you can see only what is active.",
+        required=False,
+        allowed_values=("active", "on hold", "done", "archived"),
+    ),
+    PropTemplate(
+        "tags", T.TAGS, C.MULTI_CHOICE,
+        "Free-form labels for cross-cutting themes. Obsidian indexes tags "
+        "natively for search.",
+    ),
+)
+
+
+@dataclass(frozen=True)
+class Recipe:
+    id: str
+    label: str
+    description: str
+    keywords: tuple[str, ...]
+    type_value: str
+    properties: tuple[PropTemplate, ...]
+    status_values: tuple[str, ...] = ("active", "on hold", "done", "archived")
+
+
+RECIPES: tuple[Recipe, ...] = (
+    Recipe(
+        "project", "Projects", "Track projects, their owner, deadline and state.",
+        ("project", "projects", "專案", "計畫", "計劃", "專桉"),
+        "project",
+        (
+            PropTemplate("owner", T.TEXT, C.NOTE_LINK,
+                         "Who is responsible. Linking to a person note lets you open "
+                         "that person and see every project they own."),
+            PropTemplate("start_date", T.DATE, C.PLAIN,
+                         "When work started, so you can sort projects by age."),
+            PropTemplate("due_date", T.DATE, C.PLAIN,
+                         "Deadline, so you can find what is due this week."),
+            PropTemplate("priority", T.TEXT, C.SINGLE_CHOICE,
+                         "Lets you sort the list when everything feels urgent.",
+                         allowed_values=("high", "medium", "low")),
+            PropTemplate("area", T.TEXT, C.SINGLE_CHOICE,
+                         "Which part of your life/work this belongs to."),
+        ),
+        ("planning", "active", "on hold", "done", "archived"),
+    ),
+    Recipe(
+        "task", "Tasks / action items", "Track individual actions and their state.",
+        ("task", "tasks", "todo", "to-do", "action", "任務", "待辦", "工作項目"),
+        "task",
+        (
+            PropTemplate("due_date", T.DATE, C.PLAIN, "A real date property lets you list everything due this week."),
+            PropTemplate("project", T.TEXT, C.NOTE_LINK,
+                         "Connects the task to its project note, so a project shows its tasks."),
+            PropTemplate("priority", T.TEXT, C.SINGLE_CHOICE,
+                         "Lets you sort a long list when everything feels urgent.", allowed_values=("high", "medium", "low")),
+            PropTemplate("done", T.CHECKBOX, C.PLAIN,
+                         "A simple yes/no flag you can filter on to hide finished work."),
+        ),
+        ("todo", "doing", "blocked", "done"),
+    ),
+    Recipe(
+        "reading", "Reading list / books",
+        "Track books and articles, what you read and what you thought.",
+        ("book", "books", "reading", "read", "article", "閱讀", "書", "書籍", "讀書"),
+        "book",
+        (
+            PropTemplate("author", T.TEXT, C.NOTE_LINK,
+                         "Links to an author note so you can see everything by them."),
+            PropTemplate("rating", T.NUMBER, C.PLAIN,
+                         "A number lets you sort your best reads to the top."),
+            PropTemplate("finished_date", T.DATE, C.PLAIN,
+                         "When you finished, for yearly reading reviews."),
+            PropTemplate("topics", T.LIST, C.MULTI_CHOICE,
+                         "Subjects covered, so you can group by topic."),
+        ),
+        ("to read", "reading", "finished", "abandoned"),
+    ),
+    Recipe(
+        "meeting", "Meetings", "Track meetings, attendees and follow-ups.",
+        ("meeting", "meetings", "1:1", "standup", "會議", "會談", "訪談"),
+        "meeting",
+        (
+            PropTemplate("date", T.DATE, C.PLAIN, "A real date lets you find meetings by week, month or quarter."),
+            PropTemplate("attendees", T.LIST, C.NOTE_LINK_LIST,
+                         "Links to the people who attended, so each person note can "
+                         "show their meetings."),
+            PropTemplate("project", T.TEXT, C.NOTE_LINK,
+                         "Links the meeting to its project, so the project shows its meetings."),
+            PropTemplate("follow_up_required", T.CHECKBOX, C.PLAIN,
+                         "Flags meetings that still need action, so nothing is forgotten."),
+        ),
+        ("scheduled", "held", "cancelled"),
+    ),
+    Recipe(
+        "person", "People / contacts", "Keep a people directory you can query.",
+        ("person", "people", "contact", "contacts", "人", "人物", "聯絡人", "客戶"),
+        "person",
+        (
+            PropTemplate("organisation", T.TEXT, C.NOTE_LINK,
+                         "Links the person to a company/organisation note."),
+            PropTemplate("role", T.TEXT, C.PLAIN, "Their role, so you can group people by what they do."),
+            PropTemplate("email", T.TEXT, C.PLAIN, "Plain contact detail kept as structured data instead of loose text."),
+            PropTemplate("last_contacted", T.DATE, C.PLAIN,
+                         "Lets you find people you have not spoken to in a while."),
+        ),
+        ("active", "inactive"),
+    ),
+    Recipe(
+        "equipment", "Equipment / assets",
+        "Track hardware, tools or gear, where it is and when it was serviced.",
+        ("equipment", "asset", "assets", "device", "gear", "hardware", "machine",
+         "設備", "器材", "資產", "機台", "工具"),
+        "equipment",
+        (
+            PropTemplate("serial_number", T.TEXT, C.PLAIN,
+                         "Identifies the exact physical unit, not just the model name."),
+            PropTemplate("location", T.TEXT, C.SINGLE_CHOICE,
+                         "Where it physically is, so you can find it."),
+            PropTemplate("owner", T.TEXT, C.NOTE_LINK,
+                         "Who is responsible for it, linked to that person's note."),
+            PropTemplate("purchase_date", T.DATE, C.PLAIN,
+                         "Age of the asset, for warranty and replacement planning."),
+            PropTemplate("last_service_date", T.DATE, C.PLAIN,
+                         "Lets you find equipment overdue for maintenance."),
+            PropTemplate("project", T.TEXT, C.NOTE_LINK,
+                         "Relates this record to an existing project note."),
+        ),
+        ("in use", "in storage", "in repair", "retired"),
+    ),
+    Recipe(
+        "research", "Research / papers", "Track sources and what you concluded.",
+        ("research", "paper", "papers", "study", "literature", "研究", "論文", "文獻"),
+        "paper",
+        (
+            PropTemplate("authors", T.LIST, C.NOTE_LINK_LIST,
+                         "Links to author notes, so an author shows all of their papers."),
+            PropTemplate("year", T.NUMBER, C.PLAIN, "Publication year as a number, so you can sort and filter by age."),
+            PropTemplate("source_url", T.TEXT, C.PLAIN, "Where to find the original source again without searching."),
+            PropTemplate("topics", T.LIST, C.MULTI_CHOICE,
+                         "Subject grouping across your literature."),
+        ),
+        ("to read", "reading", "summarised", "cited"),
+    ),
+    Recipe(
+        "journal", "Journal / daily notes", "Make daily notes queryable.",
+        ("journal", "diary", "daily", "log", "日誌", "日記", "每日"),
+        "journal",
+        (
+            PropTemplate("date", T.DATE, C.PLAIN, "The day this entry is about, so entries sort chronologically."),
+            PropTemplate("mood", T.TEXT, C.SINGLE_CHOICE,
+                         "Lets you look back at patterns over time.",
+                         allowed_values=("great", "good", "ok", "low")),
+            PropTemplate("people", T.LIST, C.NOTE_LINK_LIST,
+                         "Who you saw that day, linked to person notes."),
+        ),
+        ("draft", "final"),
+    ),
+    Recipe(
+        "course", "Courses / study", "Track learning material and progress.",
+        ("course", "class", "study", "learning", "課程", "學習", "上課"),
+        "course",
+        (
+            PropTemplate("instructor", T.TEXT, C.NOTE_LINK, "Links to the teacher note, so a teacher shows all their courses."),
+            PropTemplate("start_date", T.DATE, C.PLAIN, "Start date, so you can see what is running right now."),
+            PropTemplate("progress", T.NUMBER, C.PLAIN,
+                         "Percentage completed, so you can sort by what is unfinished."),
+        ),
+        ("enrolled", "in progress", "completed", "dropped"),
+    ),
+    Recipe(
+        "recipe", "Recipes / cooking", "Make a cookbook you can filter.",
+        ("recipe", "cooking", "food", "食譜", "料理", "烹飪"),
+        "recipe",
+        (
+            PropTemplate("cuisine", T.TEXT, C.SINGLE_CHOICE, "Groups recipes by style of food when you cannot decide what to cook."),
+            PropTemplate("prep_minutes", T.NUMBER, C.PLAIN,
+                         "Find something you can cook in the time you have."),
+            PropTemplate("ingredients", T.LIST, C.MULTI_CHOICE,
+                         "Lets you search recipes by what is already in the fridge."),
+            PropTemplate("rating", T.NUMBER, C.PLAIN, "A number score, so your favourites sort to the top."),
+        ),
+        ("to try", "tested", "favourite"),
+    ),
+    Recipe(
+        "travel", "Trips / travel", "Plan and review trips.",
+        ("trip", "travel", "holiday", "vacation", "旅行", "旅遊", "行程"),
+        "trip",
+        (
+            PropTemplate("destination", T.TEXT, C.SINGLE_CHOICE, "Groups trips by place, so you can revisit what you did there."),
+            PropTemplate("start_date", T.DATE, C.PLAIN, "Departure date, so trips sort correctly on a timeline."),
+            PropTemplate("end_date", T.DATE, C.PLAIN, "Return date, used with the start date to work out trip length."),
+            PropTemplate("budget", T.NUMBER, C.PLAIN, "A number, so you can compare and total what trips cost."),
+            PropTemplate("companions", T.LIST, C.NOTE_LINK_LIST, "Links to the people you travelled with, from their own notes."),
+        ),
+        ("idea", "booked", "completed"),
+    ),
+    Recipe(
+        "media", "Films / series / media", "Track what you watched.",
+        ("movie", "film", "series", "tv", "watch", "media", "電影", "影集", "觀影"),
+        "media",
+        (
+            PropTemplate("director", T.TEXT, C.NOTE_LINK, "Links to the creator note, so a director shows all their films."),
+            PropTemplate("year", T.NUMBER, C.PLAIN, "Release year as a number, so you can sort and filter by decade."),
+            PropTemplate("rating", T.NUMBER, C.PLAIN, "Your own score as a number, so you can rank what you watched."),
+            PropTemplate("watched_date", T.DATE, C.PLAIN, "When you watched it, for yearly review lists."),
+        ),
+        ("to watch", "watching", "watched"),
+    ),
+)
+
+
+#: Additional intents the user can tick. Each maps to concrete properties.
+@dataclass(frozen=True)
+class Intent:
+    id: str
+    label: str
+    keywords: tuple[str, ...]
+    properties: tuple[PropTemplate, ...]
+
+
+INTENTS: tuple[Intent, ...] = (
+    Intent(
+        "filter_by_status", "See only what is still open / active",
+        ("status", "open", "active", "progress", "狀態", "進度"),
+        (BASE_TEMPLATES[1],),
+    ),
+    Intent(
+        "group_by_category", "Group things into categories or areas",
+        ("category", "categor", "area", "group", "分類", "類別", "領域"),
+        (PropTemplate("category", T.TEXT, C.SINGLE_CHOICE,
+                      "A controlled category value so grouping stays consistent."),),
+    ),
+    Intent(
+        "find_by_date", "Find things by date (recent, overdue, this month)",
+        ("date", "when", "deadline", "due", "recent", "日期", "時間", "期限"),
+        (PropTemplate("date", T.DATE, C.PLAIN,
+                      "A real date property sorts correctly; a text date does not."),),
+    ),
+    Intent(
+        "link_to_people", "Connect notes to people",
+        ("people", "person", "who", "owner", "人", "誰", "負責"),
+        (PropTemplate("people", T.LIST, C.NOTE_LINK_LIST,
+                      "Links to person notes, so each person shows their related notes."),),
+    ),
+    Intent(
+        "link_to_projects", "Connect notes to projects",
+        ("project", "initiative", "專案", "計畫"),
+        (PropTemplate("project", T.TEXT, C.NOTE_LINK,
+                      "Relates this note to an existing project note."),),
+    ),
+    Intent(
+        "track_location", "Know where something is",
+        ("location", "where", "place", "shelf", "位置", "地點", "存放"),
+        (PropTemplate("location", T.TEXT, C.SINGLE_CHOICE,
+                      "A controlled location value so the same place is spelled once."),),
+    ),
+    Intent(
+        "track_priority", "Decide what to do first",
+        ("priority", "important", "urgent", "優先", "重要"),
+        (PropTemplate("priority", T.TEXT, C.SINGLE_CHOICE,
+                      "Lets you sort a long list by importance instead of guessing.",
+                      allowed_values=("high", "medium", "low")),),
+    ),
+    Intent(
+        "rate_things", "Rate or score things",
+        ("rating", "score", "rate", "評分", "分數"),
+        (PropTemplate("rating", T.NUMBER, C.PLAIN,
+                      "A number property can be sorted and averaged."),),
+    ),
+    Intent(
+        "track_cost", "Track cost or amount",
+        ("cost", "price", "budget", "amount", "money", "費用", "價格", "預算"),
+        (PropTemplate("cost", T.NUMBER, C.PLAIN,
+                      "A number property lets you sum and compare amounts."),),
+    ),
+)
+
+
+_WORD = re.compile(r"[A-Za-z0-9]+|[\u4e00-\u9fff]+")
+
+
+def _match_score(text: str, keywords: tuple[str, ...]) -> int:
+    lowered = text.casefold()
+    score = 0
+    for kw in keywords:
+        if kw.casefold() in lowered:
+            score += 2 if len(kw) > 3 else 1
+    return score
+
+
+def suggest_recipes(goal_text: str, limit: int = 3) -> list[dict[str, Any]]:
+    """Rank recipes against a free-text goal (deterministic)."""
+    scored = [
+        (
+            _match_score(goal_text, r.keywords),
+            r,
+        )
+        for r in RECIPES
+    ]
+    scored = [(s, r) for s, r in scored if s > 0]
+    scored.sort(key=lambda item: (-item[0], item[1].id))
+    return [
+        {
+            "id": r.id,
+            "label": r.label,
+            "description": r.description,
+            "score": s,
+            "type_value": r.type_value,
+        }
+        for s, r in scored[:limit]
+    ]
+
+
+def detect_intents(goal_text: str) -> list[str]:
+    hits = []
+    for intent in INTENTS:
+        if _match_score(goal_text, intent.keywords) > 0:
+            hits.append(intent.id)
+    return hits
+
+
+def _slug(text: str) -> str:
+    words = _WORD.findall(text.casefold())
+    if not words:
+        return "notes"
+    return "_".join(words[:3])
+
+
+def _settle_choice_controls(props: list[SchemaProperty], inv: "Inventory | None") -> None:
+    """A choice control needs values. Take them from the vault when the vault
+    already uses that property; otherwise keep the property as a plain input and
+    tell the user how to turn it into a controlled choice."""
+    for prop in props:
+        if prop.ui_control not in (UIControl.SINGLE_CHOICE, UIControl.MULTI_CHOICE):
+            continue
+        if prop.allowed_values:
+            continue
+        entry = inv.get(prop.name) if inv is not None else None
+        if entry is not None and entry.values:
+            top = [stat.value for stat in entry.top_values(8) if stat.value.strip()]
+            if top:
+                prop.allowed_values = tuple(top)
+                prop.reason = (
+                    prop.reason
+                    + f" Suggested values come from the {entry.usage_count} notes in "
+                    "your vault that already use this property."
+                ).strip()
+                continue
+        prop.ui_control = UIControl.PLAIN
+        prop.reason = (
+            prop.reason
+            + " Add a list of allowed values in the editor to turn this into a "
+            "controlled choice."
+        ).strip()
+
+
+def build_schema(
+    goal_text: str,
+    recipe_id: str | None = None,
+    intent_ids: tuple[str, ...] | list[str] = (),
+    schema_name: str | None = None,
+    inv: "Inventory | None" = None,
+) -> Schema:
+    """Turn 'I want to manage X' + intents into a concrete schema proposal."""
+    recipe = None
+    if recipe_id:
+        recipe = next((r for r in RECIPES if r.id == recipe_id), None)
+    if recipe is None:
+        ranked = suggest_recipes(goal_text, limit=1)
+        if ranked:
+            recipe = next(r for r in RECIPES if r.id == ranked[0]["id"])
+
+    props: list[SchemaProperty] = []
+    seen: set[str] = set()
+
+    def add(template: PropTemplate, origin: str, override: dict[str, Any] | None = None):
+        if template.name in seen:
+            return
+        seen.add(template.name)
+        prop = template.to_schema_property(origin)
+        if override:
+            for key, value in override.items():
+                setattr(prop, key, value)
+        props.append(prop)
+
+    origin = f"recipe:{recipe.id}" if recipe else "recipe:generic"
+
+    type_values = (recipe.type_value,) if recipe else (_slug(goal_text),)
+    add(
+        BASE_TEMPLATES[0],
+        origin,
+        {"allowed_values": type_values, "required": True},
+    )
+    status_values = recipe.status_values if recipe else BASE_TEMPLATES[1].allowed_values
+    add(BASE_TEMPLATES[1], origin, {"allowed_values": tuple(status_values)})
+
+    if recipe:
+        for template in recipe.properties:
+            add(template, origin)
+
+    for intent_id in intent_ids:
+        intent = next((i for i in INTENTS if i.id == intent_id), None)
+        if intent is None:
+            continue
+        for template in intent.properties:
+            add(template, f"intent:{intent.id}")
+
+    add(BASE_TEMPLATES[2], origin)
+
+    _settle_choice_controls(props, inv)
+
+    name = schema_name or (recipe.id if recipe else _slug(goal_text))
+    description = (
+        f"Designed from the goal: “{goal_text.strip()}”."
+        if goal_text.strip()
+        else "Designed in Property Studio."
+    )
+    return Schema(name=name, description=description, properties=props)
+
+
+# --------------------------------------------------------------------------
+# Existing-property awareness (REQ-006 / OPS-AC-007)
+# --------------------------------------------------------------------------
+def check_property_reuse(name: str, inv: Inventory) -> dict[str, Any]:
+    """Compare a proposed property name with what the vault already uses."""
+    result: dict[str, Any] = {
+        "proposed_name": name,
+        "status": "new",
+        "exact_match": None,
+        "case_variants": [],
+        "possible_overlaps": [],
+        "auto_merged": False,
+    }
+    if name in inv.properties:
+        entry = inv.properties[name]
+        result["status"] = "exact_existing"
+        result["exact_match"] = {
+            "key": entry.key,
+            "usage_count": entry.usage_count,
+            "dominant_type": entry.dominant_type,
+            "top_values": [v.to_dict() for v in entry.top_values(8)],
+            "notes": sorted(entry.notes)[:50],
+        }
+
+    norm = normalize_key(name)
+    tokens = set(key_tokens(name))
+    for key, entry in sorted(inv.properties.items()):
+        if key == name:
+            continue
+        if normalize_key(key) == norm:
+            result["case_variants"].append(
+                {
+                    "key": key,
+                    "usage_count": entry.usage_count,
+                    "dominant_type": entry.dominant_type,
+                }
+            )
+            continue
+        other = set(key_tokens(key))
+        ratio = difflib.SequenceMatcher(None, norm, normalize_key(key)).ratio()
+        if (tokens and other and (tokens < other or other < tokens)) or ratio >= 0.82:
+            result["possible_overlaps"].append(
+                {
+                    "key": key,
+                    "usage_count": entry.usage_count,
+                    "dominant_type": entry.dominant_type,
+                    "similarity_ratio": round(ratio, 3),
+                    "confidence": "possible",
+                }
+            )
+    if result["status"] == "new" and result["case_variants"]:
+        result["status"] = "case_variant_exists"
+    elif result["status"] == "new" and result["possible_overlaps"]:
+        result["status"] = "possible_overlap"
+
+    result["message"] = {
+        "exact_existing": (
+            f"'{name}' already exists in this vault. Reuse it instead of creating a "
+            "second property with the same name."
+        ),
+        "case_variant_exists": (
+            f"This vault already uses a differently-written version of '{name}'. "
+            "Reusing the existing spelling keeps filtering consistent."
+        ),
+        "possible_overlap": (
+            f"'{name}' looks similar to an existing property. This is a possibility "
+            "for you to judge — nothing is merged automatically."
+        ),
+        "new": f"'{name}' is not used anywhere in this vault yet.",
+    }[result["status"]]
+    return result
+
+
+def review_schema_against_vault(schema: Schema, inv: Inventory) -> dict[str, Any]:
+    """Full reuse/type comparison for every property in a schema."""
+    reviews = []
+    for prop in schema.properties:
+        review = check_property_reuse(prop.name, inv)
+        entry = inv.get(prop.name)
+        if entry is not None:
+            review["type_agreement"] = (
+                "matches"
+                if entry.dominant_type == prop.storage_type.value
+                else "differs"
+            )
+            review["vault_dominant_type"] = entry.dominant_type
+            review["schema_storage_type"] = prop.storage_type.value
+        reviews.append(review)
+    return {
+        "schema": schema.to_dict(),
+        "validation_errors": schema.validate(),
+        "reuse_reviews": reviews,
+        "counts": {
+            "new": sum(1 for r in reviews if r["status"] == "new"),
+            "exact_existing": sum(1 for r in reviews if r["status"] == "exact_existing"),
+            "case_variant_exists": sum(
+                1 for r in reviews if r["status"] == "case_variant_exists"
+            ),
+            "possible_overlap": sum(
+                1 for r in reviews if r["status"] == "possible_overlap"
+            ),
+        },
+    }

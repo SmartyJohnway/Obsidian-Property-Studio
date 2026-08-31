@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Obsidian Property Studio</title>
+<style>
+  :root{
+    --bg:#12131a; --panel:#1b1d27; --panel2:#232634; --line:#31344a;
+    --text:#e8e9f0; --muted:#a2a6bd; --accent:#8b7cf6; --accent2:#57c7a3;
+    --warn:#f2b45c; --danger:#ef6b73; --info:#63b3ed;
+    --radius:10px; --mono:"Cascadia Code",Consolas,"SF Mono",Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.55 "Segoe UI",system-ui,-apple-system,"Noto Sans TC",sans-serif}
+  header{display:flex;align-items:center;gap:16px;padding:14px 22px;
+    background:linear-gradient(90deg,#1b1d27,#232338);border-bottom:1px solid var(--line);
+    position:sticky;top:0;z-index:20;flex-wrap:wrap}
+  header h1{font-size:17px;margin:0;font-weight:650;letter-spacing:.2px}
+  .badge{font-size:11.5px;padding:3px 9px;border-radius:999px;border:1px solid var(--line);
+    color:var(--muted);background:#00000030}
+  .badge.ok{color:var(--accent2);border-color:#2f6a58;background:#122a24}
+  nav{display:flex;gap:4px;padding:10px 18px;background:var(--panel);
+    border-bottom:1px solid var(--line);overflow-x:auto;position:sticky;top:57px;z-index:19}
+  nav button{background:transparent;border:1px solid transparent;color:var(--muted);
+    padding:7px 14px;border-radius:8px;cursor:pointer;font-size:14px;white-space:nowrap}
+  nav button:hover{color:var(--text);background:#ffffff0d}
+  nav button.active{background:var(--accent);color:#fff;font-weight:600}
+  nav button:disabled{opacity:.4;cursor:not-allowed}
+  main{padding:20px 22px 80px;max-width:1240px;margin:0 auto}
+  section{display:none} section.active{display:block}
+  h2{font-size:19px;margin:0 0 6px} h3{font-size:15px;margin:22px 0 8px}
+  p.lead{color:var(--muted);margin:0 0 18px;max-width:78ch}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px 18px;margin-bottom:16px}
+  .grid{display:grid;gap:12px}
+  .grid.cols4{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+  .grid.cols2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+  .stat{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+  .stat .n{font-size:24px;font-weight:650}
+  .stat .l{color:var(--muted);font-size:12.5px;margin-top:2px}
+  .stat.alert .n{color:var(--danger)}
+  input,select,textarea,button{font-family:inherit;font-size:14px}
+  input[type=text],input[type=number],input[type=date],input[type=datetime-local],select,textarea{
+    background:var(--panel2);border:1px solid var(--line);color:var(--text);
+    border-radius:8px;padding:8px 10px;width:100%}
+  textarea{min-height:110px;font-family:var(--mono);font-size:13px}
+  label.field{display:block;margin-bottom:12px}
+  label.field > span{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+  button.primary{background:var(--accent);border:none;color:#fff;padding:9px 18px;
+    border-radius:8px;cursor:pointer;font-weight:600}
+  button.ghost{background:var(--panel2);border:1px solid var(--line);color:var(--text);
+    padding:8px 14px;border-radius:8px;cursor:pointer}
+  button.primary:disabled,button.ghost:disabled{opacity:.45;cursor:not-allowed}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+  .row > *{flex:1 1 200px} .row > .fixed{flex:0 0 auto}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:12.5px;text-transform:uppercase;letter-spacing:.04em}
+  tr.clickable:hover{background:#ffffff08;cursor:pointer}
+  code,pre{font-family:var(--mono)}
+  code{background:#00000045;padding:1px 5px;border-radius:4px;font-size:12.5px}
+  pre{background:#0d0e15;border:1px solid var(--line);border-radius:8px;padding:14px;
+    overflow:auto;font-size:13px;white-space:pre-wrap;word-break:break-word}
+  .pill{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:999px;
+    border:1px solid var(--line);color:var(--muted);margin-right:5px}
+  .pill.high{color:var(--danger);border-color:#7a3238;background:#2a1417}
+  .pill.medium{color:var(--warn);border-color:#7a5a25;background:#2a2113}
+  .pill.low{color:var(--info);border-color:#2c5578;background:#132030}
+  .pill.info{color:var(--muted)}
+  .pill.exact{color:var(--accent2);border-color:#2f6a58}
+  .pill.ambiguous{color:var(--warn);border-color:#7a5a25}
+  .pill.possible{color:var(--info);border-color:#2c5578}
+  .pill.unresolved{color:var(--danger);border-color:#7a3238}
+  .finding{border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:10px;
+    background:var(--panel2)}
+  .finding h4{margin:0 0 6px;font-size:14.5px}
+  .finding .why{color:var(--muted);font-size:13.5px;margin:6px 0}
+  .finding details{margin-top:8px}
+  .finding summary{cursor:pointer;color:var(--info);font-size:13px}
+  .notes-list{font-family:var(--mono);font-size:12px;color:var(--muted);
+    max-height:220px;overflow:auto;margin-top:6px}
+  .muted{color:var(--muted)} .small{font-size:12.5px}
+  .ok{color:var(--accent2)} .bad{color:var(--danger)} .warnc{color:var(--warn)}
+  .toast{position:fixed;right:20px;bottom:20px;background:var(--panel2);
+    border:1px solid var(--line);border-left:3px solid var(--accent2);padding:12px 16px;
+    border-radius:8px;max-width:420px;display:none;z-index:50;box-shadow:0 8px 30px #0008}
+  .toast.err{border-left-color:var(--danger)}
+  .prop-editor{border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:10px;
+    background:var(--panel2)}
+  .prop-editor .head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .prop-editor .head strong{font-size:14.5px}
+  .reuse{font-size:12.5px;margin-top:8px;padding:8px 10px;border-radius:6px;
+    background:#00000030;border:1px dashed var(--line)}
+  .reuse.exact_existing{border-color:#7a5a25;color:var(--warn)}
+  .reuse.case_variant_exists{border-color:#7a5a25;color:var(--warn)}
+  .reuse.possible_overlap{border-color:#2c5578;color:var(--info)}
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:900px){.split{grid-template-columns:1fr}}
+  .hint{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:13.5px}
+  .kv dt{color:var(--muted)} .kv dd{margin:0}
+  .empty{color:var(--muted);font-style:italic;padding:8px 0}
+</style>
+</head>
+<body>
+<header>
+  <h1>🗂️ Obsidian Property Studio</h1>
+  <span class="badge ok" id="roBadge">Vault read-only</span>
+  <span class="badge" id="offlineBadge">No network · No AI required</span>
+  <span class="badge" id="vaultBadge">No vault selected</span>
+  <span class="badge" id="versionBadge"></span>
+</header>
+
+<nav id="tabs">
+  <button data-tab="vault" class="active">1 · Vault</button>
+  <button data-tab="discover" data-needs-scan>2 · Discover</button>
+  <button data-tab="design">3 · Design</button>
+  <button data-tab="fill">4 · Fill &amp; Copy</button>
+  <button data-tab="refactor" data-needs-scan>5 · Refactor plan</button>
+  <button data-tab="relations" data-needs-scan>6 · Relationships</button>
+  <button data-tab="health" data-needs-scan>7 · Health</button>
+  <button data-tab="proposal">8 · AI proposal</button>
+</nav>
+
+<main>
+<!-- ============================ VAULT ============================ -->
+<section id="tab-vault" class="active">
+  <h2>Choose the vault you want to understand</h2>
+  <p class="lead">Property Studio reads your vault and never changes it. Nothing is uploaded,
+    no account or API key is needed, and no note is created, renamed or edited. Everything you
+    produce here is text that <em>you</em> copy into Obsidian yourself.</p>
+  <div class="card">
+    <div class="row">
+      <label class="field" style="flex:3 1 420px">
+        <span>Vault folder (full path)</span>
+        <input type="text" id="vaultPath" placeholder="C:\Users\you\Documents\MyVault" />
+      </label>
+      <div class="fixed"><button class="primary" id="scanBtn">Scan vault</button></div>
+      <div class="fixed"><button class="ghost" id="verifyBtn" disabled>Verify vault untouched</button></div>
+    </div>
+    <div class="hint">Tip on Windows: open the vault folder, click the address bar, copy the path.
+      Sub-folders are scanned automatically. <code>.obsidian/</code>, <code>.trash/</code> and
+      hidden folders are ignored, and symlinks/junctions are never followed out of the vault.</div>
+  </div>
+  <div id="scanSummary"></div>
+  <div id="verifyResult"></div>
+  <div id="scanIssues"></div>
+</section>
+
+<!-- ============================ DISCOVER ============================ -->
+<section id="tab-discover">
+  <h2>What properties does this vault already use?</h2>
+  <p class="lead">Every property key found in your notes' frontmatter, how often it is used, how it
+    is stored, and what can go wrong. Click any row to drill down to the actual notes.</p>
+  <div id="discoverStats" class="grid cols4"></div>
+  <div class="card">
+    <h3 style="margin-top:0">Property inventory</h3>
+    <div class="row" style="margin-bottom:10px">
+      <input type="text" id="invFilter" placeholder="Filter properties…" />
+    </div>
+    <div id="invTable"></div>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">Findings</h3>
+    <div class="row" style="margin-bottom:10px">
+      <select id="findingFilter" class="fixed" style="flex:0 0 260px">
+        <option value="">All categories</option>
+      </select>
+    </div>
+    <div id="discoverFindings"></div>
+  </div>
+</section>
+
+<!-- ============================ DESIGN ============================ -->
+<section id="tab-design">
+  <h2>Design properties without writing YAML</h2>
+  <p class="lead">Describe what you want to manage in plain words. Property Studio proposes a set of
+    properties, explains why each one exists, and checks them against what your vault already uses.</p>
+  <div class="card">
+    <label class="field">
+      <span>What do you want to manage? (e.g. “I want to manage my lab equipment and know where each item is”)</span>
+      <input type="text" id="goalText" placeholder="I want to manage …" />
+    </label>
+    <div class="row">
+      <label class="field"><span>Suggested starting point</span>
+        <select id="recipeSelect"></select></label>
+      <label class="field"><span>Schema name</span>
+        <input type="text" id="schemaName" placeholder="equipment" /></label>
+    </div>
+    <div>
+      <span class="muted small">What do you want to be able to do? (tick any)</span>
+      <div id="intentBoxes" class="grid cols2" style="margin-top:8px"></div>
+    </div>
+    <div style="margin-top:14px" class="row">
+      <div class="fixed"><button class="primary" id="buildSchemaBtn">Propose properties</button></div>
+      <div class="fixed"><button class="ghost" id="addPropBtn">+ Add a property myself</button></div>
+      <div class="fixed"><button class="ghost" id="exportSchemaBtn">Export schema (JSON)</button></div>
+    </div>
+  </div>
+  <div id="schemaEditor"></div>
+</section>
+
+<!-- ============================ FILL ============================ -->
+<section id="tab-fill">
+  <h2>Fill in the values, copy valid frontmatter</h2>
+  <p class="lead">A form built from your schema. The YAML below is exactly what gets copied — inspect
+    it before you paste it at the very top of a note in Obsidian.</p>
+  <div class="split">
+    <div class="card"><h3 style="margin-top:0">Values</h3><div id="fillForm"></div></div>
+    <div class="card">
+      <h3 style="margin-top:0">Frontmatter preview</h3>
+      <pre id="fillPreview">Design or load a schema first.</pre>
+      <div class="row">
+        <div class="fixed"><button class="primary" id="copyFmBtn">Copy frontmatter</button></div>
+        <div class="fixed"><button class="ghost" id="copyYamlBtn">Copy properties only</button></div>
+      </div>
+      <div id="fillStatus" style="margin-top:12px"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ REFACTOR ============================ -->
+<section id="tab-refactor">
+  <h2>Plan a property change safely</h2>
+  <p class="lead">Every plan is analysis only. Property Studio v1 has no code path that writes to your
+    vault — it shows you exactly which notes are affected, and where a human decision is required.</p>
+  <div class="card">
+    <div class="row">
+      <label class="field"><span>Operation</span>
+        <select id="refOp">
+          <option value="rename">Rename a property</option>
+          <option value="merge">Merge properties into one</option>
+          <option value="normalize">Normalize inconsistent values</option>
+          <option value="convert_type">Change a property's type (feasibility)</option>
+          <option value="required_impact">Make schema fields required (impact)</option>
+        </select></label>
+      <div id="refInputs" class="row" style="flex:3 1 480px"></div>
+      <div class="fixed"><button class="primary" id="planBtn">Create plan</button></div>
+      <div class="fixed"><button class="ghost" id="exportPlanBtn" disabled>Export plan</button></div>
+    </div>
+  </div>
+  <div id="planResult"></div>
+</section>
+
+<!-- ============================ RELATIONSHIPS ============================ -->
+<section id="tab-relations">
+  <h2>Relationship inbox</h2>
+  <p class="lead">Property values that point at other notes — exact matches you could turn into links,
+    ambiguous names the app refuses to guess, and links that point nowhere. Property values only:
+    your note text is never touched.</p>
+  <div class="row" style="margin-bottom:14px">
+    <div class="fixed"><button class="primary" id="loadInboxBtn">Load inbox</button></div>
+    <div class="fixed"><button class="ghost" id="exportInboxBtn" disabled>Export inbox</button></div>
+  </div>
+  <div id="inboxStats" class="grid cols4"></div>
+  <div id="inboxItems"></div>
+</section>
+
+<!-- ============================ HEALTH ============================ -->
+<section id="tab-health">
+  <h2>Property health</h2>
+  <p class="lead">One explainable view of long-term property quality. Every point deducted from the
+    score is shown, and every finding drills down to the notes it came from.</p>
+  <div class="card">
+    <div class="row">
+      <label class="field"><span>Compare against the current schema (optional)</span>
+        <select id="healthSchemaToggle">
+          <option value="no">No schema — vault-wide checks only</option>
+          <option value="yes">Yes — also check missing / unexpected properties</option>
+        </select></label>
+      <label class="field"><span>Limit to notes where…</span>
+        <input type="text" id="scopeProp" placeholder="property (e.g. type)" /></label>
+      <label class="field"><span>…equals</span>
+        <input type="text" id="scopeVal" placeholder="value (e.g. project)" /></label>
+      <div class="fixed"><button class="primary" id="healthBtn">Run health check</button></div>
+      <div class="fixed"><button class="ghost" id="exportHealthBtn" disabled>Export report</button></div>
+    </div>
+  </div>
+  <div id="healthResult"></div>
+</section>
+
+<!-- ============================ PROPOSAL ============================ -->
+<section id="tab-proposal">
+  <h2>Import an external AI / Agent schema proposal</h2>
+  <p class="lead">Optional. The app itself needs no AI. A proposal is untrusted advisory input: it is
+    validated against the versioned contract, compared with your real vault, and never applied to it.</p>
+  <div class="card">
+    <div class="row" style="margin-bottom:10px">
+      <div class="fixed"><input type="file" id="proposalFile" accept=".json,application/json" /></div>
+      <div class="fixed"><button class="ghost" id="sampleProposalBtn">Insert example</button></div>
+      <div class="fixed"><button class="primary" id="importProposalBtn">Validate &amp; compare</button></div>
+    </div>
+    <textarea id="proposalText" placeholder='{"proposal_version":"1.0","schema_name":"equipment","properties":[…]}'></textarea>
+    <div class="hint">Contract: <code>proposal_version</code> (currently <code>1.0</code>),
+      <code>schema_name</code>, and <code>properties[]</code> with
+      <code>name</code>, <code>storage_type</code>, optional <code>ui_control</code>,
+      <code>required</code>, <code>reason</code>, <code>allowed_values</code>, <code>confidence</code>.
+      See <code>docs/PROPOSAL_CONTRACT.md</code>.</div>
+  </div>
+  <div id="proposalResult"></div>
+</section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const S = {
+  meta:null, scanned:false, discovery:null, schema:null, fillValues:{},
+  lastPlan:null, lastPlanParams:null, inbox:null, health:null, healthParams:null,
+  noteCandidates:[], ambiguousNames:[]
+};
+const $ = (id)=>document.getElementById(id);
+const esc = (s)=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function toast(msg, isErr){
+  const t=$("toast"); t.textContent=msg; t.className="toast"+(isErr?" err":"");
+  t.style.display="block"; clearTimeout(t._h); t._h=setTimeout(()=>t.style.display="none", 5200);
+}
+async function api(path, body){
+  const res = await fetch(path, {method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify(body||{})});
+  const data = await res.json();
+  if(!res.ok){ throw new Error(data.error || ("HTTP "+res.status)); }
+  return data;
+}
+function setTab(name){
+  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active", b.dataset.tab===name));
+  document.querySelectorAll("section").forEach(s=>s.classList.toggle("active", s.id==="tab-"+name));
+  window.scrollTo({top:0});
+}
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
+  if(b.hasAttribute("data-needs-scan") && !S.scanned){ toast("Scan a vault first (step 1).", true); return; }
+  setTab(b.dataset.tab);
+});
+function stat(n,l,alert){return `<div class="stat${alert?" alert":""}"><div class="n">${esc(n)}</div><div class="l">${esc(l)}</div></div>`;}
+function sevPill(s){return `<span class="pill ${esc(s)}">${esc(s)}</span>`;}
+function confPill(c){return `<span class="pill ${esc(c)}">${esc(c)}</span>`;}
+async function copyText(text){
+  try{ await navigator.clipboard.writeText(text); return true; }
+  catch(e){
+    const ta=document.createElement("textarea"); ta.value=text; document.body.appendChild(ta);
+    ta.select(); const ok=document.execCommand("copy"); ta.remove(); return ok;
+  }
+}
+
+/* ------------------------------- meta ------------------------------- */
+(async function init(){
+  try{
+    S.meta = await api("/api/meta");
+    $("versionBadge").textContent = "v"+S.meta.version;
+    const rs=$("recipeSelect");
+    rs.innerHTML = `<option value="">(let the app choose from my words)</option>` +
+      S.meta.recipes.map(r=>`<option value="${esc(r.id)}">${esc(r.label)} — ${esc(r.description)}</option>`).join("");
+    $("intentBoxes").innerHTML = S.meta.intents.map(i=>
+      `<label class="small"><input type="checkbox" class="intent" value="${esc(i.id)}" /> ${esc(i.label)}</label>`).join("");
+  }catch(e){ toast("Could not reach the local app: "+e.message, true); }
+})();
+
+/* ------------------------------- vault ------------------------------ */
+$("scanBtn").onclick = async ()=>{
+  const path = $("vaultPath").value.trim();
+  if(!path){ toast("Enter the vault folder path.", true); return; }
+  $("scanBtn").disabled=true; $("scanBtn").textContent="Scanning…";
+  try{
+    const d = await api("/api/scan", {vault_path: path});
+    S.discovery = d; S.scanned = true;
+    $("vaultBadge").textContent = d.summary.vault_path;
+    $("verifyBtn").disabled = false;
+    renderScanSummary(d); renderDiscover(d); renderRefactorInputs();
+    toast(`Scanned ${d.summary.note_count} notes in ${d.scan_seconds}s. Vault not modified.`);
+  }catch(e){ toast(e.message, true); $("scanSummary").innerHTML=`<div class="card bad">${esc(e.message)}</div>`; }
+  finally{ $("scanBtn").disabled=false; $("scanBtn").textContent="Scan vault"; }
+};
+
+function renderScanSummary(d){
+  const s = d.summary;
+  $("scanSummary").innerHTML = `<div class="card"><h3 style="margin-top:0">Scan result</h3>
+    <div class="grid cols4">
+      ${stat(s.note_count,"Markdown notes")}
+      ${stat(s.notes_with_properties,"notes with properties")}
+      ${stat(s.notes_without_properties,"notes without properties")}
+      ${stat(s.notes_with_parse_failure,"notes whose properties could NOT be read", s.notes_with_parse_failure>0)}
+      ${stat(d.inventory.unique_property_count,"unique property keys")}
+      ${stat(s.skipped_path_count,"paths skipped on purpose")}
+      ${stat(d.scan_seconds+"s","scan time")}
+      ${stat(d.baseline_file_count,"files hashed for the read-only check")}
+    </div>
+    <p class="small muted" style="margin-bottom:0">Notes that failed to parse are reported separately —
+      they are never counted as “no properties”.</p></div>`;
+  const issues = d.issues || [], skipped = d.skipped || [];
+  let html = "";
+  if(issues.length){
+    html += `<div class="card"><h3 style="margin-top:0">Parse warnings &amp; errors (${issues.length})</h3>
+      <table><thead><tr><th>Note</th><th>Status</th><th>Message</th></tr></thead><tbody>` +
+      issues.map(i=>`<tr><td><code>${esc(i.note_path)}</code></td><td>${sevPill(i.severity)}<code>${esc(i.status)}</code></td>
+        <td>${esc(i.message)} <span class="muted small">${esc(i.detail)}</span></td></tr>`).join("") +
+      `</tbody></table></div>`;
+  }
+  if(skipped.length){
+    html += `<div class="card"><h3 style="margin-top:0">Skipped paths (${skipped.length})</h3>
+      <table><thead><tr><th>Path</th><th>Reason</th></tr></thead><tbody>` +
+      skipped.map(s2=>`<tr><td><code>${esc(s2.path)}</code></td><td class="muted">${esc(s2.reason)}</td></tr>`).join("")+
+      `</tbody></table></div>`;
+  }
+  $("scanIssues").innerHTML = html;
+}
+
+$("verifyBtn").onclick = async ()=>{
+  try{
+    const r = await api("/api/vault/verify", {});
+    $("verifyResult").innerHTML = `<div class="card">
+      <h3 style="margin-top:0">Vault integrity check</h3>
+      <div class="grid cols4">
+        ${stat(r.files_checked,"files hashed (SHA-256)")}
+        ${stat(r.files_created,"files created", r.files_created>0)}
+        ${stat(r.files_modified,"files modified", r.files_modified>0)}
+        ${stat(r.files_deleted,"files deleted", r.files_deleted>0)}
+      </div>
+      <p class="${r.unchanged?"ok":"bad"}" style="margin-bottom:0">${r.unchanged
+        ? "✔ Byte-for-byte identical to when the vault was scanned."
+        : "✖ Difference detected — see details below."}</p>
+      <p class="small muted">Digest before <code>${esc(r.before_digest.slice(0,16))}…</code> ·
+        after <code>${esc(r.after_digest.slice(0,16))}…</code></p></div>`;
+  }catch(e){ toast(e.message, true); }
+};
+
+/* ------------------------------ discover ----------------------------- */
+function renderDiscover(d){
+  const s=d.summary;
+  $("discoverStats").innerHTML =
+    stat(d.inventory.unique_property_count,"unique properties") +
+    stat(s.notes_with_properties,"notes with properties") +
+    stat(d.findings.length,"findings") +
+    stat(s.notes_with_parse_failure,"unreadable notes", s.notes_with_parse_failure>0);
+  renderInventory();
+  const cats = [...new Set(d.findings.map(f=>f.category))].sort();
+  $("findingFilter").innerHTML = `<option value="">All categories (${d.findings.length})</option>` +
+    cats.map(c=>`<option value="${esc(c)}">${esc(c)} (${d.findings.filter(f=>f.category===c).length})</option>`).join("");
+  renderFindings("discoverFindings", d.findings, "");
+}
+$("invFilter").oninput = renderInventory;
+$("findingFilter").onchange = ()=> renderFindings("discoverFindings", S.discovery.findings, $("findingFilter").value);
+
+function renderInventory(){
+  if(!S.discovery) return;
+  const q = $("invFilter").value.trim().toLowerCase();
+  const rows = S.discovery.inventory.properties.filter(p=>!q || p.key.toLowerCase().includes(q));
+  if(!rows.length){ $("invTable").innerHTML = `<div class="empty">No properties found.</div>`; return; }
+  $("invTable").innerHTML = `<table><thead><tr><th>Property</th><th>Notes</th><th>Stored as</th>
+    <th>Distinct values</th><th>Most common values</th></tr></thead><tbody>` +
+    rows.map(p=>`<tr class="clickable" data-key="${esc(p.key)}">
+      <td><code>${esc(p.key)}</code>${p.ambiguous_notes.length?' <span class="pill high">duplicate key</span>':''}</td>
+      <td>${p.usage_count}</td>
+      <td>${Object.entries(p.observed_types).map(([k,v])=>`<span class="pill">${esc(k)} ×${v}</span>`).join("")}</td>
+      <td>${p.distinct_value_count}</td>
+      <td class="muted small">${p.top_values.slice(0,4).map(v=>esc(v.value)+" ("+v.count+")").join(", ")}</td>
+    </tr>`).join("") + `</tbody></table><div id="propDetail"></div>`;
+  document.querySelectorAll("#invTable tr.clickable").forEach(tr=>tr.onclick=()=>showProperty(tr.dataset.key));
+}
+async function showProperty(key){
+  try{
+    const d = await api("/api/property", {key});
+    const e = d.entry;
+    $("propDetail").innerHTML = `<div class="card" style="margin-top:14px">
+      <h3 style="margin-top:0">Property <code>${esc(e.key)}</code></h3>
+      <dl class="kv">
+        <dt>Used in</dt><dd>${e.usage_count} notes (${e.empty_count} empty)</dd>
+        <dt>Stored as</dt><dd>${Object.entries(e.observed_types).map(([k,v])=>`${esc(k)} ×${v}`).join(", ")}</dd>
+        <dt>Distinct values</dt><dd>${e.distinct_value_count}</dd>
+      </dl>
+      <h4>Value distribution</h4>
+      <table><thead><tr><th>Value</th><th>Count</th><th>Notes</th></tr></thead><tbody>${
+        e.top_values.map(v=>`<tr><td><code>${esc(v.value)}</code></td><td>${v.count}</td>
+          <td class="muted small">${v.notes.slice(0,8).map(esc).join("<br>")}${v.notes.length>8?" …":""}</td></tr>`).join("")
+      }</tbody></table>
+      <details><summary>All notes using this property (${e.notes.length})</summary>
+        <div class="notes-list">${e.notes.map(esc).join("<br>")}</div></details>
+    </div>`;
+    $("propDetail").scrollIntoView({behavior:"smooth", block:"nearest"});
+  }catch(e){ toast(e.message, true); }
+}
+
+function renderFindings(targetId, findings, category){
+  const list = findings.filter(f=>!category || f.category===category);
+  const el = $(targetId);
+  if(!list.length){ el.innerHTML = `<div class="empty">Nothing found — that is good news.</div>`; return; }
+  el.innerHTML = list.map(f=>`<div class="finding">
+    <h4>${sevPill(f.severity)}${confPill(f.confidence)} ${esc(f.title)}</h4>
+    <div class="why">${esc(f.explanation)}</div>
+    <div class="small"><strong>What you can do:</strong> ${esc(f.recommendation)}</div>
+    <div class="small muted" style="margin-top:6px">category <code>${esc(f.category)}</code> ·
+      properties ${f.property_keys.map(k=>"<code>"+esc(k)+"</code>").join(", ")||"—"} ·
+      ${f.affected_note_count} affected note(s)</div>
+    <details><summary>Show affected notes &amp; evidence</summary>
+      <div class="notes-list">${f.affected_notes.map(esc).join("<br>")||"—"}</div>
+      <pre class="small">${esc(JSON.stringify(f.evidence,null,2))}</pre>
+    </details></div>`).join("");
+}
+
+/* ------------------------------- design ------------------------------ */
+$("buildSchemaBtn").onclick = async ()=>{
+  const goal = $("goalText").value.trim();
+  const intents = [...document.querySelectorAll(".intent:checked")].map(c=>c.value);
+  if(!goal && !$("recipeSelect").value){ toast("Describe what you want to manage, or pick a starting point.", true); return; }
+  try{
+    const d = await api("/api/design/build", {goal, recipe_id:$("recipeSelect").value,
+      intents, schema_name:$("schemaName").value.trim()});
+    S.schema = d.schema; renderSchemaEditor(d);
+    $("schemaName").value = d.schema.schema_name;
+    renderFillForm();
+    toast("Proposed "+d.schema.properties.length+" properties. Review, edit, then go to Fill.");
+  }catch(e){ toast(e.message, true); }
+};
+$("goalText").addEventListener("change", async ()=>{
+  const goal=$("goalText").value.trim(); if(!goal) return;
+  try{
+    const d = await api("/api/design/suggest",{goal});
+    if(d.recipes.length){ $("recipeSelect").value = d.recipes[0].id; }
+    d.detected_intents.forEach(id=>{
+      const box=[...document.querySelectorAll(".intent")].find(c=>c.value===id); if(box) box.checked=true;
+    });
+  }catch(e){}
+});
+$("addPropBtn").onclick = ()=>{
+  if(!S.schema){ S.schema = {format_version:"1.0", schema_name:$("schemaName").value.trim()||"my_notes",
+    description:"", properties:[]}; }
+  S.schema.properties.push({name:"new_property", storage_type:"text", ui_control:"plain",
+    required:false, reason:"", allowed_values:null, origin:"user", confidence:null});
+  reviewSchema();
+};
+async function reviewSchema(){
+  try{
+    const d = await api("/api/design/review", {schema:S.schema});
+    S.schema = d.schema; renderSchemaEditor(d); renderFillForm();
+  }catch(e){ toast(e.message, true); }
+}
+function renderSchemaEditor(d){
+  const schema = d.schema, reviews = d.reuse_reviews||[];
+  const types = Object.entries(S.meta.storage_types).filter(([k])=>!["empty","unsupported"].includes(k));
+  const html = `<div class="card">
+    <h3 style="margin-top:0">Schema <code>${esc(schema.schema_name)}</code>
+      <span class="muted small">${esc(schema.description||"")}</span></h3>
+    ${d.validation_errors.length?`<div class="reuse exact_existing">⚠ ${d.validation_errors.map(esc).join("<br>")}</div>`:""}
+    <div class="small muted" style="margin-bottom:10px">
+      ${d.counts.exact_existing} already in your vault · ${d.counts.case_variant_exists} differently-spelled variants ·
+      ${d.counts.possible_overlap} possible overlaps · ${d.counts.new} new</div>
+    ${schema.properties.map((p,i)=>{
+      const r = reviews[i]||{};
+      const overlaps = (r.possible_overlaps||[]).map(o=>`<code>${esc(o.key)}</code> (${o.usage_count} notes, similarity ${o.similarity_ratio})`).join(", ");
+      const variants = (r.case_variants||[]).map(o=>`<code>${esc(o.key)}</code> (${o.usage_count} notes)`).join(", ");
+      return `<div class="prop-editor" data-i="${i}">
+        <div class="head"><strong><code>${esc(p.name)}</code></strong>
+          <span>
+            <span class="pill">${esc(p.storage_type_label||p.storage_type)}</span>
+            <span class="pill">${esc(p.ui_control)}</span>
+            ${p.required?'<span class="pill medium">required</span>':'<span class="pill">optional</span>'}
+            <button class="ghost small" data-del="${i}">Remove</button></span></div>
+        <div class="row" style="margin-top:10px">
+          <label class="field"><span>Property name</span>
+            <input type="text" data-f="name" data-i="${i}" value="${esc(p.name)}" /></label>
+          <label class="field"><span>Stored in Obsidian as</span>
+            <select data-f="storage_type" data-i="${i}">${types.map(([k,v])=>
+              `<option value="${esc(k)}" ${k===p.storage_type?"selected":""}>${esc(v)}</option>`).join("")}</select></label>
+          <label class="field"><span>Input style (UI only)</span>
+            <select data-f="ui_control" data-i="${i}">${Object.keys(S.meta.ui_controls).map(k=>
+              `<option value="${esc(k)}" ${k===p.ui_control?"selected":""}>${esc(k)}</option>`).join("")}</select></label>
+          <label class="field"><span>Required?</span>
+            <select data-f="required" data-i="${i}">
+              <option value="false" ${!p.required?"selected":""}>Optional</option>
+              <option value="true" ${p.required?"selected":""}>Required</option></select></label>
+        </div>
+        <div class="row">
+          <label class="field"><span>Allowed values (comma separated — for choice inputs)</span>
+            <input type="text" data-f="allowed_values" data-i="${i}"
+              value="${esc((p.allowed_values||[]).join(", "))}" /></label>
+          <label class="field"><span>Why this property exists</span>
+            <input type="text" data-f="reason" data-i="${i}" value="${esc(p.reason||"")}" /></label>
+        </div>
+        <div class="hint">Serialization: ${esc((p.serialization||{}).serializes_as||"")} —
+          ${esc((p.serialization||{}).note||"")}</div>
+        <div class="reuse ${esc(r.status||"new")}">
+          ${esc(r.message||"")}
+          ${r.exact_match?`<br>Existing usage: ${r.exact_match.usage_count} notes, mostly stored as
+            <code>${esc(r.exact_match.dominant_type)}</code>${r.type_agreement==="differs"
+              ? ` <span class="warnc">— your schema says <code>${esc(r.schema_storage_type)}</code>, which would create a type conflict.</span>`:""}
+            <br>Top values: ${(r.exact_match.top_values||[]).slice(0,6).map(v=>"<code>"+esc(v.value)+"</code>").join(", ")||"—"}
+            <br><button class="ghost small" data-reuse="${i}">Reuse the existing property as-is</button>`:""}
+          ${variants?`<br>Existing variants: ${variants}`:""}
+          ${overlaps?`<br>Possible overlap (your judgement, nothing is merged): ${overlaps}`:""}
+        </div></div>`;}).join("")}
+    </div>`;
+  $("schemaEditor").innerHTML = html;
+  $("schemaEditor").querySelectorAll("[data-f]").forEach(inp=>{
+    inp.onchange = ()=>{
+      const i=+inp.dataset.i, f=inp.dataset.f; let v=inp.value;
+      if(f==="required") v = (v==="true");
+      if(f==="allowed_values") v = v.trim()? v.split(",").map(x=>x.trim()).filter(Boolean) : null;
+      S.schema.properties[i][f]=v; reviewSchema();
+    };
+  });
+  $("schemaEditor").querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{
+    S.schema.properties.splice(+b.dataset.del,1); reviewSchema(); });
+  $("schemaEditor").querySelectorAll("[data-reuse]").forEach(b=>b.onclick=()=>{
+    const i=+b.dataset.reuse, r=(d.reuse_reviews||[])[i];
+    if(r && r.exact_match){ S.schema.properties[i].storage_type = r.exact_match.dominant_type;
+      toast(`Reusing existing property '${r.exact_match.key}' with its current type.`); reviewSchema(); }
+  });
+}
+$("exportSchemaBtn").onclick = async ()=>{
+  if(!S.schema){ toast("Design a schema first.", true); return; }
+  try{
+    const r = await api("/api/export",{kind:"schema", params:{schema:S.schema},
+      basename:"schema-"+(S.schema.schema_name||"unnamed")});
+    toast("Schema exported to "+r.files[0].path);
+  }catch(e){ toast(e.message, true); }
+};
+
+/* -------------------------------- fill -------------------------------- */
+function renderFillForm(){
+  if(!S.schema || !S.schema.properties.length){ $("fillForm").innerHTML =
+    `<div class="empty">Design a schema in step 3 first.</div>`; return; }
+  $("fillForm").innerHTML = S.schema.properties.map(p=>{
+    const id = "fv_"+p.name, val = S.fillValues[p.name] ?? "";
+    let input;
+    const av = p.allowed_values||[];
+    if(p.ui_control==="single_choice" && av.length){
+      input = `<select id="${esc(id)}" data-p="${esc(p.name)}"><option value=""></option>` +
+        av.map(v=>`<option ${String(val)===String(v)?"selected":""}>${esc(v)}</option>`).join("")+`</select>`;
+    } else if(p.ui_control==="multi_choice" && av.length){
+      input = `<select id="${esc(id)}" data-p="${esc(p.name)}" multiple size="${Math.min(av.length,5)}">` +
+        av.map(v=>`<option ${Array.isArray(val)&&val.includes(v)?"selected":""}>${esc(v)}</option>`).join("")+`</select>`;
+    } else if(p.storage_type==="checkbox"){
+      input = `<select id="${esc(id)}" data-p="${esc(p.name)}"><option value=""></option>
+        <option value="true" ${val===true||val==="true"?"selected":""}>Yes (true)</option>
+        <option value="false" ${val===false||val==="false"?"selected":""}>No (false)</option></select>`;
+    } else if(p.storage_type==="date"){
+      input = `<input type="date" id="${esc(id)}" data-p="${esc(p.name)}" value="${esc(val)}" />`;
+    } else if(p.storage_type==="datetime"){
+      input = `<input type="datetime-local" id="${esc(id)}" data-p="${esc(p.name)}" value="${esc(val)}" />`;
+    } else if(p.storage_type==="number"){
+      input = `<input type="number" step="any" id="${esc(id)}" data-p="${esc(p.name)}" value="${esc(val)}" />`;
+    } else if(p.ui_control==="note_link"||p.ui_control==="note_link_list"){
+      input = `<input type="text" id="${esc(id)}" data-p="${esc(p.name)}" list="noteList"
+        placeholder="${p.ui_control==="note_link_list"?"Note A, Note B":"Start typing a note name…"}"
+        value="${esc(Array.isArray(val)?val.join(", "):val)}" />`;
+    } else if(p.storage_type==="list"||p.storage_type==="tags"){
+      input = `<input type="text" id="${esc(id)}" data-p="${esc(p.name)}"
+        placeholder="value1, value2" value="${esc(Array.isArray(val)?val.join(", "):val)}" />`;
+    } else {
+      input = `<input type="text" id="${esc(id)}" data-p="${esc(p.name)}" value="${esc(val)}" />`;
+    }
+    return `<label class="field"><span>${esc(p.name)}${p.required?" *":""}
+      <span class="pill">${esc(p.storage_type)}</span></span>${input}
+      <div class="hint">${esc(p.reason||"")}</div></label>`;
+  }).join("") + `<datalist id="noteList"></datalist>`;
+  $("fillForm").querySelectorAll("[data-p]").forEach(el=>{
+    el.oninput = el.onchange = ()=>{
+      const name = el.dataset.p;
+      S.fillValues[name] = el.multiple ? [...el.selectedOptions].map(o=>o.value) : el.value;
+      updatePreview();
+    };
+  });
+  loadNoteCandidates(); updatePreview();
+}
+async function loadNoteCandidates(){
+  if(!S.scanned) return;
+  try{
+    const d = await api("/api/notes/candidates", {query:""});
+    S.noteCandidates = d.candidates; S.ambiguousNames = d.ambiguous_names;
+    const dl = $("noteList");
+    if(dl) dl.innerHTML = d.candidates.map(c=>`<option value="${esc(c.name)}">${esc(c.path)}</option>`).join("");
+  }catch(e){}
+}
+let previewTimer=null;
+function updatePreview(){
+  clearTimeout(previewTimer);
+  previewTimer = setTimeout(async ()=>{
+    if(!S.schema) return;
+    try{
+      const d = await api("/api/fill/preview", {schema:S.schema, values:S.fillValues});
+      S.fill = d;
+      $("fillPreview").textContent = d.frontmatter || "(nothing filled in yet)";
+      const rt = d.roundtrip;
+      $("fillStatus").innerHTML =
+        (d.errors.length?`<div class="reuse exact_existing"><strong>Fix before copying:</strong><br>${d.errors.map(esc).join("<br>")}</div>`:"") +
+        (d.warnings.length?`<div class="reuse possible_overlap"><strong>Check these:</strong><br>${d.warnings.map(esc).join("<br>")}</div>`:"") +
+        `<div class="small ${rt.matches?"ok":"bad"}" style="margin-top:8px">
+          ${rt.matches?"✔ Verified: this YAML parses back to exactly the values shown above."
+            :"✖ Round-trip problem: "+esc((rt.differences||[]).join("; "))}</div>
+         <div class="small muted">Properties only — no note body or template is generated.</div>`;
+    }catch(e){ $("fillStatus").innerHTML = `<div class="bad small">${esc(e.message)}</div>`; }
+  }, 180);
+}
+$("copyFmBtn").onclick = async ()=>{
+  if(!S.fill || !S.fill.frontmatter){ toast("Nothing to copy yet.", true); return; }
+  const shown = $("fillPreview").textContent;
+  if(shown !== S.fill.frontmatter){ toast("Preview is out of date — try again.", true); return; }
+  toast(await copyText(S.fill.frontmatter) ? "Frontmatter copied — paste it at the very top of a note."
+    : "Copy failed; select the text manually.", false);
+};
+$("copyYamlBtn").onclick = async ()=>{
+  if(!S.fill || !S.fill.yaml){ toast("Nothing to copy yet.", true); return; }
+  toast(await copyText(S.fill.yaml) ? "Properties copied (without the --- lines)." : "Copy failed.", false);
+};
+
+/* ------------------------------ refactor ------------------------------ */
+function propOptions(){
+  const props = (S.discovery && S.discovery.inventory.properties) || [];
+  return props.map(p=>`<option value="${esc(p.key)}">${esc(p.key)} (${p.usage_count})</option>`).join("");
+}
+function renderRefactorInputs(){
+  const op = $("refOp").value, opts = propOptions();
+  let html = "";
+  if(op==="rename"){
+    html = `<label class="field"><span>Rename this property</span><select id="ref_source">${opts}</select></label>
+            <label class="field"><span>…to this name</span><input type="text" id="ref_target" placeholder="new_name" /></label>`;
+  } else if(op==="merge"){
+    html = `<label class="field"><span>Merge these properties (ctrl-click for several)</span>
+              <select id="ref_sources" multiple size="5">${opts}</select></label>
+            <label class="field"><span>…into</span><input type="text" id="ref_target" placeholder="target_property" /></label>`;
+  } else if(op==="normalize"){
+    html = `<label class="field"><span>Normalize values of</span><select id="ref_prop">${opts}</select></label>`;
+  } else if(op==="convert_type"){
+    html = `<label class="field"><span>Property</span><select id="ref_prop">${opts}</select></label>
+            <label class="field"><span>Change type to</span><select id="ref_type">
+              <option value="text">Text</option><option value="list">List</option>
+              <option value="number">Number</option><option value="checkbox">Checkbox</option>
+              <option value="date">Date</option><option value="datetime">Date &amp; time</option>
+              <option value="note_link">Note link ([[…]] text)</option></select></label>`;
+  } else {
+    html = `<label class="field"><span>Uses the schema from step 3</span>
+              <input type="text" value="${esc(S.schema?S.schema.schema_name:"(no schema yet)")}" disabled /></label>
+            <label class="field"><span>Only notes where property</span><input type="text" id="ref_scope_p" placeholder="type" /></label>
+            <label class="field"><span>equals</span><input type="text" id="ref_scope_v" placeholder="project" /></label>`;
+  }
+  $("refInputs").innerHTML = html;
+}
+$("refOp").onchange = renderRefactorInputs;
+$("planBtn").onclick = async ()=>{
+  const op = $("refOp").value; let params={operation:op};
+  try{
+    if(op==="rename"){ params.source=$("ref_source").value; params.target=$("ref_target").value.trim();
+      if(!params.target) throw new Error("Enter the new property name."); }
+    else if(op==="merge"){ params.sources=[...$("ref_sources").selectedOptions].map(o=>o.value);
+      params.target=$("ref_target").value.trim();
+      if(!params.sources.length||!params.target) throw new Error("Pick source properties and a target name."); }
+    else if(op==="normalize"){ params.property=$("ref_prop").value; }
+    else if(op==="convert_type"){ params.property=$("ref_prop").value; params.target_type=$("ref_type").value; }
+    else { if(!S.schema) throw new Error("Design a schema in step 3 first.");
+      params.schema=S.schema; params.scope_property=$("ref_scope_p").value.trim();
+      params.scope_value=$("ref_scope_v").value.trim(); }
+    const plan = await api("/api/refactor/plan", params);
+    S.lastPlan = plan; S.lastPlanParams = params; $("exportPlanBtn").disabled=false;
+    renderPlan(plan);
+  }catch(e){ toast(e.message, true); }
+};
+function planTable(title, rows, cls){
+  if(!rows || !rows.length) return `<h3>${esc(title)} (0)</h3><div class="empty">None.</div>`;
+  const keys = [...new Set(rows.flatMap(r=>Object.keys(r)))];
+  return `<h3 class="${cls||""}">${esc(title)} (${rows.length})</h3>
+    <table><thead><tr>${keys.map(k=>`<th>${esc(k)}</th>`).join("")}</tr></thead><tbody>` +
+    rows.map(r=>`<tr>${keys.map(k=>{
+      const v=r[k]; const t = (v && typeof v==="object")? JSON.stringify(v) : (v==null?"":String(v));
+      return `<td class="small">${esc(t)}</td>`;}).join("")}</tr>`).join("") + `</tbody></table>`;
+}
+function renderPlan(plan){
+  const s = plan.summary;
+  $("planResult").innerHTML = `<div class="card">
+    <h3 style="margin-top:0">Plan — ${esc(plan.operation)}</h3>
+    <div class="reuse possible_overlap">${esc(plan.notice)} Apply-to-vault capability: <strong>${plan.apply_supported}</strong>.</div>
+    <div class="grid cols4" style="margin-top:12px">${
+      Object.entries(s).map(([k,v])=>stat(typeof v==="object"?JSON.stringify(v):v, k.replace(/_/g," "),
+        /conflict|unresolved|ambiguous|missing/.test(k) && v>0)).join("")}</div>
+    ${plan.warnings&&plan.warnings.length?`<div class="reuse exact_existing" style="margin-top:12px">${plan.warnings.map(esc).join("<br>")}</div>`:""}
+    ${planTable("Conflicts — manual review required", plan.conflicts, "bad")}
+    ${planTable("Ambiguous — you must decide", plan.ambiguous)}
+    ${planTable("Unresolved — cannot be converted", plan.unresolved)}
+    ${planTable("Manual review", plan.manual_review)}
+    ${planTable("Notes that would change", plan.affected_notes)}
+    ${planTable("Value groups to normalize", plan.changes)}
+    ${planTable("Convertible values", plan.convertible)}
+    ${planTable("Notes missing required properties", plan.missing)}
+    ${planTable("Values left untouched (not assumed equivalent)", plan.untouched_values)}
+    ${planTable("Excluded — ambiguous duplicate keys", plan.excluded)}
+    ${planTable("Notes whose frontmatter could not be read", plan.unreadable_notes)}
+  </div>`;
+}
+$("exportPlanBtn").onclick = async ()=>{
+  try{
+    const r = await api("/api/export",{kind:"plan", params:S.lastPlanParams,
+      basename:"plan-"+S.lastPlan.operation});
+    toast("Plan exported (JSON + Markdown) to "+r.output_dir+
+      (r.verification.no_silent_omission?" · read-back verified":""));
+  }catch(e){ toast(e.message, true); }
+};
+
+/* ---------------------------- relationships ---------------------------- */
+$("loadInboxBtn").onclick = async ()=>{
+  try{
+    const d = await api("/api/relationships", {});
+    S.inbox = d; $("exportInboxBtn").disabled=false;
+    $("inboxStats").innerHTML = stat(d.summary.total_items,"items to review") +
+      Object.entries(d.summary.by_kind).map(([k,v])=>stat(v,k.replace(/_/g," "))).join("") +
+      stat(d.summary.auto_resolved,"resolved automatically by the app");
+    $("inboxItems").innerHTML = d.items.length? d.items.map(i=>`<div class="finding">
+      <h4>${sevPill(i.severity)}${confPill(i.confidence)} ${esc(i.title)}</h4>
+      <div class="small">Note <code>${esc(i.note)}</code> · property <code>${esc(i.property)}</code> ·
+        current value <code>${esc(i.value)}</code></div>
+      <div class="why">${esc(i.explanation)}</div>
+      <div class="small"><strong>What to do:</strong> ${esc(i.action)}</div>
+      <div class="small muted">Candidates: ${i.candidates.length? i.candidates.map(c=>"<code>"+esc(c)+"</code>").join(", ") : "—"}</div>
+      ${i.proposed_value?`<div class="row" style="margin-top:8px"><div class="fixed">
+        <button class="ghost" data-copy="${esc(i.proposed_value)}">Copy proposed value ${esc(i.proposed_value)}</button></div></div>`:
+        `<div class="small muted" style="margin-top:6px">No value is proposed — the app will not guess.</div>`}
+    </div>`).join("") : `<div class="empty">Nothing to review.</div>`;
+    $("inboxItems").querySelectorAll("[data-copy]").forEach(b=>b.onclick=async()=>{
+      toast(await copyText(b.dataset.copy)?"Copied "+b.dataset.copy:"Copy failed", false); });
+  }catch(e){ toast(e.message, true); }
+};
+$("exportInboxBtn").onclick = async ()=>{
+  try{ const r = await api("/api/export",{kind:"inbox", params:{}, basename:"relationship-inbox"});
+    toast("Inbox exported to "+r.output_dir+(r.verification.no_silent_omission?" · read-back verified":""));
+  }catch(e){ toast(e.message, true); }
+};
+
+/* -------------------------------- health -------------------------------- */
+$("healthBtn").onclick = async ()=>{
+  const useSchema = $("healthSchemaToggle").value==="yes";
+  if(useSchema && !S.schema){ toast("Design a schema in step 3 first, or choose 'No schema'.", true); return; }
+  const params = {schema: useSchema? S.schema : null,
+    scope_property:$("scopeProp").value.trim(), scope_value:$("scopeVal").value.trim()};
+  try{
+    const d = await api("/api/health", params);
+    S.health = d; S.healthParams = params; $("exportHealthBtn").disabled=false;
+    const sc = d.health_score;
+    $("healthResult").innerHTML = `<div class="card">
+      <h3 style="margin-top:0">Health score: ${sc.score} / 100</h3>
+      <p class="small muted">${esc(sc.formula)}</p>
+      <table><thead><tr><th>Category</th><th>Findings</th><th>Weight each</th><th>Raw</th><th>Cap</th><th>Applied</th></tr></thead>
+        <tbody>${sc.score_breakdown.map(r=>`<tr><td><code>${esc(r.category)}</code></td><td>${r.finding_count}</td>
+          <td>${r.weight_per_finding}</td><td>${r.raw_deduction}</td><td>${r.category_cap}</td>
+          <td>${r.applied_deduction}</td></tr>`).join("")}</tbody></table>
+      <div class="grid cols4" style="margin-top:14px">
+        ${stat(d.summary.finding_count,"findings")}
+        ${Object.entries(d.summary.by_severity).map(([k,v])=>stat(v,k+" severity",k==="high")).join("")}</div>
+    </div><div class="card"><h3 style="margin-top:0">All findings</h3><div id="healthFindings"></div></div>`;
+    renderFindings("healthFindings", d.findings, "");
+  }catch(e){ toast(e.message, true); }
+};
+$("exportHealthBtn").onclick = async ()=>{
+  try{
+    const r = await api("/api/export",{kind:"health", params:S.healthParams, basename:"property-health"});
+    toast(`Health report exported to ${r.output_dir} · ${r.verification.finding_count_in_file} findings written`+
+      (r.verification.no_silent_omission?" · read-back verified":" · MISMATCH"));
+  }catch(e){ toast(e.message, true); }
+};
+
+/* ------------------------------- proposal ------------------------------- */
+$("proposalFile").onchange = async (ev)=>{
+  const f = ev.target.files[0]; if(!f) return;
+  $("proposalText").value = await f.text();
+};
+$("sampleProposalBtn").onclick = ()=>{
+  $("proposalText").value = JSON.stringify({
+    proposal_version:"1.0", schema_name:"equipment",
+    generated_by:"Obsidian Property Architect Skill (example)",
+    properties:[
+      {name:"project", storage_type:"text", ui_control:"note_link", required:false,
+       reason:"Relate this record to an existing project note", allowed_values:null, confidence:0.8},
+      {name:"location", storage_type:"text", ui_control:"single_choice", required:true,
+       reason:"Know where the equipment physically is", allowed_values:["lab","office","storage"], confidence:0.6}
+    ]}, null, 2);
+};
+$("importProposalBtn").onclick = async ()=>{
+  try{
+    const d = await api("/api/proposal/import", {text:$("proposalText").value});
+    let html = `<div class="card"><h3 style="margin-top:0">Validation</h3>
+      <p class="${d.valid?"ok":"bad"}">${d.valid?"✔ Valid proposal (contract "+esc(d.contract_version)+")":"✖ Rejected"}</p>
+      ${d.errors.length?`<div class="reuse exact_existing"><strong>Errors:</strong><br>${d.errors.map(esc).join("<br>")}</div>`:""}
+      ${d.warnings.length?`<div class="reuse possible_overlap"><strong>Warnings:</strong><br>${d.warnings.map(esc).join("<br>")}</div>`:""}
+      <p class="small muted">Vault modified by this import: <strong>${d.vault_modified}</strong>. ${esc(d.trust||"")}</p></div>`;
+    if(d.valid && d.comparison){
+      html += `<div class="card"><h3 style="margin-top:0">Compared with your vault</h3>
+        <table><thead><tr><th>Proposed property</th><th>Type</th><th>Status in vault</th><th>Reason given</th><th>Confidence</th></tr></thead><tbody>` +
+        d.comparison.map(c=>`<tr><td><code>${esc(c.proposed_name)}</code></td>
+          <td>${esc(c.proposed_storage_type)} / ${esc(c.proposed_ui_control)}</td>
+          <td>${esc(c.status)}${c.type_agreement?` <span class="pill ${c.type_agreement==="differs"?"medium":"exact"}">type ${esc(c.type_agreement)}</span>`:""}
+            <div class="small muted">${esc(c.message)}</div></td>
+          <td class="small">${esc(c.reason||"—")}</td><td>${c.confidence==null?"—":esc(c.confidence)}</td></tr>`).join("") +
+        `</tbody></table>
+        <div class="row" style="margin-top:12px"><div class="fixed">
+          <button class="primary" id="acceptProposalBtn">Accept into the schema editor (you can still edit)</button></div>
+          <div class="fixed"><button class="ghost" id="rejectProposalBtn">Reject</button></div></div></div>`;
+    }
+    $("proposalResult").innerHTML = html;
+    const acc = $("acceptProposalBtn");
+    if(acc) acc.onclick = ()=>{ S.schema = d.schema; $("schemaName").value = d.schema.schema_name;
+      reviewSchema(); setTab("design"); toast("Proposal loaded into the schema editor. Nothing was applied to your vault."); };
+    const rej = $("rejectProposalBtn");
+    if(rej) rej.onclick = ()=>{ $("proposalResult").innerHTML=""; $("proposalText").value=""; toast("Proposal discarded."); };
+  }catch(e){ toast(e.message, true); }
+};
+</script>
+</body>
+</html>

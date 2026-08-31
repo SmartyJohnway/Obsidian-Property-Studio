@@ -1,0 +1,4 @@
+---
+type: trashed
+---
+Gone.

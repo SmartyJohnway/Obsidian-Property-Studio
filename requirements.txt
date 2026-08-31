@@ -1,0 +1,2 @@
+# Obsidian Property Studio — runtime dependencies (verified on Python 3.13.14)
+PyYAML>=6.0,<7

@@ -1,0 +1,44 @@
+{
+  "milestone": "M002",
+  "status": "PASS",
+  "verified_at": "2026-08-31T21:22:00+08:00",
+  "materialized_from": "AgentB_workspace-01a05750-6b01-702f-8d9e-43d693870e40",
+  "materialized_items": [
+    "app",
+    "tests",
+    "scripts",
+    "fixtures",
+    "docs",
+    ".gitignore",
+    "pytest.ini",
+    "README.md",
+    "requirements.txt",
+    "requirements-dev.txt",
+    "run_windows.bat",
+    "run.sh"
+  ],
+  "excluded_items": [
+    ".git",
+    "PROJECT.md",
+    "ROADMAP.md",
+    "HANDOFF.md",
+    "AGENTS.md",
+    "evidence",
+    "uploads"
+  ],
+  "baseline_test_suite": {
+    "total": 78,
+    "passed": 78,
+    "failed": 0,
+    "skipped": 0,
+    "elapsed_seconds": 13.49
+  },
+  "ui_smoke": {
+    "steps": 15,
+    "vault_unchanged": true,
+    "passed": true
+  },
+  "offline_verified": true,
+  "no_ai_required": true,
+  "read_only_verified": true
+}

@@ -12,12 +12,12 @@
 ## Current State
 
 Project State: `ACTIVE`  
-Current Milestone: `M001 — Formal Integration Baseline Freeze`  
-Current Milestone Status: `PLANNED`  
-Current Task: `M001-T01 — Verify formal root and donor snapshot identities`  
-Last Verified Gate: `Round 2 independent black-box selection completed externally`  
-Current Blocker: `None known; local donor paths and archive hashes must be verified before porting.`  
-Next Action: `Initialize the clean formal repository, freeze donor identities, then materialize Agent B selectively without importing donor governance/Git/evidence.`  
+Current Milestone: `M002 — Materialize Agent B as Formal Recipient`  
+Current Milestone Status: `IN_PROGRESS`  
+Current Task: `M002-T01 — Record B source tree baseline and materialize allowed recipient files`  
+Last Verified Gate: `M001 — Formal Integration Baseline Freeze PASS`  
+Current Blocker: `None`  
+Next Action: `Materialize Agent B source tree into formal root without importing donor governance/Git/evidence, verify environment and baseline tests.`  
 Last Updated: `2026-08-31`
 
 ---
@@ -281,7 +281,7 @@ COMPLETE
 
 # M001 — Formal Integration Baseline Freeze
 
-Status: `PLANNED`
+Status: `PASS`
 
 ### Objective
 
@@ -289,40 +289,35 @@ Establish a clean formal repository and freeze the exact Arena donor snapshots b
 
 ### Tasks
 
-- [ ] `M001-T01` Verify formal root path.
-- [ ] `M001-T02` Inspect parent directory and resolve exact A/B/C/D donor paths.
-- [ ] `M001-T03` Verify all four donor ZIP SHA-256 identities.
-- [ ] `M001-T04` Confirm donor extracted directories are treated read-only.
-- [ ] `M001-T05` Confirm only formal root four governance files are authoritative.
-- [ ] `M001-T06` Initialize new Git repository in formal root if absent.
-- [ ] `M001-T07` Record initial Git branch/HEAD/status.
-- [ ] `M001-T08` Commit or otherwise freeze four-file governance baseline.
-- [ ] `M001-T09` Establish integration evidence directory.
-- [ ] `M001-T10` Update AGENTS Part B with verified runtime/Git facts only.
-- [ ] `M001-T11` Update ROADMAP truthfully.
-- [ ] `M001-T12` Update HANDOFF last.
+- [x] `M001-T01` Verify formal root path.
+- [x] `M001-T02` Inspect parent directory and resolve exact A/B/C/D donor paths.
+- [x] `M001-T03` Verify all four donor ZIP SHA-256 identities.
+- [x] `M001-T04` Confirm donor extracted directories are treated read-only.
+- [x] `M001-T05` Confirm only formal root four governance files are authoritative.
+- [x] `M001-T06` Initialize new Git repository in formal root if absent.
+- [x] `M001-T07` Record initial Git branch/HEAD/status.
+- [x] `M001-T08` Commit or otherwise freeze four-file governance baseline.
+- [x] `M001-T09` Establish integration evidence directory.
+- [x] `M001-T10` Update AGENTS Part B with verified runtime/Git facts only.
+- [x] `M001-T11` Update ROADMAP truthfully.
+- [x] `M001-T12` Update HANDOFF last.
 
 ### Acceptance Criteria
 
-- [ ] `M001-AC01` Formal repository is a distinct Git lineage.
-- [ ] `M001-AC02` No candidate `.git` has been copied into formal root.
-- [ ] `M001-AC03` A/B/C/D archive identities match expected hashes or discrepancy is HOLD.
-- [ ] `M001-AC04` Donor directories are unchanged.
-- [ ] `M001-AC05` Formal root four files are the only governance authorities.
-- [ ] `M001-AC06` Initial Git/evidence state is recorded.
+- [x] `M001-AC01` Formal repository is a distinct Git lineage.
+- [x] `M001-AC02` No candidate `.git` has been copied into formal root.
+- [x] `M001-AC03` A/B/C/D archive identities match expected hashes or discrepancy is HOLD.
+- [x] `M001-AC04` Donor directories are unchanged.
+- [x] `M001-AC05` Formal root four files are the only governance authorities.
+- [x] `M001-AC06` Initial Git/evidence state is recorded.
 
 ### Verification / Evidence
 
-Expected:
-
-- donor hash record;
-- formal Git state;
-- donor immutability manifest/check;
-- authority-boundary check.
+- `evidence/integration/m001_baseline_freeze.json` (all 4 SHA-256 verified, git root commit `c09adf6`, Python 3.13.7 verified)
 
 ### Result
 
-`NOT YET VERIFIED`
+`PASS`
 
 ---
 

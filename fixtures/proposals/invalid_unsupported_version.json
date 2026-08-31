@@ -1,0 +1,5 @@
+{
+  "proposal_version": "9.9",
+  "schema_name": "future",
+  "properties": [{"name": "x", "storage_type": "text"}]
+}

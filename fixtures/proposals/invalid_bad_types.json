@@ -1,0 +1,11 @@
+{
+  "proposal_version": "1.0",
+  "schema_name": "bad",
+  "properties": [
+    {"name": "colour", "storage_type": "select", "required": false},
+    {"name": "owner", "storage_type": "number", "ui_control": "note_link"},
+    {"name": "", "storage_type": "text"},
+    {"name": "score", "storage_type": "number", "confidence": 5},
+    {"name": "owner", "storage_type": "text"}
+  ]
+}

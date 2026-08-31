@@ -1,0 +1,83 @@
+{
+  "empty_vault": {
+    "duplicate_keys_by_note": {},
+    "note_count": 3,
+    "notes_with_parse_failure": 0,
+    "notes_with_properties": 0,
+    "parse_status_by_note": {
+      "Daily/2026-01-01.md": "no_frontmatter",
+      "Daily/2026-01-02.md": "no_frontmatter",
+      "Ideas/隨手筆記.md": "no_frontmatter"
+    },
+    "property_usage": {},
+    "unique_property_keys": []
+  },
+  "main_vault": {
+    "duplicate_keys_by_note": {
+      "Notes/Duplicate Key.md": [
+        "status"
+      ]
+    },
+    "note_count": 22,
+    "notes_with_parse_failure": 3,
+    "notes_with_properties": 17,
+    "parse_status_by_note": {
+      "A/Duplicate Name.md": "ok",
+      "Archive/Merged Candidate.md": "ok",
+      "Archive/Old Project.md": "ok",
+      "B/Duplicate Name.md": "ok",
+      "Equipment/Microscope.md": "ok",
+      "Equipment/Oscilloscope.md": "ok",
+      "Inbox/Ambiguous Target.md": "ok",
+      "Meetings/2026-01-05 Kickoff.md": "ok",
+      "Meetings/CRLF Note.md": "ok",
+      "Notes/Duplicate Key.md": "ok",
+      "Notes/Empty Frontmatter.md": "empty_frontmatter",
+      "Notes/Malformed.md": "invalid_yaml",
+      "Notes/Nested Structure.md": "ok",
+      "Notes/No Properties.md": "no_frontmatter",
+      "Notes/Not A Mapping.md": "not_a_mapping",
+      "Notes/Unterminated.md": "unterminated_frontmatter",
+      "People/Ada Lovelace.md": "ok",
+      "People/林小明.md": "ok",
+      "Projects/Apollo.md": "ok",
+      "Projects/Borealis.md": "ok",
+      "Projects/Cascade.md": "ok",
+      "Projects/Delta 專案.md": "ok"
+    },
+    "property_usage": {
+      "Project": 1,
+      "attendees": 1,
+      "contact": 1,
+      "date": 2,
+      "due_date": 3,
+      "location": 2,
+      "owner": 3,
+      "priority": 1,
+      "project": 6,
+      "project_name": 2,
+      "purchase_date": 2,
+      "serial_number": 2,
+      "status": 9,
+      "tags": 2,
+      "type": 16
+    },
+    "unique_property_keys": [
+      "Project",
+      "attendees",
+      "contact",
+      "date",
+      "due_date",
+      "location",
+      "owner",
+      "priority",
+      "project",
+      "project_name",
+      "purchase_date",
+      "serial_number",
+      "status",
+      "tags",
+      "type"
+    ]
+  }
+}
