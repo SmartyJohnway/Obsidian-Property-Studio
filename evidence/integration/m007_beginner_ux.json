@@ -1,0 +1,22 @@
+{
+  "milestone": "M007",
+  "status": "PASS",
+  "verified_at": "2026-08-31T21:27:30+08:00",
+  "beginner_workflow": {
+    "zero_yaml_required": true,
+    "equipment_prompt_routing": "equipment (verified not reading)",
+    "chinese_prompt_routing": "equipment (verified for 我想管理設備與器材的位置)",
+    "existing_property_reuse_surfaced": true,
+    "storage_type_vs_ui_control_separated": true,
+    "fail_closed_ambiguous_fill_enforced": true
+  },
+  "regressions_verified": {
+    "INT-R2-006": "PASS",
+    "INT-R2-003": "PASS"
+  },
+  "full_test_suite": {
+    "total": 88,
+    "passed": 88,
+    "failed": 0
+  }
+}
