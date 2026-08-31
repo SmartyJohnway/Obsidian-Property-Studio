@@ -1,0 +1,14 @@
+{
+  "milestone": "M008",
+  "status": "PASS",
+  "verified_at": "2026-08-31T21:28:00+08:00",
+  "trace_verification": {
+    "malformed_notes": "Preserved across Scan, Inventory, Refactor, Health, and Export",
+    "duplicate_keys": "Preserved as ambiguous in Inventory, excluded from Refactor, reported in Health and Exports",
+    "ambiguous_identities": "Fails closed in Fill, non-auto-resolved in Relationships, preserved in Exports",
+    "broken_relationships": "Reported in Relationships, Health, and Exports",
+    "canonical_target_provenance": "Entity note is canonical target, never source note",
+    "export_parity": "In-memory reports and exported artifacts maintain exact semantic parity"
+  },
+  "tests_suite": "tests/test_consistency_gate.py (6/6 passed)"
+}
