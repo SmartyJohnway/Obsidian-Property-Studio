@@ -1,0 +1,26 @@
+{
+  "milestone": "M004",
+  "status": "PASS",
+  "verified_at": "2026-08-31T21:26:00+08:00",
+  "donor_harvested": "Agent C (read-only donor)",
+  "donor_files_inspected": [
+    "AgentC_workspace-01a05750-6ec1-7d23-9b68-927acecae272/app/core/fill.py",
+    "AgentC_workspace-01a05750-6ec1-7d23-9b68-927acecae272/app/core/relationship.py"
+  ],
+  "capabilities_ported": [
+    "Fail-closed ambiguous note-link Fill semantics (multi-target requires explicit note path choice)",
+    "Verified entity canonical target semantics",
+    "Verified ambiguous relationship findings cannot be marked confirmed: true"
+  ],
+  "regressions_verified": {
+    "INT-R2-003": "PASS",
+    "INT-R2-004": "PASS",
+    "INT-R2-005": "PASS",
+    "INT-R2-006": "PASS (C goal-routing defect excluded)"
+  },
+  "full_test_suite": {
+    "total": 88,
+    "passed": 88,
+    "failed": 0
+  }
+}

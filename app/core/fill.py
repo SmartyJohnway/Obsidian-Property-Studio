@@ -245,17 +245,40 @@ def fill_preview(
                     continue
                 target = match.group("target").strip()
                 hits = note_index.get(target.casefold(), [])
-                if len(hits) == 0:
-                    warnings.append(
-                        f"'{prop.name}': no note named '{target}' exists in this vault "
-                        "yet. The link will show as unresolved in Obsidian."
-                    )
+                if len(hits) == 1:
+                    pass
                 elif len(hits) > 1:
-                    warnings.append(
-                        f"'{prop.name}': '{target}' matches {len(hits)} notes "
-                        f"({', '.join(hits)}). Obsidian may resolve it differently — "
-                        "use a full path to be explicit."
-                    )
+                    exact = [
+                        h for h in hits
+                        if h.casefold() == target.casefold()
+                        or h.casefold() == f"{target.casefold()}.md"
+                    ]
+                    if not exact:
+                        errors.append(
+                            f"'{prop.name}': '{target}' matches {len(hits)} notes "
+                            f"({', '.join(hits)}). Pick a specific note path to make the link unambiguous."
+                        )
+                else:
+                    all_paths = [p for path_list in note_index.values() for p in path_list]
+                    path_hits = [
+                        p for p in all_paths
+                        if p.casefold() == target.casefold()
+                        or p.casefold() == f"{target.casefold()}.md"
+                        or p.casefold().endswith(f"/{target.casefold()}")
+                        or p.casefold().endswith(f"/{target.casefold()}.md")
+                    ]
+                    if len(path_hits) == 1:
+                        pass
+                    elif len(path_hits) > 1:
+                        errors.append(
+                            f"'{prop.name}': '{target}' matches {len(path_hits)} notes "
+                            f"({', '.join(path_hits)}). Pick a specific note path to make the link unambiguous."
+                        )
+                    else:
+                        warnings.append(
+                            f"'{prop.name}': no note named '{target}' exists in this vault "
+                            "yet. The link will show as unresolved in Obsidian."
+                        )
 
     roundtrip = roundtrip_check(frontmatter, mapping)
     return {
