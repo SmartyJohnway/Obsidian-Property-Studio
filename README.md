@@ -2,7 +2,7 @@
 
 **Understand, design, fill and govern Obsidian Properties — without learning YAML.**
 
-Version 1.0.0 · Local-first · Windows 11 target · **Your vault is never modified**
+Version 1.0.0 · Local-first · Windows 10 & 11 supported · **Your vault is never modified**
 
 ---
 
@@ -131,6 +131,6 @@ docs/          proposal contract, limitations, architecture notes
 
 Governance for this repository lives in `PROJECT.md`, `ROADMAP.md`, `HANDOFF.md`, `AGENTS.md`.
 
-## License / status
+## License
 
-Internal v1 release candidate. See `ROADMAP.md` for the formal release status and evidence.
+MIT License. See [LICENSE](LICENSE) for details.
