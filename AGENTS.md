@@ -970,7 +970,7 @@ If recipient architecture remains local Web App:
 - no cloud dependency;
 - no API key required.
 
-Windows 11 native acceptance is a formal milestone.
+Windows 10 (Build 19045+) / Windows 11 native acceptance is a formal milestone.
 
 Launcher must be verified on the user's Windows environment before final PASS.
 

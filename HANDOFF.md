@@ -290,22 +290,8 @@ Formal integration verification and narrow repairs completed (`95 passed in 12.8
 
 ## Next Action
 
-Antigravity should:
-
-1. set working directory to the formal root only;
-2. read all four formal governance files;
-3. inspect parent/sibling candidate paths without adopting their governance;
-4. verify A/B/C/D ZIP hashes;
-5. initialize clean Git lineage;
-6. freeze governance baseline;
-7. execute `M002` B materialization;
-8. write/freeze `INT-R2-001…010` regression tests;
-9. integrate C → A → D capabilities in ROADMAP order;
-10. rerun full evidence;
-11. perform native Windows acceptance;
-12. close v1.0.0 only through M011.
-
-Update HANDOFF last.
+None — v1.0.0 closed (`PROPERTY_STUDIO_V1_RELEASE_PASS`).
+Future changes require a new accepted milestone/release cycle.
 
 ---
 

@@ -812,17 +812,17 @@ Rerun formal evidence in the integrated repository.
 
 ---
 
-# M010 — Windows Native Product Acceptance
+# M010 — Windows 10 / Windows 11 Native Product Acceptance
 
 Status: `PASS`
 
 ### Objective
 
-Close the limitation that Arena candidates were not all natively verified on the user's Windows environment.
+Verify standalone local application and launcher natively on the Windows 10 (Build 19045+) / Windows 11 target platform.
 
 ### Tasks
 
-- [x] `M010-T01` Verify clean install on Windows (Windows 10 Build 19045 AMD64).
+- [x] `M010-T01` Verify clean install on Windows native environment (Windows 10 Build 19045 AMD64 / Windows 11 compatible).
 - [x] `M010-T02` Verify `run_windows.bat` or accepted launcher.
 - [x] `M010-T03` Open actual GUI/local Web UI.
 - [x] `M010-T04` Select a test Vault with spaces + Traditional Chinese path/value.

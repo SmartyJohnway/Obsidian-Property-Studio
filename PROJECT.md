@@ -5,7 +5,7 @@
 > Product Stage: `Formal integration / v1.0.0 release candidate`  
 > Target Product Release: `v1.0.0`  
 > Integration Baseline: `Agent B mainline + selective A/C/D capability donors`  
-> Primary Platform: `Windows 11`  
+> Primary Platform: `Windows 10 (Build 19045+) / Windows 11 (64-bit AMD64)`  
 > Product Principle: **Property governance without requiring the user to understand YAML.**
 
 ---
@@ -38,7 +38,7 @@ Obsidian 的 Properties 可以把 Markdown Vault 從單純的文件集合提升�
 
 ## 2. Goal
 
-交付一個可直接在 Windows 11 使用的 standalone local application，使不懂 YAML 的使用者也能完成：
+交付一個可直接在 Windows 10 (Build 19045+) 或 Windows 11 使用的 standalone local application，使不懂 YAML 的使用者也能完成：
 
 ```text
 Discover
@@ -616,7 +616,7 @@ Inventory、health、refactor、relationship、export 等重要 output：
 
 ### REQ-016 — Unicode / Windows usability
 
-Windows 11 上至少驗證：
+Windows 10 (Build 19045+) 與 Windows 11 上至少驗證：
 
 - Traditional Chinese filename；
 - Traditional Chinese Property value；
@@ -875,6 +875,12 @@ Technical evidence files may be created when required by ROADMAP; they are not a
 ### DEC-019 — Donor evidence does not transfer PASS
 
 **Decision:** Candidate tests/evidence support donor selection only. Formal v1.0.0 must regenerate its own evidence after integration.  
+**Status:** ACCEPTED
+
+### DEC-020 — Target platform formal scope encompasses Windows 10 and Windows 11
+
+**Decision:** The formal target platform is defined as Windows 10 (Build 19045+) and Windows 11 (64-bit AMD64).  
+**Reason:** Human project owner decision accepting native Windows 10 (Build 19045+) validation alongside Windows 11 compatibility for v1.0.0 desktop release.  
 **Status:** ACCEPTED
 
 

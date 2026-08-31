@@ -1,25 +1,27 @@
 {
   "milestone": "M011",
   "status": "PASS",
-  "verified_at": "2026-08-31T22:05:00+08:00",
+  "verified_at": "2026-08-31T22:25:00+08:00",
   "verdict": "PROPERTY_STUDIO_V1_RELEASE_PASS",
   "release_version": "1.0.0",
+  "target_platforms": "Windows 10 (Build 19045+) / Windows 11 (64-bit AMD64)",
+  "verified_native_environment": "Windows 10 Build 19045 AMD64 (Python 3.13.7)",
   "git_metadata": {
-    "head_commit": "41215a335feac999f60da38b443288f1bc3a9cfb",
     "branch": "main",
     "git_status_porcelain_clean": true,
-    "archive_classification": "Full Git Repository (lineage preserved with .git)"
+    "git_fsck": "PASS",
+    "classification": "Full Git Backup (lineage preserved with .git)"
   },
   "summary": {
     "project_state": "COMPLETE",
     "total_milestones": 11,
     "milestones_passed": 11,
     "full_test_suite_passed": 95,
+    "clean_checkout_suite_passed": 95,
     "integration_regressions_passed": 10,
     "benchmark_note_count": 5040,
     "benchmark_analysis_seconds": 5.136,
     "vault_read_only_verified": true,
-    "windows_native_environment": "Windows 10 Build 19045 AMD64 (Python 3.13.7)",
     "donor_snapshots_intact": true,
     "ambiguous_fill_ui_fail_closed_verified": true
   },
