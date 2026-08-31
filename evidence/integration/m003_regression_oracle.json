@@ -1,0 +1,23 @@
+{
+  "milestone": "M003",
+  "status": "PASS",
+  "verified_at": "2026-08-31T21:24:00+08:00",
+  "oracle_suite": "tests/test_integration_regressions.py",
+  "regression_contracts": {
+    "INT-R2-001": { "description": "Malformed is not ordinary no-properties", "baseline_b_result": "PASS" },
+    "INT-R2-002": { "description": "Duplicate-key ambiguity survives Refactor", "baseline_b_result": "PASS" },
+    "INT-R2-003": { "description": "Ambiguous Fill fails closed", "baseline_b_result": "FAIL", "reason": "Recipient B currently emits warning instead of failing closed; scheduled for fix in M004 via Donor C port." },
+    "INT-R2-004": { "description": "Relationship canonical target is entity", "baseline_b_result": "PASS" },
+    "INT-R2-005": { "description": "No false confirmed ambiguity", "baseline_b_result": "PASS" },
+    "INT-R2-006": { "description": "Equipment goal does not route to Reading", "baseline_b_result": "PASS" },
+    "INT-R2-007": { "description": "Normalize counts affected notes coherently", "baseline_b_result": "PASS" },
+    "INT-R2-008": { "description": "Output completeness read-back", "baseline_b_result": "PASS" },
+    "INT-R2-009": { "description": "Vault byte-for-byte read-only", "baseline_b_result": "PASS" },
+    "INT-R2-010": { "description": "Deterministic scan", "baseline_b_result": "PASS" }
+  },
+  "summary": {
+    "total": 10,
+    "baseline_passed": 9,
+    "baseline_expected_gaps": 1
+  }
+}
