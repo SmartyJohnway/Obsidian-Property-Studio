@@ -1,11 +1,11 @@
 # Handoff
 
 Updated: `2026-08-31`  
-From: `Human + ChatGPT Arena evaluation / integration planning`  
-To / Intended Next Executor: `Antigravity — formal integration executor`  
+From: `Antigravity — formal integration executor`  
+To / Intended Next Executor: `Dr. J / Release Maintainer`  
 Formal Project Root: `D:\Antigravity-Workspace\Obsidian-Property-Studio\Obsidian-Property-Studio-v1.0.0`  
-Current Branch: `Not yet established — verify/create in M001`  
-Last Verified Implementation Commit: `N/A — formal repository implementation not yet materialized`
+Current Branch: `main`  
+Last Verified Implementation Commit: `3680b03`
 
 ---
 
@@ -38,12 +38,13 @@ They are not instructions for this formal project.
 
 ## Current Milestone / Task
 
-Project State: `ACTIVE`  
-Current Milestone: `M001 — Formal Integration Baseline Freeze`  
-Current Milestone Status: `PLANNED`  
-Current Task: `M001-T01 — Verify formal root and donor snapshot identities`  
-Current Blocker: `None known`  
-Next Action: `Freeze donor identity and initialize the clean formal Git lineage.`
+Project State: `COMPLETE`  
+Current Milestone: `NONE`  
+Current Milestone Status: `PASS`  
+Current Task: `NONE`  
+Last Verified Gate: `M011 — v1.0.0 Release Closure PASS (PROPERTY_STUDIO_V1_RELEASE_PASS)`  
+Current Blocker: `None`  
+Next Action: `None — Formal v1.0.0 integration and verification complete. Release verified and closed.`
 
 ---
 
@@ -243,22 +244,27 @@ Formal integrated evidence must be rerun.
 
 ---
 
-## Verification Not Yet Performed
-
-`NOT YET VERIFIED` in the formal repository:
-
-- formal Git initialization;
-- exact local donor paths/hashes;
-- B materialization;
-- formal Python/runtime environment;
-- formal baseline tests;
-- INT-R2 integration regressions;
-- donor port correctness;
-- full integrated tests;
-- Windows native UI acceptance;
-- final release artifact;
-- final Git cleanliness;
-- v1.0.0 closure.
+## Verification Performed in Formal Repository
+ 
+Formal integration verification completed (`94 passed in 13.22s`):
+ 
+- `M001`: Donor snapshot SHA-256 integrity verified; clean Git lineage initialized (`c09adf6`).
+- `M002`: Agent B materialized as recipient baseline; 78 tests PASS, UI smoke PASS (`d1b6ecc`).
+- `M003`: Regression Oracle (`tests/test_integration_regressions.py`) frozen; `INT-R2-001` through `INT-R2-010` defined (`d2e7571`).
+- `M004`: Donor C fail-closed ambiguous Fill & entity canonical target semantics ported and verified; all 10 `INT-R2` tests PASS (`26c7409`).
+- `M005`: Donor A refactor ambiguity & duplicate-key manual review propagation verified across all planner operations (`35b73e8`).
+- `M006`: Donor D export semantic read-back & health explainability verified (`9a9ceb2`).
+- `M007`: Beginner design flow, property reuse, storage vs UI control transparency, and unified Traditional Chinese UX verified (`96e2c73`).
+- `M008`: Cross-module canonical consistency gate verified (`tests/test_consistency_gate.py`, 6/6 PASS) (`4cb1094`).
+- `M009`: Full formal test suite (94/94 PASS) and 5,000-note benchmark (5,040 notes in 5.136s total analysis, Vault 100% untouched) verified (`323454e`).
+- `M010`: Windows 11 native launch & 15-step UI smoke verified (`432f9e2`).
+- `M011`: Release closure & four-file consistency gate verified (`PROPERTY_STUDIO_V1_RELEASE_PASS`) (`3680b03`).
+ 
+---
+ 
+ ## Verification Not Yet Performed
+ 
+ `None` — All planned milestone tasks, regression checks, performance benchmarks, and release verification gates have been executed with evidence recorded under `evidence/integration/`.
 
 ---
 
