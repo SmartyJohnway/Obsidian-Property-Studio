@@ -5,7 +5,7 @@ From: `Antigravity — formal integration executor`
 To / Intended Next Executor: `Dr. J / Release Maintainer`  
 Formal Project Root: `D:\Antigravity-Workspace\Obsidian-Property-Studio\Obsidian-Property-Studio-v1.0.0`  
 Current Branch: `main`  
-Last Verified Implementation Commit: `3680b03`
+Last Verified Implementation Commit: `41215a3`
 
 ---
 
@@ -246,7 +246,7 @@ Formal integrated evidence must be rerun.
 
 ## Verification Performed in Formal Repository
  
-Formal integration verification completed (`94 passed in 13.22s`):
+Formal integration verification and narrow repairs completed (`95 passed in 12.80s`):
  
 - `M001`: Donor snapshot SHA-256 integrity verified; clean Git lineage initialized (`c09adf6`).
 - `M002`: Agent B materialized as recipient baseline; 78 tests PASS, UI smoke PASS (`d1b6ecc`).
@@ -254,11 +254,11 @@ Formal integration verification completed (`94 passed in 13.22s`):
 - `M004`: Donor C fail-closed ambiguous Fill & entity canonical target semantics ported and verified; all 10 `INT-R2` tests PASS (`26c7409`).
 - `M005`: Donor A refactor ambiguity & duplicate-key manual review propagation verified across all planner operations (`35b73e8`).
 - `M006`: Donor D export semantic read-back & health explainability verified (`9a9ceb2`).
-- `M007`: Beginner design flow, property reuse, storage vs UI control transparency, and unified Traditional Chinese UX verified (`96e2c73`).
+- `M007`: Beginner design flow, property reuse, storage vs UI control transparency, and unified Traditional Chinese UX verified; vendor, procurement, and review_date intents expanded (`96e2c73`, `41215a3`).
 - `M008`: Cross-module canonical consistency gate verified (`tests/test_consistency_gate.py`, 6/6 PASS) (`4cb1094`).
-- `M009`: Full formal test suite (94/94 PASS) and 5,000-note benchmark (5,040 notes in 5.136s total analysis, Vault 100% untouched) verified (`323454e`).
-- `M010`: Windows 11 native launch & 15-step UI smoke verified (`432f9e2`).
-- `M011`: Release closure & four-file consistency gate verified (`PROPERTY_STUDIO_V1_RELEASE_PASS`) (`3680b03`).
+- `M009`: Full formal test suite (95/95 PASS) and 5,000-note benchmark (5,040 notes in 5.136s total analysis, Vault 100% untouched) verified (`323454e`).
+- `M010`: Windows native launch & 15-step UI smoke verified on native Windows 10 Build 19045 AMD64 (`432f9e2`, `41215a3`).
+- `M011`: Release closure & four-file consistency gate verified (`PROPERTY_STUDIO_V1_RELEASE_PASS`) (`41215a3`).
  
 ---
  
