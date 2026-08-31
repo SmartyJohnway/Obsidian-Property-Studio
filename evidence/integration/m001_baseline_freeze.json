@@ -1,0 +1,57 @@
+{
+  "milestone": "M001",
+  "status": "PASS",
+  "verified_at": "2026-08-31T21:20:00+08:00",
+  "formal_root": "D:\\Antigravity-Workspace\\Obsidian-Property-Studio\\Obsidian-Property-Studio-v1.0.0",
+  "git": {
+    "initialized": true,
+    "branch": "main",
+    "lineage": "clean new formal repository",
+    "git_version": "git version 2.55.0.windows.5"
+  },
+  "runtime": {
+    "python_version": "Python 3.13.7",
+    "package_manager": "uv 0.12.7 / pip 26.2.1",
+    "os": "Windows 11 (AMD64)"
+  },
+  "donors": {
+    "agent_a": {
+      "role": "READ-ONLY REFACTOR DONOR",
+      "zip_path": "D:\\Antigravity-Workspace\\Obsidian-Property-Studio\\AgentA_workspace-01a05750-5684-7ca8-85d9-94758fa56fb8.zip",
+      "expected_sha256": "6c5cfacc8b33531e29aefd1bd258488f249961f5719ee6ae6e4c3c4a3b00758c",
+      "actual_sha256": "6c5cfacc8b33531e29aefd1bd258488f249961f5719ee6ae6e4c3c4a3b00758c",
+      "hash_matched": true,
+      "extracted_path": "D:\\Antigravity-Workspace\\Obsidian-Property-Studio\\AgentA_workspace-01a05750-5684-7ca8-85d9-94758fa56fb8"
+    },
+    "agent_b": {
+      "role": "MAINLINE / RECIPIENT",
+      "zip_path": "D:\\Antigravity-Workspace\\Obsidian-Property-Studio\\AgentB_workspace-01a05750-6b01-702f-8d9e-43d693870e40.zip",
+      "expected_sha256": "c167ffeedb88ee7e42306c9e18610a089db6e8d5868edf3a98c40c40f5d14c9f",
+      "actual_sha256": "c167ffeedb88ee7e42306c9e18610a089db6e8d5868edf3a98c40c40f5d14c9f",
+      "hash_matched": true,
+      "extracted_path": "D:\\Antigravity-Workspace\\Obsidian-Property-Studio\\AgentB_workspace-01a05750-6b01-702f-8d9e-43d693870e40"
+    },
+    "agent_c": {
+      "role": "READ-ONLY SAFETY / RELATIONSHIP DONOR",
+      "zip_path": "D:\\Antigravity-Workspace\\Obsidian-Property-Studio\\AgentC_workspace-01a05750-6ec1-7d23-9b68-927acecae272.zip",
+      "expected_sha256": "b23abf3bdce30151dd302effe1e7633cf37812b5ba155b0a4f195545a907d53d",
+      "actual_sha256": "b23abf3bdce30151dd302effe1e7633cf37812b5ba155b0a4f195545a907d53d",
+      "hash_matched": true,
+      "extracted_path": "D:\\Antigravity-Workspace\\Obsidian-Property-Studio\\AgentC_workspace-01a05750-6ec1-7d23-9b68-927acecae272"
+    },
+    "agent_d": {
+      "role": "READ-ONLY EXPORT / HEALTH / GOVERNANCE-PATTERN DONOR",
+      "zip_path": "D:\\Antigravity-Workspace\\Obsidian-Property-Studio\\AgentD_workspace-01a05750-d3d8-7d86-af4a-0f5b76b3fc57.zip",
+      "expected_sha256": "5404306a1155a5b31ae3613500733a5fc402b41e05b50738cd5daea5bca11939",
+      "actual_sha256": "5404306a1155a5b31ae3613500733a5fc402b41e05b50738cd5daea5bca11939",
+      "hash_matched": true,
+      "extracted_path": "D:\\Antigravity-Workspace\\Obsidian-Property-Studio\\AgentD_workspace-01a05750-d3d8-7d86-af4a-0f5b76b3fc57"
+    }
+  },
+  "governance_authorities": [
+    "PROJECT.md",
+    "ROADMAP.md",
+    "HANDOFF.md",
+    "AGENTS.md"
+  ]
+}
