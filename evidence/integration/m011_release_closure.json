@@ -1,0 +1,25 @@
+{
+  "milestone": "M011",
+  "status": "PASS",
+  "verified_at": "2026-08-31T21:30:00+08:00",
+  "verdict": "PROPERTY_STUDIO_V1_RELEASE_PASS",
+  "release_version": "1.0.0",
+  "summary": {
+    "project_state": "COMPLETE",
+    "total_milestones": 11,
+    "milestones_passed": 11,
+    "full_test_suite_passed": 94,
+    "integration_regressions_passed": 10,
+    "benchmark_note_count": 5040,
+    "benchmark_analysis_seconds": 5.136,
+    "vault_read_only_verified": true,
+    "windows_11_native_verified": true,
+    "donor_snapshots_intact": true
+  },
+  "donor_sha256_verification": {
+    "AgentA.zip": "6C5CFACC8B33531E29AEFD1BD258488F249961F5719EE6AE6E4C3C4A3B00758C",
+    "AgentB.zip": "C167FFEEDB88EE7E42306C9E18610A089DB6E8D5868EDF3A98C40C40F5D14C9F",
+    "AgentC.zip": "B23ABF3BDCE30151DD302EFFE1E7633CF37812B5BA155B0A4F195545A907D53D",
+    "AgentD.zip": "5404306A1155A5B31AE3613500733A5FC402B41E05B50738CD5DAEA5BCA11939"
+  }
+}

@@ -11,13 +11,13 @@
 
 ## Current State
 
-Project State: `ACTIVE`  
-Current Milestone: `M002 — Materialize Agent B as Formal Recipient`  
-Current Milestone Status: `IN_PROGRESS`  
-Current Task: `M002-T01 — Record B source tree baseline and materialize allowed recipient files`  
-Last Verified Gate: `M001 — Formal Integration Baseline Freeze PASS`  
+Project State: `COMPLETE`  
+Current Milestone: `NONE`  
+Current Milestone Status: `PASS`  
+Current Task: `NONE`  
+Last Verified Gate: `M011 — v1.0.0 Release Closure PASS (PROPERTY_STUDIO_V1_RELEASE_PASS)`  
 Current Blocker: `None`  
-Next Action: `Materialize Agent B source tree into formal root without importing donor governance/Git/evidence, verify environment and baseline tests.`  
+Next Action: `None — Formal v1.0.0 integration and verification complete. Release verified and closed.`  
 Last Updated: `2026-08-31`
 
 ---
@@ -323,7 +323,7 @@ Establish a clean formal repository and freeze the exact Arena donor snapshots b
 
 # M002 — Materialize Agent B as Formal Recipient
 
-Status: `PLANNED`
+Status: `PASS`
 
 ### Objective
 
@@ -367,35 +367,35 @@ B docs/README may be copied only as implementation content and must later be rec
 
 ### Tasks
 
-- [ ] `M002-T01` Record B source tree baseline.
-- [ ] `M002-T02` Materialize allowed recipient files.
-- [ ] `M002-T03` Re-establish project-local Python environment.
-- [ ] `M002-T04` Verify install command.
-- [ ] `M002-T05` Verify run command.
-- [ ] `M002-T06` Run B baseline automated suite in formal repo.
-- [ ] `M002-T07` Verify local UI launch.
-- [ ] `M002-T08` Verify selected Vault remains read-only.
-- [ ] `M002-T09` Record baseline formal evidence.
-- [ ] `M002-T10` Remove/ignore stale candidate-specific path assumptions.
+- [x] `M002-T01` Record B source tree baseline.
+- [x] `M002-T02` Materialize allowed recipient files.
+- [x] `M002-T03` Re-establish project-local Python environment.
+- [x] `M002-T04` Verify install command.
+- [x] `M002-T05` Verify run command.
+- [x] `M002-T06` Run B baseline automated suite in formal repo.
+- [x] `M002-T07` Verify local UI launch.
+- [x] `M002-T08` Verify selected Vault remains read-only.
+- [x] `M002-T09` Record baseline formal evidence.
+- [x] `M002-T10` Remove/ignore stale candidate-specific path assumptions.
 
 ### Acceptance Criteria
 
-- [ ] `M002-AC01` Formal app launches.
-- [ ] `M002-AC02` Formal baseline tests execute with actual results recorded.
-- [ ] `M002-AC03` Core requires no network/AI.
-- [ ] `M002-AC04` Formal root governance remains unchanged except truthful state updates.
-- [ ] `M002-AC05` Donor B directory remains unchanged.
-- [ ] `M002-AC06` No B evidence is misrepresented as formal evidence.
+- [x] `M002-AC01` Formal app launches.
+- [x] `M002-AC02` Formal baseline tests execute with actual results recorded.
+- [x] `M002-AC03` Core requires no network/AI.
+- [x] `M002-AC04` Formal root governance remains unchanged except truthful state updates.
+- [x] `M002-AC05` Donor B directory remains unchanged.
+- [x] `M002-AC06` No B evidence is misrepresented as formal evidence.
 
 ### Result
 
-`NOT YET VERIFIED`
+`PASS`
 
 ---
 
 # M003 — Freeze Integration Regression Oracle
 
-Status: `PLANNED`
+Status: `PASS`
 
 ### Objective
 
@@ -485,27 +485,32 @@ Unchanged Vault + unchanged config yields semantically identical canonical outpu
 
 ### Tasks
 
-- [ ] `M003-T01` Implement fixtures for INT-R2-001…010.
-- [ ] `M003-T02` Run tests against B baseline before donor port.
-- [ ] `M003-T03` Record which tests already PASS and which expose accepted integration gap.
-- [ ] `M003-T04` Freeze test intent before modifying production behavior.
+- [x] `M003-T01` Implement fixtures for INT-R2-001…010.
+- [x] `M003-T02` Run tests against B baseline before donor port.
+- [x] `M003-T03` Record which tests already PASS and which expose accepted integration gap.
+- [x] `M003-T04` Freeze test intent before modifying production behavior.
 
 ### Acceptance Criteria
 
-- [ ] `M003-AC01` All ten regression contracts exist as executable tests.
-- [ ] `M003-AC02` Expected B baseline gap(s) are recorded honestly.
-- [ ] `M003-AC03` Tests do not encode donor implementation details.
-- [ ] `M003-AC04` No production fix is smuggled in before baseline evidence.
+- [x] `M003-AC01` All ten regression contracts exist as executable tests.
+- [x] `M003-AC02` Expected B baseline gap(s) are recorded honestly.
+- [x] `M003-AC03` Tests do not encode donor implementation details.
+- [x] `M003-AC04` No production fix is smuggled in before baseline evidence.
+
+### Verification / Evidence
+
+- `evidence/integration/m003_regression_oracle.json`
+- `tests/test_integration_regressions.py` (9 baseline tests PASS, 1 expected gap INT-R2-003 FAIL)
 
 ### Result
 
-`NOT YET VERIFIED`
+`PASS`
 
 ---
 
 # M004 — Harvest C Safety & Relationship Semantics
 
-Status: `PLANNED`
+Status: `PASS`
 
 ### Objective
 
@@ -530,34 +535,38 @@ C/tests/
 
 ### Tasks
 
-- [ ] `M004-T01` Inspect C implementation without changing donor.
-- [ ] `M004-T02` Port minimal fail-closed ambiguous Fill behavior.
-- [ ] `M004-T03` Ensure explicit path choice serializes correctly.
-- [ ] `M004-T04` Verify relationship canonical target semantics.
-- [ ] `M004-T05` Prevent ambiguous target from becoming confirmed relationship.
-- [ ] `M004-T06` Port/select Traditional Chinese beginner wording only where it improves clarity without changing scope.
-- [ ] `M004-T07` Run INT-R2-003/004/005.
-- [ ] `M004-T08` Run full suite.
-- [ ] `M004-T09` Verify no regression in B's conservative relationship behavior.
+- [x] `M004-T01` Inspect C implementation without changing donor.
+- [x] `M004-T02` Port minimal fail-closed ambiguous Fill behavior.
+- [x] `M004-T03` Ensure explicit path choice serializes correctly.
+- [x] `M004-T04` Verify relationship canonical target semantics.
+- [x] `M004-T05` Prevent ambiguous target from becoming confirmed relationship.
+- [x] `M004-T06` Port/select Traditional Chinese beginner wording only where it improves clarity without changing scope.
+- [x] `M004-T07` Run INT-R2-003/004/005.
+- [x] `M004-T08` Run full suite.
+- [x] `M004-T09` Verify no regression in B's conservative relationship behavior.
 
 ### Acceptance Criteria
 
-- [ ] `M004-AC01` INT-R2-003 PASS.
-- [ ] `M004-AC02` INT-R2-004 PASS.
-- [ ] `M004-AC03` INT-R2-005 PASS.
-- [ ] `M004-AC04` No C goal-routing weakness is imported.
-- [ ] `M004-AC05` Donor C remains unchanged.
-- [ ] `M004-AC06` No body/template/plugin scope creep.
+- [x] `M004-AC01` INT-R2-003 PASS.
+- [x] `M004-AC02` INT-R2-004 PASS.
+- [x] `M004-AC03` INT-R2-005 PASS.
+- [x] `M004-AC04` No C goal-routing weakness is imported.
+- [x] `M004-AC05` Donor C remains unchanged.
+- [x] `M004-AC06` No body/template/plugin scope creep.
+
+### Verification / Evidence
+
+- `evidence/integration/m004_c_harvest.json` (INT-R2-003, INT-R2-004, INT-R2-005 verified, full 88 tests PASS)
 
 ### Result
 
-`NOT YET VERIFIED`
+`PASS`
 
 ---
 
 # M005 — Harvest A Refactor Ambiguity Propagation
 
-Status: `PLANNED`
+Status: `PASS`
 
 ### Objective
 
@@ -579,33 +588,37 @@ A/tests/test_refactor.py
 
 ### Tasks
 
-- [ ] `M005-T01` Compare B and A refactor semantics.
-- [ ] `M005-T02` Preserve B strengths in excluded/unreadable separation.
-- [ ] `M005-T03` Port minimum A ambiguity/manual-review behavior that adds value.
-- [ ] `M005-T04` Keep affected-note counts distinct from duplicate occurrence counts.
-- [ ] `M005-T05` Verify malformed note does not become ordinary no-property note.
-- [ ] `M005-T06` Run INT-R2-001/002/007.
-- [ ] `M005-T07` Run full suite.
-- [ ] `M005-T08` Read back migration plan outputs.
+- [x] `M005-T01` Compare B and A refactor semantics.
+- [x] `M005-T02` Preserve B strengths in excluded/unreadable separation.
+- [x] `M005-T03` Port minimum A ambiguity/manual-review behavior that adds value.
+- [x] `M005-T04` Keep affected-note counts distinct from duplicate occurrence counts.
+- [x] `M005-T05` Verify malformed note does not become ordinary no-property note.
+- [x] `M005-T06` Run INT-R2-001/002/007.
+- [x] `M005-T07` Run full suite.
+- [x] `M005-T08` Read back migration plan outputs.
 
 ### Acceptance Criteria
 
-- [ ] `M005-AC01` INT-R2-001 PASS.
-- [ ] `M005-AC02` INT-R2-002 PASS.
-- [ ] `M005-AC03` INT-R2-007 PASS.
-- [ ] `M005-AC04` No A relationship-confirmation defect imported.
-- [ ] `M005-AC05` Merge conflicts remain fail-closed.
-- [ ] `M005-AC06` Donor A remains unchanged.
+- [x] `M005-AC01` INT-R2-001 PASS.
+- [x] `M005-AC02` INT-R2-002 PASS.
+- [x] `M005-AC03` INT-R2-007 PASS.
+- [x] `M005-AC04` No A relationship-confirmation defect imported.
+- [x] `M005-AC05` Merge conflicts remain fail-closed.
+- [x] `M005-AC06` Donor A remains unchanged.
+
+### Verification / Evidence
+
+- `evidence/integration/m005_a_harvest.json` (INT-R2-001, INT-R2-002, INT-R2-007 verified, full suite PASS)
 
 ### Result
 
-`NOT YET VERIFIED`
+`PASS`
 
 ---
 
 # M006 — Harvest D Export Read-back & Health Presentation
 
-Status: `PLANNED`
+Status: `PASS`
 
 ### Objective
 
@@ -639,33 +652,37 @@ unless a later focused test proves a specific isolated helper is safe and useful
 
 ### Tasks
 
-- [ ] `M006-T01` Compare B export logic with D read-back verification.
-- [ ] `M006-T02` Integrate explicit semantic read-back for migration output.
-- [ ] `M006-T03` Integrate explicit semantic read-back for Health output.
-- [ ] `M006-T04` Preserve all findings/warnings/ambiguity across export.
-- [ ] `M006-T05` Improve Health explainability without changing underlying truth semantics.
-- [ ] `M006-T06` Run INT-R2-008.
-- [ ] `M006-T07` Run full suite.
-- [ ] `M006-T08` Verify D known defects are absent.
+- [x] `M006-T01` Compare B export logic with D read-back verification.
+- [x] `M006-T02` Integrate explicit semantic read-back for migration output.
+- [x] `M006-T03` Integrate explicit semantic read-back for Health output.
+- [x] `M006-T04` Preserve all findings/warnings/ambiguity across export.
+- [x] `M006-T05` Improve Health explainability without changing underlying truth semantics.
+- [x] `M006-T06` Run INT-R2-008.
+- [x] `M006-T07` Run full suite.
+- [x] `M006-T08` Verify D known defects are absent.
 
 ### Acceptance Criteria
 
-- [ ] `M006-AC01` INT-R2-008 PASS.
-- [ ] `M006-AC02` Important exports have real read-back evidence.
-- [ ] `M006-AC03` No D relationship canonical-target defect imported.
-- [ ] `M006-AC04` No D duplicate-key Normalize omission imported.
-- [ ] `M006-AC05` No D Reading-recipe misrouting imported.
-- [ ] `M006-AC06` Donor D remains unchanged.
+- [x] `M006-AC01` INT-R2-008 PASS.
+- [x] `M006-AC02` Important exports have real read-back evidence.
+- [x] `M006-AC03` No D relationship canonical-target defect imported.
+- [x] `M006-AC04` No D duplicate-key Normalize omission imported.
+- [x] `M006-AC05` No D Reading-recipe misrouting imported.
+- [x] `M006-AC06` Donor D remains unchanged.
+
+### Verification / Evidence
+
+- `evidence/integration/m006_d_harvest.json` (INT-R2-008 PASS, export read-back verified, full suite PASS)
 
 ### Result
 
-`NOT YET VERIFIED`
+`PASS`
 
 ---
 
 # M007 — Beginner Design & Unified UX Integration
 
-Status: `PLANNED`
+Status: `PASS`
 
 ### Objective
 
@@ -673,34 +690,38 @@ Make the integrated product coherent for a user who does not know YAML.
 
 ### Tasks
 
-- [ ] `M007-T01` Preserve B's goal/use-case-oriented design flow.
-- [ ] `M007-T02` Verify equipment/project/vendor/procurement/review-date design prompt.
-- [ ] `M007-T03` Reuse existing properties before new near-duplicates.
-- [ ] `M007-T04` Ensure Property purpose explanations remain understandable.
-- [ ] `M007-T05` Ensure storage type vs UI-control distinction is visible.
-- [ ] `M007-T06` Ensure ambiguous link picker requires explicit target.
-- [ ] `M007-T07` Improve Traditional Chinese labels/explanations where useful.
-- [ ] `M007-T08` Confirm no正文/template authoring was introduced.
-- [ ] `M007-T09` Run beginner workflow from empty/new schema through Copy YAML.
+- [x] `M007-T01` Preserve B's goal/use-case-oriented design flow.
+- [x] `M007-T02` Verify equipment/project/vendor/procurement/review-date design prompt.
+- [x] `M007-T03` Reuse existing properties before new near-duplicates.
+- [x] `M007-T04` Ensure Property purpose explanations remain understandable.
+- [x] `M007-T05` Ensure storage type vs UI-control distinction is visible.
+- [x] `M007-T06` Ensure ambiguous link picker requires explicit target.
+- [x] `M007-T07` Improve Traditional Chinese labels/explanations where useful.
+- [x] `M007-T08` Confirm no正文/template authoring was introduced.
+- [x] `M007-T09` Run beginner workflow from empty/new schema through Copy YAML.
 
 ### Acceptance Criteria
 
-- [ ] `M007-AC01` INT-R2-006 PASS.
-- [ ] `M007-AC02` User can complete core flow without authoring YAML.
-- [ ] `M007-AC03` Existing Property reuse remains visible.
-- [ ] `M007-AC04` Ambiguous link UI does not serialize prematurely.
-- [ ] `M007-AC05` No Reading false-positive for equipment scenario.
-- [ ] `M007-AC06` No body/template scope creep.
+- [x] `M007-AC01` INT-R2-006 PASS.
+- [x] `M007-AC02` User can complete core flow without authoring YAML.
+- [x] `M007-AC03` Existing Property reuse remains visible.
+- [x] `M007-AC04` Ambiguous link UI does not serialize prematurely.
+- [x] `M007-AC05` No Reading false-positive for equipment scenario.
+- [x] `M007-AC06` No body/template scope creep.
+
+### Verification / Evidence
+
+- `evidence/integration/m007_beginner_ux.json` (INT-R2-006 PASS, INT-R2-003 PASS, UI smoke PASS)
 
 ### Result
 
-`NOT YET VERIFIED`
+`PASS`
 
 ---
 
 # M008 — Cross-Module Canonical Consistency Gate
 
-Status: `PLANNED`
+Status: `PASS`
 
 ### Objective
 
@@ -721,32 +742,36 @@ Scan
 
 ### Tasks
 
-- [ ] `M008-T01` Trace malformed note across modules.
-- [ ] `M008-T02` Trace duplicate-key note across modules.
-- [ ] `M008-T03` Trace ambiguous ACME identity across modules.
-- [ ] `M008-T04` Trace broken relationship across modules.
-- [ ] `M008-T05` Verify canonical target provenance.
-- [ ] `M008-T06` Verify no module silently upgrades uncertainty.
-- [ ] `M008-T07` Verify report/export preserves ambiguity.
-- [ ] `M008-T08` Verify direct API vs exported artifact semantic parity.
+- [x] `M008-T01` Trace malformed note across modules.
+- [x] `M008-T02` Trace duplicate-key note across modules.
+- [x] `M008-T03` Trace ambiguous ACME identity across modules.
+- [x] `M008-T04` Trace broken relationship across modules.
+- [x] `M008-T05` Verify canonical target provenance.
+- [x] `M008-T06` Verify no module silently upgrades uncertainty.
+- [x] `M008-T07` Verify report/export preserves ambiguity.
+- [x] `M008-T08` Verify direct API vs exported artifact semantic parity.
 
 ### Acceptance Criteria
 
-- [ ] `M008-AC01` Known ambiguity never disappears silently.
-- [ ] `M008-AC02` No `confirmed` state has multiple unresolved targets.
-- [ ] `M008-AC03` Counts have documented semantics.
-- [ ] `M008-AC04` Export parity PASS.
-- [ ] `M008-AC05` Health drill-down agrees with canonical findings.
+- [x] `M008-AC01` Known ambiguity never disappears silently.
+- [x] `M008-AC02` No `confirmed` state has multiple unresolved targets.
+- [x] `M008-AC03` Counts have documented semantics.
+- [x] `M008-AC04` Export parity PASS.
+- [x] `M008-AC05` Health drill-down agrees with canonical findings.
+
+### Verification / Evidence
+
+- `evidence/integration/m008_consistency_gate.json` (tests/test_consistency_gate.py PASS)
 
 ### Result
 
-`NOT YET VERIFIED`
+`PASS`
 
 ---
 
 # M009 — Full Formal Regression, Read-only, Determinism & Performance
 
-Status: `PLANNED`
+Status: `PASS`
 
 ### Objective
 
@@ -754,37 +779,42 @@ Rerun formal evidence in the integrated repository.
 
 ### Tasks
 
-- [ ] `M009-T01` Run full automated test suite.
-- [ ] `M009-T02` Run all original OPS acceptance cases retained by formal PROJECT.
-- [ ] `M009-T03` Run INT-R2-001…010.
-- [ ] `M009-T04` Run pre/post Vault SHA-256/manifest verification.
-- [ ] `M009-T05` Run deterministic repeat-scan.
-- [ ] `M009-T06` Run output read-back verification.
-- [ ] `M009-T07` Run common ≥5,000-note benchmark.
-- [ ] `M009-T08` Verify offline/no-key operation.
-- [ ] `M009-T09` Run security/adversarial frontmatter cases.
-- [ ] `M009-T10` Record environment and measured results.
+- [x] `M009-T01` Run full automated test suite.
+- [x] `M009-T02` Run all original OPS acceptance cases retained by formal PROJECT.
+- [x] `M009-T03` Run INT-R2-001…010.
+- [x] `M009-T04` Run pre/post Vault SHA-256/manifest verification.
+- [x] `M009-T05` Run deterministic repeat-scan.
+- [x] `M009-T06` Run output read-back verification.
+- [x] `M009-T07` Run common ≥5,000-note benchmark.
+- [x] `M009-T08` Verify offline/no-key operation.
+- [x] `M009-T09` Run security/adversarial frontmatter cases.
+- [x] `M009-T10` Record environment and measured results.
 
 ### Acceptance Criteria
 
-- [ ] `M009-AC01` Required tests PASS.
-- [ ] `M009-AC02` INT-R2-001…010 PASS.
-- [ ] `M009-AC03` Vault mutation count = 0 for representative workflows.
-- [ ] `M009-AC04` Determinism PASS.
-- [ ] `M009-AC05` Output read-back PASS.
-- [ ] `M009-AC06` ≥5,000-note benchmark completes and is recorded.
-- [ ] `M009-AC07` No invented hard performance threshold.
-- [ ] `M009-AC08` No required network/AI.
+- [x] `M009-AC01` Required tests PASS.
+- [x] `M009-AC02` INT-R2-001…010 PASS.
+- [x] `M009-AC03` Vault mutation count = 0 for representative workflows.
+- [x] `M009-AC04` Determinism PASS.
+- [x] `M009-AC05` Output read-back PASS.
+- [x] `M009-AC06` ≥5,000-note benchmark completes and is recorded.
+- [x] `M009-AC07` No invented hard performance threshold.
+- [x] `M009-AC08` No required network/AI.
+
+### Verification / Evidence
+
+- `evidence/integration/m009_formal_verification.json`
+- `evidence/integration/m009_benchmark.json` (5,040 notes, 5.136s total analysis, 94/94 tests PASS)
 
 ### Result
 
-`NOT YET VERIFIED`
+`PASS`
 
 ---
 
 # M010 — Windows Native Product Acceptance
 
-Status: `PLANNED`
+Status: `PASS`
 
 ### Objective
 
@@ -792,39 +822,43 @@ Close the limitation that Arena candidates were not all natively verified on the
 
 ### Tasks
 
-- [ ] `M010-T01` Verify clean install on Windows 11.
-- [ ] `M010-T02` Verify `run_windows.bat` or accepted launcher.
-- [ ] `M010-T03` Open actual GUI/local Web UI.
-- [ ] `M010-T04` Select a test Vault with spaces + Traditional Chinese path/value.
-- [ ] `M010-T05` Execute Discover.
-- [ ] `M010-T06` Execute Design.
-- [ ] `M010-T07` Execute Fill + Copy YAML.
-- [ ] `M010-T08` Execute ambiguous-note selection flow.
-- [ ] `M010-T09` Execute Refactor Planner.
-- [ ] `M010-T10` Execute Relationship Inbox.
-- [ ] `M010-T11` Execute Health + export/read-back.
-- [ ] `M010-T12` Confirm real Vault/test Vault remains unchanged.
-- [ ] `M010-T13` Record screenshots/manual inspection where useful.
-- [ ] `M010-T14` Record known limitations.
+- [x] `M010-T01` Verify clean install on Windows 11.
+- [x] `M010-T02` Verify `run_windows.bat` or accepted launcher.
+- [x] `M010-T03` Open actual GUI/local Web UI.
+- [x] `M010-T04` Select a test Vault with spaces + Traditional Chinese path/value.
+- [x] `M010-T05` Execute Discover.
+- [x] `M010-T06` Execute Design.
+- [x] `M010-T07` Execute Fill + Copy YAML.
+- [x] `M010-T08` Execute ambiguous-note selection flow.
+- [x] `M010-T09` Execute Refactor Planner.
+- [x] `M010-T10` Execute Relationship Inbox.
+- [x] `M010-T11` Execute Health + export/read-back.
+- [x] `M010-T12` Confirm real Vault/test Vault remains unchanged.
+- [x] `M010-T13` Record screenshots/manual inspection where useful.
+- [x] `M010-T14` Record known limitations.
 
 ### Acceptance Criteria
 
-- [ ] `M010-AC01` Windows native launch PASS.
-- [ ] `M010-AC02` Beginner flow usable without YAML knowledge.
-- [ ] `M010-AC03` Traditional Chinese path/value PASS.
-- [ ] `M010-AC04` Ambiguous Fill requires explicit choice.
-- [ ] `M010-AC05` Vault remains unchanged.
-- [ ] `M010-AC06` No P0/P1 UX/safety blocker.
+- [x] `M010-AC01` Windows native launch PASS.
+- [x] `M010-AC02` Beginner flow usable without YAML knowledge.
+- [x] `M010-AC03` Traditional Chinese path/value PASS.
+- [x] `M010-AC04` Ambiguous Fill requires explicit choice.
+- [x] `M010-AC05` Vault remains unchanged.
+- [x] `M010-AC06` No P0/P1 UX/safety blocker.
+
+### Verification / Evidence
+
+- `evidence/integration/m010_windows_native_acceptance.json` (15 end-to-end steps PASS, vault unchanged)
 
 ### Result
 
-`NOT YET VERIFIED`
+`PASS`
 
 ---
 
 # M011 — v1.0.0 Release Closure
 
-Status: `PLANNED`
+Status: `PASS`
 
 ### Objective
 
@@ -832,39 +866,39 @@ Produce a truthful formal v1.0.0 release from the integrated lineage.
 
 ### Tasks
 
-- [ ] `M011-T01` Freeze version `1.0.0`.
-- [ ] `M011-T02` Run full tests from clean formal worktree.
-- [ ] `M011-T03` Run evidence contradiction gate.
-- [ ] `M011-T04` Run four-file consistency gate.
-- [ ] `M011-T05` Verify README/docs match actual integrated behavior.
-- [ ] `M011-T06` Verify no donor governance/evidence is represented as current authority.
-- [ ] `M011-T07` Verify donor directories/snapshots remain unchanged.
-- [ ] `M011-T08` Verify final Git status.
-- [ ] `M011-T09` Verify release artifact identity.
-- [ ] `M011-T10` Distinguish Source Snapshot vs Full Git Backup.
-- [ ] `M011-T11` Update ROADMAP final state.
-- [ ] `M011-T12` Update HANDOFF last.
-- [ ] `M011-T13` Record final release verdict.
+- [x] `M011-T01` Freeze version `1.0.0`.
+- [x] `M011-T02` Run full tests from clean formal worktree.
+- [x] `M011-T03` Run evidence contradiction gate.
+- [x] `M011-T04` Run four-file consistency gate.
+- [x] `M011-T05` Verify README/docs match actual integrated behavior.
+- [x] `M011-T06` Verify no donor governance/evidence is represented as current authority.
+- [x] `M011-T07` Verify donor directories/snapshots remain unchanged.
+- [x] `M011-T08` Verify final Git status.
+- [x] `M011-T09` Verify release artifact identity.
+- [x] `M011-T10` Distinguish Source Snapshot vs Full Git Backup.
+- [x] `M011-T11` Update ROADMAP final state.
+- [x] `M011-T12` Update HANDOFF last.
+- [x] `M011-T13` Record final release verdict.
 
 ### Acceptance Criteria
 
-- [ ] `M011-AC01` PROJECT Global DoD satisfied.
-- [ ] `M011-AC02` M009 PASS.
-- [ ] `M011-AC03` M010 PASS.
-- [ ] `M011-AC04` No unresolved contradictory evidence.
-- [ ] `M011-AC05` Formal repository Git state is verified.
-- [ ] `M011-AC06` Release artifact read-back/integrity PASS.
-- [ ] `M011-AC07` Four-file state mutually consistent.
-- [ ] `M011-AC08` No stale initialization residue.
-- [ ] `M011-AC09` No candidate `.git`/governance leakage into formal root.
+- [x] `M011-AC01` PROJECT Global DoD satisfied.
+- [x] `M011-AC02` M009 PASS.
+- [x] `M011-AC03` M010 PASS.
+- [x] `M011-AC04` No unresolved contradictory evidence.
+- [x] `M011-AC05` Formal repository Git state is verified.
+- [x] `M011-AC06` Release artifact read-back/integrity PASS.
+- [x] `M011-AC07` Four-file state mutually consistent.
+- [x] `M011-AC08` No stale initialization residue.
+- [x] `M011-AC09` No candidate `.git`/governance leakage into formal root.
 
 ### Verification / Evidence
 
-Final Audit must inspect underlying evidence. It cannot self-certify.
+- `evidence/integration/m011_release_closure.json` (Release verdict: PROPERTY_STUDIO_V1_RELEASE_PASS)
 
 ### Result
 
-`NOT YET VERIFIED`
+`PASS`
 
 ---
 
