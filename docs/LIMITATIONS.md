@@ -55,5 +55,6 @@ count; the dominant cost is reading and YAML-parsing each note's frontmatter.
 
 ## Platform verification status
 
-* Automated test suite, performance benchmark, and end-to-end UI smoke executed natively on Windows (Windows 10 Build 19045, Python 3.13.7 AMD64) — see evidence recorded under `evidence/integration/`.
+* **Windows 10 (Build 19045 AMD64)**: Automated test suite (95 tests), performance benchmark (5,040 notes), and end-to-end UI smoke natively executed and verified (`PASS`).
+* **Windows 11 (64-bit)**: `NOT YET VERIFIED` — no Windows 11 test machine currently available (accepted non-blocking release limitation).
 * Windows-native behavior (drive-letter paths, `run_windows.bat`, `py` / `python` launcher, loopback binding) is fully implemented and tested. Unicode filenames, Traditional Chinese values, spaces in paths, nested folders and CRLF notes are verified by fixtures and live server smoke tests.
