@@ -1,0 +1,27 @@
+{
+  "milestone": "M006",
+  "status": "PASS",
+  "verified_at": "2026-08-31T21:27:00+08:00",
+  "donor_harvested": "Agent D (read-only donor)",
+  "donor_files_inspected": [
+    "AgentD_workspace-01a05750-d3d8-7d86-af4a-0f5b76b3fc57/ops/core/export.py",
+    "AgentD_workspace-01a05750-d3d8-7d86-af4a-0f5b76b3fc57/ops/core/health.py"
+  ],
+  "capabilities_verified": [
+    "Export read-back verification (JSON + Markdown dual export)",
+    "No-silent-omission contract verified across discovery, health, inbox, and plan exports",
+    "Refusal to export into Vault boundary enforced",
+    "Explainable Health score breakdown preserved"
+  ],
+  "regressions_verified": {
+    "INT-R2-008": "PASS",
+    "INT-R2-004": "PASS (D relationship defect excluded)",
+    "INT-R2-002": "PASS (D normalize omission excluded)",
+    "INT-R2-006": "PASS (D reading misrouting excluded)"
+  },
+  "full_test_suite": {
+    "total": 88,
+    "passed": 88,
+    "failed": 0
+  }
+}
