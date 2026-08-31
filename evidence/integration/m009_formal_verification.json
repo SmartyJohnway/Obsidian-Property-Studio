@@ -1,0 +1,23 @@
+{
+  "milestone": "M009",
+  "status": "PASS",
+  "verified_at": "2026-08-31T21:28:30+08:00",
+  "automated_tests": {
+    "total": 94,
+    "passed": 94,
+    "failed": 0,
+    "skipped": 0,
+    "elapsed_seconds": 13.22
+  },
+  "benchmark_summary": {
+    "markdown_notes": 5040,
+    "scan_seconds": 4.968,
+    "total_analysis_seconds": 5.136,
+    "vault_integrity_unchanged": true,
+    "evidence_file": "evidence/integration/m009_benchmark.json"
+  },
+  "read_only_vault_verified": true,
+  "determinism_verified": true,
+  "output_readback_verified": true,
+  "offline_no_ai_verified": true
+}

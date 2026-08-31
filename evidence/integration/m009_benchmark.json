@@ -1,0 +1,41 @@
+{
+  "case": "OPS-AC-028",
+  "environment": {
+    "python": "3.13.7",
+    "platform": "Windows-10-10.0.19045-SP0",
+    "processor": "Intel64 Family 6 Model 158 Stepping 10, GenuineIntel",
+    "cpu_count": 12
+  },
+  "fixture": {
+    "markdown_notes": 5040,
+    "files_hashed": 5041,
+    "vault_bytes": 848296,
+    "generator": "scripts/make_benchmark_vault.py (seeded, deterministic)",
+    "generate_seconds": 2.602
+  },
+  "measurements_seconds": {
+    "scan": 4.968,
+    "inventory": 0.022,
+    "discovery_report": 0.008,
+    "relationship_inbox": 0.057,
+    "health_report": 0.073,
+    "type_conversion_plan": 0.007,
+    "total_analysis": 5.136
+  },
+  "observations": {
+    "peak_rss_mb_after_run": null,
+    "unique_properties": 7,
+    "findings": 5,
+    "health_findings": 1242,
+    "inbox_items": 1237,
+    "notes_with_parse_failure": 52,
+    "crash": false
+  },
+  "vault_integrity": {
+    "files_created": 0,
+    "files_modified": 0,
+    "files_deleted": 0,
+    "unchanged": true
+  },
+  "threshold_policy": "No pre-approved hard seconds threshold exists in PROJECT.md/ROADMAP.md. These numbers are measured evidence only."
+}
