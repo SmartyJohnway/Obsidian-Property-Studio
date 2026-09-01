@@ -1189,11 +1189,71 @@ In addition to Part A:
 
 ---
 
+## 42. v1.1.0 Design Spec & Donor Boundary Rules
+
+- `Obsidian_Property_Studio_v1.1.0_UIUX_vNext_Design_Spec.md` is the authoritative specification for all v1.1.0 new features, context architecture, and UX contracts.
+- `index_areaagentB.html` is a **UX donor only** (Light/Dark themes, workflow guidance, sidebar descriptions, loading states).
+- `index_areaagentD.html` is a **Visual / interaction donor only** (visual hierarchy, right drawer, card designs, breadcrumbs).
+- **Prohibited actions:**
+  - Never wholesale copy donor HTML files to replace `app/ui/index.html`.
+  - Never import mock/demo backend logic or fake API endpoints from Donor D into production code.
+  - Never allow donor prose or translation strings to override formal backend schema contracts.
+
+---
+
+## 43. v1.1.0 Specific Safety & Architecture Contracts
+
+### 43.1 Body Wikilink Analysis (Strict Read-Only)
+Markdown note bodies may be read to extract `[[Wikilinks]]` for relationship analysis. The application must NEVER edit, rewrite, patch, or repair note prose or body backlinks.
+
+### 43.2 Zero Default Relationship Rules
+The application must NOT load default ontology or folder relationship assumptions. All analysis begins as ad-hoc. Saved Relationship Checks are created only by explicit user action and stored strictly outside the Vault.
+
+### 43.3 Note Properties Workspace Fail-Closed Safety
+When editing a note's frontmatter, if duplicate keys, invalid YAML syntax, or unparseable structures are detected, the editor must fail closed (disable editing/saving and disclose the exact issue). Valid frontmatter edits must preserve unrelated properties and show a semantic diff.
+
+### 43.4 In-Memory Scope Derivation
+Scope switching must operate as an in-memory filtered view over pre-parsed `ScanResult` indexes. Switching Scopes must NEVER trigger a full disk rescan of the Vault.
+
+### 43.5 Pure Local i18n Architecture
+Translations must be managed via modular `i18n.js` and local JSON dictionaries (`locales/zh-Hant.json`, `locales/en.json`). Do not duplicate complete bilingual DOMs. No CDN or external resources are permitted.
+
+---
+
+## 44. Required v1.1.0 Regression IDs
+
+Before v1.1.0 release closure, all of the following contracts must PASS:
+
+```text
+V11-001 i18n zh-Hant / en switch deterministic
+V11-002 multi-folder Scope union / dedupe
+V11-003 nested-folder include_subfolders semantics
+V11-004 Scope does not rescan Vault
+V11-005 Note selector duplicate-name ambiguity
+V11-006 Existing Note unrelated properties preserved
+V11-007 Existing Note duplicate-key fail-closed
+V11-008 invalid Fill cannot Copy
+V11-009 Relationship Source multi-folder
+V11-010 Relationship Target multi-folder
+V11-011 link exists but target outside selected Scope
+V11-012 Property Link / Body Wikilink results separated
+V11-013 Body Wikilink analysis never mutates body
+V11-014 no default Saved Relationship Checks
+V11-015 Saved Check round-trip persistence
+V11-016 Scope-aware Health
+V11-017 Scope-aware Refactor does not expand scope
+V11-018 Vault byte-for-byte read-only after all v1.1 flows
+```
+
+---
+
 # Final Reminder
 
 ```text
-B = recipient
+B = recipient baseline
 C/A/D = read-only donors
+index_areaagentB.html = UX donor only
+index_areaagentD.html = Visual donor only
 
 Formal root four files = authority
 Donor four files = historical evidence

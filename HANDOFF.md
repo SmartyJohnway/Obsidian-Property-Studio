@@ -1,310 +1,133 @@
 # Handoff
 
-Updated: `2026-08-31`  
-From: `Antigravity — formal integration executor`  
-To / Intended Next Executor: `Dr. J / Release Maintainer`  
+Updated: `2026-09-01`  
+From: `Antigravity — v1.1.0 governance transition executor`  
+To / Intended Next Executor: `Dr. J / Antigravity Implementation Agent`  
 Formal Project Root: `D:\Antigravity-Workspace\Obsidian-Property-Studio\Obsidian-Property-Studio-v1.0.0`  
 Current Branch: `main`  
-Last Verified Implementation Commit: `41215a3`
+Last Verified Implementation Commit: `66e4b07` (v1.0.0 release)  
+Governance Baseline: `v1.1.0 Governance Transition (M001 PASS)`
 
 ---
 
 ## Governance Reminder
 
-This formal integration repository uses exactly four governance authorities:
+This repository strictly adheres to the Four-File Governance standard:
 
 ```text
-PROJECT.md
-ROADMAP.md
-HANDOFF.md
-AGENTS.md
+PROJECT.md   = accepted v1.1.0 Product Truth, Scope, and Constraints
+ROADMAP.md   = active v1.1.0 milestone execution, acceptance criteria, and evidence
+HANDOFF.md   = latest runtime recovery context (this file)
+AGENTS.md    = agent operating rules and project-specific constraints
 ```
 
 Read order:
-
 1. `PROJECT.md`
 2. `ROADMAP.md`
 3. `AGENTS.md`
 4. `HANDOFF.md`
-5. formal Git state
-6. relevant formal source/tests/evidence
-7. donor source only when the active ROADMAP milestone authorizes it
+5. git status / git log
+6. relevant source code, tests, and evidence
+7. `Obsidian_Property_Studio_v1.1.0_UIUX_vNext_Design_Spec.md` (v1.1.0 design contract)
+8. `index_areaagentB.html` (UX donor only) / `index_areaagentD.html` (Visual donor only)
 
-The A/B/C/D candidate governance files are **historical donor evidence only**.
-
-They are not instructions for this formal project.
+Historical reference:
+- `docs/archive/ROADMAP_v1.0.0.md` (read-only snapshot of v1.0.0 execution, verified SHA-256)
 
 ---
 
 ## Current Milestone / Task
 
-Project State: `COMPLETE`  
-Current Milestone: `NONE`  
+Project State: `ACTIVE`  
+Current Milestone: `M001 — v1.1.0 Governance Transition & Baseline Freeze`  
 Current Milestone Status: `PASS`  
-Current Task: `NONE`  
-Last Verified Gate: `M011 — v1.0.0 Release Closure PASS (PROPERTY_STUDIO_V1_RELEASE_PASS_WITH_LIMITATIONS)`  
+Current Task: `M001 Completed — Ready for Phase 2 / M002`  
+Last Verified Gate: `M001 — v1.1.0 Governance Transition & Baseline Freeze PASS`  
 Current Blocker: `None`  
-Next Action: `None — Formal v1.0.0 integration, closure repair, and packaging complete. Release verified and closed with accepted limitation (Windows 11 NOT YET VERIFIED).`
+Next Action: `Commit governance changes, report transition to Dr. J, and start implementation according to approved sequencing (recommend starting from M002 UI Shell or M003 i18n/Theme).`
 
 ---
 
-## Integration Decision
+## v1.1.0 Product & Architectural Truth
 
-Arena comparison is closed.
+1. **Context Architecture:**
+   ```text
+   Vault → Scope → Note → Schema
+   ```
+   - Vault: Global knowledge boundary and inventory index.
+   - Scope: Working subset (Entire Vault, One Folder, Multi-Folder, Single Note). In-memory derivation; no full Vault rescan on Scope switch.
+   - Note: Individual working note.
+   - Schema: Property definition and validation contract.
 
-Accepted roles:
+2. **Relationships Model:**
+   ```text
+   Source Scope (multi-folder) → Relationship Analysis → Target Scope (multi-folder)
+   ```
+   - Property Links vs Body Wikilinks (analysis-only, strict read-only).
+   - Findings: `VALID`, `BROKEN`, `AMBIGUOUS`, `OUTSIDE SELECTED TARGET`.
+   - Ad-hoc analysis by default; zero default relationship rules.
+   - User-initiated Saved Relationship Checks persist strictly outside the Vault.
 
-```text
-B = MAINLINE / RECIPIENT
-C = READ-ONLY SAFETY / RELATIONSHIP DONOR
-A = READ-ONLY REFACTOR DONOR
-D = READ-ONLY EXPORT / HEALTH / GOVERNANCE-PATTERN DONOR
-```
+3. **Note Properties Workspace:**
+   - Existing Note mode: inspect, edit, semantic diff, copy frontmatter. Fails closed on duplicate keys / malformed frontmatter.
+   - New/Blank mode: schema-based fill.
+   - Never writes to or modifies disk notes.
 
-Do not spend time re-running a general "which Agent wins?" competition.
+4. **i18n & Theme:**
+   - Modular `i18n.js` + `locales/zh-Hant.json` + `locales/en.json`.
+   - No CDN, localStorage preference, no HTML DOM duplication.
+   - CSS Design Tokens for Light / Dark theme.
 
-The task is now selective integration.
-
----
-
-## Donor Snapshot Identity
-
-Expected source ZIP SHA-256:
-
-```text
-A
-6c5cfacc8b33531e29aefd1bd258488f249961f5719ee6ae6e4c3c4a3b00758c
-
-B
-c167ffeedb88ee7e42306c9e18610a089db6e8d5868edf3a98c40c40f5d14c9f
-
-C
-b23abf3bdce30151dd302effe1e7633cf37812b5ba155b0a4f195545a907d53d
-
-D
-5404306a1155a5b31ae3613500733a5fc402b41e05b50738cd5daea5bca11939
-```
-
-Expected extracted sibling folders:
-
-```text
-..\AgentA_workspace-01a05750-5684-7ca8-85d9-94758fa56fb8
-..\AgentB_workspace-01a05750-6b01-702f-8d9e-43d693870e40
-..\AgentC_workspace-01a05750-6ec1-7d23-9b68-927acecae272
-..\AgentD_workspace-01a05750-d3d8-7d86-af4a-0f5b76b3fc57
-```
-
-Verify actual paths.
-
-If archive hash differs, `HOLD` before porting.
+5. **Donor Boundaries:**
+   - `index_areaagentB.html`: UX donor only.
+   - `index_areaagentD.html`: Visual/interaction donor only.
+   - Neither has functional authority; no mock backend or fake API may enter production.
 
 ---
 
-## Round 2 Product Findings to Preserve
+## Verification Performed
 
-### B
-
-Formal recipient.
-
-Strengths:
-
-- cleanest black-box result;
-- conservative parser/refactor handling;
-- good beginner design flow;
-- conservative Relationship Inbox;
-- strong export/read-back behavior.
-
-Known formal improvement:
-
-- generic ambiguous `[[ACME]]` with warning is no longer sufficient for integrated v1.0.0;
-- final Fill must fail closed until explicit target selection.
-
-### C
-
-Harvest:
-
-- fail-closed ambiguous note-link Fill;
-- relationship canonical-target resolution;
-- selected beginner-facing Traditional Chinese UX.
-
-Do not import:
-
-- weak equipment/vendor goal matching unchanged;
-- normalize manual-review counting semantics without tests.
-
-### A
-
-Harvest:
-
-- refactor ambiguity/manual-review propagation;
-- detailed migration planning;
-- integrity patterns if superior after test comparison.
-
-Do not import:
-
-- relationship `confirmed` semantics;
-- ambiguous Fill behavior.
-
-### D
-
-Harvest:
-
-- export semantic read-back;
-- Health explainability/presentation;
-- governance/safety wording patterns.
-
-Do not port D design/refactor/relationship logic wholesale.
-
-Known defects include:
-
-- Reading recipe false routing;
-- duplicate-key Normalize omission;
-- wrong relationship canonical target;
-- ambiguity hidden in Fill.
+- [x] v1.0.0 ROADMAP archived to `docs/archive/ROADMAP_v1.0.0.md` (SHA-256 verified: `6ED8CCF707ACDAF0CBD8B7E1D91D3B41CF2E823B371D6B1EFA26CF69493FFC64`).
+- [x] `PROJECT.md` updated with v1.1.0 Product Truth, Scope, Success Criteria (SC-16..22), Requirements (REQ-024..035), Non-goals, Decisions (DEC-021..029), and Definition of Done.
+- [x] `ROADMAP.md` established with 12 granular milestones (M001~M012) and 18 new regression contracts (`V11-001`~`V11-018`).
+- [x] `AGENTS.md` updated with v1.1.0 donor boundary rules, safety contracts, and regression IDs.
+- [x] Full baseline test suite executed: **95 passed in 13.43s** (Python 3.13.7).
+- [x] Four-file cross-consistency check passed.
 
 ---
 
-## Formal Repository Materialization Rule
+## Verification Not Yet Performed (v1.1.0 New Scope)
 
-Formal root begins with these four governance files.
-
-When B is materialized, do **not** copy:
-
-```text
-B\.git\
-B\PROJECT.md
-B\ROADMAP.md
-B\HANDOFF.md
-B\AGENTS.md
-B\evidence\
-B\uploads\
-cache directories
-```
-
-Candidate evidence remains donor evidence only.
-
-Preferred starting implementation content:
-
-```text
-B\app\
-B\tests\
-B\scripts\
-B\docs\
-B\requirements*.txt
-B\pytest.ini
-B\run_windows.bat
-B\run.sh
-B\README.md
-```
-
-Review each before copying; this list is a whitelist candidate, not an instruction to overwrite blindly.
+- `M002` Modern UI Shell & Design Tokens: `PLANNED`
+- `M003` Lightweight Bilingual i18n & Theme Engine: `PLANNED` (`V11-001`)
+- `M004` Scope Domain Model & In-Memory Engine: `PLANNED` (`V11-002`..`004`)
+- `M005` Scope-Aware Discover & Property Health: `PLANNED` (`V11-016`)
+- `M006` Note Properties Workspace: `PLANNED` (`V11-005`..`008`)
+- `M007` Scope-Aware Relationship Analysis: `PLANNED` (`V11-009`..`011`)
+- `M008` Body Wikilink Analysis (Strict Read-Only): `PLANNED` (`V11-012`..`013`)
+- `M009` Saved Relationship Checks: `PLANNED` (`V11-014`..`015`)
+- `M010` Scope-Aware Refactor Planner: `PLANNED` (`V11-017`)
+- `M011` Full Regression & 5,000-note Benchmark: `PLANNED` (`V11-018`)
+- `M012` Windows Native Acceptance & Release Closure: `PLANNED`
 
 ---
 
-## Important Operational Rule — Do Not Delete Donor Four-Files
+## Do Not Repeat / Critical Guardrails
 
-The four governance files inside A/B/C/D should be preserved with the original donor snapshot.
-
-Reason:
-
-- they document what each Arena Agent claimed;
-- they are useful provenance;
-- they may explain implementation assumptions;
-- deleting them damages the historical snapshot.
-
-However:
-
-> **Never treat donor `AGENTS.md`, `PROJECT.md`, `ROADMAP.md` or `HANDOFF.md` as formal instructions.**
-
-Prefer direct file inspection from the formal root without changing the working repository into a donor root.
-
-If the Agent platform would automatically activate donor `AGENTS.md` when entering a donor directory, do not enter that donor as the working project. Inspect source by absolute/relative file path or create a temporary curated donor copy that excludes governance files while preserving the original snapshot/ZIP untouched.
+- **Do not overwrite `app/ui/index.html` wholesale with Arena B or D HTML.**
+- **Do not copy mock/demo backend APIs from Arena D.**
+- **Do not weaken the read-only Vault safety contract under any circumstances.**
+- **Do not add note-body editing, prose rewriting, or body-link patching.**
+- **Do not inject default relationship rules or ontologies into the user's workspace.**
+- **Do not write Saved Relationship Checks into the Vault.**
+- **Do not trigger full Vault disk rescans when switching Scopes.**
+- **Do not duplicate complete bilingual HTML DOM trees.**
+- **Do not update HANDOFF ahead of actual verified repository state.**
 
 ---
 
-## Verification Already Performed Externally
+## Immediate Next Action
 
-The independent Round 2 audit established:
-
-- B product black-box rank #1;
-- C #2;
-- A #3;
-- D #4;
-- all four passed byte-for-byte read-only representative flows;
-- all four passed semantic deterministic repeat scan;
-- all four completed the same 5,000-note benchmark;
-- all four passed export no-silent-omission checks;
-- hidden semantic defects/limitations were identified and are encoded in ROADMAP integration regressions.
-
-These findings are selection evidence.
-
-They are **not formal v1.0.0 release evidence**.
-
-Formal integrated evidence must be rerun.
-
----
-
-## Verification Performed in Formal Repository
- 
-Formal integration verification and narrow repairs completed (`95 passed in 12.80s`):
- 
-- `M001`: Donor snapshot SHA-256 integrity verified; clean Git lineage initialized (`c09adf6`).
-- `M002`: Agent B materialized as recipient baseline; 78 tests PASS, UI smoke PASS (`d1b6ecc`).
-- `M003`: Regression Oracle (`tests/test_integration_regressions.py`) frozen; `INT-R2-001` through `INT-R2-010` defined (`d2e7571`).
-- `M004`: Donor C fail-closed ambiguous Fill & entity canonical target semantics ported and verified; all 10 `INT-R2` tests PASS (`26c7409`).
-- `M005`: Donor A refactor ambiguity & duplicate-key manual review propagation verified across all planner operations (`35b73e8`).
-- `M006`: Donor D export semantic read-back & health explainability verified (`9a9ceb2`).
-- `M007`: Beginner design flow, property reuse, storage vs UI control transparency, and unified Traditional Chinese UX verified; vendor, procurement, and review_date intents expanded (`96e2c73`, `41215a3`).
-- `M008`: Cross-module canonical consistency gate verified (`tests/test_consistency_gate.py`, 6/6 PASS) (`4cb1094`).
-- `M009`: Full formal test suite (95/95 PASS) and 5,000-note benchmark (5,040 notes in 5.136s total analysis, Vault 100% untouched) verified (`323454e`).
-- `M010`: Windows native launch & 15-step UI smoke verified on native Windows 10 Build 19045 AMD64 (`432f9e2`, `41215a3`).
-- `M011`: Release closure, artifact generation (`Obsidian-Property-Studio-v1.0.0-source.zip`, `Obsidian-Property-Studio-v1.0.0.bundle`, `RELEASE_MANIFEST.json`) & four-file consistency gate verified (`PROPERTY_STUDIO_V1_RELEASE_PASS_WITH_LIMITATIONS`).
- 
----
- 
- ## Verification Not Yet Performed
- 
-- `Windows 11 native execution`: `NOT YET VERIFIED` — no Windows 11 machine available in current environment (accepted non-blocking release limitation). All core features, CLI/launchers, and UI smoke are natively verified on Windows 10 Build 19045 AMD64.
-
----
-
-## Do Not Repeat
-
-- Do not reopen the Arena winner decision without new material evidence.
-- Do not copy an entire candidate workspace into formal root.
-- Do not `git merge` donor repositories.
-- Do not import donor `.git`.
-- Do not overwrite formal four governance files with B's four files.
-- Do not accept donor `PASS` as formal PASS.
-- Do not port D relationship/design/refactor modules wholesale.
-- Do not port C design recipe logic without regression.
-- Do not port A relationship-confirmation behavior.
-- Do not weaken the read-only Vault contract.
-- Do not add Obsidian plugin.
-- Do not add Markdown body templates.
-- Do not add required AI/cloud.
-- Do not mutate donor directories.
-- Do not delete original donor four-files from the preserved snapshots.
-
----
-
-## Next Action
-
-None — v1.0.0 closed (`PROPERTY_STUDIO_V1_RELEASE_PASS`).
-Future changes require a new accepted milestone/release cycle.
-
----
-
-## Important Notes for Next Agent
-
-The objective is not to create a "best-of-four code collage".
-
-The objective is:
-
-> **one coherent formal product using B's stable recipient architecture, strengthened only by donor behaviors that independent black-box evidence showed to be better.**
-
-Preserve one canonical model and one set of semantics.
-
-If a donor capability conflicts with the recipient architecture, prefer the behavior contract/tests over literal donor code.
-
-Port behavior, not identity.
+1. Commit all governance updates to Git (`governance: transition repository to v1.1.0 active baseline`).
+2. Provide formal transition summary report to Dr. J.
+3. Await user confirmation before beginning implementation on M002/M003.
