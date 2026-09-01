@@ -9,15 +9,15 @@
 
 ---
 
-### Current State
+#### Current State
 
 Project State: `ACTIVE`  
-Current Milestone: `M006 — Note Properties Workspace (Existing Note & Blank Modes)`  
+Current Milestone: `M007 — Scope-Aware Relationship Analysis (Property Links)`  
 Current Milestone Status: `IN_PROGRESS`  
-Current Task: `M006-T01`  
-Last Verified Gate: `M005 — Scope-Aware Discover & Property Health PASS` (Baseline: `M001 PASS`)  
+Current Task: `M007-T01`  
+Last Verified Gate: `M006 — Note Properties Workspace PASS` (Baseline: `M001 PASS`)  
 Current Blocker: `None`  
-Next Action: `Implement Note Properties Workspace domain model in app/core/note_workspace.py supporting Existing Note inspect/edit/diff and fail-closed corrupt frontmatter checks.`  
+Next Action: `Update Relationship engine in app/core/relationships.py to accept Source and Target scopes, categorize OUTSIDE SELECTED TARGET, and implement V11-009..011 regression tests.`  
 Last Updated: `2026-09-01`
 
 ---
@@ -255,33 +255,37 @@ Update Discover and Health modules to calculate metrics, property inventories, a
 
 # M006 — Note Properties Workspace (Existing Note & Blank Modes)
 
-Status: `PLANNED`
+Status: `PASS`
 
 ### Objective
 Implement the single-note Property Workspace supporting Existing Note inspection/editing with semantic diff and fail-closed corrupt-frontmatter protection, as well as New/Blank fill.
 
 ### Tasks
-- [ ] `M006-T01` Implement note search and retrieval backend supporting filename and relative path lookup.
-- [ ] `M006-T02` Implement note selection消歧義 logic (distinguishing duplicate basenames across different folders).
-- [ ] `M006-T03` Implement Existing Note frontmatter parser and semantic editor in `app/core/note_workspace.py`.
-- [ ] `M006-T04` Implement semantic frontmatter diff generator (comparing original vs updated properties).
-- [ ] `M006-T05` Implement fail-closed protection: reject editing if note has duplicate keys, unreadable YAML, or parse errors.
-- [ ] `M006-T06` Implement New/Blank Fill mode preserving v1.0.0 schema-based creation flow.
-- [ ] `M006-T07` Connect Note Properties Workspace UI with Existing/Blank mode switcher, property form, diff view, and Copy button.
-- [ ] `M006-T08` Implement `V11-005` (note selector ambiguity), `V11-006` (unrelated property preservation), `V11-007` (duplicate-key fail-closed), and `V11-008` (invalid fill copy disabled).
-- [ ] `M006-T09` Verify Vault remains 100% untouched during note inspection, editing, and preview.
+- [x] `M006-T01` Implement note search and retrieval backend supporting filename and relative path lookup.
+- [x] `M006-T02` Implement note selection消歧義 logic (distinguishing duplicate basenames across different folders).
+- [x] `M006-T03` Implement Existing Note frontmatter parser and semantic editor in `app/core/note_workspace.py`.
+- [x] `M006-T04` Implement semantic frontmatter diff generator (comparing original vs updated properties).
+- [x] `M006-T05` Implement fail-closed protection: reject editing if note has duplicate keys, unreadable YAML, or parse errors.
+- [x] `M006-T06` Implement New/Blank Fill mode preserving v1.0.0 schema-based creation flow.
+- [x] `M006-T07` Connect Note Properties Workspace UI with Existing/Blank mode switcher, property form, diff view, and Copy button.
+- [x] `M006-T08` Implement `V11-005` (note selector ambiguity), `V11-006` (unrelated property preservation), `V11-007` (duplicate-key fail-closed), and `V11-008` (invalid fill copy disabled).
+- [x] `M006-T09` Verify Vault remains 100% untouched during note inspection, editing, and preview.
 
 ### Acceptance Criteria
-- [ ] `M006-AC01` `V11-005` PASS.
-- [ ] `M006-AC02` `V11-006` PASS.
-- [ ] `M006-AC03` `V11-007` PASS.
-- [ ] `M006-AC04` `V11-008` PASS.
-- [ ] `M006-AC05` Existing note properties edit cleanly with visual semantic diff and copyable frontmatter.
-- [ ] `M006-AC06` Corrupted/duplicate-key frontmatter is rejected fail-closed with clear error explanation.
-- [ ] `M006-AC07` Note body is never modified.
+- [x] `M006-AC01` `V11-005` PASS.
+- [x] `M006-AC02` `V11-006` PASS.
+- [x] `M006-AC03` `V11-007` PASS.
+- [x] `M006-AC04` `V11-008` PASS.
+- [x] `M006-AC05` Existing note properties edit cleanly with visual semantic diff and copyable frontmatter.
+- [x] `M006-AC06` Corrupted/duplicate-key frontmatter is rejected fail-closed with clear error explanation.
+- [x] `M006-AC07` Note body is never modified.
+
+### Verification / Evidence
+- `tests/test_v11_note_workspace.py` (4/4 tests passed in 0.08s)
+- Full automated test suite (109/109 passed in 12.78s)
 
 ### Result
-`NOT YET VERIFIED`
+`PASS`
 
 ---
 

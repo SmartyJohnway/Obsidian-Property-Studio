@@ -39,12 +39,12 @@ Historical reference:
 ## Current Milestone / Task
 
 Project State: `ACTIVE`  
-Current Milestone: `M006 — Note Properties Workspace (Existing Note & Blank Modes)`  
+Current Milestone: `M007 — Scope-Aware Relationship Analysis (Property Links)`  
 Current Milestone Status: `IN_PROGRESS`  
-Current Task: `M006-T01 — Implement Note Properties Workspace domain model in app/core/note_workspace.py`  
-Last Verified Gate: `M005 — Scope-Aware Discover & Property Health PASS` (Baseline: `M001 PASS`)  
+Current Task: `M007-T01 — Update Relationship engine in app/core/relationships.py for Source/Target Scopes`  
+Last Verified Gate: `M006 — Note Properties Workspace PASS` (Baseline: `M001 PASS`)  
 Current Blocker: `None`  
-Next Action: `Implement Note Properties Workspace domain model in app/core/note_workspace.py supporting Existing Note inspect/edit/diff and fail-closed corrupt frontmatter checks, and author regression tests for V11-005..008.`
+Next Action: `Update Relationship engine in app/core/relationships.py to accept Source and Target scopes, categorize OUTSIDE SELECTED TARGET, and author regression tests for V11-009..011.`
 
 ---
 
@@ -96,15 +96,15 @@ Next Action: `Implement Note Properties Workspace domain model in app/core/note_
 - [x] `M003`: Lightweight Bilingual i18n (`app/ui/i18n.js`, `locales/zh-Hant.json`, `locales/en.json`) and Theme Engine implemented and verified (`V11-001` PASS, 99/99 tests PASS).
 - [x] `M004`: Scope Domain Model (`ScopeSpec`, Multi-folder Union/Dedupe, In-Memory Engine) implemented and verified (`V11-002`..`004` PASS, 104/104 tests PASS).
 - [x] `M005`: Scope-Aware Discover & Property Health isolation implemented and verified (`V11-016` PASS, 105/105 tests PASS).
-- [x] Full test suite executed: **105 passed in 11.45s** (Python 3.13.7).
+- [x] `M006`: Note Properties Workspace (Existing Note inspect/edit/diff + Blank Fill, fail-closed corrupt/duplicate-key protection) implemented and verified (`V11-005`..`008` PASS, 109/109 tests PASS).
+- [x] Full test suite executed: **109 passed in 12.78s** (Python 3.13.7).
 - [x] Four-file cross-consistency check passed.
 
 ---
 
 ## Verification Not Yet Performed (v1.1.0 New Scope)
 
-- `M006` Note Properties Workspace: `IN_PROGRESS` (`V11-005`..`008`)
-- `M007` Scope-Aware Relationship Analysis: `PLANNED` (`V11-009`..`011`)
+- `M007` Scope-Aware Relationship Analysis: `IN_PROGRESS` (`V11-009`..`011`)
 - `M008` Body Wikilink Analysis (Strict Read-Only): `PLANNED` (`V11-012`..`013`)
 - `M009` Saved Relationship Checks: `PLANNED` (`V11-014`..`015`)
 - `M010` Scope-Aware Refactor Planner: `PLANNED` (`V11-017`)

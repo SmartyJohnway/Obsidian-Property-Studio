@@ -20,7 +20,17 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Callable
 from urllib.parse import urlparse
 
-from .core import design, exports, health, inventory, proposal, refactor, relationships, scope
+from .core import (
+    design,
+    exports,
+    health,
+    inventory,
+    note_workspace,
+    proposal,
+    refactor,
+    relationships,
+    scope,
+)
 from .core.manifest import assert_unchanged, vault_manifest
 from .core.fill import fill_preview
 from .core.model import (
@@ -181,6 +191,39 @@ def api_fill_preview(body: dict[str, Any]) -> dict[str, Any]:
     return fill_preview(schema, values, index)
 
 
+def api_workspace_candidates(body: dict[str, Any]) -> dict[str, Any]:
+    scoped_scan = STORE.get_scoped_scan()
+    query = str(body.get("query", "")).strip()
+    candidates = note_workspace.find_candidate_notes(scoped_scan, query)
+    return {"candidates": candidates, "total": len(candidates)}
+
+
+def api_workspace_inspect(body: dict[str, Any]) -> dict[str, Any]:
+    scoped_scan = STORE.get_scoped_scan()
+    note_path = str(body.get("note_path", "")).strip()
+    if not note_path:
+        raise ApiError("note_path is required", 400)
+    result = note_workspace.inspect_note_for_workspace(scoped_scan, note_path)
+    return result.to_dict()
+
+
+def api_workspace_preview(body: dict[str, Any]) -> dict[str, Any]:
+    scoped_scan = STORE.get_scoped_scan()
+    note_path = str(body.get("note_path", "")).strip()
+    note = scoped_scan.note_by_path(note_path) if note_path else None
+    values = body.get("values", {}) or {}
+    schema_data = body.get("schema")
+    schema = Schema.from_dict(schema_data) if schema_data else None
+    deleted_keys = list(body.get("deleted_keys", []) or [])
+    diff_res = note_workspace.compute_workspace_diff_and_frontmatter(
+        original_note=note,
+        updated_values=values,
+        schema=schema,
+        deleted_keys=deleted_keys,
+    )
+    return diff_res.to_dict()
+
+
 def api_note_candidates(body: dict[str, Any]) -> dict[str, Any]:
     scan = STORE.require_scan()
     query = str(body.get("query", "")).strip().casefold()
@@ -330,6 +373,9 @@ ROUTES: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "/api/scope/folders": api_scope_folders,
     "/api/scope/apply": api_scope_apply,
     "/api/scope/current": api_scope_current,
+    "/api/workspace/candidates": api_workspace_candidates,
+    "/api/workspace/inspect": api_workspace_inspect,
+    "/api/workspace/preview": api_workspace_preview,
     "/api/discovery": api_discovery,
     "/api/property": api_property_detail,
     "/api/design/suggest": api_design_suggest,

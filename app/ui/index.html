@@ -733,17 +733,42 @@
         <div id="schemaEditor"></div>
       </section>
 
-      <!-- ============================ FILL ============================ -->
+      <!-- ============================ FILL / NOTE WORKSPACE ============================ -->
       <section id="tab-fill" class="view-section">
         <div class="page-header">
-          <h2>Fill in the values, copy valid frontmatter</h2>
-          <p class="lead">A form built from your schema. The YAML below is exactly what gets copied — inspect
-            it before you paste it at the very top of a note in Obsidian.</p>
+          <h2>筆記屬性工作區 · Note Properties Workspace</h2>
+          <p class="lead">支援空白筆記 Frontmatter 填寫與既有筆記屬性安全檢視、修改與語意比對 (Diff)。對損毀或具重複鍵之 Frontmatter 嚴格 Fail-Closed，絕不自動覆寫。</p>
+        </div>
+        <div class="card" style="margin-bottom:14px">
+          <div class="row">
+            <label class="field" style="flex:1 1 220px">
+              <span>工作區模式 (Workspace Mode)</span>
+              <select id="workspaceModeSelect">
+                <option value="blank">空白填寫模式 (Blank Fill Mode)</option>
+                <option value="existing">既有筆記檢視/編輯 (Existing Note Mode)</option>
+              </select>
+            </label>
+            <div id="noteSelectorBox" style="display:none; flex:2 1 360px">
+              <label class="field">
+                <span>選取目標筆記 (Target Note in Scope)</span>
+                <select id="workspaceNoteSelect">
+                  <option value="">-- 請選擇筆記 --</option>
+                </select>
+              </label>
+            </div>
+          </div>
         </div>
         <div class="split">
-          <div class="card"><h3 style="margin-top:0">Values</h3><div id="fillForm"></div></div>
           <div class="card">
-            <h3 style="margin-top:0">Frontmatter preview</h3>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px">
+              <h3 style="margin:0" id="fillFormTitle">屬性值表單 (Values)</h3>
+              <button class="ghost" id="wsAddPropBtn" style="display:none; padding:4px 10px; font-size:12px">+ 新增屬性</button>
+            </div>
+            <div id="fillForm"></div>
+          </div>
+          <div class="card">
+            <h3 style="margin-top:0">Frontmatter 預覽與語意比對</h3>
+            <div id="workspaceDiffBox" style="display:none; margin-bottom:12px"></div>
             <pre id="fillPreview">Design or load a schema first.</pre>
             <div class="row">
               <div class="fixed"><button class="primary" id="copyFmBtn" disabled>Copy frontmatter</button></div>
@@ -1425,8 +1450,66 @@ function removeProp(idx) {
   reviewSchema();
 }
 
-/* -------------------------------- fill -------------------------------- */
+/* -------------------------------- fill & note workspace -------------------------------- */
+S.workspace = {
+  mode: "blank",
+  selectedNotePath: null,
+  inspectedNote: null,
+  properties: {},
+  deletedKeys: []
+};
+
+async function loadWorkspaceCandidates() {
+  try {
+    const d = await api("/api/workspace/candidates", {});
+    const sel = $("workspaceNoteSelect");
+    sel.innerHTML = '<option value="">-- 請選擇筆記 --</option>' +
+      (d.candidates || []).map(c => `<option value="${esc(c.path)}">${esc(c.display_label)}</option>`).join("");
+  } catch (e) {
+    console.error("Workspace candidates error", e);
+  }
+}
+
 function setupFillHandlers() {
+  $("workspaceModeSelect").onchange = async () => {
+    const mode = $("workspaceModeSelect").value;
+    S.workspace.mode = mode;
+    $("noteSelectorBox").style.display = mode === "existing" ? "block" : "none";
+    $("wsAddPropBtn").style.display = mode === "existing" ? "block" : "none";
+    if (mode === "existing") {
+      await loadWorkspaceCandidates();
+      $("fillForm").innerHTML = '<div class="empty">請由上方選單選取目標筆記。</div>';
+      $("fillPreview").textContent = "選取筆記後將自動載入現有 Frontmatter 與比對。";
+      $("workspaceDiffBox").style.display = "none";
+      $("copyFmBtn").disabled = true;
+      $("copyYamlBtn").disabled = true;
+    } else {
+      S.workspace.selectedNotePath = null;
+      S.workspace.inspectedNote = null;
+      $("workspaceDiffBox").style.display = "none";
+      if (S.schema) renderFillForm(S.schema);
+      else {
+        $("fillForm").innerHTML = '<div class="empty">Design a schema first.</div>';
+        $("fillPreview").textContent = "Design or load a schema first.";
+      }
+    }
+  };
+
+  $("workspaceNoteSelect").onchange = async () => {
+    const notePath = $("workspaceNoteSelect").value;
+    if (!notePath) return;
+    await inspectWorkspaceNote(notePath);
+  };
+
+  $("wsAddPropBtn").onclick = () => {
+    const k = prompt("請輸入新屬性名稱 (Property Key):");
+    if (!k || !k.trim()) return;
+    const cleanK = k.trim();
+    S.workspace.properties[cleanK] = "";
+    renderExistingNoteForm();
+    triggerWorkspacePreview();
+  };
+
   $("copyFmBtn").onclick = async () => {
     if (!S.fill.valid) return;
     const ok = await copyText(S.fill.preview);
@@ -1439,6 +1522,71 @@ function setupFillHandlers() {
     const ok = await copyText(yOnly);
     toast(ok ? "Copied properties YAML to clipboard" : "Copy failed", !ok);
   };
+}
+
+async function inspectWorkspaceNote(notePath) {
+  try {
+    const d = await api("/api/workspace/inspect", { note_path: notePath });
+    S.workspace.selectedNotePath = notePath;
+    S.workspace.inspectedNote = d;
+    S.workspace.properties = Object.assign({}, d.original_properties || {});
+    S.workspace.deletedKeys = [];
+
+    if (!d.can_edit) {
+      $("fillForm").innerHTML = `
+        <div class="finding" style="border-color:var(--red)">
+          <h4 class="bad">✕ 無法安全編輯此筆記 (Fail-Closed)</h4>
+          <div class="why">${esc(d.error_reason)}</div>
+          <div class="hint">為保護資料安全，工作室拒絕編輯具損毀或重複鍵之筆記。請先至 Obsidian 中修正該筆記。</div>
+        </div>
+      `;
+      $("fillPreview").textContent = "（已鎖定：此筆記無法安全編輯）";
+      $("workspaceDiffBox").style.display = "none";
+      $("fillStatus").innerHTML = `<span class="bad">✕ ${esc(d.error_reason)}</span>`;
+      $("copyFmBtn").disabled = true;
+      $("copyYamlBtn").disabled = true;
+      S.fill.valid = false;
+      return;
+    }
+
+    renderExistingNoteForm();
+    await triggerWorkspacePreview();
+  } catch (e) {
+    toast(e.message, true);
+  }
+}
+
+function renderExistingNoteForm() {
+  const props = Object.entries(S.workspace.properties);
+  if (!props.length) {
+    $("fillForm").innerHTML = '<div class="empty">此筆記目前無任何屬性。可點擊右上角「+ 新增屬性」。</div>';
+    return;
+  }
+  $("fillForm").innerHTML = props.map(([k, v]) => `
+    <div class="prop-editor" style="margin-bottom:8px">
+      <div class="head">
+        <strong><code>${esc(k)}</code></strong>
+        <button class="ghost" style="padding:2px 8px; font-size:11.5px" onclick="removeWorkspaceProp('${esc(k)}')">✕ 刪除</button>
+      </div>
+      <div style="margin-top:6px">
+        <input type="text" class="ws-fill-inp" data-key="${esc(k)}" value="${esc(v)}" />
+      </div>
+    </div>
+  `).join("");
+
+  document.querySelectorAll(".ws-fill-inp").forEach(inp => {
+    inp.oninput = () => {
+      S.workspace.properties[inp.dataset.key] = inp.value;
+      triggerWorkspacePreview();
+    };
+  });
+}
+
+function removeWorkspaceProp(k) {
+  delete S.workspace.properties[k];
+  S.workspace.deletedKeys.push(k);
+  renderExistingNoteForm();
+  triggerWorkspacePreview();
 }
 
 function renderFillForm(sch) {
@@ -1457,6 +1605,58 @@ function renderFillForm(sch) {
     inp.oninput = triggerFillPreview;
   });
   triggerFillPreview();
+}
+
+async function triggerWorkspacePreview() {
+  if (S.workspace.mode === "blank") {
+    return triggerFillPreview();
+  }
+
+  try {
+    const d = await api("/api/workspace/preview", {
+      note_path: S.workspace.selectedNotePath,
+      values: S.workspace.properties,
+      schema: S.schema,
+      deleted_keys: S.workspace.deletedKeys
+    });
+
+    S.fill.preview = d.frontmatter_preview;
+    S.fill.valid = d.valid;
+
+    $("fillPreview").textContent = d.frontmatter_preview || "No frontmatter produced.";
+    const canCopy = d.valid && d.can_copy;
+    $("copyFmBtn").disabled = !canCopy;
+    $("copyYamlBtn").disabled = !canCopy;
+
+    if (d.diffs && d.diffs.length) {
+      $("workspaceDiffBox").style.display = "block";
+      $("workspaceDiffBox").innerHTML = `
+        <div style="font-size:12px; margin-bottom:6px; font-weight:600">屬性變更比對 (Diff):</div>
+        <div style="display:flex; flex-wrap:wrap; gap:6px">
+          ${d.diffs.map(df => {
+            let cls = "pill info";
+            if (df.change_type === "added") cls = "pill exact";
+            else if (df.change_type === "modified") cls = "pill medium";
+            else if (df.change_type === "deleted") cls = "pill high";
+            return `<span class="${cls}">${esc(df.key)}: ${esc(df.change_type)}</span>`;
+          }).join("")}
+        </div>
+      `;
+    } else {
+      $("workspaceDiffBox").style.display = "none";
+    }
+
+    if (d.valid) {
+      $("fillStatus").innerHTML = '<span class="ok">✔ Valid frontmatter — ready to copy</span>';
+    } else {
+      $("fillStatus").innerHTML = `<span class="bad">✕ Cannot copy:</span> ` +
+        (d.errors || []).map(e => `<div class="small bad">• ${esc(e)}</div>`).join("");
+    }
+  } catch (e) {
+    $("fillPreview").textContent = "Error: " + e.message;
+    $("copyFmBtn").disabled = true;
+    $("copyYamlBtn").disabled = true;
+  }
 }
 
 async function triggerFillPreview() {
