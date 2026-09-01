@@ -39,12 +39,12 @@ Historical reference:
 ## Current Milestone / Task
 
 Project State: `ACTIVE`  
-Current Milestone: `M002 — Modern UI Shell & Design System (Visual Hierarchy & Navigation)`  
+Current Milestone: `M003 — Lightweight Bilingual i18n & Theme Engine`  
 Current Milestone Status: `IN_PROGRESS`  
-Current Task: `M002-T01 — Design and implement modern UI shell layout in app/ui/`  
-Last Verified Gate: `M001 — v1.1.0 Governance Transition & Baseline Freeze PASS` (Historical v1.0.0: `docs/archive/ROADMAP_v1.0.0.md`)  
+Current Task: `M003-T01 — Implement modular i18n client engine in app/ui/i18n.js`  
+Last Verified Gate: `M002 — Modern UI Shell & Design System PASS` (Baseline: `M001 PASS`)  
 Current Blocker: `None`  
-Next Action: `Execute M002 autonomous implementation: build modern UI shell layout in app/ui/ with Sidebar categories, Persistent Context Bar, Right Drawer, and verify UI tests.`
+Next Action: `Implement modular i18n client engine in app/ui/i18n.js and translation dictionaries in app/ui/locales/ (zh-Hant.json, en.json), test regression V11-001.`
 
 ---
 
@@ -91,15 +91,16 @@ Next Action: `Execute M002 autonomous implementation: build modern UI shell layo
 - [x] `PROJECT.md` updated with v1.1.0 Product Truth, Scope, Success Criteria (SC-16..22), Requirements (REQ-024..035), Non-goals, Decisions (DEC-021..029), and Definition of Done.
 - [x] `ROADMAP.md` established with 12 granular milestones (M001~M012) and 18 new regression contracts (`V11-001`~`V11-018`).
 - [x] `AGENTS.md` updated with v1.1.0 donor boundary rules, safety contracts, and regression IDs.
-- [x] Full baseline test suite executed: **95 passed in 13.43s** (Python 3.13.7).
+- [x] `M001`: Governance baseline and four-file consistency verified (`PASS`).
+- [x] `M002`: Modern UI shell (Sidebar, Topbar Context Chips, Right Drawer, Stat cards, Theme toggle) implemented and verified in `app/ui/index.html` (95/95 tests PASS).
+- [x] Full baseline test suite executed: **95 passed in 12.10s** (Python 3.13.7).
 - [x] Four-file cross-consistency check passed.
 
 ---
 
 ## Verification Not Yet Performed (v1.1.0 New Scope)
 
-- `M002` Modern UI Shell & Design Tokens: `PLANNED`
-- `M003` Lightweight Bilingual i18n & Theme Engine: `PLANNED` (`V11-001`)
+- `M003` Lightweight Bilingual i18n & Theme Engine: `IN_PROGRESS` (`V11-001`)
 - `M004` Scope Domain Model & In-Memory Engine: `PLANNED` (`V11-002`..`004`)
 - `M005` Scope-Aware Discover & Property Health: `PLANNED` (`V11-016`)
 - `M006` Note Properties Workspace: `PLANNED` (`V11-005`..`008`)

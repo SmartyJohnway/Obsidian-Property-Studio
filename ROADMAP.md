@@ -12,12 +12,12 @@
 ## Current State
 
 Project State: `ACTIVE`  
-Current Milestone: `M002 — Modern UI Shell & Design System (Visual Hierarchy & Navigation)`  
+Current Milestone: `M003 — Lightweight Bilingual i18n & Theme Engine`  
 Current Milestone Status: `IN_PROGRESS`  
-Current Task: `M002-T01`  
-Last Verified Gate: `M001 — v1.1.0 Governance Transition & Baseline Freeze PASS` (Historical v1.0.0 Release: `docs/archive/ROADMAP_v1.0.0.md`)  
+Current Task: `M003-T01`  
+Last Verified Gate: `M002 — Modern UI Shell & Design System PASS` (Baseline: `M001 PASS`)  
 Current Blocker: `None`  
-Next Action: `Design and implement modern UI shell layout in app/ui/ with Sidebar categories, Persistent Context Bar, and Right Drawer.`  
+Next Action: `Implement modular i18n client engine in app/ui/i18n.js and translation dictionaries in app/ui/locales/.`  
 Last Updated: `2026-09-01`
 
 ---
@@ -125,30 +125,35 @@ Establish the formal v1.1.0 governance baseline, archive the v1.0.0 roadmap, upd
 
 # M002 — Modern UI Shell & Design System (Visual Hierarchy & Navigation)
 
-Status: `PLANNED`
+Status: `PASS`
 
 ### Objective
 Implement the v1.1.0 modern UI shell in `app/ui/` by harvesting visual hierarchy from Donor D and navigation/workflow patterns from Donor B, without embedding mock data or compromising existing API integration.
 
 ### Tasks
-- [ ] `M002-T01` Design unified layout structure: Sidebar with categories (Overview, Context, Create, Govern, Advanced), Top Context Bar, Main Container, Right Drawer.
-- [ ] `M002-T02` Implement CSS Design Tokens for typography, spacing, elevations, card surfaces, and status badges.
-- [ ] `M002-T03` Implement Persistent Context Bar displaying current Vault, Scope, and Selected Note.
-- [ ] `M002-T04` Implement generic Right Drawer component for deep property/finding inspection with keyboard (Esc) accessibility.
-- [ ] `M002-T05` Implement Home / Overview screen with quick-action cards and summary metrics.
-- [ ] `M002-T06` Implement universal module state containers (Initial, Loading skeleton, Ready, Empty, Blocked, Error).
-- [ ] `M002-T07` Ensure responsive layout (1024px desktop and collapsed navigation support).
-- [ ] `M002-T08` Run UI integrity tests and verify no mock/demo backend contamination.
+- [x] `M002-T01` Design unified layout structure: Sidebar with categories (Overview, Context, Create, Govern, Advanced), Top Context Bar, Main Container, Right Drawer.
+- [x] `M002-T02` Implement CSS Design Tokens for typography, spacing, elevations, card surfaces, and status badges.
+- [x] `M002-T03` Implement Persistent Context Bar displaying current Vault, Scope, and Selected Note.
+- [x] `M002-T04` Implement generic Right Drawer component for deep property/finding inspection with keyboard (Esc) accessibility.
+- [x] `M002-T05` Implement Home / Overview screen with quick-action cards and summary metrics.
+- [x] `M002-T06` Implement universal module state containers (Initial, Loading skeleton, Ready, Empty, Blocked, Error).
+- [x] `M002-T07` Ensure responsive layout (1024px desktop and collapsed navigation support).
+- [x] `M002-T08` Run UI integrity tests and verify no mock/demo backend contamination.
 
 ### Acceptance Criteria
-- [ ] `M002-AC01` UI shell renders cleanly with Sidebar categories, Persistent Context Bar, and Right Drawer.
-- [ ] `M002-AC02` Right Drawer opens and closes smoothly, including Esc key support.
-- [ ] `M002-AC03` Universal loading/empty/error states render without visual glitch.
-- [ ] `M002-AC04` No mock backend or fake API logic exists in production UI scripts.
-- [ ] `M002-AC05` All 95 existing tests continue to PASS.
+- [x] `M002-AC01` UI shell renders cleanly with Sidebar categories, Persistent Context Bar, and Right Drawer.
+- [x] `M002-AC02` Right Drawer opens and closes smoothly, including Esc key support.
+- [x] `M002-AC03` Universal loading/empty/error states render without visual glitch.
+- [x] `M002-AC04` No mock backend or fake API logic exists in production UI scripts.
+- [x] `M002-AC05` All 95 existing tests continue to PASS.
+
+### Verification / Evidence
+- `tests/test_ui_integrity.py` (7/7 tests passed in 0.18s)
+- Full automated test suite (95/95 passed in 12.10s)
 
 ### Result
-`NOT YET VERIFIED`
+`PASS`
+
 
 ---
 
