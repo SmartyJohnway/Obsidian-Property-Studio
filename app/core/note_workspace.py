@@ -112,7 +112,8 @@ def find_candidate_notes(
 
     # Prioritize in-scope notes first, then alphabetical by path
     matches.sort(key=lambda x: (not x["in_current_scope"], x["path"].casefold()))
-    return matches[:100]
+    return matches
+
 
 
 def inspect_note_for_workspace(scan: VaultScan, note_path: str) -> NoteWorkspaceInspectResult:

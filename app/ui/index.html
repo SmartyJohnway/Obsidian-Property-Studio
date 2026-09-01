@@ -444,7 +444,57 @@
   .diff-row.modified { background: var(--amber-soft); }
   .diff-row.deleted { background: var(--red-soft); }
   .diff-row.preserved { background: transparent; }
+
+  /* Note Workspace Folder Tree */
+  .ws-tree-header-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    background: var(--panel3);
+    border-bottom: 1px solid var(--line);
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .ws-tree-folder-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 8px;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    user-select: none;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    transition: background 0.15s;
+    margin-bottom: 2px;
+  }
+  .ws-tree-folder-row:hover {
+    background: var(--panel3);
+  }
+  .ws-tree-folder-children {
+    margin-left: 14px;
+    padding-left: 8px;
+    border-left: 1px solid var(--line);
+  }
+  .ws-tree-file-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 8px;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    font-size: 12.5px;
+    transition: background 0.15s;
+    margin-bottom: 2px;
+  }
+  .ws-tree-file-row:hover {
+    background: var(--teal-soft);
+    color: var(--teal);
+  }
 </style>
+
 </head>
 <body>
 
@@ -668,12 +718,13 @@
           <label class="form-label" for="wsNoteSearch" data-i18n="workspace.search_label">搜尋或選擇筆記</label>
           <div style="position:relative; margin-bottom:10px">
             <div style="display:flex; gap:10px">
-              <input type="text" id="wsNoteSearch" placeholder="🔍 輸入筆記名稱或點擊瀏覽下拉選單..." data-i18n-placeholder="ws.browse_placeholder" autocomplete="off" />
+              <input type="text" id="wsNoteSearch" placeholder="🔍 輸入筆記名稱搜尋，或點擊右側瀏覽資料夾樹..." data-i18n-placeholder="ws.browse_placeholder" autocomplete="off" />
               <button class="secondary" id="wsSearchBtn" data-i18n="workspace.search_btn">搜尋</button>
-              <button class="ghost" id="wsDropdownToggleBtn" title="Browse Notes Dropdown">▼</button>
+              <button class="secondary" id="wsDropdownToggleBtn" data-i18n="ws.browse_tree_btn">📂 瀏覽資料夾樹</button>
             </div>
-            <div id="wsNoteCandidates" style="position:absolute; top:100%; left:0; right:0; max-height:260px; overflow-y:auto; display:none; border:1px solid var(--line); border-radius:var(--radius-sm); background:var(--panel2); box-shadow:var(--shadow); z-index:50; margin-top:4px"></div>
+            <div id="wsNoteCandidates" style="position:absolute; top:100%; left:0; right:0; max-height:400px; overflow-y:auto; display:none; border:1px solid var(--line); border-radius:var(--radius-sm); background:var(--panel2); box-shadow:var(--shadow); z-index:50; margin-top:4px; padding:4px"></div>
           </div>
+
 
           <div id="wsNoteStatusBanner"></div>
         </div>
@@ -1346,57 +1397,47 @@ function setupScopeHandlers() {
 }
 
 /* ============================================================
-   Note Properties Workspace Module (Searchable Combobox + Browse Dropdown)
+   Note Properties Workspace Module (Searchable Combobox + Collapsible Folder Tree)
    ============================================================ */
 function setupWorkspaceHandlers() {
   const searchInput = $("wsNoteSearch");
   const candBox = $("wsNoteCandidates");
   const toggleBtn = $("wsDropdownToggleBtn");
 
-  const queryAndRenderCandidates = async (query = "") => {
-    try {
-      const res = await api("/api/workspace/notes", { query: query });
-      const candidates = res.candidates || [];
-      if (!candidates.length) {
-        candBox.innerHTML = `<div style="padding:10px; color:var(--muted)">${I18N.t("workspace.no_match")}</div>`;
-        candBox.style.display = "block";
-        return;
+  const buildTree = (candidates) => {
+    const root = { name: "/", fullPath: "", subfolders: {}, notes: [], totalCount: 0 };
+    for (const c of candidates) {
+      const parts = c.path.split("/");
+      parts.pop(); // remove note file name
+      let curr = root;
+      let pathAcc = "";
+      for (const p of parts) {
+        pathAcc = pathAcc ? `${pathAcc}/${p}` : p;
+        if (!curr.subfolders[p]) {
+          curr.subfolders[p] = { name: p, fullPath: pathAcc, subfolders: {}, notes: [], totalCount: 0 };
+        }
+        curr = curr.subfolders[p];
       }
-
-      const scopeNotes = candidates.filter(c => c.in_current_scope);
-      const otherNotes = candidates.filter(c => !c.in_current_scope);
-
-      let html = "";
-      if (scopeNotes.length) {
-        html += `<div style="padding:6px 10px; font-size:11px; font-weight:700; color:var(--teal); background:var(--panel3); border-bottom:1px solid var(--line)">${I18N.t("ws.scope_notes_group")} (${scopeNotes.length})</div>`;
-        html += scopeNotes.map(c => renderCandidateItem(c)).join("");
-      }
-      if (otherNotes.length) {
-        html += `<div style="padding:6px 10px; font-size:11px; font-weight:700; color:var(--muted); background:var(--panel3); border-bottom:1px solid var(--line); border-top:1px solid var(--line)">${I18N.t("ws.other_notes_group")} (${otherNotes.length})</div>`;
-        html += otherNotes.map(c => renderCandidateItem(c)).join("");
-      }
-
-      candBox.innerHTML = html;
-      candBox.style.display = "block";
-
-      candBox.querySelectorAll(".ws-cand-item").forEach(item => {
-        item.onclick = () => {
-          const path = item.getAttribute("data-path");
-          candBox.style.display = "none";
-          searchInput.value = path;
-          inspectNoteInWorkspace(path);
-        };
-      });
-    } catch (e) {
-      toast(e.message, true);
+      curr.notes.push(c);
     }
+
+    const calcCounts = (node) => {
+      let count = node.notes.length;
+      for (const sub of Object.values(node.subfolders)) {
+        count += calcCounts(sub);
+      }
+      node.totalCount = count;
+      return count;
+    };
+    calcCounts(root);
+    return root;
   };
 
-  const renderCandidateItem = (c) => `
-    <div class="ws-cand-item" data-path="${esc(c.path)}" style="padding:8px 12px; cursor:pointer; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center">
+  const renderFileRow = (c) => `
+    <div class="ws-tree-file-row ws-cand-item" data-path="${esc(c.path)}">
       <div>
-        <strong>${esc(c.name)}</strong>
-        <span class="muted" style="font-size:11.5px; margin-left:8px">📁 ${esc(c.path)}</span>
+        <span>📄 <strong>${esc(c.name)}</strong></span>
+        ${c.is_ambiguous_basename ? `<span class="muted" style="font-size:11px; margin-left:6px">(${esc(c.path)})</span>` : ''}
       </div>
       <div>
         ${c.in_current_scope ? `<span class="pill ok">${I18N.t("workspace.in_scope")}</span>` : `<span class="pill">${I18N.t("workspace.other")}</span>`}
@@ -1404,6 +1445,157 @@ function setupWorkspaceHandlers() {
       </div>
     </div>
   `;
+
+  const renderTreeNode = (folder, isRoot = false) => {
+    let html = "";
+    if (!isRoot) {
+      html += `
+        <div class="ws-tree-folder-row" data-path="${esc(folder.fullPath)}">
+          <span style="display:flex; align-items:center; gap:6px">
+            <span class="ws-tree-icon" style="font-size:11px; display:inline-block; width:12px">▶</span>
+            <span>📁 <strong>${esc(folder.name)}</strong></span>
+          </span>
+          <span class="muted" style="font-size:11.5px">${folder.totalCount} ${I18N.t("ws.notes_count_suffix")}</span>
+        </div>
+        <div class="ws-tree-folder-children" style="display:none">
+      `;
+    }
+
+    // Sort subfolders alphabetically
+    const subfolderKeys = Object.keys(folder.subfolders).sort((a, b) => a.localeCompare(b));
+    for (const key of subfolderKeys) {
+      html += renderTreeNode(folder.subfolders[key], false);
+    }
+
+    // Sort notes alphabetically
+    const sortedNotes = folder.notes.slice().sort((a, b) => a.name.localeCompare(b.name));
+    for (const n of sortedNotes) {
+      html += renderFileRow(n);
+    }
+
+    if (!isRoot) {
+      html += `</div>`;
+    }
+    return html;
+  };
+
+  const renderTree = (candidates) => {
+    const tree = buildTree(candidates);
+    const totalCount = candidates.length;
+
+    let html = `
+      <div class="ws-tree-header-bar">
+        <span>${I18N.t("ws.folder_tree_title")} (${totalCount} ${I18N.t("ws.notes_count_suffix")})</span>
+        <div style="display:flex; gap:6px">
+          <button class="ghost ws-tree-expand-all" style="padding:2px 6px; font-size:11px">${I18N.t("ws.expand_all")}</button>
+          <button class="ghost ws-tree-collapse-all" style="padding:2px 6px; font-size:11px">${I18N.t("ws.collapse_all")}</button>
+        </div>
+      </div>
+      <div style="padding:6px">
+        ${renderTreeNode(tree, true)}
+      </div>
+    `;
+
+    candBox.innerHTML = html;
+    candBox.style.display = "block";
+
+    // Bind folder toggle
+    candBox.querySelectorAll(".ws-tree-folder-row").forEach(row => {
+      row.onclick = (e) => {
+        e.stopPropagation();
+        const children = row.nextElementSibling;
+        const icon = row.querySelector(".ws-tree-icon");
+        if (children && children.classList.contains("ws-tree-folder-children")) {
+          const isClosed = children.style.display === "none";
+          children.style.display = isClosed ? "block" : "none";
+          if (icon) icon.textContent = isClosed ? "▼" : "▶";
+        }
+      };
+    });
+
+    // Bind expand all / collapse all
+    const expandBtn = candBox.querySelector(".ws-tree-expand-all");
+    if (expandBtn) {
+      expandBtn.onclick = (e) => {
+        e.stopPropagation();
+        candBox.querySelectorAll(".ws-tree-folder-children").forEach(c => c.style.display = "block");
+        candBox.querySelectorAll(".ws-tree-icon").forEach(i => i.textContent = "▼");
+      };
+    }
+    const collapseBtn = candBox.querySelector(".ws-tree-collapse-all");
+    if (collapseBtn) {
+      collapseBtn.onclick = (e) => {
+        e.stopPropagation();
+        candBox.querySelectorAll(".ws-tree-folder-children").forEach(c => c.style.display = "none");
+        candBox.querySelectorAll(".ws-tree-icon").forEach(i => i.textContent = "▶");
+      };
+    }
+
+    // Bind file selection
+    candBox.querySelectorAll(".ws-cand-item").forEach(item => {
+      item.onclick = (e) => {
+        e.stopPropagation();
+        const path = item.getAttribute("data-path");
+        candBox.style.display = "none";
+        searchInput.value = path;
+        inspectNoteInWorkspace(path);
+      };
+    });
+  };
+
+  const renderSearchResults = (candidates) => {
+    if (!candidates.length) {
+      candBox.innerHTML = `<div style="padding:10px; color:var(--muted)">${I18N.t("workspace.no_match")}</div>`;
+      candBox.style.display = "block";
+      return;
+    }
+
+    const scopeNotes = candidates.filter(c => c.in_current_scope);
+    const otherNotes = candidates.filter(c => !c.in_current_scope);
+
+    let html = `
+      <div class="ws-tree-header-bar">
+        <span>${I18N.t("ws.search_results_title")} (${candidates.length} ${I18N.t("ws.notes_count_suffix")})</span>
+      </div>
+      <div style="padding:6px">
+    `;
+    if (scopeNotes.length) {
+      html += `<div style="padding:4px 8px; font-size:11px; font-weight:700; color:var(--teal); background:var(--panel3); border-radius:4px; margin-bottom:4px">${I18N.t("ws.scope_notes_group")} (${scopeNotes.length})</div>`;
+      html += scopeNotes.map(c => renderFileRow(c)).join("");
+    }
+    if (otherNotes.length) {
+      html += `<div style="padding:4px 8px; font-size:11px; font-weight:700; color:var(--muted); background:var(--panel3); border-radius:4px; margin-top:8px; margin-bottom:4px">${I18N.t("ws.other_notes_group")} (${otherNotes.length})</div>`;
+      html += otherNotes.map(c => renderFileRow(c)).join("");
+    }
+    html += `</div>`;
+
+    candBox.innerHTML = html;
+    candBox.style.display = "block";
+
+    candBox.querySelectorAll(".ws-cand-item").forEach(item => {
+      item.onclick = (e) => {
+        e.stopPropagation();
+        const path = item.getAttribute("data-path");
+        candBox.style.display = "none";
+        searchInput.value = path;
+        inspectNoteInWorkspace(path);
+      };
+    });
+  };
+
+  const queryAndRenderCandidates = async (query = "") => {
+    try {
+      const res = await api("/api/workspace/notes", { query: query });
+      const candidates = res.candidates || [];
+      if (!query) {
+        renderTree(candidates);
+      } else {
+        renderSearchResults(candidates);
+      }
+    } catch (e) {
+      toast(e.message, true);
+    }
+  };
 
   let debounceTimer = null;
   searchInput.oninput = () => {
@@ -1421,7 +1613,8 @@ function setupWorkspaceHandlers() {
     queryAndRenderCandidates(searchInput.value.trim());
   };
 
-  toggleBtn.onclick = () => {
+  toggleBtn.onclick = (e) => {
+    e.stopPropagation();
     if (candBox.style.display === "block") {
       candBox.style.display = "none";
     } else {
@@ -1442,6 +1635,7 @@ function setupWorkspaceHandlers() {
     });
   };
 }
+
 
 async function inspectNoteInWorkspace(notePath) {
   try {

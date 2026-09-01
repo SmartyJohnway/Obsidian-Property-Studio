@@ -275,3 +275,20 @@ def test_m014_018_schema_design_selection_required_validation(sample_vault: Path
     assert "schema" in res
     assert "reuse_reviews" in res
 
+
+def test_m014_019_workspace_collapsible_folder_tree_and_no_100_limit(sample_vault: Path):
+    server.STORE.scan = scan_vault(sample_vault)
+    server.STORE.vault_path = str(sample_vault)
+
+    candidates = note_workspace.find_candidate_notes(server.STORE.scan, query="")
+    assert len(candidates) == 3
+
+    html_text = (Path(__file__).resolve().parent.parent / "app" / "ui" / "index.html").read_text(encoding="utf-8")
+    assert 'id="wsDropdownToggleBtn"' in html_text
+    assert 'ws.browse_tree_btn' in html_text
+    assert 'ws-tree-header-bar' in html_text
+    assert 'ws-tree-folder-row' in html_text
+    assert 'ws-tree-expand-all' in html_text
+    assert 'ws-tree-collapse-all' in html_text
+
+
