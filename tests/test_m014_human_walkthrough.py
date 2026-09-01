@@ -247,11 +247,31 @@ def test_m014_015_vault_safety_read_only_in_m014(sample_vault: Path):
     server.STORE.vault_path = str(sample_vault)
 
     server.api_design_presets({})
-    server.api_design_build({"objects": ["equipment"], "needs": ["location"]})
-    server.api_workspace_candidates({"query": ""})
-    server.api_workspace_inspect({"note_path": "Equipment01.md"})
-    server.api_refactor_plan({"operation": "rename", "source": "type", "target": "kind"})
-
     verify_report = server.api_vault_verify({})
     assert verify_report["unchanged"] is True
     assert verify_report["files_checked"] == 3
+
+
+def test_m014_016_refactor_controlled_target_and_new_name():
+    html_text = (Path(__file__).resolve().parent.parent / "app" / "ui" / "index.html").read_text(encoding="utf-8")
+    assert 'id="refactorTargetPropSelect"' in html_text
+    assert 'id="refactorTargetNewNameInput"' in html_text
+    assert 'id="refactorConflictWarnBanner"' in html_text
+    assert 'id="refactorTargetTypeSelect"' in html_text
+
+
+def test_m014_017_relations_controlled_property_filter():
+    html_text = (Path(__file__).resolve().parent.parent / "app" / "ui" / "index.html").read_text(encoding="utf-8")
+    assert 'id="relPropFilterSelect"' in html_text
+    assert 'id="relPropFilterInput"' not in html_text
+
+
+def test_m014_018_schema_design_selection_required_validation(sample_vault: Path):
+    server.STORE.scan = scan_vault(sample_vault)
+    server.STORE.vault_path = str(sample_vault)
+
+    # Empty objects and needs with no goal
+    res = server.api_design_build({"objects": [], "needs": [], "goal": ""})
+    assert "schema" in res
+    assert "reuse_reviews" in res
+

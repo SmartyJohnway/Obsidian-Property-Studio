@@ -855,7 +855,9 @@
 
           <div id="relPropFilterWrapper" style="margin-bottom:14px">
             <label class="form-label" data-i18n="relations.prop_filter_label">特定屬性篩選 (可選)</label>
-            <input type="text" id="relPropFilterInput" placeholder="如：project, client, related..." />
+            <select id="relPropFilterSelect" class="form-control">
+              <option value="" data-i18n="relations.all_properties">全部屬性 (All Properties)</option>
+            </select>
           </div>
 
           <div style="display:flex; gap:10px">
@@ -930,8 +932,9 @@
 
             <!-- Param 2: Target Property / Type -->
             <div id="refactorParam2Wrapper">
-              <label class="form-label" id="refactorParam2Label" data-i18n="refactor.target_label">目標屬性名 / 型態</label>
-              <input type="text" id="refactorTargetInput" placeholder="輸入目標屬性名稱..." />
+              <label class="form-label" id="refactorParam2Label" data-i18n="refactor.target_prop_label">目標屬性名稱</label>
+              <select id="refactorTargetPropSelect" class="form-control"></select>
+              <input type="text" id="refactorTargetNewNameInput" style="display:none; margin-top:8px" data-i18n-placeholder="refactor.new_name_placeholder" placeholder="請輸入全新屬性名稱..." />
               <select id="refactorTargetTypeSelect" style="display:none">
                 <option value="text">Text (文字)</option>
                 <option value="number">Number (數字)</option>
@@ -944,6 +947,7 @@
               </select>
             </div>
           </div>
+
 
           <!-- Dynamic Target Conflict Warning Banner -->
           <div id="refactorConflictWarnBanner" style="display:none; margin-bottom:14px; padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--amber); background:var(--amber-soft); color:var(--text); font-size:13px"></div>
@@ -1178,9 +1182,12 @@ function renderAllDynamicViews() {
     loadDiscovery();
     loadHealth();
     loadSavedChecks();
+    populateRelPropFilterOptions();
     populateRefactorSourceOptions();
+    populateRefactorTargetOptions();
   }
 }
+
 
 
 /* ============================================================
@@ -1613,8 +1620,26 @@ async function loadDiscovery() {
         <div class="hint">${I18N.t("discover.suggested_action")} ${esc(f.recommendation)}</div>
       </div>
     `).join("") : `<div class="muted">${I18N.t("discover.no_findings")}</div>`;
+
+    populateRelPropFilterOptions();
+    populateRefactorSourceOptions();
+    populateRefactorTargetOptions();
   } catch (e) {
     console.error(e);
+  }
+}
+
+function setupDiscoverHandlers() {
+  const btn = $("exportDiscoveryBtn");
+  if (btn) {
+    btn.onclick = async () => {
+      try {
+        const res = await api("/api/export", { kind: "discovery" });
+        toast(I18N.t("toast.export_done", { path: res.output_dir }));
+      } catch (e) {
+        toast(e.message, true);
+      }
+    };
   }
 }
 
@@ -1662,12 +1687,17 @@ function setupDesignHandlers() {
     const selectedNeeds = Array.from(document.querySelectorAll(".design-need-cb:checked")).map(cb => cb.value);
     const extraGoal = $("designGoalInput").value.trim();
 
+    if (!selectedObjs.length && !selectedNeeds.length) {
+      return toast(I18N.t("design.require_selection_warn"), true);
+    }
+
     try {
       const res = await api("/api/design/build", {
         objects: selectedObjs,
         needs: selectedNeeds,
         goal: extraGoal
       });
+
       S.lastReviewResult = res;
 
       $("designReviewResult").innerHTML = `
@@ -1860,6 +1890,22 @@ async function updateFillPreview() {
 /* ============================================================
    Relationships Module
    ============================================================ */
+function populateRelPropFilterOptions() {
+  const props = S.inventory ? S.inventory.properties : [];
+  const sel = $("relPropFilterSelect");
+  if (!sel) return;
+  const curVal = sel.value;
+  sel.innerHTML = `
+    <option value="">${esc(I18N.t("relations.all_properties"))}</option>
+    ${props.map(p => `
+      <option value="${esc(p.key)}">${esc(p.key)} (${p.usage_count})</option>
+    `).join("")}
+  `;
+  if (curVal && Array.from(sel.options).some(o => o.value === curVal)) {
+    sel.value = curVal;
+  }
+}
+
 function setupRelationsHandlers() {
   $("relSourcePropsBtn").onclick = () => {
     S.relSourceType = "property_link";
@@ -1882,10 +1928,14 @@ function setupRelationsHandlers() {
   };
 
   $("relAnalyzeBtn").onclick = async () => {
+    const btn = $("relAnalyzeBtn");
     try {
       const srcScope = getSelectedRelScope("relSrcEntireCb", ".rel-src-folder-cb");
       const tgtScope = getSelectedRelScope("relTgtEntireCb", ".rel-tgt-folder-cb");
-      const propFilter = $("relPropFilterInput").value.trim() || null;
+      const propFilter = $("relPropFilterSelect").value.trim() || null;
+
+      btn.disabled = true;
+      btn.textContent = I18N.t("relations.loading");
 
       const endpoint = S.relSourceType === "body_wikilink" ? "/api/relationships/body" : "/api/relationships";
       const payload = {
@@ -1903,7 +1953,7 @@ function setupRelationsHandlers() {
       $("relResultsCard").style.display = "block";
 
       const items = res.findings || res.items || [];
-      $("relItemsList").innerHTML = `
+      $("relItemsList").innerHTML = items.length ? `
         <table>
           <thead><tr>
             <th>${esc(I18N.t("relations.col_classification"))}</th>
@@ -1924,10 +1974,13 @@ function setupRelationsHandlers() {
             `).join("")}
           </tbody>
         </table>
-      `;
+      ` : `<div class="muted" style="padding:16px; text-align:center">此範圍內無相符的關聯項目。</div>`;
       toast(I18N.t("toast.rel_analysis_done"));
     } catch (e) {
       toast(e.message, true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = I18N.t("relations.analyze_btn");
     }
   };
 
@@ -1938,7 +1991,7 @@ function setupRelationsHandlers() {
       const name = prompt(I18N.t("relations.prompt_check_name"), I18N.t("relations.default_check_name"));
       if (!name) return;
       const notes = prompt(I18N.t("relations.prompt_notes"), "") || "";
-      const propFilter = $("relPropFilterInput").value.trim() || null;
+      const propFilter = $("relPropFilterSelect").value.trim() || null;
 
       const chk = {
         name: name,
@@ -2042,7 +2095,6 @@ async function loadSavedChecks() {
   }
 }
 
-
 /* ============================================================
    Health Module
    ============================================================ */
@@ -2073,6 +2125,20 @@ async function loadHealth() {
   }
 }
 
+function setupHealthHandlers() {
+  const btn = $("exportHealthBtn");
+  if (btn) {
+    btn.onclick = async () => {
+      try {
+        const res = await api("/api/export", { kind: "health" });
+        toast(I18N.t("toast.export_done", { path: res.output_dir }));
+      } catch (e) {
+        toast(e.message, true);
+      }
+    };
+  }
+}
+
 /* ============================================================
    Refactor & Proposal Handlers (Controlled Vocabulary + Human Summary)
    ============================================================ */
@@ -2082,9 +2148,13 @@ function populateRefactorSourceOptions() {
   const mergeList = $("refactorMergeSourcesList");
 
   if (srcSelect) {
+    const curVal = srcSelect.value;
     srcSelect.innerHTML = props.length ? props.map(p => `
       <option value="${esc(p.key)}">${esc(p.key)} (${p.usage_count} 篇筆記)</option>
     `).join("") : `<option value="">-- 無可用屬性 --</option>`;
+    if (curVal && Array.from(srcSelect.options).some(o => o.value === curVal)) {
+      srcSelect.value = curVal;
+    }
   }
 
   if (mergeList) {
@@ -2097,29 +2167,67 @@ function populateRefactorSourceOptions() {
   }
 }
 
+function populateRefactorTargetOptions() {
+  const props = S.inventory ? S.inventory.properties : [];
+  const tgtSelect = $("refactorTargetPropSelect");
+  if (!tgtSelect) return;
+  const curVal = tgtSelect.value;
+  tgtSelect.innerHTML = `
+    <option value="">${esc(I18N.t("refactor.choose_or_new"))}</option>
+    <option value="__new__">${esc(I18N.t("refactor.create_new_name"))}</option>
+    ${props.map(p => `
+      <option value="${esc(p.key)}">${esc(p.key)} (${p.usage_count} 篇筆記)</option>
+    `).join("")}
+  `;
+  if (curVal && Array.from(tgtSelect.options).some(o => o.value === curVal)) {
+    tgtSelect.value = curVal;
+  }
+}
+
 function setupRefactorHandlers() {
+  const checkTargetConflict = (targetName) => {
+    const warnEl = $("refactorConflictWarnBanner");
+    if (!targetName || !S.inventory) {
+      warnEl.style.display = "none";
+      return;
+    }
+    const match = (S.inventory.properties || []).find(p => p.key === targetName);
+    if (match) {
+      warnEl.innerHTML = I18N.t("refactor.rename_target_conflict_warn", { target: targetName, count: match.usage_count });
+      warnEl.style.display = "block";
+    } else {
+      warnEl.style.display = "none";
+    }
+  };
+
   const updateRefactorLabels = () => {
     const op = $("refactorOpSelect").value;
     const srcSelect = $("refactorSourceSelect");
     const mergeList = $("refactorMergeSourcesList");
-    const tgtInput = $("refactorTargetInput");
+    const tgtSelect = $("refactorTargetPropSelect");
+    const tgtNewNameInput = $("refactorTargetNewNameInput");
     const tgtTypeSelect = $("refactorTargetTypeSelect");
+    const warnEl = $("refactorConflictWarnBanner");
+
+    warnEl.style.display = "none";
 
     if (op === "rename") {
       $("refactorParam1Wrapper").style.display = "block";
       $("refactorParam2Wrapper").style.display = "block";
       srcSelect.style.display = "block";
       mergeList.style.display = "none";
-      tgtInput.style.display = "block";
+      tgtSelect.style.display = "block";
+      tgtNewNameInput.style.display = (tgtSelect.value === "__new__" ? "block" : "none");
       tgtTypeSelect.style.display = "none";
       $("refactorParam1Label").textContent = I18N.t("refactor.source_label");
-      $("refactorParam2Label").textContent = I18N.t("refactor.target_label");
+      $("refactorParam2Label").textContent = I18N.t("refactor.target_prop_label");
     } else if (op === "merge") {
       $("refactorParam1Wrapper").style.display = "block";
       $("refactorParam2Wrapper").style.display = "block";
       srcSelect.style.display = "none";
       mergeList.style.display = "block";
-      tgtInput.style.display = "block";
+      tgtSelect.style.display = "block";
+      tgtNewNameInput.style.display = (tgtSelect.value === "__new__" ? "block" : "none");
       tgtTypeSelect.style.display = "none";
       $("refactorParam1Label").textContent = I18N.t("refactor.sources_merge_label");
       $("refactorParam2Label").textContent = I18N.t("refactor.target_merge_label");
@@ -2134,7 +2242,8 @@ function setupRefactorHandlers() {
       $("refactorParam2Wrapper").style.display = "block";
       srcSelect.style.display = "block";
       mergeList.style.display = "none";
-      tgtInput.style.display = "none";
+      tgtSelect.style.display = "none";
+      tgtNewNameInput.style.display = "none";
       tgtTypeSelect.style.display = "block";
       $("refactorParam1Label").textContent = I18N.t("refactor.source_label");
       $("refactorParam2Label").textContent = I18N.t("refactor.target_type_label");
@@ -2143,41 +2252,42 @@ function setupRefactorHandlers() {
 
   $("refactorOpSelect").onchange = updateRefactorLabels;
 
-  // Conflict warning on Target Input
-  $("refactorTargetInput").oninput = (e) => {
-    const val = e.target.value.trim();
-    const warnEl = $("refactorConflictWarnBanner");
-    if (!val || !S.inventory) {
-      warnEl.style.display = "none";
-      return;
-    }
-    const match = (S.inventory.properties || []).find(p => p.key === val);
-    if (match) {
-      warnEl.innerHTML = I18N.t("refactor.rename_target_conflict_warn", { target: val, count: match.usage_count });
-      warnEl.style.display = "block";
+  $("refactorTargetPropSelect").onchange = (e) => {
+    const val = e.target.value;
+    const tgtNewNameInput = $("refactorTargetNewNameInput");
+    if (val === "__new__") {
+      tgtNewNameInput.style.display = "block";
+      tgtNewNameInput.focus();
+      checkTargetConflict(tgtNewNameInput.value.trim());
     } else {
-      warnEl.style.display = "none";
+      tgtNewNameInput.style.display = "none";
+      checkTargetConflict(val.trim());
     }
+  };
+
+  $("refactorTargetNewNameInput").oninput = (e) => {
+    checkTargetConflict(e.target.value.trim());
   };
 
   $("runRefactorPlanBtn").onclick = async () => {
     const op = $("refactorOpSelect").value;
-    const tgt = $("refactorTargetInput").value.trim();
+    const tgtSelectVal = $("refactorTargetPropSelect").value;
+    const effectiveTarget = (tgtSelectVal === "__new__") ? $("refactorTargetNewNameInput").value.trim() : tgtSelectVal.trim();
 
     try {
       let payload = { operation: op };
       if (op === "rename") {
         const src = $("refactorSourceSelect").value;
         if (!src) return toast(I18N.t("refactor.source_label"), true);
-        if (!tgt) return toast(I18N.t("refactor.target_label"), true);
+        if (!effectiveTarget) return toast(I18N.t("refactor.target_label"), true);
         payload.source = src;
-        payload.target = tgt;
+        payload.target = effectiveTarget;
       } else if (op === "merge") {
         const sources = Array.from(document.querySelectorAll(".refactor-merge-cb:checked")).map(cb => cb.value);
         if (!sources.length) return toast(I18N.t("refactor.sources_merge_label"), true);
-        if (!tgt) return toast(I18N.t("refactor.target_merge_label"), true);
+        if (!effectiveTarget) return toast(I18N.t("refactor.target_merge_label"), true);
         payload.sources = sources;
-        payload.target = tgt;
+        payload.target = effectiveTarget;
       } else if (op === "normalize") {
         const src = $("refactorSourceSelect").value;
         if (!src) return toast(I18N.t("refactor.source_label"), true);
@@ -2228,8 +2338,6 @@ function setupRefactorHandlers() {
   updateRefactorLabels();
 }
 
-
-
 function setupProposalHandlers() {
   $("validateProposalBtn").onclick = async () => {
     const text = $("proposalTextInput").value.trim();
@@ -2248,3 +2356,4 @@ window.addEventListener("DOMContentLoaded", init);
 </script>
 </body>
 </html>
+
