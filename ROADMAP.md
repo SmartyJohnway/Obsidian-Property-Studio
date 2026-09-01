@@ -11,17 +11,18 @@
 
 ##### Current State
 
-Project State: `COMPLETE`  
-Current Milestone: `NONE`  
-Current Milestone Status: `PASS`  
-Current Task: `NONE`  
-Last Verified Gate: `M014 — Human UI/UX Walkthrough Closure PASS`  
+Project State: `ACTIVE`  
+Current Milestone: `M014`  
+Current Milestone Status: `IN_PROGRESS`  
+Current Task: `M014-T02 Human UI/UX Production Walkthrough Re-Verification`  
+Last Verified Gate: `M013 — Full Verification Gate PASS`  
 Current Blocker: `NONE`  
-Next Action: `NONE (v1.1.0 release closure completed)`  
-Formal Release Verdict: `PROPERTY_STUDIO_V1_1_0_RELEASE_PASS_WITH_LIMITATIONS`  
-Human Verified Acceptance: `Windows 10 Browser/UI, Traditional Chinese, English, Dark/Light Themes, Vault Scan/Scope Operation (PASS — Human Verified by Dr. J)`  
+Next Action: `Human Owner re-verifies repaired M014 production UI on Windows 10 browser`  
+Automated Verification: `PASS (161/161 tests PASS)`  
+Human Verified Acceptance: `NOT YET VERIFIED (Awaiting Human Owner Walkthrough Re-Verification)`  
 Accepted Limitation: `Windows 11 AMD64 native verification recorded as NOT YET VERIFIED due to test host unavailability (accepted non-blocking release limitation per human approved contract).`  
 Last Updated: `2026-09-01`
+
 
 
 
@@ -449,22 +450,27 @@ Resolve usability, discoverability, and workflow gaps identified during the Huma
 - [x] `M014-T08` [Refactor Planner] Add conflict warning on existing target property, enforce fail-closed on empty target, and provide human-readable primary view with collapsible raw JSON.
 - [x] `M014-T09` [Automated Tests] Author `tests/test_m014_human_walkthrough.py` covering regression contracts M014-001 ~ M014-015.
 - [x] `M014-T10` [Final Evidence Closure] Execute final authoritative benchmark, synchronize all evidence documents, perform clean commit workflow, and generate external release packaging.
+- [x] `M014-T11` [Walkthrough Failure In-Place Repair] Restore missing frontend handlers (`setupDiscoverHandlers`, `setupHealthHandlers`), enforce actionable selection validation on Schema Designer, convert Relationships property filter to controlled dropdown with loading state, replace Refactor generic target with controlled combobox and new-name input, and add headless browser startup regression tests.
+- [ ] `M014-T12` [Human Production Walkthrough Re-Verification] Human Owner re-verifies repaired workflows in Windows 10 production browser.
 
 ### Acceptance Criteria
 - [x] `M014-AC01` Note Workspace supports both Search and Browse Dropdown with clear path disambiguation for duplicate basenames.
-- [x] `M014-AC02` Schema Design generates suggestions from deterministic multi-select inputs with optional free-text.
+- [x] `M014-AC02` Schema Design generates suggestions from deterministic multi-select inputs with optional free-text and actionable validation.
 - [x] `M014-AC03` `[Adopt Schema]` persists session schema and routes cleanly to Existing Note or New Frontmatter.
 - [x] `M014-AC04` New Frontmatter displays empty-state guidance when unconfigured and renders dynamic controls when configured.
-- [x] `M014-AC05` Refactor Planner uses controlled dropdowns/multi-selects and displays human-readable summary by default.
+- [x] `M014-AC05` Refactor Planner uses controlled dropdowns/multi-selects, target collision warning, and displays human-readable summary by default.
 - [x] `M014-AC06` 100% of new UI strings are localized in `zh-Hant.json` and `en.json`.
-- [x] `M014-AC07` All automated tests pass (140 existing + 15 M014 regression contracts = 155/155 tests PASS).
+- [x] `M014-AC07` All automated tests pass (140 existing + 21 M014 & integrity regression contracts = 161/161 tests PASS).
 - [x] `M014-AC08` Vault remains byte-for-byte read-only across all new workflows.
+- [ ] `M014-AC09` Human Owner re-verifies repaired UI in real Windows 10 browser without uncaught errors or workflow dead-ends.
 
 ### Result
-`PASS`
-- All 155 automated unit & integration tests pass (`pytest -v`, 13.28s).
+`IN_PROGRESS`
+- Automated Verification: `PASS` (161/161 automated unit & integration tests pass, `pytest -v`, 13.11s).
+- Headless Browser DOM Startup Smoke: `PASS` (Zero uncaught JS errors, presets populated, CTAs wired).
 - 5,000-note benchmark verified: scan 4.321s, total analysis 4.471s, vault unchanged (`evidence/benchmark.json`).
-- Human acceptance on Windows 10 Build 19045 production UI verified (`PASS — Human Verified`).
+- Human Verification: `NOT YET VERIFIED` (Awaiting Human Owner re-verification).
+
 
 
 ---

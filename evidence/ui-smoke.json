@@ -1,11 +1,11 @@
 {
   "case": "local application launch + end-to-end UI API smoke",
-  "app_version": "1.0.0",
+  "app_version": "1.1.0",
   "environment": {
     "python": "3.13.7",
     "platform": "Windows-10-10.0.19045-SP0",
     "bind_default": "127.0.0.1 (loopback only)",
-    "bound_for_this_run": "127.0.0.1:14708",
+    "bound_for_this_run": "127.0.0.1:12616",
     "hostname": "C04N06"
   },
   "vault": "D:\\Antigravity-Workspace\\Obsidian-Property-Studio\\Obsidian-Property-Studio-v1.0.0\\fixtures\\vaults\\main_vault",
@@ -13,14 +13,14 @@
     {
       "step": "GET / (UI)",
       "http_status": 200,
-      "bytes": 53338,
+      "bytes": 96805,
       "title_present": true,
       "external_resource_references": 0
     },
     {
       "step": "POST /api/meta",
       "http_status": 200,
-      "version": "1.0.0",
+      "version": "1.1.0",
       "vault_write_capability": false,
       "requires_network": false,
       "requires_api_key": false
@@ -37,7 +37,7 @@
         "skipped_path_count": 2,
         "issue_count": 5
       },
-      "scan_seconds": 0.0162
+      "scan_seconds": 0.0153
     },
     {
       "step": "POST /api/design/build",
@@ -56,6 +56,8 @@
       "reuse_counts": {
         "new": 0,
         "exact_existing": 8,
+        "exact_existing_in_scope": 8,
+        "exact_existing_in_vault_only": 0,
         "case_variant_exists": 0,
         "possible_overlap": 1
       }
@@ -76,6 +78,8 @@
         "source_usage_count": 1,
         "target_existing_usage_count": 6,
         "notes_to_change": 1,
+        "in_scope_notes_to_change": 1,
+        "out_of_scope_notes_to_change": 0,
         "conflicts": 0,
         "excluded_ambiguous": 0,
         "notes_with_parse_failure": 3
@@ -135,7 +139,18 @@
           "relationship_drift": 2
         },
         "auto_resolved": 0,
-        "scope": "property values only (no note body links are analysed or changed)"
+        "scope": "property values only (no note body links are analysed or changed)",
+        "valid_count": 5,
+        "broken_count": 1,
+        "ambiguous_count": 3,
+        "outside_target_count": 0,
+        "total_evaluated_links": 12,
+        "four_state_counts": {
+          "VALID": 5,
+          "BROKEN": 1,
+          "AMBIGUOUS": 3,
+          "OUTSIDE_SELECTED_TARGET": 0
+        }
       }
     },
     {

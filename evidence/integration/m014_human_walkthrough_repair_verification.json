@@ -1,0 +1,48 @@
+{
+  "contract": "M014_HUMAN_UI_UX_WALKTHROUGH_REPAIR_VERIFICATION",
+  "app_version": "1.1.0",
+  "timestamp": "2026-09-01T22:48:00+08:00",
+  "project_state": "ACTIVE",
+  "milestone": "M014",
+  "milestone_status": "IN_PROGRESS",
+  "automated_verification": {
+    "status": "PASS",
+    "total_tests": 161,
+    "passed_tests": 161,
+    "failed_tests": 0,
+    "duration_seconds": 13.11,
+    "headless_dom_startup_smoke": "PASS",
+    "live_http_ui_smoke": "PASS"
+  },
+  "vault_safety": {
+    "status": "PASS",
+    "unchanged": true,
+    "files_checked": 3
+  },
+  "human_verification": {
+    "status": "NOT YET VERIFIED",
+    "note": "Awaiting explicit re-verification by Human Owner in Windows 10 production browser."
+  },
+  "repairs_executed": {
+    "p0_frontend_initialization": {
+      "status": "FIXED",
+      "summary": "Restored missing setupDiscoverHandlers() and setupHealthHandlers() in app/ui/index.html. Verified browser initialization executes with zero uncaught JavaScript errors."
+    },
+    "schema_designer_workflow": {
+      "status": "FIXED",
+      "summary": "Deterministic presets load reliably on startup; added actionable validation toast when no object/need is selected; preserved complete adopt-and-fill roundtrip workflow."
+    },
+    "relationships_controlled_filter": {
+      "status": "FIXED",
+      "summary": "Replaced freeform text filter with controlled select populated from Scope inventory; includes All Properties default, usage counts, and loading indicators."
+    },
+    "refactor_controlled_target": {
+      "status": "FIXED",
+      "summary": "Replaced generic target input with operation-aware controlled controls: Combobox of existing properties + explicit new name creation input for Rename/Merge, target type select for Convert Type, and real-time name collision warning banner."
+    },
+    "automated_regressions": {
+      "status": "FIXED",
+      "summary": "Added tests in test_ui_integrity.py and test_m014_human_walkthrough.py enforcing all init() setup calls are defined, DOM IDs exist, and headless Node.js DOM startup succeeds."
+    }
+  }
+}
