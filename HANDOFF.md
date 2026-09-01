@@ -39,12 +39,12 @@ Historical reference:
 ## Current Milestone / Task
 
 Project State: `ACTIVE`  
-Current Milestone: `M001 — v1.1.0 Governance Transition & Baseline Freeze`  
-Current Milestone Status: `PASS`  
-Current Task: `M001 Completed — Ready for Phase 2 / M002`  
-Last Verified Gate: `M001 — v1.1.0 Governance Transition & Baseline Freeze PASS`  
+Current Milestone: `M002 — Modern UI Shell & Design System (Visual Hierarchy & Navigation)`  
+Current Milestone Status: `IN_PROGRESS`  
+Current Task: `M002-T01 — Design and implement modern UI shell layout in app/ui/`  
+Last Verified Gate: `M001 — v1.1.0 Governance Transition & Baseline Freeze PASS` (Historical v1.0.0: `docs/archive/ROADMAP_v1.0.0.md`)  
 Current Blocker: `None`  
-Next Action: `Commit governance changes, report transition to Dr. J, and start implementation according to approved sequencing (recommend starting from M002 UI Shell or M003 i18n/Theme).`
+Next Action: `Execute M002 autonomous implementation: build modern UI shell layout in app/ui/ with Sidebar categories, Persistent Context Bar, Right Drawer, and verify UI tests.`
 
 ---
 
@@ -128,6 +128,7 @@ Next Action: `Commit governance changes, report transition to Dr. J, and start i
 
 ## Immediate Next Action
 
-1. Commit all governance updates to Git (`governance: transition repository to v1.1.0 active baseline`).
-2. Provide formal transition summary report to Dr. J.
-3. Await user confirmation before beginning implementation on M002/M003.
+1. Execute M002 autonomous implementation: modernize `app/ui/` shell (Sidebar, Context Bar, Right Drawer, Overview, Design Tokens).
+2. Run pytest suite and UI integrity checks.
+3. Advance to M003 (Bilingual i18n & Theme Engine).
+4. Do not push to GitHub until all local milestones and verifications are completed.

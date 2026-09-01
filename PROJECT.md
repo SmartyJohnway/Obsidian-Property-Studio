@@ -481,7 +481,7 @@ The project (v1.1.0) is done when:
 - all 95 retained v1.0.0 regression tests pass；
 - all 18 new v1.1.0 regression tests (`V11-001` ~ `V11-018`) pass；
 - large-Vault (≥5,000 notes) performance benchmark is measured and recorded；
-- Windows 10/11 native launcher and UI acceptance pass；
+- Windows 10 (Build 19045+) native launcher and UI acceptance freshly verified; Windows 11 (64-bit AMD64) is a supported target with native verification allowed to remain NOT YET VERIFIED as an accepted non-blocking limitation if no test machine is available (Windows 10 evidence must never be represented as Windows 11 evidence)；
 - documentation (README, User Guide) reflects v1.1.0 capabilities；
 - all four root governance files are mutually consistent；
 - final ROADMAP v1.1.0 release gate is `PASS` with non-contradictory evidence.

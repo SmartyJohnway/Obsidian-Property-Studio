@@ -12,12 +12,12 @@
 ## Current State
 
 Project State: `ACTIVE`  
-Current Milestone: `M001 — v1.1.0 Governance & Baseline Freeze`  
-Current Milestone Status: `PASS`  
-Current Task: `M001-T05`  
-Last Verified Gate: `M001 — v1.1.0 Governance & Baseline Freeze PASS` (Historical v1.0.0 Release: `docs/archive/ROADMAP_v1.0.0.md`)  
+Current Milestone: `M002 — Modern UI Shell & Design System (Visual Hierarchy & Navigation)`  
+Current Milestone Status: `IN_PROGRESS`  
+Current Task: `M002-T01`  
+Last Verified Gate: `M001 — v1.1.0 Governance Transition & Baseline Freeze PASS` (Historical v1.0.0 Release: `docs/archive/ROADMAP_v1.0.0.md`)  
 Current Blocker: `None`  
-Next Action: `Report governance transition completion to Dr. J, record governance commit SHA, and prepare to start M002 (UI Shell Refactor) or M003 (i18n & Theme).`  
+Next Action: `Design and implement modern UI shell layout in app/ui/ with Sidebar categories, Persistent Context Bar, and Right Drawer.`  
 Last Updated: `2026-09-01`
 
 ---
@@ -427,12 +427,13 @@ Validate v1.1.0 native execution on Windows 10 (Build 19045+) / Windows 11, exec
 - [ ] `M012-T09` Update HANDOFF.md last.
 
 ### Acceptance Criteria
-- [ ] `M012-AC01` Windows native launcher and UI acceptance PASS.
-- [ ] `M012-AC02` Traditional Chinese and English UI verified end-to-end.
-- [ ] `M012-AC03` Documentation matches implementation.
-- [ ] `M012-AC04` Four-file consistency gate PASS.
-- [ ] `M012-AC05` Release manifest and bundles verified.
-- [ ] `M012-AC06` Formal release verdict recorded (`PROPERTY_STUDIO_V1_1_0_RELEASE_PASS`).
+- [ ] `M012-AC01` Windows 10 (Build 19045+) native launcher and UI acceptance freshly verified.
+- [ ] `M012-AC02` Windows 11 (64-bit AMD64) recorded accurately as `NOT YET VERIFIED` (accepted non-blocking release limitation if test machine unavailable).
+- [ ] `M012-AC03` Traditional Chinese and English UI verified end-to-end.
+- [ ] `M012-AC04` Documentation matches implementation.
+- [ ] `M012-AC05` Four-file consistency gate PASS.
+- [ ] `M012-AC06` Release manifest and bundles verified.
+- [ ] `M012-AC07` Formal release verdict recorded (`PROPERTY_STUDIO_V1_1_0_RELEASE_PASS_WITH_LIMITATIONS` or `PASS`).
 
 ### Result
 `NOT YET VERIFIED`

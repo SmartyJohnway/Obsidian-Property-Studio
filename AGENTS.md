@@ -658,10 +658,11 @@ Perform:
 
 # Part B — Project-Specific Operating Rules
 
-> Project: `Obsidian Property Studio v1.0.0 Formal Integration`  
+> Project: `Obsidian Property Studio v1.1.0 Development Cycle`  
 > Formal Root: `D:\Antigravity-Workspace\Obsidian-Property-Studio\Obsidian-Property-Studio-v1.0.0`  
-> Recipient: `Agent B`  
-> Read-only Donors: `Agent C`, `Agent A`, `Agent D`
+> Recipient Baseline: `Agent B (v1.0.0 historical recipient)`  
+> Historical Donors: `Agent C`, `Agent A`, `Agent D`  
+> v1.1.0 UI/UX Donors: `index_areaagentB.html (UX donor only)`, `index_areaagentD.html (Visual donor only)`
 
 ---
 
@@ -970,9 +971,15 @@ If recipient architecture remains local Web App:
 - no cloud dependency;
 - no API key required.
 
-Windows 10 (Build 19045+) / Windows 11 native acceptance is a formal milestone.
+### Supported Targets:
+- Windows 10 (Build 19045+)
+- Windows 11 (64-bit AMD64)
 
-Launcher must be verified on the user's Windows environment before final PASS.
+### v1.1.0 Native Acceptance:
+- Windows 10 Build 19045+ native verification must be freshly executed for v1.1.0.
+- Windows 11 is a supported target; native verification may remain `NOT YET VERIFIED` if no Windows 11 test host is available (accepted non-blocking release limitation).
+- Windows 10 evidence must never be represented as Windows 11 evidence.
+- Launcher must be verified on the user's Windows environment before final PASS.
 
 ---
 
@@ -1130,21 +1137,19 @@ These are integration regressions, not optional donor tests.
 
 ## 39. Formal Release Rules
 
-Before `PROPERTY_STUDIO_V1_RELEASE_PASS`:
+Before `PROPERTY_STUDIO_V1_1_0_RELEASE_PASS_WITH_LIMITATIONS` (or `PASS`):
 
 ```text
-[ ] M009 PASS.
-[ ] M010 PASS.
+[ ] M011 PASS (113+ tests pass, 5,000-note benchmark recorded, read-only verified).
+[ ] M012 PASS (Windows 10 Build 19045+ native launcher & UI acceptance verified).
 [ ] Full tests executed in formal repo.
-[ ] INT-R2-001…010 PASS.
-[ ] Vault read-only PASS.
+[ ] V11-001…018 PASS.
+[ ] Vault byte-for-byte read-only PASS.
 [ ] Output read-back PASS.
 [ ] No contradictory evidence.
-[ ] Windows native launch PASS.
+[ ] Windows 10 native launch PASS.
+[ ] Windows 11 status accurately declared (NOT YET VERIFIED as accepted limitation).
 [ ] Formal Git status verified.
-[ ] Donor snapshots unchanged.
-[ ] Candidate governance not imported as authority.
-[ ] No candidate .git in formal repo.
 [ ] Four-file consistency gate PASS.
 [ ] HANDOFF updated last.
 ```
