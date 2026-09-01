@@ -1,4 +1,4 @@
-"""Property Refactor Planner (M006) — planning only, never applies (DEC-006).
+"""Property Refactor Planner (M010) — scope-aware planning only, never applies (DEC-006, REQ-034, REQ-035).
 
 Every plan is a read-only analysis of the canonical scan. There is deliberately
 no function in this package that writes to a vault; ``apply_supported`` is
@@ -14,8 +14,9 @@ from .inventory import Inventory, build_inventory, normalize_value
 from .model import StorageType, VaultScan
 from .scanner import note_name_index
 from .fill import WIKILINK_RE
+from .scope import ScopeMode, ScopeSpec, filter_scan_by_scope
 
-PLAN_FORMAT_VERSION = "1.0"
+PLAN_FORMAT_VERSION = "1.1.0"
 
 PLANNING_ONLY_NOTICE = (
     "Planning only. Obsidian Property Studio v1 never modifies your vault. "
@@ -32,6 +33,12 @@ def _base_plan(operation: str, **fields: Any) -> dict[str, Any]:
     }
     plan.update(fields)
     return plan
+
+
+def _resolve_scoped_scan(scan: VaultScan, scope: ScopeSpec | None) -> tuple[VaultScan, bool]:
+    if scope is not None and scope.mode != ScopeMode.ENTIRE_VAULT:
+        return filter_scan_by_scope(scan, scope), True
+    return scan, False
 
 
 def _excluded_ambiguous(scan: VaultScan, keys: tuple[str, ...]) -> list[dict[str, str]]:
@@ -66,14 +73,19 @@ def _parse_failures(scan: VaultScan) -> list[dict[str, str]]:
 # --------------------------------------------------------------------------
 # Rename
 # --------------------------------------------------------------------------
-def plan_rename(scan: VaultScan, source: str, target: str) -> dict[str, Any]:
-    inv = build_inventory(scan)
+def plan_rename(
+    scan: VaultScan, source: str, target: str, scope: ScopeSpec | None = None
+) -> dict[str, Any]:
+    active_scan, is_scoped = _resolve_scoped_scan(scan, scope)
+    inv = build_inventory(active_scan)
+    all_inv = build_inventory(scan) if is_scoped else inv
+
     affected: list[dict[str, Any]] = []
     conflicts: list[dict[str, Any]] = []
-    excluded = _excluded_ambiguous(scan, (source, target))
+    excluded = _excluded_ambiguous(active_scan, (source, target))
     excluded_notes = {e["note"] for e in excluded}
 
-    for note in scan.notes:
+    for note in active_scan.notes:
         if source not in note.properties:
             continue
         if note.path in excluded_notes:
@@ -105,6 +117,9 @@ def plan_rename(scan: VaultScan, source: str, target: str) -> dict[str, Any]:
 
     source_entry = inv.get(source)
     target_entry = inv.get(target)
+    all_source_entry = all_inv.get(source)
+    all_source_count = all_source_entry.usage_count if all_source_entry else 0
+
     type_warning = None
     if source_entry and target_entry and (
         source_entry.dominant_type != target_entry.dominant_type
@@ -115,22 +130,27 @@ def plan_rename(scan: VaultScan, source: str, target: str) -> dict[str, Any]:
             "a type conflict."
         )
 
+    summary: dict[str, Any] = {
+        "source_usage_count": source_entry.usage_count if source_entry else 0,
+        "target_existing_usage_count": target_entry.usage_count if target_entry else 0,
+        "notes_to_change": len(affected),
+        "in_scope_notes_to_change": len(affected),
+        "out_of_scope_notes_to_change": max(0, all_source_count - (source_entry.usage_count if source_entry else 0)),
+        "conflicts": len(conflicts),
+        "excluded_ambiguous": len(excluded),
+        "notes_with_parse_failure": len(_parse_failures(active_scan)),
+    }
+
     return _base_plan(
         "rename_property",
         source=source,
         target=target,
-        summary={
-            "source_usage_count": source_entry.usage_count if source_entry else 0,
-            "target_existing_usage_count": target_entry.usage_count if target_entry else 0,
-            "notes_to_change": len(affected),
-            "conflicts": len(conflicts),
-            "excluded_ambiguous": len(excluded),
-            "notes_with_parse_failure": len(_parse_failures(scan)),
-        },
+        scope=scope.to_dict() if scope else {"mode": "entire_vault"},
+        summary=summary,
         affected_notes=sorted(affected, key=lambda a: a["note"]),
         conflicts=sorted(conflicts, key=lambda c: c["note"]),
         excluded=excluded,
-        unreadable_notes=_parse_failures(scan),
+        unreadable_notes=_parse_failures(active_scan),
         warnings=[w for w in [type_warning] if w],
     )
 
@@ -138,16 +158,19 @@ def plan_rename(scan: VaultScan, source: str, target: str) -> dict[str, Any]:
 # --------------------------------------------------------------------------
 # Merge
 # --------------------------------------------------------------------------
-def plan_merge(scan: VaultScan, sources: list[str], target: str) -> dict[str, Any]:
+def plan_merge(
+    scan: VaultScan, sources: list[str], target: str, scope: ScopeSpec | None = None
+) -> dict[str, Any]:
+    active_scan, is_scoped = _resolve_scoped_scan(scan, scope)
     all_keys = tuple(dict.fromkeys([*sources, target]))
-    excluded = _excluded_ambiguous(scan, all_keys)
+    excluded = _excluded_ambiguous(active_scan, all_keys)
     excluded_notes = {e["note"] for e in excluded}
 
     affected: list[dict[str, Any]] = []
     conflicts: list[dict[str, Any]] = []
     manual_review: list[dict[str, Any]] = []
 
-    for note in scan.notes:
+    for note in active_scan.notes:
         present = [k for k in all_keys if k in note.properties]
         if not present or (present == [target]):
             continue
@@ -201,11 +224,12 @@ def plan_merge(scan: VaultScan, sources: list[str], target: str) -> dict[str, An
             }
         )
 
-    inv = build_inventory(scan)
+    inv = build_inventory(active_scan)
     return _base_plan(
         "merge_properties",
         sources=list(sources),
         target=target,
+        scope=scope.to_dict() if scope else {"mode": "entire_vault"},
         summary={
             "notes_to_change": len(affected),
             "conflicts": len(conflicts),
@@ -220,7 +244,7 @@ def plan_merge(scan: VaultScan, sources: list[str], target: str) -> dict[str, An
         conflicts=sorted(conflicts, key=lambda c: c["note"]),
         manual_review=sorted(manual_review, key=lambda m: m["note"]),
         excluded=excluded,
-        unreadable_notes=_parse_failures(scan),
+        unreadable_notes=_parse_failures(active_scan),
         warnings=[],
     )
 
@@ -229,9 +253,13 @@ def plan_merge(scan: VaultScan, sources: list[str], target: str) -> dict[str, An
 # Normalize values
 # --------------------------------------------------------------------------
 def plan_normalize(
-    scan: VaultScan, key: str, canonical_overrides: dict[str, str] | None = None
+    scan: VaultScan,
+    key: str,
+    canonical_overrides: dict[str, str] | None = None,
+    scope: ScopeSpec | None = None,
 ) -> dict[str, Any]:
-    inv: Inventory = build_inventory(scan)
+    active_scan, is_scoped = _resolve_scoped_scan(scan, scope)
+    inv: Inventory = build_inventory(active_scan)
     entry = inv.get(key)
     overrides = canonical_overrides or {}
     groups: dict[str, list[Any]] = {}
@@ -274,10 +302,11 @@ def plan_normalize(
             }
         )
 
-    excluded = _excluded_ambiguous(scan, (key,))
+    excluded = _excluded_ambiguous(active_scan, (key,))
     return _base_plan(
         "normalize_values",
         property=key,
+        scope=scope.to_dict() if scope else {"mode": "entire_vault"},
         summary={
             "usage_count": entry.usage_count if entry else 0,
             "distinct_values": entry.distinct_value_count if entry else 0,
@@ -289,11 +318,8 @@ def plan_normalize(
         changes=changes,
         untouched_values=untouched,
         excluded=excluded,
-        unreadable_notes=_parse_failures(scan),
-        warnings=[
-            "Only case/whitespace variants are grouped. Values that merely look "
-            "related are never assumed to be equivalent."
-        ],
+        unreadable_notes=_parse_failures(active_scan),
+        warnings=[],
     )
 
 
@@ -301,13 +327,12 @@ def plan_normalize(
 # Type conversion feasibility
 # --------------------------------------------------------------------------
 def _convertible_to(
-    value_display: str, scalars: tuple[str, ...], storage: StorageType,
-    target: str, name_index: dict[str, list[str]]
+    value_display: str,
+    scalars: tuple[str, ...],
+    storage: StorageType,
+    target: str,
+    name_index: dict[str, list[str]],
 ) -> tuple[str, str, str]:
-    """Return ``(outcome, proposed_value, detail)``.
-
-    outcome ∈ {convertible, ambiguous, unresolved, already}
-    """
     text = value_display.strip()
     if target == storage.value:
         return "already", text, "Already stored as the target type."
@@ -381,7 +406,10 @@ def _convertible_to(
     return "unresolved", "", f"Unsupported target type '{target}'."
 
 
-def plan_type_conversion(scan: VaultScan, key: str, target_type: str) -> dict[str, Any]:
+def plan_type_conversion(
+    scan: VaultScan, key: str, target_type: str, scope: ScopeSpec | None = None
+) -> dict[str, Any]:
+    active_scan, _ = _resolve_scoped_scan(scan, scope)
     name_index = note_name_index(scan)
     buckets: dict[str, list[dict[str, Any]]] = {
         "convertible": [],
@@ -389,10 +417,10 @@ def plan_type_conversion(scan: VaultScan, key: str, target_type: str) -> dict[st
         "unresolved": [],
         "already": [],
     }
-    excluded = _excluded_ambiguous(scan, (key,))
+    excluded = _excluded_ambiguous(active_scan, (key,))
     excluded_notes = {e["note"] for e in excluded}
 
-    for note in scan.notes:
+    for note in active_scan.notes:
         value = note.properties.get(key)
         if value is None or note.path in excluded_notes:
             continue
@@ -422,6 +450,7 @@ def plan_type_conversion(scan: VaultScan, key: str, target_type: str) -> dict[st
         "convert_property_type",
         property=key,
         target_type=target_type,
+        scope=scope.to_dict() if scope else {"mode": "entire_vault"},
         summary={
             "values_examined": total,
             "convertible": len(buckets["convertible"]),
@@ -437,7 +466,7 @@ def plan_type_conversion(scan: VaultScan, key: str, target_type: str) -> dict[st
         unresolved=buckets["unresolved"],
         already_target_type=buckets["already"],
         excluded=excluded,
-        unreadable_notes=_parse_failures(scan),
+        unreadable_notes=_parse_failures(active_scan),
         warnings=[
             "Ambiguous and unresolved values are never converted automatically or "
             "guessed."
@@ -453,13 +482,15 @@ def plan_required_impact(
     schema: Any,
     scope_property: str | None = None,
     scope_value: str | None = None,
+    scope: ScopeSpec | None = None,
 ) -> dict[str, Any]:
     """Impact of making schema fields required, scoped to matching notes."""
+    active_scan, _ = _resolve_scoped_scan(scan, scope)
     schema_keys = [p.name for p in schema.properties]
     required_keys = [p.name for p in schema.properties if p.required]
 
     in_scope: list[Any] = []
-    for note in scan.notes:
+    for note in active_scan.notes:
         if note.parse_failed:
             continue
         if scope_property:
@@ -493,16 +524,16 @@ def plan_required_impact(
     return _base_plan(
         "required_optional_impact",
         schema_name=getattr(schema, "name", ""),
-        scope={"property": scope_property, "value": scope_value},
+        scope={"property": scope_property, "value": scope_value, "spec": scope.to_dict() if scope else None},
         summary={
             "notes_in_scope": len(in_scope),
             "required_properties": required_keys,
             "notes_missing_required": len(missing),
             "notes_compliant": len(in_scope) - len(missing),
-            "notes_with_parse_failure": len(_parse_failures(scan)),
+            "notes_with_parse_failure": len(_parse_failures(active_scan)),
         },
         missing=sorted(missing, key=lambda m: m["note"]),
-        unreadable_notes=_parse_failures(scan),
+        unreadable_notes=_parse_failures(active_scan),
         warnings=[
             "Notes whose frontmatter could not be parsed are listed separately and "
             "are not counted as compliant."

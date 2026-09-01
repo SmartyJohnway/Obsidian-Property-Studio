@@ -245,20 +245,25 @@ def api_note_candidates(body: dict[str, Any]) -> dict[str, Any]:
 def api_refactor_plan(body: dict[str, Any]) -> dict[str, Any]:
     scan = STORE.require_scan()
     operation = body.get("operation")
+    scope_data = body.get("scope")
+    active_scope = ScopeSpec.from_dict(scope_data) if scope_data else STORE.scope
+
     if operation == "rename":
-        plan = refactor.plan_rename(scan, body["source"], body["target"])
+        plan = refactor.plan_rename(scan, body["source"], body["target"], scope=active_scope)
     elif operation == "merge":
-        plan = refactor.plan_merge(scan, list(body.get("sources", [])), body["target"])
+        plan = refactor.plan_merge(scan, list(body.get("sources", [])), body["target"], scope=active_scope)
     elif operation == "normalize":
+        prop = body.get("property") or body.get("key")
         plan = refactor.plan_normalize(
-            scan, body["property"], body.get("canonical_overrides") or None
+            scan, prop, body.get("canonical_overrides") or None, scope=active_scope
         )
     elif operation == "convert_type":
-        plan = refactor.plan_type_conversion(scan, body["property"], body["target_type"])
+        prop = body.get("property") or body.get("key")
+        plan = refactor.plan_type_conversion(scan, prop, body["target_type"], scope=active_scope)
     elif operation == "required_impact":
         schema = Schema.from_dict(body.get("schema", {}))
         plan = refactor.plan_required_impact(
-            scan, schema, body.get("scope_property") or None, body.get("scope_value") or None
+            scan, schema, body.get("scope_property") or None, body.get("scope_value") or None, scope=active_scope
         )
     else:
         raise ApiError(f"Unknown refactor operation '{operation}'.", 400)

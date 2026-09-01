@@ -39,12 +39,12 @@ Historical reference:
 ## Current Milestone / Task
 
 Project State: `ACTIVE`  
-Current Milestone: `M010 — Scope-Aware Property Refactor Planner`  
+Current Milestone: `M011 — Full Regression Suite, Large-Vault Benchmark & Read-Only Verification`  
 Current Milestone Status: `IN_PROGRESS`  
-Current Task: `M010-T01 — Update Refactor Planner in app/core/refactor.py for Scope boundaries`  
-Last Verified Gate: `M009 — Saved Relationship Checks Management PASS` (Baseline: `M001 PASS`)  
+Current Task: `M011-T01 — Execute full regression test suite (v1.0.0 + v1.1.0 V11-001..018)`  
+Last Verified Gate: `M010 — Scope-Aware Property Refactor Planner PASS` (Baseline: `M001 PASS`)  
 Current Blocker: `None`  
-Next Action: `Update Refactor Planner in app/core/refactor.py to accept Scope boundaries, limit migration plans strictly to Scope notes without silent expansion, and author regression test for V11-017.`
+Next Action: `Execute full automated test suite, author V11-018 comprehensive byte-for-byte read-only verification across all v1.1.0 workflows, run 5,000-note benchmark, and generate formal M011 evidence artifact.`
 
 ---
 
@@ -100,15 +100,15 @@ Next Action: `Update Refactor Planner in app/core/refactor.py to accept Scope bo
 - [x] `M007`: Scope-Aware Relationship Analysis (Property Links with Multi-Folder Source/Target & OUTSIDE SELECTED TARGET) implemented and verified (`V11-009`..`011`, `V11-014` PASS, 112/112 tests PASS).
 - [x] `M008`: Body Wikilink Relationship Analysis (Strict Read-Only, zero byte change, model/API separation) implemented and verified (`V11-012`..`013` PASS, 115/115 tests PASS).
 - [x] `M009`: Saved Relationship Checks Management (Advisory, zero default rules, external storage persistence outside Vault) implemented and verified (`V11-014`..`015` PASS, 117/117 tests PASS).
-- [x] Full test suite executed: **117 passed in 12.42s** (Python 3.13.7).
+- [x] `M010`: Scope-Aware Property Refactor Planner (Scope-bounded migration plans, no silent expansion, out-of-scope disclosure) implemented and verified (`V11-017` PASS, 118/118 tests PASS).
+- [x] Full test suite executed: **118 passed in 12.11s** (Python 3.13.7).
 - [x] Four-file cross-consistency check passed.
 
 ---
 
 ## Verification Not Yet Performed (v1.1.0 New Scope)
 
-- `M010` Scope-Aware Refactor Planner: `IN_PROGRESS` (`V11-017`)
-- `M011` Full Regression & 5,000-note Benchmark: `PLANNED` (`V11-018`)
+- `M011` Full Regression & 5,000-note Benchmark: `IN_PROGRESS` (`V11-018`)
 - `M012` Windows Native Acceptance & Release Closure: `PLANNED`
 
 ---

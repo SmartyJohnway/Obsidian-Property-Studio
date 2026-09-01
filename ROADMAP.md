@@ -9,15 +9,15 @@
 
 ---
 
-#### Current State
+##### Current State
 
 Project State: `ACTIVE`  
-Current Milestone: `M010 — Scope-Aware Property Refactor Planner`  
+Current Milestone: `M011 — Full Regression Suite, Large-Vault Benchmark & Read-Only Verification`  
 Current Milestone Status: `IN_PROGRESS`  
-Current Task: `M010-T01`  
-Last Verified Gate: `M009 — Saved Relationship Checks Management PASS` (Baseline: `M001 PASS`)  
+Current Task: `M011-T01`  
+Last Verified Gate: `M010 — Scope-Aware Property Refactor Planner PASS` (Baseline: `M001 PASS`)  
 Current Blocker: `None`  
-Next Action: `Update Refactor Planner in app/core/refactor.py to accept Scope boundaries, limit migration plans to Scope notes without silent expansion, and implement V11-017 regression test.`  
+Next Action: `Execute full automated test suite, author V11-018 comprehensive byte-for-byte read-only verification across all v1.1.0 workflows, run 5,000-note benchmark, and generate formal M011 evidence artifact.`  
 Last Updated: `2026-09-01`
 
 ---
@@ -388,27 +388,31 @@ Implement user-initiated Saved Relationship Checks allowing users to name, annot
 
 # M010 — Scope-Aware Property Refactor Planner
 
-Status: `PLANNED`
+Status: `PASS`
 
 ### Objective
 Update the Property Refactor Planner to operate strictly within the selected Scope, disclosing in-scope vs out-of-scope counts and preventing silent scope expansion.
 
 ### Tasks
-- [ ] `M010-T01` Update Refactor Planner in `app/core/refactor.py` to accept Scope boundaries.
-- [ ] `M010-T02` Compute affected note count in Scope alongside informative out-of-scope usage count.
-- [ ] `M010-T03` Ensure generated migration plan files list only Scope notes.
-- [ ] `M010-T04` Update Refactor UI to display active Scope and prevent silent whole-vault expansion.
-- [ ] `M010-T05` Implement `V11-017` (Scope-aware Refactor does not expand scope).
-- [ ] `M010-T06` Verify duplicate-key and malformed note manual-review propagation remains fail-closed.
+- [x] `M010-T01` Update Refactor Planner in `app/core/refactor.py` to accept Scope boundaries.
+- [x] `M010-T02` Compute affected note count in Scope alongside informative out-of-scope usage count.
+- [x] `M010-T03` Ensure generated migration plan files list only Scope notes.
+- [x] `M010-T04` Update Refactor UI to display active Scope and prevent silent whole-vault expansion.
+- [x] `M010-T05` Implement `V11-017` (Scope-aware Refactor does not expand scope).
+- [x] `M010-T06` Verify duplicate-key and malformed note manual-review propagation remains fail-closed.
 
 ### Acceptance Criteria
-- [ ] `M010-AC01` `V11-017` PASS.
-- [ ] `M010-AC02` Refactor plans list strictly in-Scope notes.
-- [ ] `M010-AC03` Out-of-scope note counts are clearly indicated as not included in the plan.
-- [ ] `M010-AC04` All v1.0.0 refactor conflict and manual-review contracts are preserved.
+- [x] `M010-AC01` `V11-017` PASS.
+- [x] `M010-AC02` Refactor plans list strictly in-Scope notes.
+- [x] `M010-AC03` Out-of-scope note counts are clearly indicated as not included in the plan.
+- [x] `M010-AC04` All v1.0.0 refactor conflict and manual-review contracts are preserved.
+
+### Verification / Evidence
+- `tests/test_v11_refactor.py` (1/1 test passed in 0.08s)
+- Full automated test suite (118/118 passed in 12.11s)
 
 ### Result
-`NOT YET VERIFIED`
+`PASS`
 
 ---
 
