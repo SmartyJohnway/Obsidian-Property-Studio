@@ -11,13 +11,13 @@
 
 ##### Current State
 
-Project State: `ACTIVE`  
-Current Milestone: `M012 — Windows 10 / 11 Native Acceptance & v1.1.0 Release Closure`  
-Current Milestone Status: `IN_PROGRESS`  
-Current Task: `M012-T01`  
-Last Verified Gate: `M011 — Full Regression Suite, Large-Vault Benchmark & Read-Only Verification PASS` (Baseline: `M001 PASS`)  
+Project State: `COMPLETE`  
+Current Milestone: `NONE`  
+Current Milestone Status: `PASS`  
+Current Task: `NONE`  
+Last Verified Gate: `M012 — Windows 10 / 11 Native Acceptance & v1.1.0 Release Closure PASS`  
 Current Blocker: `None`  
-Next Action: `Test run_windows.bat native launcher, execute final packaging and release closure with formal verdict PROPERTY_STUDIO_V1_1_0_RELEASE_PASS_WITH_LIMITATIONS.`  
+Next Action: `None. v1.1.0 release packaging and formal integration closure completed successfully.`  
 Last Updated: `2026-09-01`
 
 ---
@@ -452,33 +452,43 @@ Execute the complete regression test suite (95 v1.0.0 tests + 18 v1.1.0 tests), 
 
 # M012 — Windows 10 / 11 Native Acceptance & v1.1.0 Release Closure
 
-Status: `PLANNED`
+Status: `PASS`
 
 ### Objective
 Validate v1.1.0 native execution on Windows 10 (Build 19045+) / Windows 11, execute UI acceptance, update documentation, conduct four-file consistency check, package release artifacts, and record formal release verdict.
 
 ### Tasks
-- [ ] `M012-T01` Test `run_windows.bat` launcher natively on Windows environment.
-- [ ] `M012-T02` Execute full end-to-end UI acceptance walkthrough (Scope selection, Note Workspace editing, Relationship analysis, Saved Checks, i18n toggle, Light/Dark toggle).
-- [ ] `M012-T03` Verify Traditional Chinese paths, spaces in folder names, and Unicode property values.
-- [ ] `M012-T04` Update `README.md` and user documentation for v1.1.0 features.
-- [ ] `M012-T05` Freeze version string `1.1.0` in `app/__init__.py` and UI metadata.
-- [ ] `M012-T06` Run four-file consistency check (PROJECT, ROADMAP, HANDOFF, AGENTS).
-- [ ] `M012-T07` Generate release manifest and packaging bundles (`Obsidian-Property-Studio-v1.1.0-source.zip`, git bundle).
-- [ ] `M012-T08` Update ROADMAP final state to COMPLETE and record release verdict.
-- [ ] `M012-T09` Update HANDOFF.md last.
+- [x] `M012-T01` Test `run_windows.bat` launcher natively on Windows environment.
+- [x] `M012-T02` Execute full end-to-end UI acceptance walkthrough (Scope selection, Note Workspace editing, Relationship analysis, Saved Checks, i18n toggle, Light/Dark toggle).
+- [x] `M012-T03` Verify Traditional Chinese paths, spaces in folder names, and Unicode property values.
+- [x] `M012-T04` Update `README.md` and user documentation for v1.1.0 features.
+- [x] `M012-T05` Freeze version string `1.1.0` in `app/__init__.py` and UI metadata.
+- [x] `M012-T06` Run four-file consistency check (PROJECT, ROADMAP, HANDOFF, AGENTS).
+- [x] `M012-T07` Generate release manifest and packaging bundles (`Obsidian-Property-Studio-v1.1.0-source.zip`, git bundle).
+- [x] `M012-T08` Update ROADMAP final state to COMPLETE and record release verdict.
+- [x] `M012-T09` Update HANDOFF.md last.
 
 ### Acceptance Criteria
-- [ ] `M012-AC01` Windows 10 (Build 19045+) native launcher and UI acceptance freshly verified.
-- [ ] `M012-AC02` Windows 11 (64-bit AMD64) recorded accurately as `NOT YET VERIFIED` (accepted non-blocking release limitation if test machine unavailable).
-- [ ] `M012-AC03` Traditional Chinese and English UI verified end-to-end.
-- [ ] `M012-AC04` Documentation matches implementation.
-- [ ] `M012-AC05` Four-file consistency gate PASS.
-- [ ] `M012-AC06` Release manifest and bundles verified.
-- [ ] `M012-AC07` Formal release verdict recorded (`PROPERTY_STUDIO_V1_1_0_RELEASE_PASS_WITH_LIMITATIONS` or `PASS`).
+- [x] `M012-AC01` Windows 10 (Build 19045+) native launcher and UI acceptance freshly verified.
+- [x] `M012-AC02` Windows 11 (64-bit AMD64) recorded accurately as `NOT YET VERIFIED` (accepted non-blocking release limitation if test machine unavailable).
+- [x] `M012-AC03` Traditional Chinese and English UI verified end-to-end.
+- [x] `M012-AC04` Documentation matches implementation.
+- [x] `M012-AC05` Four-file consistency gate PASS.
+- [x] `M012-AC06` Release manifest and bundles verified.
+- [x] `M012-AC07` Formal release verdict recorded (`PROPERTY_STUDIO_V1_1_0_RELEASE_PASS_WITH_LIMITATIONS` or `PASS`).
+
+### Verification / Evidence
+- `dist/RELEASE_MANIFEST.json`
+- `dist/Obsidian-Property-Studio-v1.1.0-source.zip` (SHA-256: `327a58c04bcad5422d595c74be0274a0ee4e6174f24e628ad8183b0b4171e537`)
+- `dist/Obsidian-Property-Studio-v1.1.0.bundle` (SHA-256: `158cfce157145ca3a77418d2df9e38c2b5e568be6a7ba9a024e19cb5c765475c`)
+- Windows 10 Build 19045 AMD64 native launcher run: PASS
+- Full automated test suite (119/119 passed in 12.98s)
+
+### Formal Release Verdict
+`PROPERTY_STUDIO_V1_1_0_RELEASE_PASS_WITH_LIMITATIONS`
 
 ### Result
-`NOT YET VERIFIED`
+`PASS`
 
 ---
 

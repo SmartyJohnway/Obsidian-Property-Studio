@@ -38,13 +38,13 @@ Historical reference:
 
 ## Current Milestone / Task
 
-Project State: `ACTIVE`  
-Current Milestone: `M012 — Windows 10 / 11 Native Acceptance & v1.1.0 Release Closure`  
-Current Milestone Status: `IN_PROGRESS`  
-Current Task: `M012-T01 — Test run_windows.bat native launcher and package release`  
-Last Verified Gate: `M011 — Full Regression Suite, Large-Vault Benchmark & Read-Only Verification PASS` (Baseline: `M001 PASS`)  
+Project State: `COMPLETE`  
+Current Milestone: `NONE`  
+Current Milestone Status: `PASS`  
+Current Task: `NONE`  
+Last Verified Gate: `M012 — Windows 10 / 11 Native Acceptance & v1.1.0 Release Closure PASS` (Baseline: `M001 PASS`)  
 Current Blocker: `None`  
-Next Action: `Test run_windows.bat native launcher, execute final packaging, conduct 4-file consistency check, and close release with formal verdict PROPERTY_STUDIO_V1_1_0_RELEASE_PASS_WITH_LIMITATIONS.`
+Next Action: `None. Obsidian Property Studio v1.1.0 release and formal integration cycle completed successfully.`
 
 ---
 
@@ -102,6 +102,7 @@ Next Action: `Test run_windows.bat native launcher, execute final packaging, con
 - [x] `M009`: Saved Relationship Checks Management (Advisory, zero default rules, external storage persistence outside Vault) implemented and verified (`V11-014`..`015` PASS, 117/117 tests PASS).
 - [x] `M010`: Scope-Aware Property Refactor Planner (Scope-bounded migration plans, no silent expansion, out-of-scope disclosure) implemented and verified (`V11-017` PASS, 118/118 tests PASS).
 - [x] `M011`: Full Regression Suite (119/119 PASS), 5,000-note Benchmark (4.865s scan, 5.019s total analysis), and Comprehensive Vault Byte-for-Byte Read-Only Gate verified (`V11-018` PASS, `evidence/integration/m011_v110_formal_verification.json`).
+- [x] `M012`: Windows 10 (Build 19045 AMD64) Native Acceptance, Release Packaging (`dist/Obsidian-Property-Studio-v1.1.0-source.zip`, `dist/Obsidian-Property-Studio-v1.1.0.bundle`, `dist/RELEASE_MANIFEST.json`), and Formal Verdict `PROPERTY_STUDIO_V1_1_0_RELEASE_PASS_WITH_LIMITATIONS` (`PASS`).
 - [x] Full test suite executed: **119 passed in 12.98s** (Python 3.13.7).
 - [x] Four-file cross-consistency check passed.
 
@@ -109,7 +110,16 @@ Next Action: `Test run_windows.bat native launcher, execute final packaging, con
 
 ## Verification Not Yet Performed (v1.1.0 New Scope)
 
-- `M012` Windows Native Acceptance & Release Closure: `IN_PROGRESS`
+- None. All milestones M001~M012 are verified `PASS`.
+
+---
+
+## Final Release Artifacts & Checksums (v1.1.0)
+
+- **Source ZIP:** `dist/Obsidian-Property-Studio-v1.1.0-source.zip` (SHA-256: `327a58c04bcad5422d595c74be0274a0ee4e6174f24e628ad8183b0b4171e537`)
+- **Git Bundle:** `dist/Obsidian-Property-Studio-v1.1.0.bundle` (SHA-256: `158cfce157145ca3a77418d2df9e38c2b5e568be6a7ba9a024e19cb5c765475c`)
+- **Release Manifest:** `dist/RELEASE_MANIFEST.json`
+- **Formal Verdict:** `PROPERTY_STUDIO_V1_1_0_RELEASE_PASS_WITH_LIMITATIONS`
 
 ---
 
