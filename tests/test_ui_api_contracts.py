@@ -170,3 +170,17 @@ def test_api_export_scope_aware_contract(out_dir: str):
         data = json.load(fh)
     assert data["scope"]["mode"] == "folders"
     assert "People" in data["scope"]["folders"]
+
+
+def test_api_refactor_merge_contract():
+    # Verify merge operation contract
+    res = ROUTES["/api/refactor/plan"]({
+        "operation": "merge",
+        "sources": ["tag", "tags", "category"],
+        "target": "topics",
+    })
+    assert "affected_notes" in res
+    assert "conflicts" in res
+    assert "summary" in res
+
+

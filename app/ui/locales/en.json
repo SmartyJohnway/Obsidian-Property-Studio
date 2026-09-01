@@ -24,7 +24,10 @@
   "context.note_prefix": "Note:",
   "context.no_vault": "No vault loaded",
   "context.entire_vault": "Entire Vault",
+  "context.folders_summary": "{count} folder(s) ({notes} notes)",
+  "context.single_note_summary": "Note: {path}",
   "context.no_note": "No note selected",
+
   "overview.title": "Workspace Overview",
   "overview.lead": "Understand, design, edit, and govern your Obsidian Properties. Runs entirely locally and remains strictly read-only towards your vault files.",
   "overview.not_scanned_title": "No Vault Loaded",
@@ -180,7 +183,10 @@
   "refactor.op_convert": "Convert Type",
   "refactor.source_label": "Source Property Name",
   "refactor.target_label": "Target Property Name / Type",
+  "refactor.sources_merge_label": "Source Property Names (comma-separated)",
+  "refactor.target_merge_label": "Merged Target Property Name",
   "refactor.plan_btn": "Generate Refactor Plan",
+
   "refactor.output_title": "Refactor Impact Analysis Result",
   "refactor.in_scope_notes": "In-Scope Notes to Change",
   "refactor.out_of_scope_notes": "Out-of-Scope Notes (Untouched)",

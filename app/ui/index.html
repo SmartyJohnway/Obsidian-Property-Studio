@@ -1051,13 +1051,39 @@ async function init() {
   setupProposalHandlers();
 }
 
+function updateContextBarLabels() {
+  if (!S.scanned) {
+    $("currentVaultLabel").textContent = I18N.t("context.no_vault");
+    $("currentScopeLabel").textContent = I18N.t("context.no_vault");
+    return;
+  }
+  const scope = S.scope || { mode: "entire_vault" };
+  if (scope.mode === "entire_vault") {
+    $("currentScopeLabel").textContent = I18N.t("context.entire_vault");
+  } else if (scope.mode === "folders") {
+    $("currentScopeLabel").textContent = I18N.t("context.folders_summary", {
+      count: (scope.folders || []).length,
+      notes: S.notesInScope || 0
+    });
+  } else if (scope.mode === "single_note") {
+    $("currentScopeLabel").textContent = I18N.t("context.single_note_summary", {
+      path: scope.note_path || ""
+    });
+  }
+  if (S.currentNote) {
+    $("currentNoteLabel").textContent = S.currentNote.name || S.currentNote.note_path;
+  }
+}
+
 function renderAllDynamicViews() {
+  updateContextBarLabels();
   if (S.scanned) {
     loadDiscovery();
     loadHealth();
     loadSavedChecks();
   }
 }
+
 
 /* ============================================================
    Vault Module
@@ -1193,10 +1219,8 @@ function setupScopeHandlers() {
     try {
       const res = await api("/api/scope/apply", { scope: scopeSpec });
       S.scope = res.scope;
-      const label = mode === "entire_vault" ? I18N.t("context.entire_vault") :
-                    mode === "folders" ? `${scopeSpec.folders.length} folder(s) (${res.notes_in_scope} notes)` :
-                    `Note: ${scopeSpec.note_path}`;
-      $("currentScopeLabel").textContent = label;
+      S.notesInScope = res.notes_in_scope;
+      updateContextBarLabels();
       toast(I18N.t("toast.scope_applied"));
       await loadDiscovery();
       await loadHealth();
@@ -1213,7 +1237,8 @@ function setupScopeHandlers() {
       $("scopeSingleNoteSelector").style.display = "none";
       document.querySelectorAll(".scope-folder-cb").forEach(cb => cb.checked = false);
       S.scope = res.scope;
-      $("currentScopeLabel").textContent = I18N.t("context.entire_vault");
+      S.notesInScope = res.notes_in_scope;
+      updateContextBarLabels();
       toast(I18N.t("toast.scope_applied"));
       await loadDiscovery();
       await loadHealth();
@@ -1221,6 +1246,7 @@ function setupScopeHandlers() {
       toast(e.message, true);
     }
   };
+
 }
 
 /* ============================================================
@@ -1539,11 +1565,11 @@ function setupRelationsHandlers() {
   };
 
   $("relAnalyzeBtn").onclick = async () => {
-    const srcScope = getSelectedRelScope("relSrcEntireCb", ".rel-src-folder-cb");
-    const tgtScope = getSelectedRelScope("relTgtEntireCb", ".rel-tgt-folder-cb");
-    const propFilter = $("relPropFilterInput").value.trim() || null;
-
     try {
+      const srcScope = getSelectedRelScope("relSrcEntireCb", ".rel-src-folder-cb");
+      const tgtScope = getSelectedRelScope("relTgtEntireCb", ".rel-tgt-folder-cb");
+      const propFilter = $("relPropFilterInput").value.trim() || null;
+
       const endpoint = S.relSourceType === "body_wikilink" ? "/api/relationships/body" : "/api/relationships";
       const payload = {
         source_scope: srcScope,
@@ -1589,23 +1615,23 @@ function setupRelationsHandlers() {
   };
 
   $("relSaveCheckBtn").onclick = async () => {
-    const name = prompt(I18N.t("relations.prompt_check_name"), I18N.t("relations.default_check_name"));
-    if (!name) return;
-    const notes = prompt(I18N.t("relations.prompt_notes"), "") || "";
-    const srcScope = getSelectedRelScope("relSrcEntireCb", ".rel-src-folder-cb");
-    const tgtScope = getSelectedRelScope("relTgtEntireCb", ".rel-tgt-folder-cb");
-    const propFilter = $("relPropFilterInput").value.trim() || null;
-
-    const chk = {
-      name: name,
-      notes: notes,
-      link_type: S.relSourceType,
-      property_name: propFilter,
-      source_scope: srcScope,
-      target_scope: tgtScope
-    };
-
     try {
+      const srcScope = getSelectedRelScope("relSrcEntireCb", ".rel-src-folder-cb");
+      const tgtScope = getSelectedRelScope("relTgtEntireCb", ".rel-tgt-folder-cb");
+      const name = prompt(I18N.t("relations.prompt_check_name"), I18N.t("relations.default_check_name"));
+      if (!name) return;
+      const notes = prompt(I18N.t("relations.prompt_notes"), "") || "";
+      const propFilter = $("relPropFilterInput").value.trim() || null;
+
+      const chk = {
+        name: name,
+        notes: notes,
+        link_type: S.relSourceType,
+        property_name: propFilter,
+        source_scope: srcScope,
+        target_scope: tgtScope
+      };
+
       await api("/api/relationships/saved/save", { check: chk });
       toast(I18N.t("toast.check_saved"));
       await loadSavedChecks();
@@ -1613,6 +1639,7 @@ function setupRelationsHandlers() {
       toast(e.message, true);
     }
   };
+
 }
 
 function getSelectedRelScope(entireCbId, folderCbClass) {
@@ -1745,6 +1772,32 @@ function setupHealthHandlers() {
    Refactor & Proposal Handlers
    ============================================================ */
 function setupRefactorHandlers() {
+  const updateRefactorLabels = () => {
+    const op = $("refactorOpSelect").value;
+    if (op === "rename") {
+      $("refactorParam1Wrapper").style.display = "block";
+      $("refactorParam2Wrapper").style.display = "block";
+      $("refactorParam1Label").textContent = I18N.t("refactor.source_label");
+      $("refactorParam2Label").textContent = I18N.t("refactor.target_label");
+    } else if (op === "merge") {
+      $("refactorParam1Wrapper").style.display = "block";
+      $("refactorParam2Wrapper").style.display = "block";
+      $("refactorParam1Label").textContent = I18N.t("refactor.sources_merge_label");
+      $("refactorParam2Label").textContent = I18N.t("refactor.target_merge_label");
+    } else if (op === "normalize") {
+      $("refactorParam1Wrapper").style.display = "block";
+      $("refactorParam2Wrapper").style.display = "none";
+      $("refactorParam1Label").textContent = I18N.t("refactor.source_label");
+    } else if (op === "convert_type") {
+      $("refactorParam1Wrapper").style.display = "block";
+      $("refactorParam2Wrapper").style.display = "block";
+      $("refactorParam1Label").textContent = I18N.t("refactor.source_label");
+      $("refactorParam2Label").textContent = I18N.t("refactor.target_label");
+    }
+  };
+
+  $("refactorOpSelect").onchange = updateRefactorLabels;
+
   $("runRefactorPlanBtn").onclick = async () => {
     const op = $("refactorOpSelect").value;
     const p1 = $("refactorParam1Input").value.trim();
@@ -1752,9 +1805,18 @@ function setupRefactorHandlers() {
 
     try {
       let payload = { operation: op };
-      if (op === "rename") { payload.source = p1; payload.target = p2; }
-      else if (op === "normalize") { payload.property = p1; }
-      else if (op === "convert_type") { payload.property = p1; payload.target_type = p2; }
+      if (op === "rename") {
+        payload.source = p1;
+        payload.target = p2;
+      } else if (op === "merge") {
+        payload.sources = p1.split(",").map(s => s.trim()).filter(Boolean);
+        payload.target = p2;
+      } else if (op === "normalize") {
+        payload.property = p1;
+      } else if (op === "convert_type") {
+        payload.property = p1;
+        payload.target_type = p2;
+      }
 
       const res = await api("/api/refactor/plan", payload);
       $("refactorPlanOutput").innerHTML = `
@@ -1771,6 +1833,7 @@ function setupRefactorHandlers() {
     }
   };
 }
+
 
 function setupProposalHandlers() {
   $("validateProposalBtn").onclick = async () => {

@@ -16,7 +16,7 @@
     "native_execution_verified": true
   },
   "http_server_walkthrough": {
-    "base_url": "http://127.0.0.1:1588",
+    "base_url": "http://127.0.0.1:2618",
     "static_html_served": true,
     "i18n_locales_served": true,
     "api_scan_verified": true,
@@ -37,6 +37,8 @@
     "files_deleted": 0,
     "unchanged": true
   },
-  "windows_acceptance_verdict": "PASS",
+  "windows_native_http_acceptance": "PASS",
+  "windows_native_launcher_invocation": "PASS",
+  "windows_browser_ui_acceptance": "NOT YET VERIFIED (accepted non-blocking release limitation)",
   "windows_11_status": "NOT YET VERIFIED (accepted non-blocking release limitation)"
 }

@@ -4,6 +4,7 @@ __pycache__/
 .venv/
 uploads/
 .cache/
+dist/
 *.zip
 *.bundle
 *.rar

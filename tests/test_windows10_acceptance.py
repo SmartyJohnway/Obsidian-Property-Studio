@@ -246,9 +246,12 @@ def test_m012_windows10_native_launcher_and_http_walkthrough(live_server: str, m
             "files_deleted": 0,
             "unchanged": True
         },
-        "windows_acceptance_verdict": "PASS",
+        "windows_native_http_acceptance": "PASS",
+        "windows_native_launcher_invocation": "PASS" if launcher_ok else "HOLD",
+        "windows_browser_ui_acceptance": "NOT YET VERIFIED (accepted non-blocking release limitation)",
         "windows_11_status": "NOT YET VERIFIED (accepted non-blocking release limitation)"
     }
 
     with open(evidence_file, "w", encoding="utf-8") as f:
         json.dump(evidence_data, f, indent=2, ensure_ascii=False)
+

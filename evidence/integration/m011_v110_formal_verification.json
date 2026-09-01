@@ -15,11 +15,11 @@
     }
   },
   "regression_suite": {
-    "total_tests": 139,
-    "passed": 139,
+    "total_tests": 140,
+    "passed": 140,
     "failed": 0,
     "skipped": 0,
-    "duration_seconds": 15.19,
+    "duration_seconds": 15.20,
     "contracts": {
       "V11-001": "PASS (tests/test_v11_i18n.py)",
       "V11-002": "PASS (tests/test_v11_scope.py)",
