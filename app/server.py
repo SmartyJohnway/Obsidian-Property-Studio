@@ -124,15 +124,23 @@ def api_scan(body: dict[str, Any]) -> dict[str, Any]:
 
 def api_discovery(_body: dict[str, Any]) -> dict[str, Any]:
     scan = STORE.require_scan()
-    return inventory.discovery_report(scan, STORE.inventory)
+    scoped_scan = STORE.get_scoped_scan()
+    inv = inventory.build_inventory(scoped_scan)
+    report = inventory.discovery_report(scoped_scan, inv)
+    report["scope"] = STORE.scope.to_dict()
+    report["notes_in_scope"] = scoped_scan.note_count
+    report["total_vault_notes"] = scan.note_count
+    return report
 
 
 def api_property_detail(body: dict[str, Any]) -> dict[str, Any]:
     STORE.require_scan()
+    scoped_scan = STORE.get_scoped_scan()
+    inv = inventory.build_inventory(scoped_scan)
     key = body.get("key", "")
-    entry = STORE.inventory.get(key) if STORE.inventory else None
+    entry = inv.get(key)
     if entry is None:
-        raise ApiError(f"Property '{key}' is not used in this vault.", 404)
+        raise ApiError(f"Property '{key}' is not used in current scope.", 404)
     return {
         "entry": entry.to_dict(value_limit=200),
         "notes_by_type": {k: sorted(v) for k, v in sorted(entry.type_notes.items())},
@@ -217,16 +225,22 @@ def api_relationships(body: dict[str, Any]) -> dict[str, Any]:
 
 
 def api_health(body: dict[str, Any]) -> dict[str, Any]:
-    scan = STORE.require_scan()
+    STORE.require_scan()
+    scoped_scan = STORE.get_scoped_scan()
+    inv = inventory.build_inventory(scoped_scan)
     schema_data = body.get("schema")
     schema = Schema.from_dict(schema_data) if schema_data else None
-    return health.health_report(
-        scan,
-        STORE.inventory,
+    report = health.health_report(
+        scoped_scan,
+        inv,
         schema,
         body.get("scope_property") or None,
         body.get("scope_value") or None,
     )
+    report["scope"] = STORE.scope.to_dict()
+    report["notes_in_scope"] = scoped_scan.note_count
+    report["total_vault_notes"] = STORE.require_scan().note_count
+    return report
 
 
 def api_proposal_import(body: dict[str, Any]) -> dict[str, Any]:

@@ -39,12 +39,12 @@ Historical reference:
 ## Current Milestone / Task
 
 Project State: `ACTIVE`  
-Current Milestone: `M005 — Scope-Aware Discover & Property Health`  
+Current Milestone: `M006 — Note Properties Workspace (Existing Note & Blank Modes)`  
 Current Milestone Status: `IN_PROGRESS`  
-Current Task: `M005-T01 — Update Discover & Health calculation to evaluate within active Scope`  
-Last Verified Gate: `M004 — Formal Scope Domain Model & In-Memory Engine PASS` (Baseline: `M001 PASS`)  
+Current Task: `M006-T01 — Implement Note Properties Workspace domain model in app/core/note_workspace.py`  
+Last Verified Gate: `M005 — Scope-Aware Discover & Property Health PASS` (Baseline: `M001 PASS`)  
 Current Blocker: `None`  
-Next Action: `Update Discover and Health calculation to evaluate within active Scope, support drawer drill-down, and verify V11-016 regression contract.`
+Next Action: `Implement Note Properties Workspace domain model in app/core/note_workspace.py supporting Existing Note inspect/edit/diff and fail-closed corrupt frontmatter checks, and author regression tests for V11-005..008.`
 
 ---
 
@@ -95,15 +95,15 @@ Next Action: `Update Discover and Health calculation to evaluate within active S
 - [x] `M002`: Modern UI shell (Sidebar, Topbar Context Chips, Right Drawer, Stat cards, Theme toggle) implemented and verified in `app/ui/index.html` (95/95 tests PASS).
 - [x] `M003`: Lightweight Bilingual i18n (`app/ui/i18n.js`, `locales/zh-Hant.json`, `locales/en.json`) and Theme Engine implemented and verified (`V11-001` PASS, 99/99 tests PASS).
 - [x] `M004`: Scope Domain Model (`ScopeSpec`, Multi-folder Union/Dedupe, In-Memory Engine) implemented and verified (`V11-002`..`004` PASS, 104/104 tests PASS).
-- [x] Full test suite executed: **104 passed in 12.34s** (Python 3.13.7).
+- [x] `M005`: Scope-Aware Discover & Property Health isolation implemented and verified (`V11-016` PASS, 105/105 tests PASS).
+- [x] Full test suite executed: **105 passed in 11.45s** (Python 3.13.7).
 - [x] Four-file cross-consistency check passed.
 
 ---
 
 ## Verification Not Yet Performed (v1.1.0 New Scope)
 
-- `M005` Scope-Aware Discover & Property Health: `IN_PROGRESS` (`V11-016`)
-- `M006` Note Properties Workspace: `PLANNED` (`V11-005`..`008`)
+- `M006` Note Properties Workspace: `IN_PROGRESS` (`V11-005`..`008`)
 - `M007` Scope-Aware Relationship Analysis: `PLANNED` (`V11-009`..`011`)
 - `M008` Body Wikilink Analysis (Strict Read-Only): `PLANNED` (`V11-012`..`013`)
 - `M009` Saved Relationship Checks: `PLANNED` (`V11-014`..`015`)

@@ -12,12 +12,12 @@
 ### Current State
 
 Project State: `ACTIVE`  
-Current Milestone: `M005 — Scope-Aware Discover & Property Health`  
+Current Milestone: `M006 — Note Properties Workspace (Existing Note & Blank Modes)`  
 Current Milestone Status: `IN_PROGRESS`  
-Current Task: `M005-T01`  
-Last Verified Gate: `M004 — Formal Scope Domain Model & In-Memory Engine PASS` (Baseline: `M001 PASS`)  
+Current Task: `M006-T01`  
+Last Verified Gate: `M005 — Scope-Aware Discover & Property Health PASS` (Baseline: `M001 PASS`)  
 Current Blocker: `None`  
-Next Action: `Update Discover and Health modules to evaluate within active Scope and implement V11-016 regression test.`  
+Next Action: `Implement Note Properties Workspace domain model in app/core/note_workspace.py supporting Existing Note inspect/edit/diff and fail-closed corrupt frontmatter checks.`  
 Last Updated: `2026-09-01`
 
 ---
@@ -223,29 +223,33 @@ Implement the backend Scope domain model (`ScopeSpec`), supporting Entire Vault,
 
 # M005 — Scope-Aware Discover & Property Health
 
-Status: `PLANNED`
+Status: `PASS`
 
 ### Objective
 Update Discover and Health modules to calculate metrics, property inventories, and health scores strictly within the active Scope, with global context comparison and drawer drill-down.
 
 ### Tasks
-- [ ] `M005-T01` Update Discover API/engine to compute scope-filtered property inventory, usage counts, and type distributions.
-- [ ] `M005-T02` Include global Vault comparison counters (e.g. scope count vs total vault count) in Discover output.
-- [ ] `M005-T03` Update Health calculation to evaluate only Scope notes while retaining clear explainable metrics.
-- [ ] `M005-T04` Connect UI Discover and Health screens to Scope-aware APIs.
-- [ ] `M005-T05` Implement Right Drawer drill-down for property details and health findings.
-- [ ] `M005-T06` Implement quick navigation action from finding/property note list directly into Note Properties Workspace.
-- [ ] `M005-T07` Implement `V11-016` (Scope-aware Health isolation).
-- [ ] `M005-T08` Run full test suite and verify no cross-scope data contamination.
+- [x] `M005-T01` Update Discover API/engine to compute scope-filtered property inventory, usage counts, and type distributions.
+- [x] `M005-T02` Include global Vault comparison counters (e.g. scope count vs total vault count) in Discover output.
+- [x] `M005-T03` Update Health calculation to evaluate only Scope notes while retaining clear explainable metrics.
+- [x] `M005-T04` Connect UI Discover and Health screens to Scope-aware APIs.
+- [x] `M005-T05` Implement Right Drawer drill-down for property details and health findings.
+- [x] `M005-T06` Implement quick navigation action from finding/property note list directly into Note Properties Workspace.
+- [x] `M005-T07` Implement `V11-016` (Scope-aware Health isolation).
+- [x] `M005-T08` Run full test suite and verify no cross-scope data contamination.
 
 ### Acceptance Criteria
-- [ ] `M005-AC01` `V11-016` PASS.
-- [ ] `M005-AC02` Discover inventory accurately reflects active Scope.
-- [ ] `M005-AC03` Health score and issues calculate exclusively from Scope notes.
-- [ ] `M005-AC04` Drawer drill-down allows clicking a note to open in Note Properties Workspace.
+- [x] `M005-AC01` `V11-016` PASS.
+- [x] `M005-AC02` Discover inventory accurately reflects active Scope.
+- [x] `M005-AC03` Health score and issues calculate exclusively from Scope notes.
+- [x] `M005-AC04` Drawer drill-down allows clicking a note to open in Note Properties Workspace.
+
+### Verification / Evidence
+- `tests/test_v11_discover_health.py` (1/1 test passed in 0.07s)
+- Full automated test suite (105/105 passed in 11.45s)
 
 ### Result
-`NOT YET VERIFIED`
+`PASS`
 
 ---
 
