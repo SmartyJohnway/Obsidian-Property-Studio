@@ -1,0 +1,187 @@
+{
+  "case": "OPS-AC-026 / REQ-015 output read-back",
+  "app_version": "1.1.0",
+  "vault": "D:\\Antigravity-Workspace\\Obsidian-Property-Studio\\Obsidian-Property-Studio-v1.0.0\\fixtures\\vaults\\main_vault",
+  "artifacts": [
+    {
+      "kind": "discovery",
+      "basename": "discovery",
+      "files": [
+        {
+          "path": "evidence\\e2e\\discovery.json",
+          "bytes": 27696,
+          "read_back_matches": true
+        },
+        {
+          "path": "evidence\\e2e\\discovery.md",
+          "bytes": 8243,
+          "read_back_matches": true
+        }
+      ],
+      "items_in_memory": 12,
+      "items_in_file": 12,
+      "no_silent_omission": true
+    },
+    {
+      "kind": "health",
+      "basename": "health",
+      "files": [
+        {
+          "path": "evidence\\e2e\\health.json",
+          "bytes": 20879,
+          "read_back_matches": true
+        },
+        {
+          "path": "evidence\\e2e\\health.md",
+          "bytes": 9802,
+          "read_back_matches": true
+        }
+      ],
+      "items_in_memory": 19,
+      "items_in_file": 19,
+      "no_silent_omission": true
+    },
+    {
+      "kind": "inbox",
+      "basename": "relationship-inbox",
+      "files": [
+        {
+          "path": "evidence\\e2e\\relationship-inbox.json",
+          "bytes": 7476,
+          "read_back_matches": true
+        },
+        {
+          "path": "evidence\\e2e\\relationship-inbox.md",
+          "bytes": 3599,
+          "read_back_matches": true
+        }
+      ],
+      "items_in_memory": 7,
+      "items_in_file": 7,
+      "no_silent_omission": true
+    },
+    {
+      "kind": "plan",
+      "basename": "plan-rename",
+      "files": [
+        {
+          "path": "evidence\\e2e\\plan-rename.json",
+          "bytes": 1159,
+          "read_back_matches": true
+        },
+        {
+          "path": "evidence\\e2e\\plan-rename.md",
+          "bytes": 862,
+          "read_back_matches": true
+        }
+      ],
+      "items_in_memory": 0,
+      "items_in_file": 0,
+      "no_silent_omission": true
+    },
+    {
+      "kind": "plan",
+      "basename": "plan-merge",
+      "files": [
+        {
+          "path": "evidence\\e2e\\plan-merge.json",
+          "bytes": 1516,
+          "read_back_matches": true
+        },
+        {
+          "path": "evidence\\e2e\\plan-merge.md",
+          "bytes": 1123,
+          "read_back_matches": true
+        }
+      ],
+      "items_in_memory": 0,
+      "items_in_file": 0,
+      "no_silent_omission": true
+    },
+    {
+      "kind": "plan",
+      "basename": "plan-normalize",
+      "files": [
+        {
+          "path": "evidence\\e2e\\plan-normalize.json",
+          "bytes": 2317,
+          "read_back_matches": true
+        },
+        {
+          "path": "evidence\\e2e\\plan-normalize.md",
+          "bytes": 1207,
+          "read_back_matches": true
+        }
+      ],
+      "items_in_memory": 0,
+      "items_in_file": 0,
+      "no_silent_omission": true
+    },
+    {
+      "kind": "plan",
+      "basename": "plan-convert-type",
+      "files": [
+        {
+          "path": "evidence\\e2e\\plan-convert-type.json",
+          "bytes": 2308,
+          "read_back_matches": true
+        },
+        {
+          "path": "evidence\\e2e\\plan-convert-type.md",
+          "bytes": 1753,
+          "read_back_matches": true
+        }
+      ],
+      "items_in_memory": 0,
+      "items_in_file": 0,
+      "no_silent_omission": true
+    },
+    {
+      "kind": "plan",
+      "basename": "plan-required-impact",
+      "files": [
+        {
+          "path": "evidence\\e2e\\plan-required-impact.json",
+          "bytes": 982,
+          "read_back_matches": true
+        },
+        {
+          "path": "evidence\\e2e\\plan-required-impact.md",
+          "bytes": 702,
+          "read_back_matches": true
+        }
+      ],
+      "items_in_memory": 0,
+      "items_in_file": 0,
+      "no_silent_omission": true
+    },
+    {
+      "kind": "schema",
+      "basename": "schema-equipment",
+      "files": [
+        {
+          "path": "evidence\\e2e\\schema-equipment.json",
+          "bytes": 6154,
+          "read_back_matches": true
+        }
+      ],
+      "items_in_memory": 0,
+      "items_in_file": 0,
+      "no_silent_omission": true
+    }
+  ],
+  "all_read_back_ok": true,
+  "all_complete": true,
+  "export_destination_inside_vault": false,
+  "counts": {
+    "notes": 22,
+    "unique_properties": 15,
+    "discovery_findings": 12,
+    "health_findings": 19,
+    "health_score": 49.5,
+    "inbox_items": 7,
+    "fill_roundtrip_matches": true,
+    "proposal_valid_accepted": true,
+    "proposal_invalid_rejected": true
+  }
+}

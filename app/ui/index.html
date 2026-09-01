@@ -657,6 +657,7 @@
       </section>
 
       <!-- ============================ NOTE WORKSPACE ============================ -->
+      <!-- ============================ NOTE WORKSPACE ============================ -->
       <section id="tab-workspace" class="view-section">
         <div class="page-header">
           <h2 data-i18n="workspace.title">單篇筆記屬性工作區</h2>
@@ -665,11 +666,14 @@
 
         <div class="card">
           <label class="form-label" for="wsNoteSearch" data-i18n="workspace.search_label">搜尋或選擇筆記</label>
-          <div style="display:flex; gap:10px; margin-bottom:10px">
-            <input type="text" id="wsNoteSearch" placeholder="輸入筆記名稱或相對路徑搜尋..." data-i18n-placeholder="workspace.search_placeholder" />
-            <button class="secondary" id="wsSearchBtn" data-i18n="workspace.search_btn">搜尋</button>
+          <div style="position:relative; margin-bottom:10px">
+            <div style="display:flex; gap:10px">
+              <input type="text" id="wsNoteSearch" placeholder="🔍 輸入筆記名稱或點擊瀏覽下拉選單..." data-i18n-placeholder="ws.browse_placeholder" autocomplete="off" />
+              <button class="secondary" id="wsSearchBtn" data-i18n="workspace.search_btn">搜尋</button>
+              <button class="ghost" id="wsDropdownToggleBtn" title="Browse Notes Dropdown">▼</button>
+            </div>
+            <div id="wsNoteCandidates" style="position:absolute; top:100%; left:0; right:0; max-height:260px; overflow-y:auto; display:none; border:1px solid var(--line); border-radius:var(--radius-sm); background:var(--panel2); box-shadow:var(--shadow); z-index:50; margin-top:4px"></div>
           </div>
-          <div id="wsNoteCandidates" style="max-height:160px; overflow-y:auto; display:none; border:1px solid var(--line); border-radius:var(--radius-sm); background:var(--bg-surface); margin-bottom:14px"></div>
 
           <div id="wsNoteStatusBanner"></div>
         </div>
@@ -723,47 +727,96 @@
       <section id="tab-design" class="view-section">
         <div class="page-header">
           <h2 data-i18n="design.title">屬性架構設計</h2>
-          <p class="lead" data-i18n="design.lead">使用自然語言描述您的記錄目標。工作室將建議合適的屬性組合，自動與目前範圍及全庫既有詞彙比對，避免重複造輪子。</p>
+          <p class="lead" data-i18n="design.lead">選擇您欲記錄的管理對象與需求。工作室將依確定性原則建議最佳屬性組合，並自動與目前範圍及全庫既有詞彙比對，避免重複造輪子。</p>
         </div>
 
         <div class="card">
-          <label class="form-label" for="designGoalInput" data-i18n="design.goal_label">管理目標描述</label>
-          <div style="display:flex; gap:10px; margin-bottom:12px">
-            <input type="text" id="designGoalInput" placeholder="例如：我想管理實驗室設備並記錄存放位置與維護週期..." data-i18n-placeholder="design.goal_placeholder" />
-            <button class="primary" id="designSuggestBtn" data-i18n="design.suggest_btn">產生建議架構</button>
+          <!-- A. Management Objects Multi-select -->
+          <div style="margin-bottom:16px">
+            <label class="form-label" style="font-size:14px; font-weight:600" data-i18n="design.objects_title">A. 你在管理什麼？（管理對象，可複選）</label>
+            <div id="designObjectsList" class="folder-checklist" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:8px; max-height:160px; padding:10px"></div>
           </div>
-          <div id="designRecipes"></div>
+
+          <!-- B. Management Needs Multi-select -->
+          <div style="margin-bottom:16px">
+            <label class="form-label" style="font-size:14px; font-weight:600" data-i18n="design.needs_title">B. 你需要追蹤什麼？（管理需求，可複選）</label>
+            <div id="designNeedsList" class="folder-checklist" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:8px; max-height:160px; padding:10px"></div>
+          </div>
+
+          <!-- C. Optional Extra Text -->
+          <div style="margin-bottom:16px">
+            <label class="form-label" for="designGoalInput" data-i18n="design.extra_label">C. 其他特殊需求（選填）</label>
+            <input type="text" id="designGoalInput" placeholder="例如：這是美國工廠設備導入專案，需要追蹤供應商與法規..." data-i18n-placeholder="design.extra_placeholder" />
+          </div>
+
+          <button class="primary" id="designSuggestBtn" data-i18n="design.suggest_btn">產生建議架構</button>
         </div>
 
         <div id="designReviewCard" class="card" style="display:none">
-          <h3 style="margin-top:0" data-i18n="design.review_title">架構審查與比對</h3>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px">
+            <h3 style="margin:0" data-i18n="design.review_title">架構審查與比對</h3>
+            <button class="primary" id="designAdoptBtn" data-i18n="design.adopt_btn">採用此屬性架構 (Adopt Schema)</button>
+          </div>
           <div id="designReviewResult"></div>
+        </div>
+
+        <!-- Next Actions Card upon adoption -->
+        <div id="designNextActionsCard" class="card" style="display:none; border-left:4px solid var(--teal); background:var(--teal-soft)">
+          <h3 style="margin-top:0" data-i18n="design.next_actions_title">架構已採用！接下來要做什麼？</h3>
+          <div class="grid cols2" style="margin-top:12px">
+            <div class="action-card" id="designGoToWorkspace">
+              <div class="act-title" data-i18n="design.next_apply_existing">套用到既有筆記 (Apply to Existing Note)</div>
+              <div class="act-desc" data-i18n="design.next_apply_existing_desc">選擇一篇現有 Note，讀入目前 Properties 後調整與補齊</div>
+            </div>
+            <div class="action-card" id="designGoToFill">
+              <div class="act-title" data-i18n="design.next_create_blank">建立新筆記 Frontmatter (New Frontmatter)</div>
+              <div class="act-desc" data-i18n="design.next_create_blank_desc">填入屬性值並即時產生可複製的合法 YAML Frontmatter</div>
+            </div>
+          </div>
         </div>
       </section>
 
       <!-- ============================ FILL ============================ -->
       <section id="tab-fill" class="view-section">
         <div class="page-header">
-          <h2 data-i18n="fill.title">填寫並複製 Frontmatter</h2>
+          <h2 data-i18n="fill.title">新筆記屬性產生器</h2>
           <p class="lead" data-i18n="fill.lead">依據設計的 Schema 填寫屬性值。下方將即時產生合法的 YAML Frontmatter，供您複製貼上到 Obsidian 筆記頂端。</p>
         </div>
 
-        <div class="grid cols2">
-          <div class="card">
-            <h3 style="margin-top:0" data-i18n="fill.form_title">填寫表單</h3>
-            <div id="fillFormFields"></div>
+        <!-- Empty State if no schema adopted -->
+        <div id="fillEmptyStateCard" class="card" style="text-align:center; padding:36px 20px">
+          <div style="font-size:36px; margin-bottom:12px">📋</div>
+          <h3 style="margin-top:0" data-i18n="fill.empty_title">尚未選擇屬性架構</h3>
+          <p class="muted" style="max-width:440px; margin:0 auto 16px auto" data-i18n="fill.empty_desc">若要建立新筆記的 Frontmatter，請先選擇或建立一組屬性架構。</p>
+          <button class="primary" id="fillGoToDesignBtn" data-i18n="fill.go_to_design">前往屬性架構設計 →</button>
+        </div>
+
+        <!-- Active Schema Form when adopted -->
+        <div id="fillActiveFormArea" style="display:none">
+          <div class="card" style="margin-bottom:14px; background:var(--panel2)">
+            <span data-i18n="fill.current_schema_prefix">目前採用架構：</span>
+            <strong id="fillCurrentSchemaName">—</strong>
+            <span class="muted" id="fillCurrentSchemaPropsCount" style="margin-left:8px"></span>
           </div>
-          <div class="card">
-            <h3 style="margin-top:0" data-i18n="fill.preview_title">Frontmatter 預覽與校驗</h3>
-            <pre id="fillYamlPreview" style="max-height:240px; font-size:12.5px"></pre>
-            <div id="fillStatusMsg" style="margin-bottom:12px"></div>
-            <div style="display:flex; gap:10px">
-              <button class="primary" id="copyFmBtn" disabled data-i18n="fill.copy_fm">複製完整 Frontmatter</button>
-              <button class="secondary" id="copyYamlBtn" disabled data-i18n="fill.copy_yaml">僅複製 Properties YAML</button>
+
+          <div class="grid cols2">
+            <div class="card">
+              <h3 style="margin-top:0" data-i18n="fill.form_title">填寫表單</h3>
+              <div id="fillFormFields"></div>
+            </div>
+            <div class="card">
+              <h3 style="margin-top:0" data-i18n="fill.preview_title">Frontmatter 預覽與校驗</h3>
+              <pre id="fillYamlPreview" style="max-height:240px; font-size:12.5px"></pre>
+              <div id="fillStatusMsg" style="margin-bottom:12px"></div>
+              <div style="display:flex; gap:10px">
+                <button class="primary" id="copyFmBtn" disabled data-i18n="fill.copy_fm">複製完整 Frontmatter</button>
+                <button class="secondary" id="copyYamlBtn" disabled data-i18n="fill.copy_yaml">僅複製 Properties YAML</button>
+              </div>
             </div>
           </div>
         </div>
       </section>
+
 
       <!-- ============================ RELATIONSHIPS ============================ -->
       <section id="tab-relations" class="view-section">
@@ -867,23 +920,49 @@
                 <option value="convert_type" data-i18n="refactor.op_convert">型態轉換 (Convert Type)</option>
               </select>
             </div>
+
+            <!-- Param 1: Source Property (Dropdown / Multi-select / Select) -->
             <div id="refactorParam1Wrapper">
               <label class="form-label" id="refactorParam1Label" data-i18n="refactor.source_label">來源屬性名</label>
-              <input type="text" id="refactorParam1Input" />
+              <select id="refactorSourceSelect"></select>
+              <div id="refactorMergeSourcesList" class="folder-checklist" style="display:none; max-height:140px"></div>
             </div>
+
+            <!-- Param 2: Target Property / Type -->
             <div id="refactorParam2Wrapper">
               <label class="form-label" id="refactorParam2Label" data-i18n="refactor.target_label">目標屬性名 / 型態</label>
-              <input type="text" id="refactorParam2Input" />
+              <input type="text" id="refactorTargetInput" placeholder="輸入目標屬性名稱..." />
+              <select id="refactorTargetTypeSelect" style="display:none">
+                <option value="text">Text (文字)</option>
+                <option value="number">Number (數字)</option>
+                <option value="date">Date (日期)</option>
+                <option value="checkbox">Checkbox (核取方塊)</option>
+                <option value="list">List (清單)</option>
+                <option value="tags">Tags (標籤清單)</option>
+                <option value="note_link">Note Link (筆記連結 [[...]])</option>
+                <option value="note_link_list">Note Link List (筆記連結清單)</option>
+              </select>
             </div>
           </div>
+
+          <!-- Dynamic Target Conflict Warning Banner -->
+          <div id="refactorConflictWarnBanner" style="display:none; margin-bottom:14px; padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--amber); background:var(--amber-soft); color:var(--text); font-size:13px"></div>
+
           <button class="primary" id="runRefactorPlanBtn" data-i18n="refactor.plan_btn">產生重構計畫</button>
         </div>
 
         <div id="refactorPlanResultCard" class="card" style="display:none">
-          <h3 style="margin-top:0" data-i18n="refactor.output_title">重構影響分析結果</h3>
-          <div id="refactorPlanOutput"></div>
+          <h3 style="margin-top:0" data-i18n="refactor.human_summary_title">重構影響摘要</h3>
+          <div id="refactorHumanSummary"></div>
+
+          <!-- Collapsible Raw Plan JSON View (Advanced/Evidence) -->
+          <details style="margin-top:16px; border-top:1px solid var(--line); padding-top:12px">
+            <summary style="cursor:pointer; font-weight:600; color:var(--muted); font-size:13px" data-i18n="refactor.raw_json_view">查看原始計畫 JSON</summary>
+            <div id="refactorPlanOutput" style="margin-top:10px"></div>
+          </details>
         </div>
       </section>
+
 
       <!-- ============================ PROPOSAL ============================ -->
       <section id="tab-proposal" class="view-section">
@@ -934,8 +1013,12 @@ const S = {
   vaultPath: "",
   scanned: false,
   scope: { mode: "entire_vault", folders: [], include_subfolders: true, note_path: null },
+  notesInScope: 0,
   currentNote: null,
-  schema: null,
+  currentSchema: null,
+  designPresets: null,
+  lastReviewResult: null,
+  inventory: null,
   fill: { valid: false, values: {} },
   relSourceType: "property_link", // "property_link" | "body_wikilink"
   savedChecks: [],
@@ -977,6 +1060,11 @@ function setTab(tabId) {
   document.querySelectorAll("section.view-section").forEach(sec => {
     sec.classList.toggle("active", sec.id === `tab-${tabId}`);
   });
+  if (tabId === "refactor") {
+    populateRefactorSourceOptions();
+  } else if (tabId === "fill") {
+    renderFillForm();
+  }
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -1018,6 +1106,11 @@ async function init() {
   $("actHealth").onclick = () => setTab("health");
   $("actRefactor").onclick = () => setTab("refactor");
 
+  // Fill empty state navigation
+  if ($("fillGoToDesignBtn")) {
+    $("fillGoToDesignBtn").onclick = () => setTab("design");
+  }
+
   // Top buttons
   $("langToggleBtn").onclick = () => {
     I18N.toggleLocale();
@@ -1045,10 +1138,13 @@ async function init() {
   setupWorkspaceHandlers();
   setupDiscoverHandlers();
   setupDesignHandlers();
+  setupFillHandlers();
   setupRelationsHandlers();
   setupHealthHandlers();
   setupRefactorHandlers();
   setupProposalHandlers();
+
+  await loadDesignPresets();
 }
 
 function updateContextBarLabels() {
@@ -1077,10 +1173,12 @@ function updateContextBarLabels() {
 
 function renderAllDynamicViews() {
   updateContextBarLabels();
+  renderDesignPresets();
   if (S.scanned) {
     loadDiscovery();
     loadHealth();
     loadSavedChecks();
+    populateRefactorSourceOptions();
   }
 }
 
@@ -1119,6 +1217,7 @@ function setupVaultHandlers() {
       await loadDiscovery();
       await loadHealth();
       await loadSavedChecks();
+      populateRefactorSourceOptions();
     } catch (e) {
       $("scanMsg").innerHTML = `<div class="bad" style="font-weight:600">✕ ${esc(e.message)}</div>`;
       toast(e.message, true);
@@ -1143,14 +1242,13 @@ function setupVaultHandlers() {
 }
 
 /* ============================================================
-   Scope Module (Entire, Folders, Single Note)
+   Scope Module
    ============================================================ */
 async function loadScopeFolders() {
   try {
     const res = await api("/api/scope/folders", {});
     S.folders = res.folders || [];
 
-    // 1. General Scope View Folders
     const listEl = $("scopeFolderList");
     if (!S.folders.length) {
       listEl.innerHTML = `<div class="muted">${I18N.t("scope.no_subfolders")}</div>`;
@@ -1163,7 +1261,6 @@ async function loadScopeFolders() {
       `).join("");
     }
 
-    // 2. Relationships Multi-Folder Selectors
     renderRelationsFolderLists();
   } catch (e) {
     console.error(e);
@@ -1171,33 +1268,24 @@ async function loadScopeFolders() {
 }
 
 function renderRelationsFolderLists() {
-  const srcListEl = $("relSrcFoldersList");
-  const tgtListEl = $("relTgtFoldersList");
+  const srcEl = $("relSrcFoldersList");
+  const tgtEl = $("relTgtFoldersList");
+  if (!srcEl || !tgtEl) return;
 
-  if (!S.folders.length) {
-    srcListEl.innerHTML = `<div class="muted">${I18N.t("scope.no_subfolders")}</div>`;
-    tgtListEl.innerHTML = `<div class="muted">${I18N.t("scope.no_subfolders")}</div>`;
-    return;
-  }
-
-  srcListEl.innerHTML = S.folders.map(f => `
+  const html = (cls) => S.folders.map(f => `
     <label class="folder-check-item">
-      <input type="checkbox" class="rel-src-folder-cb" value="${esc(f)}" />
+      <input type="checkbox" class="${cls}" value="${esc(f)}" />
       <span>📁 <code>${esc(f)}</code></span>
     </label>
   `).join("");
 
-  tgtListEl.innerHTML = S.folders.map(f => `
-    <label class="folder-check-item">
-      <input type="checkbox" class="rel-tgt-folder-cb" value="${esc(f)}" />
-      <span>📁 <code>${esc(f)}</code></span>
-    </label>
-  `).join("");
+  srcEl.innerHTML = html("rel-src-folder-cb");
+  tgtEl.innerHTML = html("rel-tgt-folder-cb");
 }
 
 function setupScopeHandlers() {
-  $("scopeModeSelect").onchange = () => {
-    const mode = $("scopeModeSelect").value;
+  $("scopeModeSelect").onchange = (e) => {
+    const mode = e.target.value;
     $("scopeFolderSelector").style.display = mode === "folders" ? "block" : "none";
     $("scopeSingleNoteSelector").style.display = mode === "single_note" ? "block" : "none";
   };
@@ -1224,6 +1312,7 @@ function setupScopeHandlers() {
       toast(I18N.t("toast.scope_applied"));
       await loadDiscovery();
       await loadHealth();
+      populateRefactorSourceOptions();
     } catch (e) {
       toast(e.message, true);
     }
@@ -1242,46 +1331,52 @@ function setupScopeHandlers() {
       toast(I18N.t("toast.scope_applied"));
       await loadDiscovery();
       await loadHealth();
+      populateRefactorSourceOptions();
     } catch (e) {
       toast(e.message, true);
     }
   };
-
 }
 
 /* ============================================================
-   Note Properties Workspace Module
+   Note Properties Workspace Module (Searchable Combobox + Browse Dropdown)
    ============================================================ */
 function setupWorkspaceHandlers() {
-  $("wsSearchBtn").onclick = async () => {
-    const q = $("wsNoteSearch").value.trim();
+  const searchInput = $("wsNoteSearch");
+  const candBox = $("wsNoteCandidates");
+  const toggleBtn = $("wsDropdownToggleBtn");
+
+  const queryAndRenderCandidates = async (query = "") => {
     try {
-      const res = await api("/api/workspace/notes", { query: q });
-      const box = $("wsNoteCandidates");
-      if (!res.candidates || !res.candidates.length) {
-        box.innerHTML = `<div style="padding:10px; color:var(--muted)">${I18N.t("workspace.no_match")}</div>`;
-        box.style.display = "block";
+      const res = await api("/api/workspace/notes", { query: query });
+      const candidates = res.candidates || [];
+      if (!candidates.length) {
+        candBox.innerHTML = `<div style="padding:10px; color:var(--muted)">${I18N.t("workspace.no_match")}</div>`;
+        candBox.style.display = "block";
         return;
       }
-      box.innerHTML = res.candidates.map(c => `
-        <div class="ws-cand-item" data-path="${esc(c.path)}" style="padding:8px 12px; cursor:pointer; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center">
-          <div>
-            <strong>${esc(c.name)}</strong>
-            <span class="muted" style="font-size:11.5px; margin-left:8px">${esc(c.path)}</span>
-          </div>
-          <div>
-            ${c.in_current_scope ? `<span class="pill ok">${I18N.t("workspace.in_scope")}</span>` : `<span class="pill">${I18N.t("workspace.other")}</span>`}
-            ${c.is_ambiguous_basename ? `<span class="pill warn">${I18N.t("workspace.ambig_name")}</span>` : ''}
-          </div>
-        </div>
-      `).join("");
-      box.style.display = "block";
 
-      document.querySelectorAll(".ws-cand-item").forEach(item => {
+      const scopeNotes = candidates.filter(c => c.in_current_scope);
+      const otherNotes = candidates.filter(c => !c.in_current_scope);
+
+      let html = "";
+      if (scopeNotes.length) {
+        html += `<div style="padding:6px 10px; font-size:11px; font-weight:700; color:var(--teal); background:var(--panel3); border-bottom:1px solid var(--line)">${I18N.t("ws.scope_notes_group")} (${scopeNotes.length})</div>`;
+        html += scopeNotes.map(c => renderCandidateItem(c)).join("");
+      }
+      if (otherNotes.length) {
+        html += `<div style="padding:6px 10px; font-size:11px; font-weight:700; color:var(--muted); background:var(--panel3); border-bottom:1px solid var(--line); border-top:1px solid var(--line)">${I18N.t("ws.other_notes_group")} (${otherNotes.length})</div>`;
+        html += otherNotes.map(c => renderCandidateItem(c)).join("");
+      }
+
+      candBox.innerHTML = html;
+      candBox.style.display = "block";
+
+      candBox.querySelectorAll(".ws-cand-item").forEach(item => {
         item.onclick = () => {
           const path = item.getAttribute("data-path");
-          box.style.display = "none";
-          $("wsNoteSearch").value = path;
+          candBox.style.display = "none";
+          searchInput.value = path;
           inspectNoteInWorkspace(path);
         };
       });
@@ -1289,6 +1384,49 @@ function setupWorkspaceHandlers() {
       toast(e.message, true);
     }
   };
+
+  const renderCandidateItem = (c) => `
+    <div class="ws-cand-item" data-path="${esc(c.path)}" style="padding:8px 12px; cursor:pointer; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center">
+      <div>
+        <strong>${esc(c.name)}</strong>
+        <span class="muted" style="font-size:11.5px; margin-left:8px">📁 ${esc(c.path)}</span>
+      </div>
+      <div>
+        ${c.in_current_scope ? `<span class="pill ok">${I18N.t("workspace.in_scope")}</span>` : `<span class="pill">${I18N.t("workspace.other")}</span>`}
+        ${c.is_ambiguous_basename ? `<span class="pill warn" title="${esc(I18N.t("ws.duplicate_warning"))}">${I18N.t("workspace.ambig_name")}</span>` : ''}
+      </div>
+    </div>
+  `;
+
+  let debounceTimer = null;
+  searchInput.oninput = () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      queryAndRenderCandidates(searchInput.value.trim());
+    }, 200);
+  };
+
+  searchInput.onfocus = () => {
+    queryAndRenderCandidates(searchInput.value.trim());
+  };
+
+  $("wsSearchBtn").onclick = () => {
+    queryAndRenderCandidates(searchInput.value.trim());
+  };
+
+  toggleBtn.onclick = () => {
+    if (candBox.style.display === "block") {
+      candBox.style.display = "none";
+    } else {
+      queryAndRenderCandidates("");
+    }
+  };
+
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest("#tab-workspace .card")) {
+      candBox.style.display = "none";
+    }
+  });
 
   $("wsCopyBtn").onclick = () => {
     const text = $("wsYamlPreview").textContent;
@@ -1386,6 +1524,7 @@ async function updateWorkspacePreview() {
     const res = await api("/api/workspace/preview", {
       note_path: S.currentNote.note_path,
       values: values,
+      schema: S.currentSchema,
       deleted_keys: deletedKeys
     });
 
@@ -1405,20 +1544,13 @@ async function updateWorkspacePreview() {
     $("wsYamlPreview").textContent = res.frontmatter_preview || "";
 
     const canCopy = res.can_copy && res.roundtrip_matches;
-    S.fill.valid = canCopy;
     if (canCopy) {
       $("wsRoundtripStatus").innerHTML = `<span class="ok">${I18N.t("workspace.roundtrip_ok")}</span>`;
       $("wsCopyBtn").disabled = false;
-      if ($("copyFmBtn")) $("copyFmBtn").disabled = false;
-      if ($("copyYamlBtn")) $("copyYamlBtn").disabled = false;
     } else {
       const errs = res.errors.length ? res.errors.join("<br>") : I18N.t("workspace.roundtrip_err");
       $("wsRoundtripStatus").innerHTML = `<span class="bad">${errs}</span>`;
       $("wsCopyBtn").disabled = true;
-      if (!S.fill.valid) {
-        if ($("copyFmBtn")) $("copyFmBtn").disabled = true;
-        if ($("copyYamlBtn")) $("copyYamlBtn").disabled = true;
-      }
     }
   } catch (e) {
     console.error(e);
@@ -1431,6 +1563,7 @@ async function updateWorkspacePreview() {
 async function loadDiscovery() {
   try {
     const res = await api("/api/discovery", {});
+    S.inventory = res.inventory;
     const props = res.inventory ? res.inventory.properties : [];
     $("discoveryInventoryTable").innerHTML = `
       <table>
@@ -1465,7 +1598,6 @@ async function loadDiscovery() {
             <table>
               <thead><tr><th>${esc(I18N.t("discover.drawer_val"))}</th><th>${esc(I18N.t("discover.drawer_count"))}</th></tr></thead>
               <tbody>
-
                 ${(det.entry.values || det.entry.top_values || []).map(v => `<tr><td><code>${esc(v.value)}</code></td><td>${v.count}</td></tr>`).join("")}
               </tbody>
             </table>
@@ -1486,27 +1618,58 @@ async function loadDiscovery() {
   }
 }
 
-function setupDiscoverHandlers() {
-  $("exportDiscoveryBtn").onclick = async () => {
-    try {
-      const res = await api("/api/export", { kind: "discovery" });
-      toast(I18N.t("toast.export_done", { path: res.output_dir }));
-    } catch (e) {
-      toast(e.message, true);
-    }
-  };
+/* ============================================================
+   Design Module (Structured Presets + Adopt Schema + Next Actions)
+   ============================================================ */
+async function loadDesignPresets() {
+  try {
+    const res = await api("/api/design/presets", {});
+    S.designPresets = res;
+    renderDesignPresets();
+  } catch (e) {
+    console.error(e);
+  }
 }
 
-/* ============================================================
-   Design Module
-   ============================================================ */
+function renderDesignPresets() {
+  if (!S.designPresets) return;
+  const isZh = I18N.currentLocale === "zh-Hant";
+
+  const objList = $("designObjectsList");
+  if (objList) {
+    objList.innerHTML = S.designPresets.objects.map(o => `
+      <label class="folder-check-item">
+        <input type="checkbox" class="design-obj-cb" value="${esc(o.id)}" />
+        <span>${esc(isZh ? o.name_zh : o.name_en)}</span>
+      </label>
+    `).join("");
+  }
+
+  const needList = $("designNeedsList");
+  if (needList) {
+    needList.innerHTML = S.designPresets.needs.map(n => `
+      <label class="folder-check-item">
+        <input type="checkbox" class="design-need-cb" value="${esc(n.id)}" />
+        <span>${esc(isZh ? n.name_zh : n.name_en)}</span>
+      </label>
+    `).join("");
+  }
+}
+
 function setupDesignHandlers() {
   $("designSuggestBtn").onclick = async () => {
-    const goal = $("designGoalInput").value.trim();
-    if (!goal) return toast(I18N.t("design.empty_goal_warn"), true);
+    const selectedObjs = Array.from(document.querySelectorAll(".design-obj-cb:checked")).map(cb => cb.value);
+    const selectedNeeds = Array.from(document.querySelectorAll(".design-need-cb:checked")).map(cb => cb.value);
+    const extraGoal = $("designGoalInput").value.trim();
 
     try {
-      const res = await api("/api/design/build", { goal: goal });
+      const res = await api("/api/design/build", {
+        objects: selectedObjs,
+        needs: selectedNeeds,
+        goal: extraGoal
+      });
+      S.lastReviewResult = res;
+
       $("designReviewResult").innerHTML = `
         <div class="grid cols3" style="margin-bottom:14px">
           <div class="stat ok"><div class="n">${res.counts.exact_existing_in_scope || 0}</div><div class="l">${I18N.t("design.in_scope_count")}</div></div>
@@ -1515,6 +1678,7 @@ function setupDesignHandlers() {
         </div>
         <table>
           <thead><tr>
+            <th style="width:40px; text-align:center">${esc(I18N.t("design.retain_col"))}</th>
             <th>${esc(I18N.t("design.col_prop"))}</th>
             <th>${esc(I18N.t("design.col_type"))}</th>
             <th>${esc(I18N.t("design.col_status"))}</th>
@@ -1523,24 +1687,178 @@ function setupDesignHandlers() {
           <tbody>
             ${res.reuse_reviews.map(r => `
               <tr>
+                <td style="text-align:center"><input type="checkbox" class="design-retain-cb" checked data-prop="${esc(r.proposed_name)}" /></td>
                 <td><code>${esc(r.proposed_name)}</code></td>
                 <td>${esc(r.schema_storage_type || '')}</td>
-                <td><span class="pill ${r.in_scope ? 'ok' : r.in_vault_only ? 'warn' : ''}">${esc(r.status)}</span></td>
-                <td class="muted" style="font-size:12px">${esc(r.message)}</td>
+                <td><span class="pill ${r.in_scope ? 'ok' : r.in_vault_only ? 'warn' : ''}">${esc(I18N.t(r.status_key || `schema.status_${r.status}`))}</span></td>
+                <td class="muted" style="font-size:12px">${esc(I18N.t(r.message_key, { name: r.proposed_name }) || r.message)}</td>
               </tr>
             `).join("")}
           </tbody>
         </table>
       `;
       $("designReviewCard").style.display = "block";
+      $("designNextActionsCard").style.display = "none";
     } catch (e) {
       toast(e.message, true);
     }
   };
+
+  $("designAdoptBtn").onclick = () => {
+    if (!S.lastReviewResult || !S.lastReviewResult.schema) return;
+    const retainedProps = new Set(
+      Array.from(document.querySelectorAll(".design-retain-cb:checked")).map(cb => cb.getAttribute("data-prop"))
+    );
+
+    const baseSchema = S.lastReviewResult.schema;
+    const filteredProps = (baseSchema.properties || []).filter(p => retainedProps.has(p.name));
+
+    S.currentSchema = {
+      name: baseSchema.name || "custom-schema",
+      description: baseSchema.description || "",
+      properties: filteredProps
+    };
+
+    $("designNextActionsCard").style.display = "block";
+    toast(I18N.t("toast.schema_adopted", { name: S.currentSchema.name }));
+    renderFillForm();
+  };
+
+  $("designGoToWorkspace").onclick = () => setTab("workspace");
+  $("designGoToFill").onclick = () => setTab("fill");
 }
 
 /* ============================================================
-   Relationships Module (Multi-Folder 4-State + Persistent Saved Checks)
+   Fill Module (New Frontmatter Generator)
+   ============================================================ */
+function setupFillHandlers() {
+  $("copyFmBtn").onclick = () => {
+    if (!S.fill.valid) {
+      toast(I18N.t("fill.invalid_status"), true);
+      return;
+    }
+    const text = $("fillYamlPreview").textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      toast(I18N.t("toast.copied"));
+    });
+  };
+
+  $("copyYamlBtn").onclick = () => {
+    if (!S.fill.valid) {
+      toast(I18N.t("fill.invalid_status"), true);
+      return;
+    }
+    let text = $("fillYamlPreview").textContent;
+    if (text.startsWith("---\n")) text = text.slice(4);
+    if (text.endsWith("\n---\n")) text = text.slice(0, -5);
+    else if (text.endsWith("\n---")) text = text.slice(0, -4);
+    navigator.clipboard.writeText(text).then(() => {
+      toast(I18N.t("toast.copied"));
+    });
+  };
+}
+
+
+function renderFillForm() {
+  const emptyState = $("fillEmptyStateCard");
+  const activeArea = $("fillActiveFormArea");
+  if (!emptyState || !activeArea) return;
+
+  if (!S.currentSchema || !S.currentSchema.properties || !S.currentSchema.properties.length) {
+    emptyState.style.display = "block";
+    activeArea.style.display = "none";
+    return;
+  }
+
+  emptyState.style.display = "none";
+  activeArea.style.display = "block";
+  $("fillCurrentSchemaName").textContent = S.currentSchema.name;
+  $("fillCurrentSchemaPropsCount").textContent = `(${S.currentSchema.properties.length} ${I18N.t("workspace.existing_props_count")})`;
+
+  const formEl = $("fillFormFields");
+  formEl.innerHTML = S.currentSchema.properties.map(p => {
+    let controlHtml = "";
+    if (p.allowed_values && p.allowed_values.length) {
+      controlHtml = `
+        <select class="fill-prop-input" data-name="${esc(p.name)}" data-type="${esc(p.storage_type)}">
+          <option value="">-- 選擇 --</option>
+          ${p.allowed_values.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join("")}
+        </select>
+      `;
+    } else if (p.storage_type === "checkbox") {
+      controlHtml = `<input type="checkbox" class="fill-prop-input-cb" data-name="${esc(p.name)}" data-type="${esc(p.storage_type)}" />`;
+    } else if (p.storage_type === "number") {
+      controlHtml = `<input type="number" class="fill-prop-input" data-name="${esc(p.name)}" data-type="${esc(p.storage_type)}" placeholder="0" />`;
+    } else if (p.storage_type === "date") {
+      controlHtml = `<input type="date" class="fill-prop-input" data-name="${esc(p.name)}" data-type="${esc(p.storage_type)}" />`;
+    } else {
+      controlHtml = `<input type="text" class="fill-prop-input" data-name="${esc(p.name)}" data-type="${esc(p.storage_type)}" placeholder="${p.ui_control === 'note_link' ? '[[Note Name]]' : '輸入屬性值...'}" />`;
+    }
+
+    return `
+      <div style="margin-bottom:12px">
+        <label class="form-label" style="display:flex; justify-content:space-between">
+          <span><strong>${esc(p.name)}</strong> ${p.required ? '<span style="color:var(--red)">*</span>' : ''}</span>
+          <span class="muted" style="font-size:11.5px">${esc(p.storage_type)}</span>
+        </label>
+        ${controlHtml}
+      </div>
+    `;
+  }).join("");
+
+  document.querySelectorAll(".fill-prop-input").forEach(input => {
+    input.oninput = updateFillPreview;
+    input.onchange = updateFillPreview;
+  });
+  document.querySelectorAll(".fill-prop-input-cb").forEach(cb => {
+    cb.onchange = updateFillPreview;
+  });
+
+  updateFillPreview();
+}
+
+async function updateFillPreview() {
+  if (!S.currentSchema) return;
+  const values = {};
+
+  document.querySelectorAll(".fill-prop-input").forEach(input => {
+    const k = input.getAttribute("data-name");
+    const v = input.value.trim();
+    if (v) values[k] = v;
+  });
+  document.querySelectorAll(".fill-prop-input-cb").forEach(cb => {
+    const k = cb.getAttribute("data-name");
+    values[k] = cb.checked;
+  });
+
+  try {
+    const res = await api("/api/fill/preview", {
+      schema: S.currentSchema,
+      values: values
+    });
+
+    $("fillYamlPreview").textContent = res.frontmatter_preview || "";
+
+    const isValid = res.valid && !res.has_ambiguities;
+    S.fill.valid = isValid;
+
+    if (isValid) {
+      $("fillStatusMsg").innerHTML = `<span class="ok">${I18N.t("fill.valid_status")}</span>`;
+      $("copyFmBtn").disabled = false;
+      $("copyYamlBtn").disabled = false;
+    } else {
+      const errText = res.errors.length ? res.errors.join("<br>") : I18N.t("fill.invalid_status");
+      $("fillStatusMsg").innerHTML = `<span class="bad">${errText}</span>`;
+      $("copyFmBtn").disabled = true;
+      $("copyYamlBtn").disabled = true;
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+/* ============================================================
+   Relationships Module
    ============================================================ */
 function setupRelationsHandlers() {
   $("relSourcePropsBtn").onclick = () => {
@@ -1556,7 +1874,6 @@ function setupRelationsHandlers() {
     $("relPropFilterWrapper").style.display = "none";
   };
 
-  // Multi-folder checkbox toggles
   $("relSrcEntireCb").onchange = (e) => {
     $("relSrcFoldersList").style.display = e.target.checked ? "none" : "block";
   };
@@ -1639,7 +1956,6 @@ function setupRelationsHandlers() {
       toast(e.message, true);
     }
   };
-
 }
 
 function getSelectedRelScope(entireCbId, folderCbClass) {
@@ -1658,7 +1974,6 @@ const SAVED_CHECKS_STORAGE_KEY = "ops_saved_checks_v1";
 
 async function loadSavedChecks() {
   try {
-    // 1. Sync from localStorage to server on startup if server is clean
     let localChecks = [];
     try {
       const raw = localStorage.getItem(SAVED_CHECKS_STORAGE_KEY);
@@ -1748,6 +2063,7 @@ async function loadHealth() {
     $("healthFindingsList").innerHTML = res.findings && res.findings.length ? res.findings.map(f => `
       <div class="card" style="margin-bottom:10px; border-left:4px solid ${f.severity === 'high' ? 'var(--red)' : f.severity === 'medium' ? 'var(--amber)' : 'var(--teal)'}">
         <strong>[${esc(f.severity.toUpperCase())}] ${esc(f.title)}</strong>
+
         <p class="muted" style="margin:4px 0">${esc(f.explanation)}</p>
         <div class="hint">${I18N.t("health.affected_notes_label")} (${f.affected_note_count})：${esc(f.affected_notes.slice(0, 5).join(", "))}</div>
       </div>
@@ -1757,82 +2073,161 @@ async function loadHealth() {
   }
 }
 
-function setupHealthHandlers() {
-  $("exportHealthBtn").onclick = async () => {
-    try {
-      const res = await api("/api/export", { kind: "health" });
-      toast(I18N.t("toast.export_done", { path: res.output_dir }));
-    } catch (e) {
-      toast(e.message, true);
-    }
-  };
+/* ============================================================
+   Refactor & Proposal Handlers (Controlled Vocabulary + Human Summary)
+   ============================================================ */
+function populateRefactorSourceOptions() {
+  const props = S.inventory ? S.inventory.properties : [];
+  const srcSelect = $("refactorSourceSelect");
+  const mergeList = $("refactorMergeSourcesList");
+
+  if (srcSelect) {
+    srcSelect.innerHTML = props.length ? props.map(p => `
+      <option value="${esc(p.key)}">${esc(p.key)} (${p.usage_count} 篇筆記)</option>
+    `).join("") : `<option value="">-- 無可用屬性 --</option>`;
+  }
+
+  if (mergeList) {
+    mergeList.innerHTML = props.length ? props.map(p => `
+      <label class="folder-check-item">
+        <input type="checkbox" class="refactor-merge-cb" value="${esc(p.key)}" />
+        <span><code>${esc(p.key)}</code> <span class="muted">(${p.usage_count})</span></span>
+      </label>
+    `).join("") : `<div class="muted">無可用屬性</div>`;
+  }
 }
 
-/* ============================================================
-   Refactor & Proposal Handlers
-   ============================================================ */
 function setupRefactorHandlers() {
   const updateRefactorLabels = () => {
     const op = $("refactorOpSelect").value;
+    const srcSelect = $("refactorSourceSelect");
+    const mergeList = $("refactorMergeSourcesList");
+    const tgtInput = $("refactorTargetInput");
+    const tgtTypeSelect = $("refactorTargetTypeSelect");
+
     if (op === "rename") {
       $("refactorParam1Wrapper").style.display = "block";
       $("refactorParam2Wrapper").style.display = "block";
+      srcSelect.style.display = "block";
+      mergeList.style.display = "none";
+      tgtInput.style.display = "block";
+      tgtTypeSelect.style.display = "none";
       $("refactorParam1Label").textContent = I18N.t("refactor.source_label");
       $("refactorParam2Label").textContent = I18N.t("refactor.target_label");
     } else if (op === "merge") {
       $("refactorParam1Wrapper").style.display = "block";
       $("refactorParam2Wrapper").style.display = "block";
+      srcSelect.style.display = "none";
+      mergeList.style.display = "block";
+      tgtInput.style.display = "block";
+      tgtTypeSelect.style.display = "none";
       $("refactorParam1Label").textContent = I18N.t("refactor.sources_merge_label");
       $("refactorParam2Label").textContent = I18N.t("refactor.target_merge_label");
     } else if (op === "normalize") {
       $("refactorParam1Wrapper").style.display = "block";
       $("refactorParam2Wrapper").style.display = "none";
+      srcSelect.style.display = "block";
+      mergeList.style.display = "none";
       $("refactorParam1Label").textContent = I18N.t("refactor.source_label");
     } else if (op === "convert_type") {
       $("refactorParam1Wrapper").style.display = "block";
       $("refactorParam2Wrapper").style.display = "block";
+      srcSelect.style.display = "block";
+      mergeList.style.display = "none";
+      tgtInput.style.display = "none";
+      tgtTypeSelect.style.display = "block";
       $("refactorParam1Label").textContent = I18N.t("refactor.source_label");
-      $("refactorParam2Label").textContent = I18N.t("refactor.target_label");
+      $("refactorParam2Label").textContent = I18N.t("refactor.target_type_label");
     }
   };
 
   $("refactorOpSelect").onchange = updateRefactorLabels;
 
+  // Conflict warning on Target Input
+  $("refactorTargetInput").oninput = (e) => {
+    const val = e.target.value.trim();
+    const warnEl = $("refactorConflictWarnBanner");
+    if (!val || !S.inventory) {
+      warnEl.style.display = "none";
+      return;
+    }
+    const match = (S.inventory.properties || []).find(p => p.key === val);
+    if (match) {
+      warnEl.innerHTML = I18N.t("refactor.rename_target_conflict_warn", { target: val, count: match.usage_count });
+      warnEl.style.display = "block";
+    } else {
+      warnEl.style.display = "none";
+    }
+  };
+
   $("runRefactorPlanBtn").onclick = async () => {
     const op = $("refactorOpSelect").value;
-    const p1 = $("refactorParam1Input").value.trim();
-    const p2 = $("refactorParam2Input").value.trim();
+    const tgt = $("refactorTargetInput").value.trim();
 
     try {
       let payload = { operation: op };
       if (op === "rename") {
-        payload.source = p1;
-        payload.target = p2;
+        const src = $("refactorSourceSelect").value;
+        if (!src) return toast(I18N.t("refactor.source_label"), true);
+        if (!tgt) return toast(I18N.t("refactor.target_label"), true);
+        payload.source = src;
+        payload.target = tgt;
       } else if (op === "merge") {
-        payload.sources = p1.split(",").map(s => s.trim()).filter(Boolean);
-        payload.target = p2;
+        const sources = Array.from(document.querySelectorAll(".refactor-merge-cb:checked")).map(cb => cb.value);
+        if (!sources.length) return toast(I18N.t("refactor.sources_merge_label"), true);
+        if (!tgt) return toast(I18N.t("refactor.target_merge_label"), true);
+        payload.sources = sources;
+        payload.target = tgt;
       } else if (op === "normalize") {
-        payload.property = p1;
+        const src = $("refactorSourceSelect").value;
+        if (!src) return toast(I18N.t("refactor.source_label"), true);
+        payload.property = src;
       } else if (op === "convert_type") {
-        payload.property = p1;
-        payload.target_type = p2;
+        const src = $("refactorSourceSelect").value;
+        const tgtType = $("refactorTargetTypeSelect").value;
+        if (!src) return toast(I18N.t("refactor.source_label"), true);
+        payload.property = src;
+        payload.target_type = tgtType;
       }
 
       const res = await api("/api/refactor/plan", payload);
-      $("refactorPlanOutput").innerHTML = `
+
+      // Render Human-Readable Summary
+      const affectedNotes = res.in_scope_notes_to_change || res.affected_notes || [];
+      const conflicts = res.conflicts || [];
+      const excluded = res.excluded || [];
+
+      $("refactorHumanSummary").innerHTML = `
         <div class="grid cols3" style="margin-bottom:14px">
-          <div class="stat"><div class="n">${res.in_scope_notes_to_change ? res.in_scope_notes_to_change.length : (res.affected_notes || []).length}</div><div class="l">${I18N.t("refactor.in_scope_notes")}</div></div>
+          <div class="stat ok"><div class="n">${affectedNotes.length}</div><div class="l">${I18N.t("refactor.in_scope_notes")}</div></div>
           <div class="stat"><div class="n">${res.out_of_scope_notes_count || 0}</div><div class="l">${I18N.t("refactor.out_of_scope_notes")}</div></div>
-          <div class="stat alert"><div class="n">${(res.conflicts || []).length + (res.excluded || []).length}</div><div class="l">${I18N.t("refactor.conflicts_count")}</div></div>
+          <div class="stat ${conflicts.length ? 'alert' : ''}"><div class="n">${conflicts.length + excluded.length}</div><div class="l">${I18N.t("refactor.conflicts_count")}</div></div>
         </div>
-        <pre>${esc(JSON.stringify(res, null, 2))}</pre>
+
+        ${res.target_already_exists ? `
+          <div class="card" style="border-left:4px solid var(--amber); background:var(--amber-soft); margin-bottom:12px">
+            <strong>⚠ ${esc(I18N.t("refactor.rename_target_conflict_warn", { target: payload.target, count: res.target_existing_usage_count || 0 }))}</strong>
+          </div>
+        ` : ''}
+
+        <div class="card" style="background:var(--panel2)">
+          <h4 style="margin-top:0">${I18N.t("refactor.affected_notes_view")} (${affectedNotes.length})</h4>
+          <ul style="max-height:160px; overflow-y:auto; padding-left:20px; font-size:12.5px; margin:0">
+            ${affectedNotes.slice(0, 100).map(n => `<li><code>${esc(n.note || n)}</code></li>`).join("")}
+          </ul>
+        </div>
       `;
+
+      $("refactorPlanOutput").innerHTML = `<pre style="font-size:12px">${esc(JSON.stringify(res, null, 2))}</pre>`;
       $("refactorPlanResultCard").style.display = "block";
     } catch (e) {
       toast(e.message, true);
     }
   };
+
+  updateRefactorLabels();
 }
+
 
 
 function setupProposalHandlers() {

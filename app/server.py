@@ -181,17 +181,42 @@ def api_design_suggest(body: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def api_design_presets(_body: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "objects": [
+            {"id": v["id"], "name_zh": v["name_zh"], "name_en": v["name_en"], "props_count": len(v["props"])}
+            for v in design.OBJECT_PRESETS.values()
+        ],
+        "needs": [
+            {"id": v["id"], "name_zh": v["name_zh"], "name_en": v["name_en"], "props_count": len(v["props"])}
+            for v in design.NEED_PRESETS.values()
+        ],
+    }
+
+
 def api_design_build(body: dict[str, Any]) -> dict[str, Any]:
     goal = str(body.get("goal", ""))
+    objects = list(body.get("objects", []) or [])
+    needs = list(body.get("needs", []) or [])
     scoped_inv = STORE.get_scoped_inventory() if STORE.scan else inventory.Inventory()
     global_inv = STORE.inventory or scoped_inv
-    schema = design.build_schema(
-        goal_text=goal,
-        recipe_id=body.get("recipe_id") or None,
-        intent_ids=tuple(body.get("intents", []) or []),
-        schema_name=body.get("schema_name") or None,
-        inv=scoped_inv,
-    )
+
+    if objects or needs:
+        schema = design.build_schema_from_structured_inputs(
+            objects=objects,
+            needs=needs,
+            extra_text=goal,
+            schema_name=body.get("schema_name") or None,
+            inv=scoped_inv,
+        )
+    else:
+        schema = design.build_schema(
+            goal_text=goal,
+            recipe_id=body.get("recipe_id") or None,
+            intent_ids=tuple(body.get("intents", []) or []),
+            schema_name=body.get("schema_name") or None,
+            inv=scoped_inv,
+        )
     return design.review_schema_against_vault(schema, scoped_inv, global_inv=global_inv)
 
 
@@ -249,9 +274,7 @@ def api_note_candidates(body: dict[str, Any]) -> dict[str, Any]:
     for note in scan.notes:
         if query and query not in note.name.casefold() and query not in note.path.casefold():
             continue
-        matches.append({"name": note.name, "path": note.path})
-        if len(matches) >= 50:
-            break
+        matches.append(note.path)
     index = note_name_index(scan)
     ambiguous = sorted(name for name, paths in index.items() if len(paths) > 1)
     return {"candidates": matches, "ambiguous_names": ambiguous}
@@ -267,17 +290,42 @@ def api_refactor_plan(body: dict[str, Any]) -> dict[str, Any]:
         raise ApiError(f"Invalid Scope specification: {exc}", 400) from exc
 
     if operation == "rename":
-        plan = refactor.plan_rename(scan, body["source"], body["target"], scope=active_scope)
+        source = str(body.get("source", "")).strip()
+        target = str(body.get("target", "")).strip()
+        if not source:
+            raise ApiError("Source property name is required.", 400)
+        if not target:
+            raise ApiError("Target property name cannot be empty.", 400)
+        plan = refactor.plan_rename(scan, source, target, scope=active_scope)
+        # Check target conflict against global inventory
+        global_inv = STORE.inventory
+        if global_inv and target in global_inv.properties:
+            plan["target_already_exists"] = True
+            plan["target_existing_usage_count"] = global_inv.properties[target].usage_count
     elif operation == "merge":
-        plan = refactor.plan_merge(scan, list(body.get("sources", [])), body["target"], scope=active_scope)
+        sources = [str(s).strip() for s in body.get("sources", []) if str(s).strip()]
+        target = str(body.get("target", "")).strip()
+        if not sources:
+            raise ApiError("Merge requires at least one source property.", 400)
+        if not target:
+            raise ApiError("Target property name cannot be empty.", 400)
+        plan = refactor.plan_merge(scan, sources, target, scope=active_scope)
     elif operation == "normalize":
-        prop = body.get("property") or body.get("key")
+        prop = str(body.get("property") or body.get("key") or "").strip()
+        if not prop:
+            raise ApiError("Property name is required for normalization.", 400)
         plan = refactor.plan_normalize(
             scan, prop, body.get("canonical_overrides") or None, scope=active_scope
         )
     elif operation == "convert_type":
-        prop = body.get("property") or body.get("key")
-        plan = refactor.plan_type_conversion(scan, prop, body["target_type"], scope=active_scope)
+        prop = str(body.get("property") or body.get("key") or "").strip()
+        target_type = str(body.get("target_type", "")).strip()
+        if not prop:
+            raise ApiError("Property name is required for type conversion.", 400)
+        valid_types = {"text", "number", "date", "checkbox", "list", "tags", "note_link", "note_link_list"}
+        if target_type not in valid_types:
+            raise ApiError(f"Target type must be one of {sorted(valid_types)}, got '{target_type}'.", 400)
+        plan = refactor.plan_type_conversion(scan, prop, target_type, scope=active_scope)
     elif operation == "required_impact":
         schema = Schema.from_dict(body.get("schema", {}))
         plan = refactor.plan_required_impact(
@@ -286,6 +334,7 @@ def api_refactor_plan(body: dict[str, Any]) -> dict[str, Any]:
     else:
         raise ApiError(f"Unknown refactor operation '{operation}'.", 400)
     return plan
+
 
 
 def api_relationships(body: dict[str, Any]) -> dict[str, Any]:
@@ -501,7 +550,9 @@ ROUTES: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "/api/scan": api_scan,
     "/api/discovery": api_discovery,
     "/api/property": api_property_detail,
+    "/api/design/presets": api_design_presets,
     "/api/design/suggest": api_design_suggest,
+
     "/api/design/build": api_design_build,
     "/api/design/review": api_design_review,
     "/api/fill/preview": api_fill_preview,

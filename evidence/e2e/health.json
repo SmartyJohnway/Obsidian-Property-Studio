@@ -1,0 +1,626 @@
+{
+  "report_format_version": "1.0",
+  "vault_path": "D:\\Antigravity-Workspace\\Obsidian-Property-Studio\\Obsidian-Property-Studio-v1.0.0\\fixtures\\vaults\\main_vault",
+  "summary": {
+    "vault_path": "D:\\Antigravity-Workspace\\Obsidian-Property-Studio\\Obsidian-Property-Studio-v1.0.0\\fixtures\\vaults\\main_vault",
+    "note_count": 22,
+    "notes_with_properties": 17,
+    "notes_without_properties": 2,
+    "notes_with_parse_failure": 3,
+    "skipped_path_count": 2,
+    "issue_count": 5,
+    "unique_property_count": 15,
+    "finding_count": 19,
+    "by_severity": {
+      "high": 6,
+      "info": 3,
+      "low": 8,
+      "medium": 2
+    },
+    "by_category": {
+      "ambiguous_property": 1,
+      "ambiguous_relationship": 1,
+      "broken_relationship": 1,
+      "link_upgrade_opportunity": 3,
+      "naming_drift": 1,
+      "parse_failure": 3,
+      "possible_semantic_overlap": 4,
+      "type_conflict": 1,
+      "value_drift": 4
+    },
+    "schema_applied": "equipment"
+  },
+  "health_score": {
+    "score": 49.5,
+    "total_deduction": 50.5,
+    "formula": "score = max(0, 100 - sum over categories of min(category_cap, weight_per_finding * finding_count)). Weights and caps are listed in 'score_breakdown'. Informational categories have weight 0.",
+    "score_breakdown": [
+      {
+        "category": "ambiguous_property",
+        "finding_count": 1,
+        "weight_per_finding": 6.0,
+        "raw_deduction": 6.0,
+        "category_cap": 15.0,
+        "applied_deduction": 6.0
+      },
+      {
+        "category": "ambiguous_relationship",
+        "finding_count": 1,
+        "weight_per_finding": 1.5,
+        "raw_deduction": 1.5,
+        "category_cap": 8.0,
+        "applied_deduction": 1.5
+      },
+      {
+        "category": "broken_relationship",
+        "finding_count": 1,
+        "weight_per_finding": 2.0,
+        "raw_deduction": 2.0,
+        "category_cap": 10.0,
+        "applied_deduction": 2.0
+      },
+      {
+        "category": "link_upgrade_opportunity",
+        "finding_count": 3,
+        "weight_per_finding": 0.0,
+        "raw_deduction": 0.0,
+        "category_cap": 0.0,
+        "applied_deduction": 0.0
+      },
+      {
+        "category": "naming_drift",
+        "finding_count": 1,
+        "weight_per_finding": 4.0,
+        "raw_deduction": 4.0,
+        "category_cap": 15.0,
+        "applied_deduction": 4.0
+      },
+      {
+        "category": "parse_failure",
+        "finding_count": 3,
+        "weight_per_finding": 8.0,
+        "raw_deduction": 24.0,
+        "category_cap": 25.0,
+        "applied_deduction": 24.0
+      },
+      {
+        "category": "possible_semantic_overlap",
+        "finding_count": 4,
+        "weight_per_finding": 0.0,
+        "raw_deduction": 0.0,
+        "category_cap": 0.0,
+        "applied_deduction": 0.0
+      },
+      {
+        "category": "type_conflict",
+        "finding_count": 1,
+        "weight_per_finding": 5.0,
+        "raw_deduction": 5.0,
+        "category_cap": 20.0,
+        "applied_deduction": 5.0
+      },
+      {
+        "category": "value_drift",
+        "finding_count": 4,
+        "weight_per_finding": 2.0,
+        "raw_deduction": 8.0,
+        "category_cap": 10.0,
+        "applied_deduction": 8.0
+      }
+    ]
+  },
+  "findings": [
+    {
+      "id": "duplicate-key:status",
+      "category": "ambiguous_property",
+      "severity": "high",
+      "title": "'status' is defined more than once in the same note",
+      "explanation": "Duplicate YAML keys have no single defined value. The product refuses to guess which one is correct.",
+      "recommendation": "Open the listed notes and keep exactly one definition of this property.",
+      "property_keys": [
+        "status"
+      ],
+      "affected_note_count": 1,
+      "affected_notes": [
+        "Notes/Duplicate Key.md"
+      ],
+      "evidence": {
+        "policy": "fail-closed: excluded from dependent plans"
+      },
+      "confidence": "exact"
+    },
+    {
+      "id": "health:ambiguous-link:Inbox/Ambiguous Target.md:project:[[Duplicate Name]]",
+      "category": "ambiguous_relationship",
+      "severity": "medium",
+      "title": "'Duplicate Name' could mean 2 different notes",
+      "explanation": "Several notes share this name. Property Studio will not choose one for you.",
+      "recommendation": "Pick the intended note, or use a full path link.",
+      "property_keys": [
+        "project"
+      ],
+      "affected_note_count": 1,
+      "affected_notes": [
+        "Inbox/Ambiguous Target.md"
+      ],
+      "evidence": {
+        "value": "[[Duplicate Name]]",
+        "candidates": [
+          "A/Duplicate Name.md",
+          "B/Duplicate Name.md"
+        ],
+        "auto_resolved": false
+      },
+      "confidence": "ambiguous"
+    },
+    {
+      "id": "health:broken-link:Meetings/2026-01-05 Kickoff.md:attendees:[[Missing Person]]",
+      "category": "broken_relationship",
+      "severity": "high",
+      "title": "Link 'Missing Person' points to no existing note",
+      "explanation": "This property links to a note that does not exist in this vault.",
+      "recommendation": "Create the note, fix the spelling, or clear the value.",
+      "property_keys": [
+        "attendees"
+      ],
+      "affected_note_count": 1,
+      "affected_notes": [
+        "Meetings/2026-01-05 Kickoff.md"
+      ],
+      "evidence": {
+        "value": "[[Missing Person]]",
+        "candidates": [],
+        "auto_resolved": false
+      },
+      "confidence": "unresolved"
+    },
+    {
+      "id": "health:link-upgrade:Equipment/Microscope.md:project:Apollo",
+      "category": "link_upgrade_opportunity",
+      "severity": "info",
+      "title": "'Apollo' exactly matches the note Projects/Apollo.md",
+      "explanation": "This plain text value names an existing note. Turning it into a link makes the relationship visible in Obsidian's graph and backlinks.",
+      "recommendation": "Review and, if correct, copy the proposed link value.",
+      "property_keys": [
+        "project"
+      ],
+      "affected_note_count": 1,
+      "affected_notes": [
+        "Equipment/Microscope.md"
+      ],
+      "evidence": {
+        "value": "Apollo",
+        "candidates": [
+          "Projects/Apollo.md"
+        ],
+        "auto_resolved": false
+      },
+      "confidence": "exact"
+    },
+    {
+      "id": "health:link-upgrade:Meetings/CRLF Note.md:project:Apollo",
+      "category": "link_upgrade_opportunity",
+      "severity": "info",
+      "title": "'Apollo' exactly matches the note Projects/Apollo.md",
+      "explanation": "This plain text value names an existing note. Turning it into a link makes the relationship visible in Obsidian's graph and backlinks.",
+      "recommendation": "Review and, if correct, copy the proposed link value.",
+      "property_keys": [
+        "project"
+      ],
+      "affected_note_count": 1,
+      "affected_notes": [
+        "Meetings/CRLF Note.md"
+      ],
+      "evidence": {
+        "value": "Apollo",
+        "candidates": [
+          "Projects/Apollo.md"
+        ],
+        "auto_resolved": false
+      },
+      "confidence": "exact"
+    },
+    {
+      "id": "health:link-upgrade:Projects/Borealis.md:owner:Ada Lovelace",
+      "category": "link_upgrade_opportunity",
+      "severity": "info",
+      "title": "'Ada Lovelace' exactly matches the note People/Ada Lovelace.md",
+      "explanation": "This plain text value names an existing note. Turning it into a link makes the relationship visible in Obsidian's graph and backlinks.",
+      "recommendation": "Review and, if correct, copy the proposed link value.",
+      "property_keys": [
+        "owner"
+      ],
+      "affected_note_count": 1,
+      "affected_notes": [
+        "Projects/Borealis.md"
+      ],
+      "evidence": {
+        "value": "Ada Lovelace",
+        "candidates": [
+          "People/Ada Lovelace.md"
+        ],
+        "auto_resolved": false
+      },
+      "confidence": "exact"
+    },
+    {
+      "id": "naming-drift:project",
+      "category": "naming_drift",
+      "severity": "medium",
+      "title": "Case drift: project, Project",
+      "explanation": "These property keys are the same word written differently, so Obsidian treats them as separate properties and filtering/grouping splits across them.",
+      "recommendation": "Consider standardising on 'project' (most used: 6 notes) via the Refactor Planner. Nothing is changed automatically.",
+      "property_keys": [
+        "project",
+        "Project"
+      ],
+      "affected_note_count": 7,
+      "affected_notes": [
+        "Archive/Merged Candidate.md",
+        "Equipment/Microscope.md",
+        "Equipment/Oscilloscope.md",
+        "Inbox/Ambiguous Target.md",
+        "Meetings/2026-01-05 Kickoff.md",
+        "Meetings/CRLF Note.md",
+        "Projects/Cascade.md"
+      ],
+      "evidence": {
+        "normalized_key": "project",
+        "variants": [
+          {
+            "key": "project",
+            "usage_count": 6
+          },
+          {
+            "key": "Project",
+            "usage_count": 1
+          }
+        ],
+        "match_basis": "case only"
+      },
+      "confidence": "exact"
+    },
+    {
+      "id": "parse-failure:invalid_yaml",
+      "category": "parse_failure",
+      "severity": "high",
+      "title": "1 note(s) with unreadable properties (invalid_yaml)",
+      "explanation": "These notes could not be parsed. They are NOT counted as notes without properties — their property layer is unknown.",
+      "recommendation": "Fix the frontmatter in Obsidian, then rescan.",
+      "property_keys": [],
+      "affected_note_count": 1,
+      "affected_notes": [
+        "Notes/Malformed.md"
+      ],
+      "evidence": {
+        "notes": [
+          {
+            "note": "Notes/Malformed.md",
+            "message": "Frontmatter is not valid YAML, so its properties cannot be read.",
+            "detail": "while scanning a quoted scalar   in \"<unicode string>\", line 1, column 8:     title: \"unclosed            ^ found unexpected end of stream   in \"<unicode string>\", line 2, column 16:     status: [broken                    ^"
+          }
+        ]
+      },
+      "confidence": "exact"
+    },
+    {
+      "id": "parse-failure:not_a_mapping",
+      "category": "parse_failure",
+      "severity": "high",
+      "title": "1 note(s) with unreadable properties (not_a_mapping)",
+      "explanation": "These notes could not be parsed. They are NOT counted as notes without properties — their property layer is unknown.",
+      "recommendation": "Fix the frontmatter in Obsidian, then rescan.",
+      "property_keys": [],
+      "affected_note_count": 1,
+      "affected_notes": [
+        "Notes/Not A Mapping.md"
+      ],
+      "evidence": {
+        "notes": [
+          {
+            "note": "Notes/Not A Mapping.md",
+            "message": "Frontmatter is valid YAML but is not a list of properties (found list).",
+            "detail": "Obsidian expects 'key: value' pairs at the top level."
+          }
+        ]
+      },
+      "confidence": "exact"
+    },
+    {
+      "id": "parse-failure:unterminated_frontmatter",
+      "category": "parse_failure",
+      "severity": "high",
+      "title": "1 note(s) with unreadable properties (unterminated_frontmatter)",
+      "explanation": "These notes could not be parsed. They are NOT counted as notes without properties — their property layer is unknown.",
+      "recommendation": "Fix the frontmatter in Obsidian, then rescan.",
+      "property_keys": [],
+      "affected_note_count": 1,
+      "affected_notes": [
+        "Notes/Unterminated.md"
+      ],
+      "evidence": {
+        "notes": [
+          {
+            "note": "Notes/Unterminated.md",
+            "message": "Frontmatter starts with '---' but never closes. Obsidian will not read properties from this note.",
+            "detail": "No closing '---' delimiter was found."
+          }
+        ]
+      },
+      "confidence": "exact"
+    },
+    {
+      "id": "possible-overlap:Project|project_name",
+      "category": "possible_semantic_overlap",
+      "severity": "low",
+      "title": "Possible overlap: 'Project' and 'project_name'",
+      "explanation": "These two property names look related, but the product cannot prove they mean the same thing. This is a possibility for you to judge, not a confirmed duplicate.",
+      "recommendation": "Review both properties' values. Merge only if you decide they mean the same thing.",
+      "property_keys": [
+        "Project",
+        "project_name"
+      ],
+      "affected_note_count": 3,
+      "affected_notes": [
+        "Archive/Merged Candidate.md",
+        "Archive/Old Project.md",
+        "Projects/Cascade.md"
+      ],
+      "evidence": {
+        "similarity_ratio": 0.778,
+        "token_subset": true,
+        "usage": {
+          "Project": 1,
+          "project_name": 2
+        },
+        "auto_merge": false
+      },
+      "confidence": "possible"
+    },
+    {
+      "id": "possible-overlap:date|due_date",
+      "category": "possible_semantic_overlap",
+      "severity": "low",
+      "title": "Possible overlap: 'date' and 'due_date'",
+      "explanation": "These two property names look related, but the product cannot prove they mean the same thing. This is a possibility for you to judge, not a confirmed duplicate.",
+      "recommendation": "Review both properties' values. Merge only if you decide they mean the same thing.",
+      "property_keys": [
+        "date",
+        "due_date"
+      ],
+      "affected_note_count": 5,
+      "affected_notes": [
+        "Meetings/2026-01-05 Kickoff.md",
+        "Meetings/CRLF Note.md",
+        "Projects/Apollo.md",
+        "Projects/Borealis.md",
+        "Projects/Cascade.md"
+      ],
+      "evidence": {
+        "similarity_ratio": 0.727,
+        "token_subset": true,
+        "usage": {
+          "date": 2,
+          "due_date": 3
+        },
+        "auto_merge": false
+      },
+      "confidence": "possible"
+    },
+    {
+      "id": "possible-overlap:date|purchase_date",
+      "category": "possible_semantic_overlap",
+      "severity": "low",
+      "title": "Possible overlap: 'date' and 'purchase_date'",
+      "explanation": "These two property names look related, but the product cannot prove they mean the same thing. This is a possibility for you to judge, not a confirmed duplicate.",
+      "recommendation": "Review both properties' values. Merge only if you decide they mean the same thing.",
+      "property_keys": [
+        "date",
+        "purchase_date"
+      ],
+      "affected_note_count": 4,
+      "affected_notes": [
+        "Equipment/Microscope.md",
+        "Equipment/Oscilloscope.md",
+        "Meetings/2026-01-05 Kickoff.md",
+        "Meetings/CRLF Note.md"
+      ],
+      "evidence": {
+        "similarity_ratio": 0.5,
+        "token_subset": true,
+        "usage": {
+          "date": 2,
+          "purchase_date": 2
+        },
+        "auto_merge": false
+      },
+      "confidence": "possible"
+    },
+    {
+      "id": "possible-overlap:project|project_name",
+      "category": "possible_semantic_overlap",
+      "severity": "low",
+      "title": "Possible overlap: 'project' and 'project_name'",
+      "explanation": "These two property names look related, but the product cannot prove they mean the same thing. This is a possibility for you to judge, not a confirmed duplicate.",
+      "recommendation": "Review both properties' values. Merge only if you decide they mean the same thing.",
+      "property_keys": [
+        "project",
+        "project_name"
+      ],
+      "affected_note_count": 7,
+      "affected_notes": [
+        "Archive/Merged Candidate.md",
+        "Archive/Old Project.md",
+        "Equipment/Microscope.md",
+        "Equipment/Oscilloscope.md",
+        "Inbox/Ambiguous Target.md",
+        "Meetings/2026-01-05 Kickoff.md",
+        "Meetings/CRLF Note.md"
+      ],
+      "evidence": {
+        "similarity_ratio": 0.778,
+        "token_subset": true,
+        "usage": {
+          "project": 6,
+          "project_name": 2
+        },
+        "auto_merge": false
+      },
+      "confidence": "possible"
+    },
+    {
+      "id": "type-conflict:due_date",
+      "category": "type_conflict",
+      "severity": "high",
+      "title": "'due_date' is stored as date and text in different notes",
+      "explanation": "Obsidian expects one property type per property. Mixed shapes break sorting, filtering and Bases/Dataview style queries.",
+      "recommendation": "Decide the intended type and use the Refactor Planner's type conversion feasibility check before changing anything.",
+      "property_keys": [
+        "due_date"
+      ],
+      "affected_note_count": 3,
+      "affected_notes": [
+        "Projects/Apollo.md",
+        "Projects/Borealis.md",
+        "Projects/Cascade.md"
+      ],
+      "evidence": {
+        "observed_types": {
+          "date": 2,
+          "text": 1
+        },
+        "notes_by_type": {
+          "date": [
+            "Projects/Apollo.md",
+            "Projects/Borealis.md"
+          ],
+          "text": [
+            "Projects/Cascade.md"
+          ]
+        }
+      },
+      "confidence": "exact"
+    },
+    {
+      "id": "health:relationship-drift:owner:ada lovelace",
+      "category": "value_drift",
+      "severity": "low",
+      "title": "'owner' refers to the same target in 2 different ways",
+      "explanation": "Mixing plain text and links (or different spellings) for the same target splits the relationship.",
+      "recommendation": "Standardise on one form using the Refactor Planner.",
+      "property_keys": [
+        "owner"
+      ],
+      "affected_note_count": 2,
+      "affected_notes": [
+        "Projects/Apollo.md",
+        "Projects/Borealis.md"
+      ],
+      "evidence": {
+        "value": "Ada Lovelace, [[Ada Lovelace]]",
+        "candidates": [
+          "Projects/Apollo.md",
+          "Projects/Borealis.md"
+        ],
+        "auto_resolved": false
+      },
+      "confidence": "exact"
+    },
+    {
+      "id": "health:relationship-drift:project:apollo",
+      "category": "value_drift",
+      "severity": "low",
+      "title": "'project' refers to the same target in 2 different ways",
+      "explanation": "Mixing plain text and links (or different spellings) for the same target splits the relationship.",
+      "recommendation": "Standardise on one form using the Refactor Planner.",
+      "property_keys": [
+        "project"
+      ],
+      "affected_note_count": 4,
+      "affected_notes": [
+        "Equipment/Microscope.md",
+        "Equipment/Oscilloscope.md",
+        "Meetings/2026-01-05 Kickoff.md",
+        "Meetings/CRLF Note.md"
+      ],
+      "evidence": {
+        "value": "Apollo, [[Apollo]]",
+        "candidates": [
+          "Equipment/Microscope.md",
+          "Equipment/Oscilloscope.md",
+          "Meetings/2026-01-05 Kickoff.md",
+          "Meetings/CRLF Note.md"
+        ],
+        "auto_resolved": false
+      },
+      "confidence": "exact"
+    },
+    {
+      "id": "value-drift:location:lab",
+      "category": "value_drift",
+      "severity": "low",
+      "title": "'location' uses inconsistent spellings of 'Lab', 'lab'",
+      "explanation": "The same value is written with different capitalisation or spacing, so it appears as several different values when you filter or group.",
+      "recommendation": "Normalize to 'Lab' with the Refactor Planner (planning only — the vault is not modified).",
+      "property_keys": [
+        "location"
+      ],
+      "affected_note_count": 2,
+      "affected_notes": [
+        "Equipment/Microscope.md",
+        "Equipment/Oscilloscope.md"
+      ],
+      "evidence": {
+        "normalized_value": "lab",
+        "variants": [
+          {
+            "value": "Lab",
+            "count": 1
+          },
+          {
+            "value": "lab",
+            "count": 1
+          }
+        ]
+      },
+      "confidence": "exact"
+    },
+    {
+      "id": "value-drift:status:active",
+      "category": "value_drift",
+      "severity": "low",
+      "title": "'status' uses inconsistent spellings of 'active', 'ACTIVE', 'Active'",
+      "explanation": "The same value is written with different capitalisation or spacing, so it appears as several different values when you filter or group.",
+      "recommendation": "Normalize to 'active' with the Refactor Planner (planning only — the vault is not modified).",
+      "property_keys": [
+        "status"
+      ],
+      "affected_note_count": 5,
+      "affected_notes": [
+        "People/Ada Lovelace.md",
+        "People/林小明.md",
+        "Projects/Apollo.md",
+        "Projects/Borealis.md",
+        "Projects/Cascade.md"
+      ],
+      "evidence": {
+        "normalized_value": "active",
+        "variants": [
+          {
+            "value": "active",
+            "count": 3
+          },
+          {
+            "value": "ACTIVE",
+            "count": 1
+          },
+          {
+            "value": "Active",
+            "count": 1
+          }
+        ]
+      },
+      "confidence": "exact"
+    }
+  ]
+}

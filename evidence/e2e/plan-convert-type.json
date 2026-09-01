@@ -1,0 +1,87 @@
+{
+  "plan_format_version": "1.1.0",
+  "operation": "convert_property_type",
+  "apply_supported": false,
+  "notice": "Planning only. Obsidian Property Studio v1 never modifies your vault. Use this plan to make the changes yourself in Obsidian.",
+  "property": "project",
+  "target_type": "note_link",
+  "scope": {
+    "mode": "entire_vault"
+  },
+  "summary": {
+    "values_examined": 6,
+    "convertible": 4,
+    "ambiguous": 1,
+    "unresolved": 1,
+    "already_target_type": 0,
+    "excluded_ambiguous": 0,
+    "feasible_without_manual_work": false
+  },
+  "convertible": [
+    {
+      "note": "Equipment/Microscope.md",
+      "value": "Apollo",
+      "proposed_value": "[[Apollo]]",
+      "detail": "Matches note 'Projects/Apollo.md'.",
+      "current_type": "text"
+    },
+    {
+      "note": "Equipment/Oscilloscope.md",
+      "value": "[[Apollo]]",
+      "proposed_value": "[[Apollo]]",
+      "detail": "Matches note 'Projects/Apollo.md'.",
+      "current_type": "text"
+    },
+    {
+      "note": "Meetings/2026-01-05 Kickoff.md",
+      "value": "[[Apollo]]",
+      "proposed_value": "[[Apollo]]",
+      "detail": "Matches note 'Projects/Apollo.md'.",
+      "current_type": "text"
+    },
+    {
+      "note": "Meetings/CRLF Note.md",
+      "value": "Apollo",
+      "proposed_value": "[[Apollo]]",
+      "detail": "Matches note 'Projects/Apollo.md'.",
+      "current_type": "text"
+    }
+  ],
+  "ambiguous": [
+    {
+      "note": "Inbox/Ambiguous Target.md",
+      "value": "[[Duplicate Name]]",
+      "proposed_value": "",
+      "detail": "Matches 2 notes: A/Duplicate Name.md, B/Duplicate Name.md.",
+      "current_type": "text"
+    }
+  ],
+  "unresolved": [
+    {
+      "note": "Archive/Merged Candidate.md",
+      "value": "Apollo Legacy",
+      "proposed_value": "",
+      "detail": "No note named 'Apollo Legacy' exists.",
+      "current_type": "text"
+    }
+  ],
+  "already_target_type": [],
+  "excluded": [],
+  "unreadable_notes": [
+    {
+      "note": "Notes/Malformed.md",
+      "reason": "invalid_yaml"
+    },
+    {
+      "note": "Notes/Not A Mapping.md",
+      "reason": "not_a_mapping"
+    },
+    {
+      "note": "Notes/Unterminated.md",
+      "reason": "unterminated_frontmatter"
+    }
+  ],
+  "warnings": [
+    "Ambiguous and unresolved values are never converted automatically or guessed."
+  ]
+}

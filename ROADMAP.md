@@ -15,12 +15,15 @@ Project State: `COMPLETE`
 Current Milestone: `NONE`  
 Current Milestone Status: `PASS`  
 Current Task: `NONE`  
-Last Verified Gate: `M013 — Release Closure Final In-Place Repair PASS`  
+Last Verified Gate: `M014 — Human UI/UX Walkthrough Closure PASS`  
 Current Blocker: `NONE`  
-Next Action: `PR #1 final merge approval`  
+Next Action: `NONE (v1.1.0 release closure completed)`  
 Formal Release Verdict: `PROPERTY_STUDIO_V1_1_0_RELEASE_PASS_WITH_LIMITATIONS`  
+Human Verified Acceptance: `Windows 10 Browser/UI, Traditional Chinese, English, Dark/Light Themes, Vault Scan/Scope Operation (PASS — Human Verified by Dr. J)`  
 Accepted Limitation: `Windows 11 AMD64 native verification recorded as NOT YET VERIFIED due to test host unavailability (accepted non-blocking release limitation per human approved contract).`  
 Last Updated: `2026-09-01`
+
+
 
 ---
 
@@ -417,6 +420,55 @@ Systematically address and verify all 12 repair contracts (R01~R12) from the PR 
 `PASS` (Verified across 140 test cases in `tests/`, Windows 10 live HTTP native acceptance test, Refactor Merge operation contract, and automated release packaging verification)
 
 ---
+
+# M014 — Human UI/UX Walkthrough Closure
+
+Status: `IN_PROGRESS`
+
+### Objective
+Resolve usability, discoverability, and workflow gaps identified during the Human Owner walkthrough on Windows 10 production UI: Searchable Combobox + Browse Dropdown in Note Workspace; structured multi-select management objects and needs in Schema Design with clear Adopt CTA and routing; i18n localization of schema review statuses; dynamic empty-state and form generation for New Frontmatter / Blank Note; controlled vocabulary dropdowns/multi-selects and human-readable primary summary view in Refactor Planner; and final release evidence closure.
+
+### Human Verified Acceptance
+- Windows 10 actual browser/UI rendering: `PASS — Human Verified`
+- Traditional Chinese UI: `PASS — Human Verified`
+- English UI: `PASS — Human Verified`
+- zh-Hant ↔ English switching: `PASS — Human Verified`
+- Dark theme: `PASS — Human Verified`
+- Light theme: `PASS — Human Verified`
+- Dark ↔ Light switching: `PASS — Human Verified`
+- Vault scan / Scope UI basic operation: `PASS — Human Verified`
+
+### Tasks
+- [x] `M014-T01` [Note Workspace] Implement Searchable Combobox + Browse Dropdown with Scope preference, folder hierarchy, whole-Vault toggle, and duplicate-basename path disambiguation.
+- [x] `M014-T02` [Schema Design] Replace vague free-text primary input with deterministic multi-select presets for Management Objects and Management Needs; relegate free-text to optional secondary context.
+- [x] `M014-T03` [Schema Design] Enable per-property retain/exclude checkboxes and implement `[Adopt Schema]` CTA establishing `Current Schema` in session state.
+- [x] `M014-T04` [Schema Design] Provide explicit Next Actions after adoption (`[Apply to Existing Note]` and `[Create New Frontmatter]`).
+- [x] `M014-T05` [i18n] Localize all schema recommendation explanation strings and enums (`exact_existing`, `elsewhere`, `new`, `overlap`).
+- [x] `M014-T06` [New Frontmatter] Implement informative empty state when no schema is adopted, and dynamic form control generation with live YAML preview when Current Schema exists.
+- [x] `M014-T07` [Refactor Planner] Implement controlled vocabulary UI: Scope inventory dropdown for Rename, multi-select for Merge, observed value mapping for Normalize, and controlled target types for Convert Type.
+- [x] `M014-T08` [Refactor Planner] Add conflict warning on existing target property, enforce fail-closed on empty target, and provide human-readable primary view with collapsible raw JSON.
+- [x] `M014-T09` [Automated Tests] Author `tests/test_m014_human_walkthrough.py` covering regression contracts M014-001 ~ M014-015.
+- [x] `M014-T10` [Final Evidence Closure] Execute final authoritative benchmark, synchronize all evidence documents, perform clean commit workflow, and generate external release packaging.
+
+### Acceptance Criteria
+- [x] `M014-AC01` Note Workspace supports both Search and Browse Dropdown with clear path disambiguation for duplicate basenames.
+- [x] `M014-AC02` Schema Design generates suggestions from deterministic multi-select inputs with optional free-text.
+- [x] `M014-AC03` `[Adopt Schema]` persists session schema and routes cleanly to Existing Note or New Frontmatter.
+- [x] `M014-AC04` New Frontmatter displays empty-state guidance when unconfigured and renders dynamic controls when configured.
+- [x] `M014-AC05` Refactor Planner uses controlled dropdowns/multi-selects and displays human-readable summary by default.
+- [x] `M014-AC06` 100% of new UI strings are localized in `zh-Hant.json` and `en.json`.
+- [x] `M014-AC07` All automated tests pass (140 existing + 15 M014 regression contracts = 155/155 tests PASS).
+- [x] `M014-AC08` Vault remains byte-for-byte read-only across all new workflows.
+
+### Result
+`PASS`
+- All 155 automated unit & integration tests pass (`pytest -v`, 13.28s).
+- 5,000-note benchmark verified: scan 4.321s, total analysis 4.471s, vault unchanged (`evidence/benchmark.json`).
+- Human acceptance on Windows 10 Build 19045 production UI verified (`PASS — Human Verified`).
+
+
+---
+
 
 # 4. Final v1.1.0 Integration Summary
 

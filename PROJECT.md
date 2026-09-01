@@ -331,6 +331,16 @@ Refactor Planner 與 Property Health 必須嚴格根據當前選定的 Scope 進
 ### REQ-035 — Universal Module States & Drawer Drill-Down
 主要模組皆需定義明確的 Initial, Loading, Ready, Empty, Blocked, Error 狀態。Discover 與 Health 提供右側 Drawer 抽屜供深入檢視，並提供開啟至 Note Properties Workspace 的快捷操作。
 
+### REQ-036 — Note Properties Searchable Combobox & Browse Dropdown
+Note Properties Workspace 必須同時支援精確搜尋（Search）與層級瀏覽（Browse Dropdown）。下拉選單優先呈現 Current Scope 內筆記與資料夾路徑，並支援切換至全庫檢視；同名筆記必須呈現完整相對路徑以消歧義，絕不自動猜測同名 Note。
+
+### REQ-037 — Structured Multi-Select Schema Inputs & Adopt Next Actions
+Schema Designer 必須提供結構化的「管理對象（Management Objects）」與「管理需求（Management Needs）」確定性預設複選清單，自由文字降為選填輔助；產生的建議屬性清單支援個別勾選/剔除，並提供明確的「採用此屬性架構 (Adopt Schema)」CTA。採用後建立 Current Schema，並導引至「套用到既有筆記」或「建立新筆記 Frontmatter」；Blank Note 模式在未選擇 Schema 時提供清晰的 Empty State 與前往設計器導引，採用後動態渲染可用表單控制項。所有建議標籤與原因透過 i18n 完全在地化。
+
+### REQ-038 — Controlled Vocabulary Refactor Planner & Human-Readable Primary View
+Refactor Planner 的操作輸入（來源屬性、目標型態、屬性值正規化對照）必須最大程度使用 Scope 既有屬性/值之下拉選單或多選方塊，避免要求手動輸入已知資料；Rename 目標衝突需即時警告；空目標嚴格 fail-closed。計畫產出以直觀的統計摘要、Scope 範圍與受影響筆記清單為第一主視圖，原始 JSON 計畫作為進階/證據視圖折疊提供。維持 Planning-only，絕不執行寫入。
+
+
 ---
 
 ## 6. Constraints / Non-negotiables

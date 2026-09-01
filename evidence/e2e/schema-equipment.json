@@ -1,0 +1,165 @@
+{
+  "format_version": "1.0",
+  "schema_name": "equipment",
+  "description": "Designed from the goal: “I want to manage my lab equipment and know where each item is”.",
+  "properties": [
+    {
+      "name": "type",
+      "storage_type": "text",
+      "storage_type_label": "Text",
+      "ui_control": "single_choice",
+      "serialization": {
+        "storage_types": "text, number, date, datetime",
+        "serializes_as": "a single scalar value of the underlying storage type",
+        "note": "Select is a schema/UI constraint over a scalar value. Obsidian has no native 'select' property type; the note stores a plain scalar."
+      },
+      "required": true,
+      "reason": "Marks what kind of note this is, so you can filter one kind of note out of the whole vault.",
+      "allowed_values": [
+        "equipment"
+      ],
+      "origin": "recipe:equipment",
+      "confidence": null
+    },
+    {
+      "name": "status",
+      "storage_type": "text",
+      "storage_type_label": "Text",
+      "ui_control": "single_choice",
+      "serialization": {
+        "storage_types": "text, number, date, datetime",
+        "serializes_as": "a single scalar value of the underlying storage type",
+        "note": "Select is a schema/UI constraint over a scalar value. Obsidian has no native 'select' property type; the note stores a plain scalar."
+      },
+      "required": false,
+      "reason": "Tracks where this item currently is, so you can see only what is active.",
+      "allowed_values": [
+        "in use",
+        "in storage",
+        "in repair",
+        "retired"
+      ],
+      "origin": "recipe:equipment",
+      "confidence": null
+    },
+    {
+      "name": "serial_number",
+      "storage_type": "text",
+      "storage_type_label": "Text",
+      "ui_control": "plain",
+      "serialization": {
+        "storage_types": "text, list, number, checkbox, date, datetime, tags",
+        "serializes_as": "the underlying storage type, unchanged",
+        "note": "No extra constraint. The control is only an input widget."
+      },
+      "required": false,
+      "reason": "Identifies the exact physical unit, not just the model name.",
+      "allowed_values": null,
+      "origin": "recipe:equipment",
+      "confidence": null
+    },
+    {
+      "name": "location",
+      "storage_type": "text",
+      "storage_type_label": "Text",
+      "ui_control": "single_choice",
+      "serialization": {
+        "storage_types": "text, number, date, datetime",
+        "serializes_as": "a single scalar value of the underlying storage type",
+        "note": "Select is a schema/UI constraint over a scalar value. Obsidian has no native 'select' property type; the note stores a plain scalar."
+      },
+      "required": false,
+      "reason": "Where it physically is, so you can find it. Suggested values come from the 2 notes in your vault that already use this property.",
+      "allowed_values": [
+        "Lab",
+        "lab"
+      ],
+      "origin": "recipe:equipment",
+      "confidence": null
+    },
+    {
+      "name": "owner",
+      "storage_type": "text",
+      "storage_type_label": "Text",
+      "ui_control": "note_link",
+      "serialization": {
+        "storage_types": "text",
+        "serializes_as": "\"[[Note Name]]\" wiki-link inside a text property",
+        "note": "Note-link picker is a UI convenience that writes a link-encoded text value. It is not a separate Obsidian storage type."
+      },
+      "required": false,
+      "reason": "Who is responsible for it, linked to that person's note.",
+      "allowed_values": null,
+      "origin": "recipe:equipment",
+      "confidence": null
+    },
+    {
+      "name": "purchase_date",
+      "storage_type": "date",
+      "storage_type_label": "Date",
+      "ui_control": "plain",
+      "serialization": {
+        "storage_types": "text, list, number, checkbox, date, datetime, tags",
+        "serializes_as": "the underlying storage type, unchanged",
+        "note": "No extra constraint. The control is only an input widget."
+      },
+      "required": false,
+      "reason": "Age of the asset, for warranty and replacement planning.",
+      "allowed_values": null,
+      "origin": "recipe:equipment",
+      "confidence": null
+    },
+    {
+      "name": "last_service_date",
+      "storage_type": "date",
+      "storage_type_label": "Date",
+      "ui_control": "plain",
+      "serialization": {
+        "storage_types": "text, list, number, checkbox, date, datetime, tags",
+        "serializes_as": "the underlying storage type, unchanged",
+        "note": "No extra constraint. The control is only an input widget."
+      },
+      "required": false,
+      "reason": "Lets you find equipment overdue for maintenance.",
+      "allowed_values": null,
+      "origin": "recipe:equipment",
+      "confidence": null
+    },
+    {
+      "name": "project",
+      "storage_type": "text",
+      "storage_type_label": "Text",
+      "ui_control": "note_link",
+      "serialization": {
+        "storage_types": "text",
+        "serializes_as": "\"[[Note Name]]\" wiki-link inside a text property",
+        "note": "Note-link picker is a UI convenience that writes a link-encoded text value. It is not a separate Obsidian storage type."
+      },
+      "required": false,
+      "reason": "Relates this record to an existing project note.",
+      "allowed_values": null,
+      "origin": "recipe:equipment",
+      "confidence": null
+    },
+    {
+      "name": "tags",
+      "storage_type": "tags",
+      "storage_type_label": "Tags",
+      "ui_control": "multi_choice",
+      "serialization": {
+        "storage_types": "list, tags",
+        "serializes_as": "a YAML list of scalars (or a tags list)",
+        "note": "Multi-select is a schema/UI constraint over a list. Obsidian stores an ordinary list property."
+      },
+      "required": false,
+      "reason": "Free-form labels for cross-cutting themes. Obsidian indexes tags natively for search. Suggested values come from the 2 notes in your vault that already use this property.",
+      "allowed_values": [
+        "urgent",
+        "work",
+        "研究"
+      ],
+      "origin": "recipe:equipment",
+      "confidence": null
+    }
+  ]
+}

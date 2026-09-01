@@ -1,0 +1,88 @@
+{
+  "case": "OPS-AC-027 / SC-12",
+  "runs": 2,
+  "compared_sections": [
+    "discovery",
+    "fill",
+    "health",
+    "inbox",
+    "plan_convert",
+    "plan_merge",
+    "plan_normalize",
+    "plan_rename",
+    "plan_required",
+    "proposal_invalid",
+    "proposal_valid",
+    "schema",
+    "schema_review"
+  ],
+  "per_section": {
+    "discovery": {
+      "digest_run_1": "7814f18b0517953d43c6c6334f6c7a4151bcaf475e42e397547ee8ecfe9e03f8",
+      "digest_run_2": "7814f18b0517953d43c6c6334f6c7a4151bcaf475e42e397547ee8ecfe9e03f8",
+      "identical": true
+    },
+    "fill": {
+      "digest_run_1": "f32b5185282fbec961fb9c04b6e7c3c3b3849c40386ad607cf03db89fe4ac9a6",
+      "digest_run_2": "f32b5185282fbec961fb9c04b6e7c3c3b3849c40386ad607cf03db89fe4ac9a6",
+      "identical": true
+    },
+    "health": {
+      "digest_run_1": "e997c21e7a793f7bceb802d4eed0d32ed6f642ce9ae1fba16caa5a14b9fbd70a",
+      "digest_run_2": "e997c21e7a793f7bceb802d4eed0d32ed6f642ce9ae1fba16caa5a14b9fbd70a",
+      "identical": true
+    },
+    "inbox": {
+      "digest_run_1": "dd5c4f17eb99d3293b95d56856bf91b8de0b2609c76c3b86179e48ff79d25517",
+      "digest_run_2": "dd5c4f17eb99d3293b95d56856bf91b8de0b2609c76c3b86179e48ff79d25517",
+      "identical": true
+    },
+    "plan_convert": {
+      "digest_run_1": "d63b5bb5017a4b9f99bf681a30ffaea2225c28b5491799c3d4cd3934a3e8e3bb",
+      "digest_run_2": "d63b5bb5017a4b9f99bf681a30ffaea2225c28b5491799c3d4cd3934a3e8e3bb",
+      "identical": true
+    },
+    "plan_merge": {
+      "digest_run_1": "6a6a0bb6c93e7bf4ca476ef3cec2295c1b8afab96ea3d0fba6ad98d37797c3f4",
+      "digest_run_2": "6a6a0bb6c93e7bf4ca476ef3cec2295c1b8afab96ea3d0fba6ad98d37797c3f4",
+      "identical": true
+    },
+    "plan_normalize": {
+      "digest_run_1": "e63818f24c7a220e9a34335151a1157fff5aa399b3d7d82e5d30eeed6e660d11",
+      "digest_run_2": "e63818f24c7a220e9a34335151a1157fff5aa399b3d7d82e5d30eeed6e660d11",
+      "identical": true
+    },
+    "plan_rename": {
+      "digest_run_1": "beee983cd31463e74aa446014dfed83d72dba56f8c7458707845a2e562e5acbe",
+      "digest_run_2": "beee983cd31463e74aa446014dfed83d72dba56f8c7458707845a2e562e5acbe",
+      "identical": true
+    },
+    "plan_required": {
+      "digest_run_1": "ec83f0ecf5940a40f70b989548d34ac14f5503e9a678c7621de3301711047c73",
+      "digest_run_2": "ec83f0ecf5940a40f70b989548d34ac14f5503e9a678c7621de3301711047c73",
+      "identical": true
+    },
+    "proposal_invalid": {
+      "digest_run_1": "d76f5c593bd81ed375b59de286c6bdde3875c13492d800a6befe56870171cb96",
+      "digest_run_2": "d76f5c593bd81ed375b59de286c6bdde3875c13492d800a6befe56870171cb96",
+      "identical": true
+    },
+    "proposal_valid": {
+      "digest_run_1": "01853cb0db822f6b4fef73ebb8c51ed0c987389060db58b3b174d0a3641a370c",
+      "digest_run_2": "01853cb0db822f6b4fef73ebb8c51ed0c987389060db58b3b174d0a3641a370c",
+      "identical": true
+    },
+    "schema": {
+      "digest_run_1": "e1fcbd6c8ca855ad91c181d7ed410dfb56b27dcf6fc179af3be372e3a556d843",
+      "digest_run_2": "e1fcbd6c8ca855ad91c181d7ed410dfb56b27dcf6fc179af3be372e3a556d843",
+      "identical": true
+    },
+    "schema_review": {
+      "digest_run_1": "466c5da1aea7d8416b716f6e79109f52ced050c74427915a623834bce264bc28",
+      "digest_run_2": "466c5da1aea7d8416b716f6e79109f52ced050c74427915a623834bce264bc28",
+      "identical": true
+    }
+  },
+  "all_identical": true,
+  "note": "scan_seconds (wall clock) is excluded; it is not a semantic field."
+}
