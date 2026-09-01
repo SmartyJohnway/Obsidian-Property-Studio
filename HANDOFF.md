@@ -5,7 +5,7 @@ From: `Antigravity — v1.1.0 governance transition executor`
 To / Intended Next Executor: `Dr. J / Antigravity Implementation Agent`  
 Formal Project Root: `D:\Antigravity-Workspace\Obsidian-Property-Studio\Obsidian-Property-Studio-v1.0.0`  
 Current Branch: `main`  
-Last Verified Implementation Commit: `66e4b07` (v1.0.0 release)  
+Last Verified Implementation Commit: `da7a85a` (v1.1.0 governance transition)
 Governance Baseline: `v1.1.0 Governance Transition (M001 PASS)`
 
 ---
