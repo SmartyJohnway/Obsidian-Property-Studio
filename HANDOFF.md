@@ -5,7 +5,7 @@ From: `Antigravity — v1.1.0 release repair executor`
 To / Intended Next Executor: `Dr. J / PR #1 Merger`  
 Formal Project Root: `D:\Antigravity-Workspace\Obsidian-Property-Studio\Obsidian-Property-Studio-v1.0.0`  
 Current Branch: `feature/v1.1.0-release`  
-Last Verified Implementation Commit: Final Governed Head (Post-Commit 19 Narrow Closure)  
+Last Verified Implementation Commit: `2700206fa108bc3e433bc2145c22883441a1eb3d`  
 Governance Baseline: `v1.1.0 Governance Transition (M001 PASS)`
 
 ---
@@ -42,9 +42,7 @@ Last Verified Gate: `M013 — Release Closure Final In-Place Repair PASS`
 Current Blocker: `NONE`  
 Next Action: `PR #1 final merge approval`  
 Formal Release Verdict: `PROPERTY_STUDIO_V1_1_0_RELEASE_PASS_WITH_LIMITATIONS`  
-Accepted Limitations:  
-1. `Windows 11 AMD64 native verification recorded as NOT YET VERIFIED due to test host unavailability (accepted non-blocking release limitation per human approved contract).`  
-2. `Windows 10 Browser DOM automation recorded as NOT YET VERIFIED (Windows 10 native launcher invocation and live HTTP socket walkthrough fully verified; accepted non-blocking release limitation).`
+Accepted Limitation: `Windows 11 AMD64 native verification recorded as NOT YET VERIFIED due to test host unavailability (accepted non-blocking release limitation per human approved contract).`
 
 ---
 
@@ -61,16 +59,19 @@ Accepted Limitations:
    - Implemented `updateContextBarLabels()` for dynamic scope summary (`context.folders_summary`, `context.single_note_summary`).
    - Synced across language toggles with zero hardcoded English or Chinese fallback strings.
 4. **Single Source of Truth Benchmark Evidence (Blocker 4A: PASS):**
-   - Authoritative benchmark run frozen: `5,040` notes, `scan: 5.062s`, `total_analysis: 5.227s` across all 3 evidence documents (`evidence/benchmark.json`, `m009_benchmark.json`, `m011_v110_formal_verification.json`).
+   - Single authoritative benchmark run frozen: `5,040` notes, `scan: 4.399s`, `total_analysis: 4.546s` across all 3 evidence documents (`evidence/benchmark.json`, `m009_benchmark.json`, `m011_v110_formal_verification.json`).
 5. **Decoupled External Release Artifact Architecture (Blocker 4B: PASS):**
    - `dist/` and `RELEASE_MANIFEST.json` defined as post-package external release artifacts (excluded from git via `.gitignore`).
    - Final release commit completed before packaging, eliminating recursive metadata commits.
+6. **Governance & Audit History Integrity:**
+   - Full M001～M010 Objectives, Tasks, and Acceptance Criteria permanently preserved in `ROADMAP.md`.
+   - `tests/test_windows10_acceptance.py` explicitly asserts `bat_res.returncode == 0` for `run_windows.bat`.
 
 ---
 
 ## Verification Summary
 
-- [x] Full Pytest Suite: **140 passed** in 13.31s (`pytest -v`).
+- [x] Full Pytest Suite: **140 passed** in 13.33s (`pytest -v`).
 - [x] Windows 10 Native Acceptance: **PASS** (`evidence/integration/m012_v110_windows10_native_acceptance.json`).
 - [x] Vault Byte-for-Byte Read-Only: **PASS** (0 created, 0 modified, 0 deleted across all workflows).
 - [x] Four-File Consistency Gate: **PASS**.
