@@ -1,11 +1,11 @@
 # Handoff
 
 Updated: `2026-09-01`  
-From: `Antigravity — v1.1.0 governance transition executor`  
-To / Intended Next Executor: `Dr. J / Antigravity Implementation Agent`  
+From: `Antigravity — v1.1.0 release repair executor`  
+To / Intended Next Executor: `Dr. J / PR #1 Merger`  
 Formal Project Root: `D:\Antigravity-Workspace\Obsidian-Property-Studio\Obsidian-Property-Studio-v1.0.0`  
-Current Branch: `main`  
-Last Verified Implementation Commit: `da7a85a` (v1.1.0 governance transition)
+Current Branch: `feature/v1.1.0-release`  
+Last Verified Implementation Commit: `7d9a66f` (In-Place Release Closure Repair checkpoint ready for final commit)  
 Governance Baseline: `v1.1.0 Governance Transition (M001 PASS)`
 
 ---
@@ -28,8 +28,7 @@ Read order:
 4. `HANDOFF.md`
 5. git status / git log
 6. relevant source code, tests, and evidence
-7. `Obsidian_Property_Studio_v1.1.0_UIUX_vNext_Design_Spec.md` (v1.1.0 design contract)
-8. `index_areaagentB.html` (UX donor only) / `index_areaagentD.html` (Visual donor only)
+7. `docs/specs/Obsidian_Property_Studio_v1.1.0_UIUX_vNext_Design_Spec.md` (authoritative v1.1.0 design specification)
 
 Historical reference:
 - `docs/archive/ROADMAP_v1.0.0.md` (read-only snapshot of v1.0.0 execution, verified SHA-256)
@@ -42,9 +41,11 @@ Project State: `COMPLETE`
 Current Milestone: `NONE`  
 Current Milestone Status: `PASS`  
 Current Task: `NONE`  
-Last Verified Gate: `M012 — Windows 10 / 11 Native Acceptance & v1.1.0 Release Closure PASS` (Baseline: `M001 PASS`)  
-Current Blocker: `None`  
-Next Action: `None. Obsidian Property Studio v1.1.0 release and formal integration cycle completed successfully.`
+Last Verified Gate: `M013 — Release Closure In-Place Repair PASS`  
+Current Blocker: `NONE`  
+Next Action: `PR #1 final merge approval`  
+Formal Release Verdict: `PROPERTY_STUDIO_V1_1_0_RELEASE_PASS_WITH_LIMITATIONS`  
+Accepted Limitation: `Windows 11 AMD64 native verification recorded as NOT YET VERIFIED due to test host unavailability (accepted non-blocking release limitation per human approved contract).`
 
 ---
 
@@ -64,82 +65,50 @@ Next Action: `None. Obsidian Property Studio v1.1.0 release and formal integrati
    Source Scope (multi-folder) → Relationship Analysis → Target Scope (multi-folder)
    ```
    - Property Links vs Body Wikilinks (analysis-only, strict read-only).
-   - Findings: `VALID`, `BROKEN`, `AMBIGUOUS`, `OUTSIDE SELECTED TARGET`.
+   - Findings: 4-state classification (`VALID`, `BROKEN`, `AMBIGUOUS`, `OUTSIDE SELECTED TARGET`).
    - Ad-hoc analysis by default; zero default relationship rules.
    - User-initiated Saved Relationship Checks persist strictly outside the Vault.
 
 3. **Note Properties Workspace:**
    - Existing Note mode: inspect, edit, semantic diff, copy frontmatter. Fails closed on duplicate keys / malformed frontmatter.
    - New/Blank mode: schema-based fill.
+   - Enforces strict YAML serialization round-trip verification (`roundtrip_check`) before enabling copy.
    - Never writes to or modifies disk notes.
 
 4. **i18n & Theme:**
    - Modular `i18n.js` + `locales/zh-Hant.json` + `locales/en.json`.
    - No CDN, localStorage preference, no HTML DOM duplication.
+   - Zero fake bilingual side-by-side strings; pure localized prose.
    - CSS Design Tokens for Light / Dark theme.
 
 5. **Donor Boundaries:**
    - `index_areaagentB.html`: UX donor only.
    - `index_areaagentD.html`: Visual/interaction donor only.
-   - Neither has functional authority; no mock backend or fake API may enter production.
+   - Neither has functional authority; no mock backend or fake API enters production.
 
 ---
 
-## Verification Performed
+## In-Place Release Closure Repair Summary (R01 ~ R12)
 
-- [x] v1.0.0 ROADMAP archived to `docs/archive/ROADMAP_v1.0.0.md` (SHA-256 verified: `6ED8CCF707ACDAF0CBD8B7E1D91D3B41CF2E823B371D6B1EFA26CF69493FFC64`).
-- [x] `PROJECT.md` updated with v1.1.0 Product Truth, Scope, Success Criteria (SC-16..22), Requirements (REQ-024..035), Non-goals, Decisions (DEC-021..029), and Definition of Done.
-- [x] `ROADMAP.md` established with 12 granular milestones (M001~M012) and 18 new regression contracts (`V11-001`~`V11-018`).
-- [x] `AGENTS.md` updated with v1.1.0 donor boundary rules, safety contracts, and regression IDs.
-- [x] `M001`: Governance baseline and four-file consistency verified (`PASS`).
-- [x] `M002`: Modern UI shell (Sidebar, Topbar Context Chips, Right Drawer, Stat cards, Theme toggle) implemented and verified in `app/ui/index.html` (95/95 tests PASS).
-- [x] `M003`: Lightweight Bilingual i18n (`app/ui/i18n.js`, `locales/zh-Hant.json`, `locales/en.json`) and Theme Engine implemented and verified (`V11-001` PASS, 99/99 tests PASS).
-- [x] `M004`: Scope Domain Model (`ScopeSpec`, Multi-folder Union/Dedupe, In-Memory Engine) implemented and verified (`V11-002`..`004` PASS, 104/104 tests PASS).
-- [x] `M005`: Scope-Aware Discover & Property Health isolation implemented and verified (`V11-016` PASS, 105/105 tests PASS).
-- [x] `M006`: Note Properties Workspace (Existing Note inspect/edit/diff + Blank Fill, fail-closed corrupt/duplicate-key protection) implemented and verified (`V11-005`..`008` PASS, 109/109 tests PASS).
-- [x] `M007`: Scope-Aware Relationship Analysis (Property Links with Multi-Folder Source/Target & OUTSIDE SELECTED TARGET) implemented and verified (`V11-009`..`011`, `V11-014` PASS, 112/112 tests PASS).
-- [x] `M008`: Body Wikilink Relationship Analysis (Strict Read-Only, zero byte change, model/API separation) implemented and verified (`V11-012`..`013` PASS, 115/115 tests PASS).
-- [x] `M009`: Saved Relationship Checks Management (Advisory, zero default rules, external storage persistence outside Vault) implemented and verified (`V11-014`..`015` PASS, 117/117 tests PASS).
-- [x] `M010`: Scope-Aware Property Refactor Planner (Scope-bounded migration plans, no silent expansion, out-of-scope disclosure) implemented and verified (`V11-017` PASS, 118/118 tests PASS).
-- [x] `M011`: Full Regression Suite (119/119 PASS), 5,000-note Benchmark (4.865s scan, 5.019s total analysis), and Comprehensive Vault Byte-for-Byte Read-Only Gate verified (`V11-018` PASS, `evidence/integration/m011_v110_formal_verification.json`).
-- [x] `M012`: Windows 10 (Build 19045 AMD64) Native Acceptance, Release Packaging (`dist/Obsidian-Property-Studio-v1.1.0-source.zip`, `dist/Obsidian-Property-Studio-v1.1.0.bundle`, `dist/RELEASE_MANIFEST.json`), and Formal Verdict `PROPERTY_STUDIO_V1_1_0_RELEASE_PASS_WITH_LIMITATIONS` (`PASS`).
-- [x] Full test suite executed: **119 passed in 12.98s** (Python 3.13.7).
-- [x] Four-file cross-consistency check passed.
+- [x] **R01**: UI ↔ Backend API Contract Reconciled. All 16+ production endpoints (`/api/*`) verified end-to-end via `tests/test_ui_api_contracts.py`.
+- [x] **R02**: True i18n Dictionary Parity. Removed all side-by-side labels (e.g. `範圍選擇 · Scope`), aligned `zh-Hant.json` and `en.json`, verified via `tests/test_v11_repairs.py`.
+- [x] **R03**: Relationships 4-State Classification (`VALID`, `BROKEN`, `AMBIGUOUS`, `OUTSIDE SELECTED TARGET`), Body Wikilinks analysis, and Saved Checks UI exposed and verified in `app/core/relationships.py`, `app/core/body_links.py`, `app/core/saved_checks.py`.
+- [x] **R04**: Scope Fail-Closed. Unknown Scope modes, empty folder lists, and missing single notes raise explicit `ScopeValidationError` (never fallback to Entire Vault).
+- [x] **R05**: Single Note Scope & Whole-Vault Note Workspace Candidate Search. Supports full-vault discovery with relative paths, scope indicators, and duplicate-basename ambiguity warnings.
+- [x] **R06**: Scope-Aware Export Consistency. Exports generated from UI match active Scope context without silent whole-vault fallback.
+- [x] **R07**: Design Dual Context. Suggestion and reuse reviews evaluate properties in Scope vs Whole Vault.
+- [x] **R08**: YAML Round-Trip Safety Gate. `fill.roundtrip_check` enforced on frontmatter generation; copy disabled on semantic mismatch.
+- [x] **R09**: Windows 10 Build 19045+ Native Acceptance Evidence freshly generated at `evidence/integration/m012_v110_windows10_native_acceptance.json`.
+- [x] **R10**: Dynamic Release Packaging Gate. Built source ZIP and git bundle, verified via clean temp extractions, git clone, `git fsck --full`, and dynamic test execution recorded in `dist/RELEASE_MANIFEST.json`.
+- [x] **R11**: Four-File Governance Coherence. Synchronized PROJECT, ROADMAP, HANDOFF, AGENTS to eliminate stale residues.
+- [x] **R12**: Authoritative Design Spec Self-Contained at `docs/specs/Obsidian_Property_Studio_v1.1.0_UIUX_vNext_Design_Spec.md`.
 
 ---
 
-## Verification Not Yet Performed (v1.1.0 New Scope)
+## Verification Summary
 
-- None. All milestones M001~M012 are verified `PASS`.
-
----
-
-## Final Release Artifacts & Checksums (v1.1.0)
-
-- **Source ZIP:** `dist/Obsidian-Property-Studio-v1.1.0-source.zip` (SHA-256: `23ad2b647d27abab58c1cd39372048ab6a489bcd4e432476ad5573a36ae91623`)
-- **Git Bundle:** `dist/Obsidian-Property-Studio-v1.1.0.bundle` (SHA-256: `eab84361a194ece8c84b5ee5dde4858cbba1244ebd2a28ccd23ecbdc06ef197f`)
-- **Release Manifest:** `dist/RELEASE_MANIFEST.json`
-- **Formal Verdict:** `PROPERTY_STUDIO_V1_1_0_RELEASE_PASS_WITH_LIMITATIONS`
-
----
-
-## Do Not Repeat / Critical Guardrails
-
-- **Do not overwrite `app/ui/index.html` wholesale with Arena B or D HTML.**
-- **Do not copy mock/demo backend APIs from Arena D.**
-- **Do not weaken the read-only Vault safety contract under any circumstances.**
-- **Do not add note-body editing, prose rewriting, or body-link patching.**
-- **Do not inject default relationship rules or ontologies into the user's workspace.**
-- **Do not write Saved Relationship Checks into the Vault.**
-- **Do not trigger full Vault disk rescans when switching Scopes.**
-- **Do not duplicate complete bilingual HTML DOM trees.**
-- **Do not update HANDOFF ahead of actual verified repository state.**
-
----
-
-## Immediate Next Action
-
-1. Execute M002 autonomous implementation: modernize `app/ui/` shell (Sidebar, Context Bar, Right Drawer, Overview, Design Tokens).
-2. Run pytest suite and UI integrity checks.
-3. Advance to M003 (Bilingual i18n & Theme Engine).
-4. Do not push to GitHub until all local milestones and verifications are completed.
+- [x] Full Pytest Suite: **139 passed** in 14.93s (`pytest -v`).
+- [x] Windows 10 Native Acceptance: **PASS** (`evidence/integration/m012_v110_windows10_native_acceptance.json`).
+- [x] Release Packaging Verification: **PASS** (`dist/RELEASE_MANIFEST.json`, `Obsidian-Property-Studio-v1.1.0-source.zip`, `Obsidian-Property-Studio-v1.1.0.bundle`).
+- [x] Vault Byte-for-Byte Read-Only: **PASS** (0 created, 0 modified, 0 deleted across all workflows).
+- [x] Four-File Consistency Gate: **PASS**.

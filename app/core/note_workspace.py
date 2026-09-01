@@ -1,4 +1,4 @@
-"""Note Properties Workspace domain model and diff engine (M006).
+"""Note Properties Workspace domain model, search, and diff engine (M006).
 
 REQ-026 / REQ-027 / DEC-022 / DEC-023:
 Supports:
@@ -6,8 +6,8 @@ Supports:
 2. Editing existing properties while preserving unrelated properties across edits (V11-006).
 3. Fail-closed protection against corrupt frontmatter and duplicate keys (V11-007).
 4. Generating semantic diffs and copyable frontmatter with copy button fail-closed (V11-008).
-5. Disambiguating duplicate base names across folders (V11-005).
-6. Blank note frontmatter generation (v1.0.0 flow).
+5. Disambiguating duplicate base names across folders and whole-vault search (V11-005, R05).
+6. Strict YAML serialization round-trip verification gate (R08).
 """
 
 from __future__ import annotations
@@ -15,9 +15,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-import yaml
-
+from app.core.fill import render_frontmatter, roundtrip_check
 from app.core.model import FAILED_PARSE_STATUSES, Note, ParseStatus, Schema, VaultScan
+from app.core.scope import ScopeSpec, is_note_in_scope
 
 
 @dataclass
@@ -68,6 +68,7 @@ class NoteWorkspaceDiffResult:
     diffs: list[PropertyDiff] = field(default_factory=list)
     merged_properties: dict[str, Any] = field(default_factory=dict)
     frontmatter_preview: str = ""
+    roundtrip_matches: bool = True
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -79,11 +80,14 @@ class NoteWorkspaceDiffResult:
             "diffs": [d.to_dict() for d in self.diffs],
             "merged_properties": self.merged_properties,
             "frontmatter_preview": self.frontmatter_preview,
+            "roundtrip_matches": self.roundtrip_matches,
         }
 
 
-def find_candidate_notes(scan: VaultScan, query: str = "") -> list[dict[str, Any]]:
-    """Find notes matching query with explicit path ambiguity detection (V11-005)."""
+def find_candidate_notes(
+    scan: VaultScan, query: str = "", current_scope: ScopeSpec | None = None
+) -> list[dict[str, Any]]:
+    """Find notes across the whole vault with relative paths, ambiguity detection, and Scope priority (R05)."""
     q = query.strip().casefold()
     matches = []
     basename_counts: dict[str, int] = {}
@@ -96,17 +100,19 @@ def find_candidate_notes(scan: VaultScan, query: str = "") -> list[dict[str, Any
         if q and q not in note.name.casefold() and q not in note.path.casefold():
             continue
         is_ambiguous = basename_counts.get(note.name.casefold(), 0) > 1
+        in_scope = is_note_in_scope(note.path, current_scope) if current_scope else True
         matches.append({
             "path": note.path,
             "name": note.name,
             "has_properties": note.has_properties,
             "is_ambiguous_basename": is_ambiguous,
-            "display_label": f"{note.name} ({note.path})" if is_ambiguous else note.name,
+            "in_current_scope": in_scope,
+            "display_label": f"{note.name} ({note.path})" if is_ambiguous else f"{note.name} — {note.path}",
         })
-        if len(matches) >= 100:
-            break
 
-    return matches
+    # Prioritize in-scope notes first, then alphabetical by path
+    matches.sort(key=lambda x: (not x["in_current_scope"], x["path"].casefold()))
+    return matches[:100]
 
 
 def inspect_note_for_workspace(scan: VaultScan, note_path: str) -> NoteWorkspaceInspectResult:
@@ -118,41 +124,43 @@ def inspect_note_for_workspace(scan: VaultScan, note_path: str) -> NoteWorkspace
             name=note_path.rsplit("/", 1)[-1].replace(".md", ""),
             parse_status="not_found",
             can_edit=False,
-            error_reason=f"Note '{note_path}' not found in current scan/scope.",
+            error_reason=f"Note '{note_path}' was not found in the vault scan.",
         )
 
-    # Check parse status fail-closed (V11-007)
-    if note.parse_status in FAILED_PARSE_STATUSES:
+    if note.parse_status in FAILED_PARSE_STATUSES or note.parse_failed:
+        error_msg = (
+            f"Frontmatter parse failed: {note.issues[0].message if note.issues else note.parse_status.value}."
+        )
         return NoteWorkspaceInspectResult(
             note_path=note.path,
             name=note.name,
             parse_status=note.parse_status.value,
             can_edit=False,
-            error_reason=f"Note has malformed or unreadable frontmatter ({note.parse_status.value}). Editing is blocked to prevent data corruption.",
+            error_reason=error_msg,
         )
 
-    # Check duplicate keys fail-closed (V11-007)
     if note.duplicate_keys:
-        dup_list = ", ".join(note.duplicate_keys)
+        dup_list = ", ".join(sorted(note.duplicate_keys))
         return NoteWorkspaceInspectResult(
             note_path=note.path,
             name=note.name,
             parse_status=note.parse_status.value,
             can_edit=False,
-            error_reason=f"Note contains duplicate YAML keys ({dup_list}). Property Studio refuses to guess which value to keep.",
+            error_reason=f"Duplicate YAML keys detected ({dup_list}). Fail closed to avoid data corruption.",
             duplicate_keys=list(note.duplicate_keys),
+            original_properties={k: v.raw for k, v in note.properties.items()},
         )
 
-    orig_props = {}
-    for k, v in note.properties.items():
-        orig_props[k] = v.raw
+    props: dict[str, Any] = {}
+    for key, val in note.properties.items():
+        props[key] = val.raw
 
     return NoteWorkspaceInspectResult(
         note_path=note.path,
         name=note.name,
         parse_status=note.parse_status.value,
         can_edit=True,
-        original_properties=orig_props,
+        original_properties=props,
     )
 
 
@@ -162,22 +170,23 @@ def compute_workspace_diff_and_frontmatter(
     schema: Schema | None = None,
     deleted_keys: list[str] | None = None,
 ) -> NoteWorkspaceDiffResult:
-    """Compute semantic property diff and serialize valid frontmatter (V11-006, V11-008)."""
-    deleted_set = set(deleted_keys or [])
+    """Compute semantic diff, merge properties, and enforce YAML round-trip safety gate (R08)."""
     errors: list[str] = []
     warnings: list[str] = []
     diffs: list[PropertyDiff] = []
+    deleted_set = set(deleted_keys or [])
 
-    # If original_note is provided and corrupted/duplicate-key, fail closed (V11-007)
     if original_note is not None:
-        if original_note.parse_status in FAILED_PARSE_STATUSES:
-            errors.append(f"Cannot edit note with corrupt frontmatter: {original_note.parse_status.value}")
+        if original_note.parse_failed or original_note.parse_status in FAILED_PARSE_STATUSES:
+            err_text = original_note.issues[0].message if original_note.issues else original_note.parse_status.value
+            errors.append(f"Cannot edit note with parse failure: {err_text}")
             return NoteWorkspaceDiffResult(
                 note_path=original_note.path,
                 valid=False,
                 can_copy=False,
                 errors=errors,
                 frontmatter_preview="",
+                roundtrip_matches=False,
             )
         if original_note.duplicate_keys:
             errors.append(f"Cannot edit note with duplicate keys: {', '.join(original_note.duplicate_keys)}")
@@ -187,6 +196,7 @@ def compute_workspace_diff_and_frontmatter(
                 can_copy=False,
                 errors=errors,
                 frontmatter_preview="",
+                roundtrip_matches=False,
             )
 
     orig_map: dict[str, Any] = {}
@@ -199,7 +209,6 @@ def compute_workspace_diff_and_frontmatter(
             if prop.required:
                 val = updated_values.get(prop.name)
                 if val is None or (isinstance(val, str) and not val.strip()):
-                    # check if existing note had a non-empty value that was not deleted
                     if prop.name not in orig_map or prop.name in deleted_set:
                         errors.append(f"Required property '{prop.name}' is missing or empty.")
 
@@ -232,37 +241,20 @@ def compute_workspace_diff_and_frontmatter(
             diffs.append(PropertyDiff(key=key, change_type="preserved", old_value=old_val, new_value=old_val))
             merged[key] = old_val
 
-    is_valid = len(errors) == 0
-    can_copy = is_valid
+    # Generate standard governed YAML frontmatter
+    frontmatter_text = render_frontmatter(merged) if merged else ""
 
-    # Generate YAML frontmatter
-    fm_lines = ["---"]
-    for k, v in merged.items():
-        if v is None or v == "":
-            fm_lines.append(f"{k}:")
-        elif isinstance(v, bool):
-            fm_lines.append(f"{k}: {str(v).lower()}")
-        elif isinstance(v, (int, float)):
-            fm_lines.append(f"{k}: {v}")
-        elif isinstance(v, list):
-            fm_lines.append(f"{k}:")
-            for item in v:
-                fm_lines.append(f"  - {item}")
-        else:
-            s_val = str(v)
-            if "\n" in s_val:
-                fm_lines.append(f"{k}: |-\n  " + s_val.replace("\n", "\n  "))
-            elif ":" in s_val or "#" in s_val or s_val.startswith("[[") or s_val.startswith('"') or s_val.startswith("'"):
-                # If already starts with quotes, format cleanly
-                if (s_val.startswith('"') and s_val.endswith('"')) or (s_val.startswith("'") and s_val.endswith("'")):
-                    fm_lines.append(f"{k}: {s_val}")
-                else:
-                    escaped = s_val.replace('"', '\\"')
-                    fm_lines.append(f'{k}: "{escaped}"')
-            else:
-                fm_lines.append(f"{k}: {s_val}")
-    fm_lines.append("---")
-    frontmatter_text = "\n".join(fm_lines) + "\n"
+    # Strict YAML roundtrip verification gate (R08 / OPS-AC-010)
+    rt_matches = True
+    if frontmatter_text:
+        rt = roundtrip_check(frontmatter_text, merged)
+        rt_matches = rt.get("matches", False)
+        if not rt_matches:
+            for diff in rt.get("differences", []):
+                errors.append(f"YAML round-trip semantic mismatch: {diff}")
+
+    is_valid = len(errors) == 0 and rt_matches
+    can_copy = is_valid
 
     return NoteWorkspaceDiffResult(
         note_path=original_note.path if original_note else None,
@@ -273,4 +265,5 @@ def compute_workspace_diff_and_frontmatter(
         diffs=diffs,
         merged_properties=merged,
         frontmatter_preview=frontmatter_text,
+        roundtrip_matches=rt_matches,
     )

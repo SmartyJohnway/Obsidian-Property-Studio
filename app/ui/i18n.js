@@ -1,5 +1,5 @@
 /**
- * Lightweight, local-first bilingual i18n engine (zh-Hant / en)
+ * Lightweight, local-first bilingual i18n engine (zh-Hant / en) for Obsidian Property Studio v1.1.0.
  * Zero CDN dependencies, offline-first with localStorage preference.
  */
 const I18N = {
@@ -59,6 +59,11 @@ const I18N = {
       const trans = this.t(key);
       if (trans && trans !== key) el.setAttribute("placeholder", trans);
     });
+    document.querySelectorAll("[data-i18n-title]").forEach(el => {
+      const key = el.getAttribute("data-i18n-title");
+      const trans = this.t(key);
+      if (trans && trans !== key) el.setAttribute("title", trans);
+    });
     const langBtn = document.getElementById("langToggleBtn");
     if (langBtn) {
       langBtn.textContent = locale === "zh-Hant" ? "EN" : "繁中";
@@ -66,3 +71,6 @@ const I18N = {
     }
   }
 };
+
+window.I18N = I18N;
+window.t = (k, p) => I18N.t(k, p);

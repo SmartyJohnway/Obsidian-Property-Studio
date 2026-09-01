@@ -196,13 +196,38 @@ def analyze_body_wikilinks(
                         )
                     )
 
+    four_state_counts = {
+        "VALID": status_counts["valid"],
+        "BROKEN": status_counts["broken"],
+        "AMBIGUOUS": status_counts["ambiguous"],
+        "OUTSIDE_SELECTED_TARGET": status_counts["outside_target_scope"],
+    }
+
     return {
         "analysis_type": "body_wikilinks",
         "summary": {
             "total_links_found": len(findings),
             "by_status": dict(status_counts),
+            "four_state_counts": four_state_counts,
+            "valid_count": status_counts["valid"],
+            "broken_count": status_counts["broken"],
+            "ambiguous_count": status_counts["ambiguous"],
+            "outside_target_count": status_counts["outside_target_scope"],
             "source_notes_checked": len(source_notes),
             "read_only_contract": "strict_read_only",
         },
-        "findings": [f.to_dict() for f in findings],
+        "findings": [
+            {
+                **f.to_dict(),
+                "classification": (
+                    "OUTSIDE_SELECTED_TARGET"
+                    if f.status == "outside_target_scope"
+                    else f.status.upper()
+                ),
+            }
+            for f in findings
+        ],
+        "source_scope": source_scope.to_dict() if source_scope else None,
+        "target_scope": target_scope.to_dict() if target_scope else None,
     }
+

@@ -1,10 +1,10 @@
-"""Property Relationship Inbox & Scope-Aware Relationship Analysis (M007).
+"""Property Relationship Inbox & Scope-Aware Relationship Analysis (M007 / R03).
 
-Property layer only (DEC-007, REQ-028, REQ-029, DEC-024):
+Property layer only (DEC-007, REQ-028, REQ-029, DEC-024, R03):
 1. Never touches note bodies or mutates backlinks.
 2. Accepts multi-folder Source Scope (V11-009).
 3. Accepts multi-folder Target Scope (V11-010).
-4. Categorizes resolved links outside Target Scope as OUTSIDE SELECTED TARGET (V11-011).
+4. Four-state classification: VALID, BROKEN, AMBIGUOUS, OUTSIDE SELECTED TARGET (R03).
 5. Zero default rules or ontology assumptions on startup (V11-014).
 """
 
@@ -67,7 +67,7 @@ def build_inbox(
     source_scope: ScopeSpec | None = None,
     target_scope: ScopeSpec | None = None,
 ) -> dict[str, Any]:
-    """Analyze property relationships with optional Source and Target scopes (REQ-028, REQ-029)."""
+    """Analyze property relationships with 4-state contract (VALID, BROKEN, AMBIGUOUS, OUTSIDE TARGET)."""
     name_index = note_name_index(scan)
     path_index = note_path_index(scan)
 
@@ -79,6 +79,7 @@ def build_inbox(
     )
 
     items: list[dict[str, Any]] = []
+    valid_links: list[dict[str, Any]] = []
 
     def add(**kwargs: Any) -> None:
         items.append(kwargs)
@@ -104,6 +105,7 @@ def build_inbox(
                             add(
                                 id=f"outside-target:{note.path}:{key}:{scalar}",
                                 kind="outside_target_scope",
+                                classification="OUTSIDE_SELECTED_TARGET",
                                 confidence=Confidence.EXACT.value,
                                 severity=Severity.LOW.value,
                                 note=note.path,
@@ -120,11 +122,22 @@ def build_inbox(
                                 action="Verify whether this cross-folder relationship is intended.",
                                 auto_resolved=False,
                             )
-                        continue  # healthy resolved link within target scope
+                        else:
+                            # Healthy resolved link within target scope (VALID)
+                            valid_links.append({
+                                "source_note": note.path,
+                                "property": key,
+                                "raw_value": scalar,
+                                "target": target,
+                                "resolved_path": resolved_path,
+                                "classification": "VALID",
+                            })
+                        continue
                     if len(hits) > 1:
                         add(
                             id=f"ambiguous-link:{note.path}:{key}:{scalar}",
                             kind="ambiguous_link",
+                            classification="AMBIGUOUS",
                             confidence=Confidence.AMBIGUOUS.value,
                             severity=Severity.MEDIUM.value,
                             note=note.path,
@@ -146,6 +159,7 @@ def build_inbox(
                         add(
                             id=f"broken-link:{note.path}:{key}:{scalar}",
                             kind="broken_link",
+                            classification="BROKEN",
                             confidence=Confidence.UNRESOLVED.value,
                             severity=Severity.HIGH.value,
                             note=note.path,
@@ -186,6 +200,7 @@ def build_inbox(
                         add(
                             id=f"link-upgrade:{note.path}:{key}:{scalar}",
                             kind="link_upgrade_candidate",
+                            classification="VALID",
                             confidence=Confidence.EXACT.value,
                             severity=Severity.LOW.value,
                             note=note.path,
@@ -207,6 +222,7 @@ def build_inbox(
                         add(
                             id=f"outside-target-candidate:{note.path}:{key}:{scalar}",
                             kind="outside_target_scope",
+                            classification="OUTSIDE_SELECTED_TARGET",
                             confidence=Confidence.EXACT.value,
                             severity=Severity.LOW.value,
                             note=note.path,
@@ -224,6 +240,7 @@ def build_inbox(
                     add(
                         id=f"ambiguous-candidate:{note.path}:{key}:{scalar}",
                         kind="ambiguous_candidate",
+                        classification="AMBIGUOUS",
                         confidence=Confidence.AMBIGUOUS.value,
                         severity=Severity.MEDIUM.value,
                         note=note.path,
@@ -263,6 +280,7 @@ def build_inbox(
                 {
                     "id": f"relationship-drift:{key}:{norm}",
                     "kind": "relationship_drift",
+                    "classification": "AMBIGUOUS",
                     "confidence": Confidence.EXACT.value,
                     "severity": Severity.LOW.value,
                     "note": notes[0] if notes else "",
@@ -290,12 +308,31 @@ def build_inbox(
     for item in items:
         counts[item["kind"]] = counts.get(item["kind"], 0) + 1
 
+    valid_count = len(valid_links)
+    broken_count = sum(1 for i in items if i.get("classification") == "BROKEN")
+    ambiguous_count = sum(1 for i in items if i.get("classification") == "AMBIGUOUS")
+    outside_target_count = sum(1 for i in items if i.get("classification") == "OUTSIDE_SELECTED_TARGET")
+
     return {
         "summary": {
             "total_items": len(items),
             "by_kind": dict(sorted(counts.items())),
             "auto_resolved": 0,
             "scope": "property values only (no note body links are analysed or changed)",
+            "valid_count": valid_count,
+            "broken_count": broken_count,
+            "ambiguous_count": ambiguous_count,
+            "outside_target_count": outside_target_count,
+            "total_evaluated_links": valid_count + len(items),
+            "four_state_counts": {
+                "VALID": valid_count,
+                "BROKEN": broken_count,
+                "AMBIGUOUS": ambiguous_count,
+                "OUTSIDE_SELECTED_TARGET": outside_target_count,
+            },
         },
         "items": items,
+        "valid_links": valid_links,
+        "source_scope": source_scope.to_dict() if source_scope else None,
+        "target_scope": target_scope.to_dict() if target_scope else None,
     }

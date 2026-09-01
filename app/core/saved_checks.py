@@ -131,5 +131,10 @@ class SavedChecksStore:
                 source_scope=chk.source_scope,
                 target_scope=chk.target_scope,
             )
+        res["check_id"] = check_id
+        res["check_name"] = chk.name
         res["executed_check"] = chk.to_dict()
+        res["results"] = dict(res)
         return res
+
+

@@ -501,32 +501,55 @@ def build_schema(
 
 
 # --------------------------------------------------------------------------
-# Existing-property awareness (REQ-006 / OPS-AC-007)
+# Existing-property awareness (REQ-006 / OPS-AC-007 / R07)
 # --------------------------------------------------------------------------
-def check_property_reuse(name: str, inv: Inventory) -> dict[str, Any]:
-    """Compare a proposed property name with what the vault already uses."""
+def check_property_reuse(
+    name: str, inv: Inventory, global_inv: Inventory | None = None
+) -> dict[str, Any]:
+    """Compare a proposed property name with current Scope and Whole Vault inventories (R07)."""
+    effective_global = global_inv or inv
     result: dict[str, Any] = {
         "proposed_name": name,
         "status": "new",
+        "in_scope": False,
+        "in_vault_only": False,
         "exact_match": None,
         "case_variants": [],
         "possible_overlaps": [],
         "auto_merged": False,
     }
+
+    # 1. Check current scope inventory
     if name in inv.properties:
         entry = inv.properties[name]
         result["status"] = "exact_existing"
+        result["in_scope"] = True
         result["exact_match"] = {
             "key": entry.key,
             "usage_count": entry.usage_count,
             "dominant_type": entry.dominant_type,
             "top_values": [v.to_dict() for v in entry.top_values(8)],
             "notes": sorted(entry.notes)[:50],
+            "scope_location": "in_scope",
+        }
+    # 2. Check whole-vault inventory if not found in scope
+    elif global_inv is not None and name in global_inv.properties:
+        entry = global_inv.properties[name]
+        result["status"] = "exact_existing_in_vault_only"
+        result["in_vault_only"] = True
+        result["exact_match"] = {
+            "key": entry.key,
+            "usage_count": entry.usage_count,
+            "dominant_type": entry.dominant_type,
+            "top_values": [v.to_dict() for v in entry.top_values(8)],
+            "notes": sorted(entry.notes)[:50],
+            "scope_location": "outside_scope",
         }
 
+    # Check case variants and overlaps across global inventory
     norm = normalize_key(name)
     tokens = set(key_tokens(name))
-    for key, entry in sorted(inv.properties.items()):
+    for key, entry in sorted(effective_global.properties.items()):
         if key == name:
             continue
         if normalize_key(key) == norm:
@@ -535,6 +558,7 @@ def check_property_reuse(name: str, inv: Inventory) -> dict[str, Any]:
                     "key": key,
                     "usage_count": entry.usage_count,
                     "dominant_type": entry.dominant_type,
+                    "in_scope": key in inv.properties,
                 }
             )
             continue
@@ -548,17 +572,22 @@ def check_property_reuse(name: str, inv: Inventory) -> dict[str, Any]:
                     "dominant_type": entry.dominant_type,
                     "similarity_ratio": round(ratio, 3),
                     "confidence": "possible",
+                    "in_scope": key in inv.properties,
                 }
             )
-    if result["status"] == "new" and result["case_variants"]:
-        result["status"] = "case_variant_exists"
-    elif result["status"] == "new" and result["possible_overlaps"]:
-        result["status"] = "possible_overlap"
 
-    result["message"] = {
+    if result["status"] == "new":
+        if result["case_variants"]:
+            result["status"] = "case_variant_exists"
+        elif result["possible_overlaps"]:
+            result["status"] = "possible_overlap"
+
+    messages = {
         "exact_existing": (
-            f"'{name}' already exists in this vault. Reuse it instead of creating a "
-            "second property with the same name."
+            f"'{name}' already exists in current Scope. Reuse it to keep your schema consistent."
+        ),
+        "exact_existing_in_vault_only": (
+            f"'{name}' exists elsewhere in this vault (outside current Scope). You can adopt this existing convention."
         ),
         "case_variant_exists": (
             f"This vault already uses a differently-written version of '{name}'. "
@@ -569,16 +598,20 @@ def check_property_reuse(name: str, inv: Inventory) -> dict[str, Any]:
             "for you to judge — nothing is merged automatically."
         ),
         "new": f"'{name}' is not used anywhere in this vault yet.",
-    }[result["status"]]
+    }
+    result["message"] = messages.get(result["status"], "")
     return result
 
 
-def review_schema_against_vault(schema: Schema, inv: Inventory) -> dict[str, Any]:
-    """Full reuse/type comparison for every property in a schema."""
+def review_schema_against_vault(
+    schema: Schema, inv: Inventory, global_inv: Inventory | None = None
+) -> dict[str, Any]:
+    """Full reuse/type comparison for every property in a schema across Scope and Vault (R07)."""
     reviews = []
+    effective_global = global_inv or inv
     for prop in schema.properties:
-        review = check_property_reuse(prop.name, inv)
-        entry = inv.get(prop.name)
+        review = check_property_reuse(prop.name, inv, global_inv=global_inv)
+        entry = inv.get(prop.name) or effective_global.get(prop.name)
         if entry is not None:
             review["type_agreement"] = (
                 "matches"
@@ -594,7 +627,9 @@ def review_schema_against_vault(schema: Schema, inv: Inventory) -> dict[str, Any
         "reuse_reviews": reviews,
         "counts": {
             "new": sum(1 for r in reviews if r["status"] == "new"),
-            "exact_existing": sum(1 for r in reviews if r["status"] == "exact_existing"),
+            "exact_existing": sum(1 for r in reviews if r["status"] in ("exact_existing", "exact_existing_in_vault_only")),
+            "exact_existing_in_scope": sum(1 for r in reviews if r["status"] == "exact_existing"),
+            "exact_existing_in_vault_only": sum(1 for r in reviews if r["status"] == "exact_existing_in_vault_only"),
             "case_variant_exists": sum(
                 1 for r in reviews if r["status"] == "case_variant_exists"
             ),
@@ -603,3 +638,4 @@ def review_schema_against_vault(schema: Schema, inv: Inventory) -> dict[str, Any
             ),
         },
     }
+

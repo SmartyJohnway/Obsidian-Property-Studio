@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Obsidian 屬性工作室 · Obsidian Property Studio</title>
+<title>Obsidian Property Studio</title>
 <!--
-  安全契約 / Safety Contract:
-  Vault is read-only — Property Studio reads your vault and never changes it.
-  There is no vault write API: no note is created, renamed, edited or deleted.
+  Safety Contract:
+  Vault is strictly read-only — Property Studio reads your vault and never changes it.
+  There is no vault write API: no note is created, renamed, edited, or deleted.
   Local-first and offline-first: no external resources or CDN dependencies.
 -->
 <style>
@@ -79,7 +79,7 @@
   body {
     background: var(--bg);
     color: var(--text);
-    font: 14.5px/1.55 var(--font);
+    font: 14px/1.55 var(--font);
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
   }
@@ -255,7 +255,7 @@
     cursor: pointer;
     display: grid;
     place-items: center;
-    font-size: 14px;
+    font-size: 13px;
     transition: all 0.15s ease;
   }
   .icon-btn:hover { color: var(--text); border-color: var(--brand); }
@@ -274,160 +274,98 @@
   }
 
   .page-header { margin-bottom: 20px; }
-  .page-header h2 { font-size: 21px; margin: 0 0 6px; font-weight: 700; letter-spacing: 0.2px; }
-  .page-header p.lead { color: var(--muted); margin: 0; max-width: 84ch; font-size: 14px; line-height: 1.6; }
+  .page-header h2 { font-size: 20px; margin: 0 0 6px; font-weight: 700; letter-spacing: 0.2px; }
+  .page-header p.lead { color: var(--muted); margin: 0; max-width: 84ch; font-size: 13.5px; line-height: 1.6; }
 
-  /* Components */
+  /* UI Cards & Grid */
   .card {
     background: var(--panel);
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    padding: 18px 20px;
-    margin-bottom: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
     box-shadow: var(--shadow-sm);
   }
-  .grid { display: grid; gap: 12px; }
-  .grid.cols4 { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
-  .grid.cols3 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
-  .grid.cols2 { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
+  .grid { display: grid; gap: 16px; }
+  .grid.cols2 { grid-template-columns: repeat(2, 1fr); }
+  .grid.cols3 { grid-template-columns: repeat(3, 1fr); }
+  .grid.cols4 { grid-template-columns: repeat(4, 1fr); }
+  @media (max-width: 900px) {
+    .grid.cols2, .grid.cols3, .grid.cols4 { grid-template-columns: 1fr; }
+    .app-layout { grid-template-columns: 1fr; }
+    .app-sidebar { display: none; }
+  }
 
   .stat {
     background: var(--panel2);
     border: 1px solid var(--line);
     border-radius: var(--radius-sm);
-    padding: 14px 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
   }
-  .stat .n { font-size: 24px; font-weight: 700; color: var(--text); }
-  .stat .l { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+  .stat .n { font-size: 26px; font-weight: 700; color: var(--text); line-height: 1.1; font-family: var(--mono); }
+  .stat .l { font-size: 12px; color: var(--muted); }
+  .stat.ok .n { color: var(--teal); }
   .stat.alert .n { color: var(--red); }
+  .stat.warn .n { color: var(--amber); }
 
-  input[type="text"], input[type="number"], input[type="date"], input[type="datetime-local"], select, textarea {
-    background: var(--panel2);
-    border: 1px solid var(--line);
-    color: var(--text);
-    border-radius: var(--radius-sm);
-    padding: 8px 12px;
+  /* Forms & Buttons */
+  label.form-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+  input[type="text"], input[type="number"], select, textarea {
     width: 100%;
+    background: var(--bg-surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 9px 12px;
+    color: var(--text);
+    font-size: 13.5px;
     font-family: inherit;
-    font-size: 14px;
     outline: none;
     transition: border-color 0.15s ease;
   }
-  input:focus, select:focus, textarea:focus {
-    border-color: var(--brand);
-    box-shadow: 0 0 0 2px var(--brand-soft);
-  }
-  textarea { min-height: 100px; font-family: var(--mono); font-size: 13px; }
-
-  label.field { display: block; margin-bottom: 14px; }
-  label.field > span { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; font-weight: 500; }
-
-  button.primary {
-    background: var(--brand);
-    border: none;
-    color: #fff;
-    padding: 9px 18px;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
+  input[type="text"]:focus, select:focus, textarea:focus { border-color: var(--brand); }
+  button {
+    font-family: inherit;
+    font-size: 13.5px;
     font-weight: 600;
-    font-size: 13.5px;
-    transition: all 0.15s ease;
-  }
-  button.primary:hover:not(:disabled) {
-    background: var(--brand-hover);
-    box-shadow: 0 4px 12px var(--brand-soft);
-  }
-  button.ghost {
-    background: var(--panel2);
-    border: 1px solid var(--line);
-    color: var(--text);
-    padding: 8px 16px;
+    padding: 9px 16px;
     border-radius: var(--radius-sm);
+    border: 1px solid transparent;
     cursor: pointer;
-    font-size: 13.5px;
     transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
   }
-  button.ghost:hover:not(:disabled) {
-    background: var(--panel3);
-    border-color: var(--line2);
-  }
+  button.primary { background: var(--brand); color: #ffffff; }
+  button.primary:hover { background: var(--brand-hover); }
+  button.secondary { background: var(--panel2); border-color: var(--line); color: var(--text); }
+  button.secondary:hover { background: var(--panel3); border-color: var(--brand); }
+  button.ghost { background: transparent; color: var(--muted); }
+  button.ghost:hover { color: var(--text); background: var(--panel2); }
   button:disabled { opacity: 0.45; cursor: not-allowed; }
 
-  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
-  .row > * { flex: 1 1 200px; }
-  .row > .fixed { flex: 0 0 auto; }
-  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  @media (max-width: 900px) { .split { grid-template-columns: 1fr; } }
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--line); }
+  th { font-size: 11px; text-transform: uppercase; color: var(--muted); font-weight: 600; letter-spacing: 0.5px; background: var(--panel2); }
+  tr:hover td { background: var(--panel2); }
 
-  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
-  th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
-  tr.clickable { cursor: pointer; transition: background 0.15s; }
-  tr.clickable:hover { background: var(--panel2); }
-
-  .pill {
-    display: inline-block;
-    font-size: 11.5px;
-    padding: 2px 8px;
-    border-radius: 999px;
-    border: 1px solid var(--line);
-    color: var(--muted);
-    margin-right: 4px;
-    font-weight: 500;
-  }
-  .pill.high, .pill.unresolved { color: var(--red); border-color: var(--red); background: var(--red-soft); }
-  .pill.medium, .pill.ambiguous { color: var(--amber); border-color: var(--amber); background: var(--amber-soft); }
-  .pill.low, .pill.possible { color: var(--blue); border-color: var(--blue); background: var(--blue-soft); }
-  .pill.exact, .pill.ok { color: var(--teal); border-color: var(--teal); background: var(--teal-soft); }
-  .pill.outside { color: var(--amber); border-color: var(--amber); background: var(--amber-soft); }
-  .pill.info { color: var(--muted); }
-
-  .finding {
-    border: 1px solid var(--line);
-    border-radius: var(--radius-sm);
-    padding: 14px;
-    margin-bottom: 10px;
-    background: var(--panel2);
-  }
-  .finding h4 { margin: 0 0 6px; font-size: 14.5px; }
-  .finding .why { color: var(--muted); font-size: 13.5px; margin: 6px 0; }
-  .finding details { margin-top: 8px; }
-  .finding summary { cursor: pointer; color: var(--blue); font-size: 13px; }
-  .notes-list { font-family: var(--mono); font-size: 12px; color: var(--muted); max-height: 220px; overflow: auto; margin-top: 6px; }
-
-  .prop-editor { border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 10px; background: var(--panel2); }
-  .prop-editor .head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-  .prop-editor .head strong { font-size: 14.5px; }
-  .reuse { font-size: 12.5px; margin-top: 8px; padding: 8px 10px; border-radius: 6px; background: var(--bg); border: 1px dashed var(--line); }
-  .reuse.exact_existing { border-color: var(--amber); color: var(--amber); }
-  .reuse.case_variant_exists { border-color: var(--amber); color: var(--amber); }
-  .reuse.possible_overlap { border-color: var(--blue); color: var(--blue); }
-
-  .action-card {
-    background: var(--panel2);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    padding: 18px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  .action-card:hover {
-    border-color: var(--brand);
-    background: var(--panel3);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow);
-  }
-  .action-card .act-title { font-size: 15px; font-weight: 600; color: var(--text); }
-  .action-card .act-desc { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+  /* Badges & Pills */
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; }
+  .pill.high, .pill.broken, .pill.bad { background: var(--red-soft); color: var(--red); }
+  .pill.medium, .pill.ambiguous, .pill.warn { background: var(--amber-soft); color: var(--amber); }
+  .pill.low, .pill.valid, .pill.ok { background: var(--teal-soft); color: var(--teal); }
+  .pill.outside { background: var(--blue-soft); color: var(--blue); }
 
   /* Right Drawer */
   .drawer-overlay {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0, 0, 0, 0.55);
+    background: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(4px);
     z-index: 100;
     display: none;
@@ -438,7 +376,7 @@
   .drawer-panel {
     position: fixed;
     top: 0; right: 0; bottom: 0;
-    width: 480px; max-width: 90vw;
+    width: 520px; max-width: 90vw;
     background: var(--bg-surface);
     border-left: 1px solid var(--line);
     box-shadow: var(--shadow);
@@ -463,15 +401,31 @@
   }
   .toast.err { border-left-color: var(--red); }
 
-  .muted { color: var(--muted); }
-  .small { font-size: 12.5px; }
-  .ok { color: var(--teal); }
-  .bad { color: var(--red); }
-  .warnc { color: var(--amber); }
-  .hint { font-size: 12.5px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
-  .empty { color: var(--muted); font-style: italic; padding: 12px 0; }
-  .kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; font-size: 13.5px; }
-  .kv dt { color: var(--muted); } .kv dd { margin: 0; }
+  .action-card {
+    background: var(--panel2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 18px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .action-card:hover {
+    border-color: var(--brand);
+    background: var(--panel3);
+    transform: translateY(-2px);
+  }
+  .action-card .act-title { font-size: 14.5px; font-weight: 600; color: var(--text); }
+  .action-card .act-desc { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+
+  .diff-box { border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; margin-top: 12px; }
+  .diff-row { display: grid; grid-template-columns: 140px 100px 1fr; padding: 8px 12px; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .diff-row.added { background: var(--teal-soft); }
+  .diff-row.modified { background: var(--amber-soft); }
+  .diff-row.deleted { background: var(--red-soft); }
+  .diff-row.preserved { background: transparent; }
 </style>
 </head>
 <body>
@@ -482,56 +436,59 @@
     <div class="sidebar-brand">
       <div class="brand-logo">🗂️</div>
       <div>
-        <div class="brand-title">Property Studio</div>
-        <div class="brand-sub">Obsidian PKM v1.1.0</div>
+        <div class="brand-title" data-i18n="app.title">Obsidian 屬性工作室</div>
+        <div class="brand-sub" data-i18n="app.subtitle">Obsidian PKM v1.1.0</div>
       </div>
     </div>
 
     <nav class="sidebar-nav" id="sidebarNav">
-      <div class="nav-group-title">Home</div>
+      <div class="nav-group-title" data-i18n="nav.group.home">首頁</div>
       <button class="nav-btn active" data-tab="overview">
-        <span class="icon">🏠</span> <span>總覽 · Overview</span>
+        <span class="icon">🏠</span> <span data-i18n="nav.overview">工作區總覽</span>
       </button>
 
-      <div class="nav-group-title">Context</div>
+      <div class="nav-group-title" data-i18n="nav.group.context">上下文範圍</div>
       <button class="nav-btn" data-tab="vault">
-        <span class="icon">📁</span> <span>知識庫 · Vault</span>
+        <span class="icon">📁</span> <span data-i18n="nav.vault">知識庫管理</span>
       </button>
       <button class="nav-btn" data-tab="scope" data-needs-scan>
-        <span class="icon">🎯</span> <span>範圍選擇 · Scope</span>
+        <span class="icon">🎯</span> <span data-i18n="nav.scope">分析範圍</span>
       </button>
 
-      <div class="nav-group-title">Create</div>
+      <div class="nav-group-title" data-i18n="nav.group.create">建立與編輯</div>
+      <button class="nav-btn" data-tab="workspace" data-needs-scan>
+        <span class="icon">📝</span> <span data-i18n="nav.workspace">單篇筆記工作區</span>
+      </button>
       <button class="nav-btn" data-tab="design">
-        <span class="icon">✨</span> <span>設計屬性 · Design</span>
+        <span class="icon">✨</span> <span data-i18n="nav.design">屬性架構設計</span>
       </button>
       <button class="nav-btn" data-tab="fill">
-        <span class="icon">📝</span> <span>筆記填寫 · Fill &amp; Copy</span>
+        <span class="icon">📄</span> <span data-i18n="nav.fill">空白筆記填寫</span>
       </button>
 
-      <div class="nav-group-title">Govern</div>
+      <div class="nav-group-title" data-i18n="nav.group.govern">治理與分析</div>
       <button class="nav-btn" data-tab="discover" data-needs-scan>
-        <span class="icon">🔍</span> <span>盤點現況 · Discover</span>
-      </button>
-      <button class="nav-btn" data-tab="refactor" data-needs-scan>
-        <span class="icon">🔄</span> <span>重構規劃 · Refactor</span>
+        <span class="icon">🔍</span> <span data-i18n="nav.discover">屬性現況盤點</span>
       </button>
       <button class="nav-btn" data-tab="relations" data-needs-scan>
-        <span class="icon">🔗</span> <span>關聯分析 · Relations</span>
+        <span class="icon">🔗</span> <span data-i18n="nav.relations">關聯分析</span>
       </button>
       <button class="nav-btn" data-tab="health" data-needs-scan>
-        <span class="icon">🩺</span> <span>健康檢查 · Health</span>
+        <span class="icon">🩺</span> <span data-i18n="nav.health">健康度檢查</span>
+      </button>
+      <button class="nav-btn" data-tab="refactor" data-needs-scan>
+        <span class="icon">🔄</span> <span data-i18n="nav.refactor">屬性重構規劃</span>
       </button>
 
-      <div class="nav-group-title">Advanced</div>
+      <div class="nav-group-title" data-i18n="nav.group.advanced">進階工具</div>
       <button class="nav-btn" data-tab="proposal">
-        <span class="icon">🤖</span> <span>AI 提案 · Proposal</span>
+        <span class="icon">🤖</span> <span data-i18n="nav.proposal">AI 提案匯入</span>
       </button>
     </nav>
 
     <div class="sidebar-footer">
-      <div><strong>Obsidian Property Studio</strong></div>
-      <div class="muted">Local-first · Read-only · No AI required</div>
+      <div><strong data-i18n="app.title">Obsidian 屬性工作室</strong></div>
+      <div class="muted" style="font-size:11px" data-i18n="safety.offline">完全離線 · 無須連網與 AI</div>
     </div>
   </aside>
 
@@ -540,23 +497,23 @@
     <header class="top-context-bar">
       <div class="context-chips">
         <div class="chip ok" id="roBadge">
-          <span class="dot"></span> <span>Vault read-only</span>
+          <span class="dot"></span> <span data-i18n="safety.read_only">知識庫唯讀</span>
         </div>
         <div class="chip" id="vaultBadge">
-          <span class="label-dim">Vault:</span> <span>No vault selected</span>
+          <span class="label-dim" data-i18n="context.vault_prefix">知識庫：</span> <span id="currentVaultLabel" data-i18n="context.no_vault">尚未選擇知識庫</span>
         </div>
-        <div class="chip" id="scopeBadge">
-          <span class="label-dim">Scope:</span> <span id="currentScopeLabel">Entire Vault</span>
+        <div class="chip brand" id="scopeBadge">
+          <span class="label-dim" data-i18n="context.scope_prefix">範圍：</span> <span id="currentScopeLabel" data-i18n="context.entire_vault">全庫 (Entire Vault)</span>
         </div>
-        <div class="chip" id="offlineBadge">
-          <span>No network · No AI required</span>
+        <div class="chip" id="noteBadge" style="display:none">
+          <span class="label-dim" data-i18n="context.note_prefix">當前筆記：</span> <span id="currentNoteLabel" data-i18n="context.no_note">未選擇筆記</span>
         </div>
         <span class="chip" id="versionBadge">v1.1.0</span>
       </div>
 
       <div class="top-actions">
-        <button class="icon-btn" id="langToggleBtn" title="Switch Language (繁中 / EN)" style="font-size:12px; font-weight:700">EN</button>
-        <button class="icon-btn" id="themeToggleBtn" title="Toggle Light / Dark Theme">🌓</button>
+        <button class="icon-btn" id="langToggleBtn" title="切換語言 (Language)" style="font-size:12px; font-weight:700">EN</button>
+        <button class="icon-btn" id="themeToggleBtn" title="切換深淺色主題 (Theme)">🌓</button>
       </div>
     </header>
 
@@ -564,50 +521,50 @@
       <!-- ============================ OVERVIEW ============================ -->
       <section id="tab-overview" class="view-section active">
         <div class="page-header">
-          <h2>總覽 · Workspace Overview</h2>
-          <p class="lead">理解、設計與治理您的 Obsidian Properties。本工作室在本地執行，對選定的知識庫保持嚴格唯讀，不變更任何筆記內容。</p>
+          <h2 data-i18n="overview.title">工作區總覽</h2>
+          <p class="lead" data-i18n="overview.lead">理解、設計、編輯與治理您的 Obsidian Properties。本工作室完全在本地執行，對選定的知識庫保持嚴格唯讀，絕不直接修改任何筆記內容。</p>
         </div>
 
         <div id="overviewNotScanned" class="card">
-          <h3 style="margin-top:0">尚未載入知識庫</h3>
-          <p class="muted">請先在「知識庫 (Vault)」頁籤中輸入您的 Obsidian 資料夾路徑並進行掃描。</p>
-          <button class="primary" id="gotoVaultBtn">選擇並掃描知識庫 →</button>
+          <h3 style="margin-top:0" data-i18n="overview.not_scanned_title">尚未載入知識庫</h3>
+          <p class="muted" data-i18n="overview.not_scanned_desc">請先在「知識庫」頁面中指定您的 Obsidian 資料夾路徑並進行掃描。</p>
+          <button class="primary" id="gotoVaultBtn" data-i18n="overview.scan_btn">前往選擇並掃描知識庫 →</button>
         </div>
 
         <div id="overviewScanned" style="display:none">
           <div class="grid cols4" style="margin-bottom:20px">
-            <div class="stat"><div class="n" id="ovNotesCount">0</div><div class="l">筆記總數 (Notes)</div></div>
-            <div class="stat"><div class="n" id="ovPropsCount">0</div><div class="l">屬性總數 (Properties)</div></div>
-            <div class="stat"><div class="n" id="ovHealthScore">—</div><div class="l">健康度評分 (Health Score)</div></div>
-            <div class="stat alert"><div class="n" id="ovIssuesCount">0</div><div class="l">待檢視問題 (Findings)</div></div>
+            <div class="stat"><div class="n" id="ovNotesCount">0</div><div class="l" data-i18n="overview.notes_count">筆記總數</div></div>
+            <div class="stat"><div class="n" id="ovPropsCount">0</div><div class="l" data-i18n="overview.props_count">屬性總數</div></div>
+            <div class="stat ok"><div class="n" id="ovHealthScore">—</div><div class="l" data-i18n="overview.health_score">健康度評分</div></div>
+            <div class="stat alert"><div class="n" id="ovIssuesCount">0</div><div class="l" data-i18n="overview.issues_count">待檢視事項</div></div>
           </div>
 
           <div class="card">
-            <h3 style="margin-top:0">快速操作 · Quick Actions</h3>
+            <h3 style="margin-top:0" data-i18n="overview.quick_actions">快速操作</h3>
             <div class="grid cols3" style="margin-top:12px">
+              <div class="action-card" id="actWorkspace">
+                <div class="act-title" data-i18n="action.workspace_title">📝 單篇筆記工作區</div>
+                <div class="act-desc" data-i18n="action.workspace_desc">檢視既有筆記屬性、進行語意編輯與即時差異比對，安全複製 Frontmatter。</div>
+              </div>
               <div class="action-card" id="actDiscover">
-                <div class="act-title">🔍 盤點屬性庫存</div>
-                <div class="act-desc">查看全庫或當前範圍內的屬性清單、使用頻率與型態分布。</div>
+                <div class="act-title" data-i18n="action.discover_title">🔍 盤點屬性清冊</div>
+                <div class="act-desc" data-i18n="action.discover_desc">檢視全庫或指定範圍內的屬性清單、使用頻率與資料型態分布。</div>
               </div>
               <div class="action-card" id="actDesign">
-                <div class="act-title">✨ 設計新屬性 Schema</div>
-                <div class="act-desc">以目的與用途導向建立屬性規格，重用既有詞彙，無需手寫 YAML。</div>
-              </div>
-              <div class="action-card" id="actFill">
-                <div class="act-title">📝 填寫並複製 Frontmatter</div>
-                <div class="act-desc">依據 Schema 表單填寫值，即時生成可複製到 Obsidian 的 YAML。</div>
+                <div class="act-title" data-i18n="action.design_title">✨ 設計屬性架構</div>
+                <div class="act-desc" data-i18n="action.design_desc">以自然語言描述管理目標，工作室自動比對現有庫存並建議屬性規範。</div>
               </div>
               <div class="action-card" id="actRelations">
-                <div class="act-title">🔗 分析筆記關聯</div>
-                <div class="act-desc">在 Source 與 Target Scope 之間探索屬性連結與正文 Wikilinks 關聯。</div>
+                <div class="act-title" data-i18n="action.relations_title">🔗 分析筆記關聯</div>
+                <div class="act-desc" data-i18n="action.relations_desc">設定來源與目標範圍，分析屬性連結與正文 Wikilinks 關聯及四態分類。</div>
               </div>
               <div class="action-card" id="actHealth">
-                <div class="act-title">🩺 執行健康度檢查</div>
-                <div class="act-desc">找出 naming drift、value drift、型態衝突與未關聯屬性。</div>
+                <div class="act-title" data-i18n="action.health_title">🩺 執行健康診斷</div>
+                <div class="act-desc" data-i18n="action.health_desc">找出命名漂移、值漂移、型態衝突與遺漏之必填屬性。</div>
               </div>
               <div class="action-card" id="actRefactor">
-                <div class="act-title">🔄 規劃屬性重構</div>
-                <div class="act-desc">產生安全、受控的屬性重新命名、合併或數值標準化影響分析。</div>
+                <div class="act-title" data-i18n="action.refactor_title">🔄 規劃屬性重構</div>
+                <div class="act-desc" data-i18n="action.refactor_desc">在安全範圍內產生重新命名、合併或值標準化之受控影響分析報告。</div>
               </div>
             </div>
           </div>
@@ -617,61 +574,108 @@
       <!-- ============================ VAULT ============================ -->
       <section id="tab-vault" class="view-section">
         <div class="page-header">
-          <h2>Choose the vault you want to understand</h2>
-          <p class="lead">Property Studio reads your vault and never changes it. Nothing is uploaded,
-            no account or API key is needed, and no note is created, renamed or edited. Everything you
-            produce here is text that <em>you</em> copy into Obsidian yourself.</p>
+          <h2 data-i18n="vault.title">選擇要載入的知識庫</h2>
+          <p class="lead" data-i18n="vault.lead">屬性工作室對知識庫保持嚴格唯讀，絕不修改或刪除任何檔案。所有操作皆在記憶體與外部匯出目錄進行，無須上傳，無須 API 金鑰。</p>
         </div>
+
         <div class="card">
-          <div class="row">
-            <label class="field" style="flex:3 1 420px">
-              <span>Vault folder (full path)</span>
-              <input type="text" id="vaultPath" placeholder="C:\Users\you\Documents\MyVault" />
-            </label>
-            <div class="fixed"><button class="primary" id="scanBtn">Scan vault</button></div>
-            <div class="fixed"><button class="ghost" id="verifyBtn" disabled>Verify vault untouched</button></div>
+          <label class="form-label" for="vaultPathInput" data-i18n="vault.path_label">知識庫資料夾絕對路徑</label>
+          <div style="display:flex; gap:10px; margin-bottom:12px">
+            <input type="text" id="vaultPathInput" placeholder="D:\Notes\MyVault 或 /home/user/vault" />
+            <button class="primary" id="scanVaultBtn" data-i18n="vault.scan_btn">掃描知識庫</button>
           </div>
-          <div class="hint">Tip on Windows: open the vault folder, click the address bar, copy the path.
-            Sub-folders are scanned automatically. <code>.obsidian/</code>, <code>.trash/</code> and
-            hidden folders are ignored, and symlinks/junctions are never followed out of the vault.</div>
+          <div id="scanMsg"></div>
         </div>
-        <div id="scanSummary"></div>
-        <div id="verifyResult"></div>
-        <div id="scanIssues"></div>
+
+        <div id="vaultStatsCard" class="card" style="display:none">
+          <div class="grid cols4" style="margin-bottom:16px">
+            <div class="stat"><div class="n" id="statNotesTotal">0</div><div class="l" data-i18n="overview.notes_count">筆記總數</div></div>
+            <div class="stat ok"><div class="n" id="statNotesWithProps">0</div><div class="l">具備屬性之筆記</div></div>
+            <div class="stat"><div class="n" id="statNotesNoProps">0</div><div class="l">無屬性之筆記</div></div>
+            <div class="stat alert"><div class="n" id="statNotesFailed">0</div><div class="l">解析失敗筆記</div></div>
+          </div>
+          <button class="secondary" id="verifyUntouchedBtn" data-i18n="vault.verify_btn" title="Verify vault untouched">驗證知識庫未受修改 (Verify vault untouched)</button>
+          <div id="verifyResult" style="margin-top:12px"></div>
+
+        </div>
       </section>
 
       <!-- ============================ SCOPE ============================ -->
       <section id="tab-scope" class="view-section">
         <div class="page-header">
-          <h2>分析範圍選擇 · Scope Selection</h2>
-          <p class="lead">設定目前專注的工作範圍（全庫、單一資料夾、多資料夾或單篇筆記）。切換範圍使用記憶體索引即時過濾，不重複讀取磁碟。</p>
+          <h2 data-i18n="scope.title">分析範圍設定</h2>
+          <p class="lead" data-i18n="scope.lead">設定目前專注的工作範圍（全庫、單一資料夾、多資料夾或單篇筆記）。範圍切換完全在記憶體中進行，無須重複讀取硬碟。</p>
         </div>
+
         <div class="card">
-          <div class="row" style="margin-bottom:12px">
-            <label class="field" style="flex:1 1 240px">
-              <span>範圍模式 (Scope Mode)</span>
-              <select id="scopeModeSelect">
-                <option value="entire_vault">整個知識庫 (Entire Vault)</option>
-                <option value="folders">指定資料夾 (Folders Selection)</option>
-              </select>
-            </label>
-            <label class="field" style="flex:0 0 180px">
-              <span>包含子資料夾 (Subfolders)</span>
-              <select id="scopeIncludeSubfolders">
-                <option value="true">是 (Yes)</option>
-                <option value="false">否 (No)</option>
-              </select>
-            </label>
+          <div style="max-width:480px">
+            <label class="form-label" for="scopeModeSelect" data-i18n="scope.mode_label">範圍模式</label>
+            <select id="scopeModeSelect" style="margin-bottom:14px">
+              <option value="entire_vault" data-i18n="scope.mode_entire">全庫 (Entire Vault)</option>
+              <option value="folders" data-i18n="scope.mode_folders">指定資料夾 (Folders)</option>
+              <option value="single_note" data-i18n="scope.mode_single_note">單篇筆記 (Single Note)</option>
+            </select>
+
+            <div id="scopeFolderSelector" style="display:none; margin-bottom:16px">
+              <label class="form-label" data-i18n="scope.folders_select_title">選擇納入範圍的資料夾：</label>
+              <div id="scopeFolderList" style="max-height:220px; overflow-y:auto; border:1px solid var(--line); padding:10px; border-radius:var(--radius-sm); background:var(--bg-surface); margin-bottom:10px"></div>
+              <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer">
+                <input type="checkbox" id="scopeIncludeSubfolders" checked />
+                <span data-i18n="scope.subfolders_label">包含子資料夾</span>
+              </label>
+            </div>
+
+            <div id="scopeSingleNoteSelector" style="display:none; margin-bottom:16px">
+              <label class="form-label" for="scopeSingleNoteInput" data-i18n="scope.note_select_title">指定單篇筆記路徑：</label>
+              <input type="text" id="scopeSingleNoteInput" placeholder="例如：Projects/Alpha.md" />
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:14px">
+              <button class="primary" id="applyScopeBtn" data-i18n="scope.apply_btn">套用範圍</button>
+              <button class="secondary" id="resetScopeBtn" data-i18n="scope.reset_btn">重設為全庫</button>
+            </div>
           </div>
-          <div id="scopeFolderSelector" style="display:none; margin-top:12px">
-            <label class="field">
-              <span>選取資料夾（可多選）</span>
-              <div id="scopeFolderList" style="max-height:240px; overflow-y:auto; border:1px solid var(--line); border-radius:var(--radius-sm); padding:10px; background:var(--panel2)"></div>
-            </label>
+        </div>
+      </section>
+
+      <!-- ============================ NOTE WORKSPACE ============================ -->
+      <section id="tab-workspace" class="view-section">
+        <div class="page-header">
+          <h2 data-i18n="workspace.title">單篇筆記屬性工作區</h2>
+          <p class="lead" data-i18n="workspace.lead">搜尋全庫筆記，檢視既有 Frontmatter 屬性，在不修改檔案的情況下進行表單編輯、檢視語意 Diff，並複製安全合法的 YAML。</p>
+        </div>
+
+        <div class="card">
+          <label class="form-label" for="wsNoteSearch" data-i18n="workspace.search_label">搜尋或選擇筆記</label>
+          <div style="display:flex; gap:10px; margin-bottom:10px">
+            <input type="text" id="wsNoteSearch" placeholder="輸入筆記名稱或相對路徑搜尋..." data-i18n-placeholder="workspace.search_placeholder" />
+            <button class="secondary" id="wsSearchBtn">搜尋</button>
           </div>
-          <div class="row" style="margin-top:12px">
-            <div class="fixed"><button class="primary" id="applyScopeBtn">套用範圍 (Apply Scope)</button></div>
-            <div class="fixed"><button class="ghost" id="resetScopeBtn">重設為全庫 (Reset to Entire Vault)</button></div>
+          <div id="wsNoteCandidates" style="max-height:160px; overflow-y:auto; display:none; border:1px solid var(--line); border-radius:var(--radius-sm); background:var(--bg-surface); margin-bottom:14px"></div>
+
+          <div id="wsNoteStatusBanner"></div>
+        </div>
+
+        <div id="wsEditorArea" style="display:none">
+          <div class="grid cols2">
+            <div class="card">
+              <h3 style="margin-top:0">屬性編輯器</h3>
+              <div id="wsPropFields"></div>
+              <div style="display:flex; gap:10px; margin-top:14px">
+                <button class="secondary" id="wsAddPropBtn">+ 新增屬性欄位</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <h3 style="margin-top:0" data-i18n="workspace.diff_title">屬性變更比對 (Semantic Diff)</h3>
+              <div id="wsDiffView"></div>
+
+              <h3 style="margin-top:20px" data-i18n="workspace.preview_title">YAML Frontmatter 預覽</h3>
+              <pre id="wsYamlPreview" style="max-height:220px; font-size:12.5px"></pre>
+
+              <div id="wsRoundtripStatus" style="margin-bottom:12px; font-size:13px"></div>
+              <button class="primary" id="wsCopyBtn" data-i18n="workspace.copy_btn">複製 Frontmatter</button>
+            </div>
           </div>
         </div>
       </section>
@@ -679,197 +683,196 @@
       <!-- ============================ DISCOVER ============================ -->
       <section id="tab-discover" class="view-section">
         <div class="page-header">
-          <h2>What properties does this vault already use?</h2>
-          <p class="lead">Every property key found in your notes' frontmatter, how often it is used, how it
-            is stored, and what can go wrong. Click any row to drill down to the actual notes.</p>
+          <h2 data-i18n="discover.title">屬性清冊盤點</h2>
+          <p class="lead" data-i18n="discover.lead">統計當前範圍內筆記 Frontmatter 中出現的所有屬性鍵、使用次數、儲存型態與異常項目。</p>
         </div>
-        <div id="discoverStats" class="grid cols4"></div>
+
         <div class="card">
-          <h3 style="margin-top:0">Property inventory</h3>
-          <div class="row" style="margin-bottom:10px">
-            <input type="text" id="invFilter" placeholder="Filter properties…" />
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px">
+            <h3 style="margin:0" data-i18n="discover.inventory_title">屬性清冊清單</h3>
+            <button class="secondary" id="exportDiscoveryBtn" data-i18n="discover.export_btn">匯出盤點報告</button>
           </div>
-          <div id="invTable"></div>
+          <div id="discoveryInventoryTable"></div>
         </div>
+
         <div class="card">
-          <h3 style="margin-top:0">Findings</h3>
-          <div class="row" style="margin-bottom:10px">
-            <select id="findingFilter" class="fixed" style="flex:0 0 260px">
-              <option value="">All categories</option>
-            </select>
-          </div>
-          <div id="discoverFindings"></div>
+          <h3 style="margin-top:0" data-i18n="discover.findings_title">診斷事項與警示</h3>
+          <div id="discoveryFindings"></div>
         </div>
       </section>
 
       <!-- ============================ DESIGN ============================ -->
       <section id="tab-design" class="view-section">
         <div class="page-header">
-          <h2>Design properties without writing YAML</h2>
-          <p class="lead">Describe what you want to manage in plain words. Property Studio proposes a set of
-            properties, explains why each one exists, and checks them against what your vault already uses.</p>
+          <h2 data-i18n="design.title">屬性架構設計</h2>
+          <p class="lead" data-i18n="design.lead">使用自然語言描述您的記錄目標。工作室將建議合適的屬性組合，自動與目前範圍及全庫既有詞彙比對，避免重複造輪子。</p>
         </div>
+
         <div class="card">
-          <label class="field">
-            <span>What do you want to manage? (e.g. “I want to manage my lab equipment and know where each item is”)</span>
-            <input type="text" id="goalText" placeholder="I want to manage …" />
-          </label>
-          <div class="row">
-            <label class="field"><span>Suggested starting point</span>
-              <select id="recipeSelect"></select></label>
-            <label class="field"><span>Schema name</span>
-              <input type="text" id="schemaName" placeholder="equipment" /></label>
+          <label class="form-label" for="designGoalInput" data-i18n="design.goal_label">管理目標描述</label>
+          <div style="display:flex; gap:10px; margin-bottom:12px">
+            <input type="text" id="designGoalInput" placeholder="例如：我想管理實驗室設備並記錄存放位置與維護週期..." data-i18n-placeholder="design.goal_placeholder" />
+            <button class="primary" id="designSuggestBtn" data-i18n="design.suggest_btn">產生建議架構</button>
           </div>
-          <div>
-            <span class="muted small">What do you want to be able to do? (tick any)</span>
-            <div id="intentBoxes" class="grid cols2" style="margin-top:8px"></div>
-          </div>
-          <div style="margin-top:14px" class="row">
-            <div class="fixed"><button class="primary" id="buildSchemaBtn">Propose properties</button></div>
-            <div class="fixed"><button class="ghost" id="addPropBtn">+ Add a property myself</button></div>
-            <div class="fixed"><button class="ghost" id="exportSchemaBtn">Export schema (JSON)</button></div>
-          </div>
+          <div id="designRecipes"></div>
         </div>
-        <div id="schemaEditor"></div>
+
+        <div id="designReviewCard" class="card" style="display:none">
+          <h3 style="margin-top:0" data-i18n="design.review_title">架構審查與比對</h3>
+          <div id="designReviewResult"></div>
+        </div>
       </section>
 
-      <!-- ============================ FILL / NOTE WORKSPACE ============================ -->
+      <!-- ============================ FILL ============================ -->
       <section id="tab-fill" class="view-section">
         <div class="page-header">
-          <h2>筆記屬性工作區 · Note Properties Workspace</h2>
-          <p class="lead">支援空白筆記 Frontmatter 填寫與既有筆記屬性安全檢視、修改與語意比對 (Diff)。對損毀或具重複鍵之 Frontmatter 嚴格 Fail-Closed，絕不自動覆寫。</p>
+          <h2 data-i18n="fill.title">填寫並複製 Frontmatter</h2>
+          <p class="lead" data-i18n="fill.lead">依據設計的 Schema 填寫屬性值。下方將即時產生合法的 YAML Frontmatter，供您複製貼上到 Obsidian 筆記頂端。</p>
         </div>
-        <div class="card" style="margin-bottom:14px">
-          <div class="row">
-            <label class="field" style="flex:1 1 220px">
-              <span>工作區模式 (Workspace Mode)</span>
-              <select id="workspaceModeSelect">
-                <option value="blank">空白填寫模式 (Blank Fill Mode)</option>
-                <option value="existing">既有筆記檢視/編輯 (Existing Note Mode)</option>
-              </select>
-            </label>
-            <div id="noteSelectorBox" style="display:none; flex:2 1 360px">
-              <label class="field">
-                <span>選取目標筆記 (Target Note in Scope)</span>
-                <select id="workspaceNoteSelect">
-                  <option value="">-- 請選擇筆記 --</option>
-                </select>
-              </label>
+
+        <div class="grid cols2">
+          <div class="card">
+            <h3 style="margin-top:0">填寫表單</h3>
+            <div id="fillFormFields"></div>
+          </div>
+          <div class="card">
+            <div id="fillStatusMsg" style="margin-bottom:12px"></div>
+            <div style="display:flex; gap:10px">
+              <button class="primary" id="copyFmBtn" disabled data-i18n="fill.copy_fm">複製完整 Frontmatter</button>
+              <button class="secondary" id="copyYamlBtn" disabled data-i18n="fill.copy_yaml">僅複製 Properties YAML</button>
             </div>
           </div>
         </div>
-        <div class="split">
-          <div class="card">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px">
-              <h3 style="margin:0" id="fillFormTitle">屬性值表單 (Values)</h3>
-              <button class="ghost" id="wsAddPropBtn" style="display:none; padding:4px 10px; font-size:12px">+ 新增屬性</button>
-            </div>
-            <div id="fillForm"></div>
+      </section>
+
+
+      <!-- ============================ RELATIONSHIPS ============================ -->
+      <section id="tab-relations" class="view-section">
+        <div class="page-header">
+          <h2 data-i18n="relations.title">筆記關聯分析</h2>
+          <p class="lead" data-i18n="relations.lead">分析筆記之間的連結結構。支援自訂來源範圍與目標範圍，區分屬性連結與正文 Wikilinks，提供四態分類（VALID, BROKEN, AMBIGUOUS, OUTSIDE TARGET）與自訂檢查保存。</p>
+        </div>
+
+        <div class="card">
+          <div style="display:flex; gap:12px; margin-bottom:16px; border-bottom:1px solid var(--line); padding-bottom:12px">
+            <button class="secondary active" id="relSourcePropsBtn" data-i18n="relations.source_tab_props">屬性連結 (Property Links)</button>
+            <button class="secondary" id="relSourceBodyBtn" data-i18n="relations.source_tab_body">正文 Wikilinks (嚴格唯讀)</button>
           </div>
-          <div class="card">
-            <h3 style="margin-top:0">Frontmatter 預覽與語意比對</h3>
-            <div id="workspaceDiffBox" style="display:none; margin-bottom:12px"></div>
-            <pre id="fillPreview">Design or load a schema first.</pre>
-            <div class="row">
-              <div class="fixed"><button class="primary" id="copyFmBtn" disabled>Copy frontmatter</button></div>
-              <div class="fixed"><button class="ghost" id="copyYamlBtn" disabled>Copy properties only</button></div>
+
+          <div class="grid cols3" style="margin-bottom:14px">
+            <div>
+              <label class="form-label" data-i18n="relations.source_scope_label">來源範圍 (Source Scope)</label>
+              <select id="relSourceScopeSelect"></select>
             </div>
-            <div id="fillStatus" style="margin-top:12px"></div>
+            <div>
+              <label class="form-label" data-i18n="relations.target_scope_label">目標範圍 (Target Scope)</label>
+              <select id="relTargetScopeSelect"></select>
+            </div>
+            <div id="relPropFilterWrapper">
+              <label class="form-label" data-i18n="relations.prop_filter_label">特定屬性篩選 (可選)</label>
+              <input type="text" id="relPropFilterInput" placeholder="如：project, related..." />
+            </div>
           </div>
+
+          <div style="display:flex; gap:10px">
+            <button class="primary" id="relAnalyzeBtn" data-i18n="relations.analyze_btn">執行關聯分析</button>
+            <button class="secondary" id="relSaveCheckBtn" data-i18n="relations.save_check_btn">保存此檢查條件</button>
+          </div>
+        </div>
+
+        <div id="relResultsCard" class="card" style="display:none">
+          <div class="grid cols4" style="margin-bottom:18px">
+            <div class="stat ok"><div class="n" id="relStatValid">0</div><div class="l" data-i18n="relations.state_valid">正常連結 (VALID)</div></div>
+            <div class="stat alert"><div class="n" id="relStatBroken">0</div><div class="l" data-i18n="relations.state_broken">斷鏈 (BROKEN)</div></div>
+            <div class="stat warn"><div class="n" id="relStatAmbig">0</div><div class="l" data-i18n="relations.state_ambiguous">歧義連結 (AMBIGUOUS)</div></div>
+            <div class="stat"><div class="n" id="relStatOutside">0</div><div class="l" data-i18n="relations.state_outside">目標超出範圍 (OUTSIDE TARGET)</div></div>
+          </div>
+
+          <div id="relItemsList"></div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-top:0" data-i18n="relations.saved_checks_title">已保存的關聯檢查</h3>
+          <div id="savedChecksList"></div>
+        </div>
+      </section>
+
+      <!-- ============================ HEALTH ============================ -->
+      <section id="tab-health" class="view-section">
+        <div class="page-header">
+          <h2 data-i18n="health.title">屬性健康度診斷</h2>
+          <p class="lead" data-i18n="health.lead">針對當前範圍內的屬性品質進行透明、可解釋的評分與診斷，找出拼寫分歧、型態混亂與孤立屬性。</p>
+        </div>
+
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px">
+            <h3 style="margin:0" data-i18n="health.score_title">健康評分與扣分分析</h3>
+            <button class="secondary" id="exportHealthBtn" data-i18n="health.export_btn">匯出健康報告</button>
+          </div>
+          <div id="healthScoreSection"></div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-top:0" data-i18n="health.findings_title">所有診斷項目</h3>
+          <div id="healthFindingsList"></div>
         </div>
       </section>
 
       <!-- ============================ REFACTOR ============================ -->
       <section id="tab-refactor" class="view-section">
         <div class="page-header">
-          <h2>Plan a property change safely</h2>
-          <p class="lead">Every plan is analysis only. Property Studio v1 has no code path that writes to your
-            vault — it shows you exactly which notes are affected, and where a human decision is required.</p>
+          <h2 data-i18n="refactor.title">安全重構規劃</h2>
+          <p class="lead" data-i18n="refactor.lead">所有重構規劃皆為唯讀分析。絕不會自動寫入知識庫，明確揭露受影響筆記與需人工決策之衝突點。</p>
         </div>
+
         <div class="card">
-          <div class="row">
-            <label class="field"><span>Operation</span>
-              <select id="refOp">
-                <option value="rename">Rename a property</option>
-                <option value="merge">Merge properties into one</option>
-                <option value="normalize">Normalize inconsistent values</option>
-                <option value="convert_type">Change a property's type (feasibility)</option>
-                <option value="required_impact">Make schema fields required (impact)</option>
-              </select></label>
-            <div id="refInputs" class="row" style="flex:3 1 480px">
-              <label class="field" id="refFromField"><span>From property name</span>
-                <input type="text" id="refFrom" placeholder="old_name" /></label>
-              <label class="field" id="refToField"><span>To property name</span>
-                <input type="text" id="refTo" placeholder="new_name" /></label>
+          <div class="grid cols3" style="margin-bottom:14px">
+            <div>
+              <label class="form-label">操作類型</label>
+              <select id="refactorOpSelect">
+                <option value="rename">重新命名屬性 (Rename)</option>
+                <option value="merge">合併多個屬性 (Merge)</option>
+                <option value="normalize">數值格式標準化 (Normalize)</option>
+                <option value="convert_type">型態轉換 (Convert Type)</option>
+              </select>
             </div>
-            <div class="fixed"><button class="primary" id="planBtn">Create plan</button></div>
-            <div class="fixed"><button class="ghost" id="exportPlanBtn" disabled>Export plan</button></div>
+            <div id="refactorParam1Wrapper">
+              <label class="form-label" id="refactorParam1Label">來源屬性名</label>
+              <input type="text" id="refactorParam1Input" />
+            </div>
+            <div id="refactorParam2Wrapper">
+              <label class="form-label" id="refactorParam2Label">目標屬性名 / 型態</label>
+              <input type="text" id="refactorParam2Input" />
+            </div>
           </div>
+          <button class="primary" id="runRefactorPlanBtn">產生重構計畫</button>
         </div>
-        <div id="planResult"></div>
-      </section>
 
-      <!-- ============================ RELATIONSHIPS ============================ -->
-      <section id="tab-relations" class="view-section">
-        <div class="page-header">
-          <h2>Relationship inbox</h2>
-          <p class="lead">Property values that point at other notes — exact matches you could turn into links,
-            broken links, ambiguous names and drift. Nothing is changed in your vault.</p>
+        <div id="refactorPlanResultCard" class="card" style="display:none">
+          <h3 style="margin-top:0">重構影響分析結果</h3>
+          <div id="refactorPlanOutput"></div>
         </div>
-        <div class="card">
-          <div class="row" style="margin-bottom:12px">
-            <div class="fixed"><button class="primary" id="loadInboxBtn">Scan relationships</button></div>
-            <div class="fixed"><button class="ghost" id="exportInboxBtn" disabled>Export inbox</button></div>
-          </div>
-          <div id="inboxStats" class="grid cols4"></div>
-        </div>
-        <div id="inboxItems"></div>
-      </section>
-
-      <!-- ============================ HEALTH ============================ -->
-      <section id="tab-health" class="view-section">
-        <div class="page-header">
-          <h2>Property health check</h2>
-          <p class="lead">A deterministic, explainable health score for your vault's property layer.
-            Weight each finding, cap runaway deductions, and drill down to every affected note.</p>
-        </div>
-        <div class="card">
-          <div class="row">
-            <label class="field"><span>Evaluate against</span>
-              <select id="healthSchemaToggle">
-                <option value="no">No schema (audit inventory only)</option>
-                <option value="yes">Currently active schema</option>
-              </select></label>
-            <label class="field"><span>Optional: restrict to scope property</span>
-              <input type="text" id="scopeProp" placeholder="e.g. type" /></label>
-            <label class="field"><span>Scope value</span>
-              <input type="text" id="scopeVal" placeholder="e.g. equipment" /></label>
-            <div class="fixed"><button class="primary" id="healthBtn">Run health check</button></div>
-            <div class="fixed"><button class="ghost" id="exportHealthBtn" disabled>Export report</button></div>
-          </div>
-        </div>
-        <div id="healthResult"></div>
       </section>
 
       <!-- ============================ PROPOSAL ============================ -->
       <section id="tab-proposal" class="view-section">
         <div class="page-header">
-          <h2>External AI / Agent proposal import</h2>
-          <p class="lead">Import a schema proposal generated by an external agent (such as the
-            <code>Obsidian Property Architect Skill</code>). Property Studio has no AI dependency of its own —
-            it validates proposals locally, checks them against your vault, and lets <em>you</em> decide.</p>
+          <h2 data-i18n="proposal.title">外部 AI 提案匯入</h2>
+          <p class="lead" data-i18n="proposal.lead">匯入由外部 Agent 或工具產生的版本化 Schema Proposal JSON。工作室將進行純本地校驗並與您的知識庫進行比對。</p>
         </div>
+
         <div class="card">
-          <label class="field"><span>Paste JSON or choose a file</span>
-            <textarea id="proposalText" placeholder='{"proposal_version":"1.0", "schema_name":"...", "properties":[...]}'></textarea></label>
-          <div class="row">
-            <div class="fixed"><input type="file" id="proposalFile" accept=".json,application/json" style="display:none" />
-              <button class="ghost" id="browseProposalBtn">Choose file…</button></div>
-            <div class="fixed"><button class="primary" id="importProposalBtn">Validate &amp; compare</button></div>
-            <div class="fixed"><button class="ghost" id="sampleProposalBtn">Load sample proposal</button></div>
+          <label class="form-label" data-i18n="proposal.paste_label">貼上 Proposal JSON 或選擇檔案</label>
+          <textarea id="proposalTextInput" rows="6" placeholder="{\n  \"proposal_contract_version\": \"1.0.0\",\n  ...\n}"></textarea>
+          <div style="display:flex; gap:10px; margin-top:12px">
+            <button class="primary" id="validateProposalBtn" data-i18n="proposal.validate_btn">校驗並比對提案</button>
           </div>
         </div>
-        <div id="proposalResult"></div>
+
+        <div id="proposalResultCard" class="card" style="display:none">
+          <h3 style="margin-top:0">提案比對結果</h3>
+          <div id="proposalResultOutput"></div>
+        </div>
       </section>
     </div>
   </main>
@@ -879,105 +882,76 @@
 <div class="drawer-overlay" id="drawerOverlay"></div>
 <div class="drawer-panel" id="drawerPanel">
   <div class="drawer-header">
-    <h3 id="drawerTitle">詳細資訊 · Details</h3>
-    <button class="icon-btn" id="drawerCloseBtn" title="Close (Esc)">✕</button>
+    <h3 id="drawerTitle" data-i18n="drawer.title">詳細資訊下鑽</h3>
+    <button class="ghost icon-btn" id="drawerCloseBtn" data-i18n-title="drawer.close">✕</button>
   </div>
   <div class="drawer-body" id="drawerBody"></div>
-  <div class="drawer-footer" id="drawerFooter"></div>
+  <div class="drawer-footer">
+    <button class="secondary" id="drawerFooterCloseBtn" data-i18n="drawer.close">關閉 (Esc)</button>
+  </div>
 </div>
 
-<!-- ============================ TOAST ============================ -->
-<div class="toast" id="toast"></div>
+<!-- Toast -->
+<div class="toast" id="globalToast"></div>
 
-<!-- ============================ INLINE SCRIPT ============================ -->
+<script src="i18n.js"></script>
 <script>
+/* ============================================================
+   Application Runtime State & API Layer
+   ============================================================ */
 const S = {
-  meta: null,
   vaultPath: "",
-  scan: null,
-  inventory: null,
+  scanned: false,
+  scope: { mode: "entire_vault", folders: [], include_subfolders: true, note_path: null },
+  currentNote: null,
   schema: null,
-  fill: { values: {}, preview: "", valid: false },
-  lastPlan: null,
-  lastPlanParams: null,
-  health: null,
-  healthParams: null,
-  inbox: null,
-  scope: { mode: "entire_vault", includeSubfolders: true, roots: [] }
+  fill: { valid: false, values: {} },
+  relSourceType: "props", // "props" | "body"
+  savedChecks: [],
+  meta: {}
 };
 
-const $ = (id) => document.getElementById(id);
 
+function $(id) { return document.getElementById(id); }
 function esc(s) {
-  if (s === null || s === undefined) return "";
-  return String(s)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
+  if (s == null) return "";
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-function stat(num, lbl, isAlert = false) {
-  return `<div class="stat${isAlert ? ' alert' : ''}"><div class="n">${esc(num)}</div><div class="l">${esc(lbl)}</div></div>`;
-}
-
-function toast(msg, isErr = false) {
-  const t = $("toast");
-  t.textContent = msg;
-  t.className = isErr ? "toast err" : "toast";
-  t.style.display = "block";
-  clearTimeout(t._timer);
-  t._timer = setTimeout(() => { t.style.display = "none"; }, 3500);
-}
-
-async function copyText(txt) {
-  try {
-    await navigator.clipboard.writeText(txt);
-    return true;
-  } catch (e) {
-    const ta = document.createElement("textarea");
-    ta.value = txt;
-    document.body.appendChild(ta);
-    ta.select();
-    const ok = document.execCommand("copy");
-    document.body.removeChild(ta);
-    return ok;
-  }
-}
-
-async function api(path, body = {}) {
-  const res = await fetch(path, {
+async function api(path, payload = {}) {
+  const resp = await fetch(path, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body)
+    body: JSON.stringify(payload)
   });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    throw new Error(data.error || `HTTP ${res.status}`);
+  const data = await resp.json();
+  if (!resp.ok) {
+    throw new Error(data.error || ("API Error (" + resp.status + ")"));
   }
   return data;
 }
 
-function switchTab(tabId) {
-  document.querySelectorAll(".nav-btn").forEach(btn => {
-    btn.classList.toggle("active", btn.dataset.tab === tabId);
+function toast(msg, isErr = false) {
+  const el = $("globalToast");
+  el.textContent = msg;
+  el.className = isErr ? "toast err" : "toast";
+  el.style.display = "block";
+  setTimeout(() => { el.style.display = "none"; }, 3500);
+}
+
+function setTab(tabId) {
+  document.querySelectorAll("nav.sidebar-nav button.nav-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.getAttribute("data-tab") === tabId);
   });
-  document.querySelectorAll(".view-section").forEach(sec => {
+  document.querySelectorAll("section.view-section").forEach(sec => {
     sec.classList.toggle("active", sec.id === `tab-${tabId}`);
   });
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-function setTab(tabId) {
-  switchTab(tabId);
-}
-
-function openDrawer(title, bodyHtml, footerHtml = "") {
+function openDrawer(title, html) {
   $("drawerTitle").textContent = title;
-  $("drawerBody").innerHTML = bodyHtml;
-  $("drawerFooter").innerHTML = footerHtml;
-  $("drawerFooter").style.display = footerHtml ? "block" : "none";
+  $("drawerBody").innerHTML = html;
   $("drawerOverlay").classList.add("active");
   $("drawerPanel").classList.add("active");
 }
@@ -987,1093 +961,179 @@ function closeDrawer() {
   $("drawerPanel").classList.remove("active");
 }
 
-const I18N = {
-  currentLocale: "zh-Hant",
-  locales: { "zh-Hant": {}, "en": {} },
-
-  async init(defaultLocale = "zh-Hant") {
-    const saved = localStorage.getItem("ps_locale") || defaultLocale;
-    this.currentLocale = saved;
-    try {
-      const [zh, en] = await Promise.all([
-        fetch("/locales/zh-Hant.json").then(r => r.json()).catch(() => ({})),
-        fetch("/locales/en.json").then(r => r.json()).catch(() => ({}))
-      ]);
-      if (zh && Object.keys(zh).length) this.locales["zh-Hant"] = zh;
-      if (en && Object.keys(en).length) this.locales["en"] = en;
-    } catch (e) {
-      console.warn("i18n fetch fallback", e);
-    }
-    this.applyLocale(this.currentLocale);
-  },
-
-  t(key, params = {}) {
-    const dict = this.locales[this.currentLocale] || this.locales["zh-Hant"] || {};
-    let text = dict[key] || (this.locales["en"] ? this.locales["en"][key] : key) || key;
-    if (typeof text !== "string") return key;
-    for (const [k, v] of Object.entries(params)) {
-      text = text.replace(new RegExp(`\\{${k}\\}`, "g"), v);
-    }
-    return text;
-  },
-
-  setLocale(locale) {
-    if (!["zh-Hant", "en"].includes(locale)) return;
-    this.currentLocale = locale;
-    localStorage.setItem("ps_locale", locale);
-    this.applyLocale(locale);
-  },
-
-  toggleLocale() {
-    const next = this.currentLocale === "zh-Hant" ? "en" : "zh-Hant";
-    this.setLocale(next);
-  },
-
-  applyLocale(locale) {
-    document.documentElement.setAttribute("lang", locale);
-    document.querySelectorAll("[data-i18n]").forEach(el => {
-      const key = el.getAttribute("data-i18n");
-      const trans = this.t(key);
-      if (trans && trans !== key) el.textContent = trans;
-    });
-    document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
-      const key = el.getAttribute("data-i18n-placeholder");
-      const trans = this.t(key);
-      if (trans && trans !== key) el.setAttribute("placeholder", trans);
-    });
-    const langBtn = $("langToggleBtn");
-    if (langBtn) {
-      langBtn.textContent = locale === "zh-Hant" ? "EN" : "繁中";
-      langBtn.title = locale === "zh-Hant" ? "Switch to English" : "切換至繁體中文";
-    }
-  }
-};
-
-function initTheme() {
-  const saved = localStorage.getItem("ps_theme") || "dark";
-  document.documentElement.setAttribute("data-theme", saved);
-  $("themeToggleBtn").onclick = () => {
-    const current = document.documentElement.getAttribute("data-theme") || "dark";
-    const next = current === "dark" ? "light" : "dark";
-    document.documentElement.setAttribute("data-theme", next);
-    localStorage.setItem("ps_theme", next);
-  };
-}
-
-function sevPill(sev) {
-  return `<span class="pill ${esc(sev || 'info')}">${esc(sev || 'info')}</span>`;
-}
-function confPill(conf) {
-  return conf ? `<span class="pill ${esc(conf)}">${esc(conf)}</span>` : "";
-}
-
-function updateScanLocks(scanned) {
-  document.querySelectorAll("[data-needs-scan]").forEach(btn => {
-    btn.disabled = !scanned;
-  });
-  $("verifyBtn").disabled = !scanned;
-}
-
-/* -------------------------------- initialization -------------------------------- */
+/* ============================================================
+   Initialization & Navigation
+   ============================================================ */
 async function init() {
-  initTheme();
   await I18N.init();
 
-  const langBtn = $("langToggleBtn");
-  if (langBtn) {
-    langBtn.onclick = () => I18N.toggleLocale();
-  }
-
-  document.querySelectorAll(".sidebar-nav button[data-tab]").forEach(btn => {
+  // Navigation handlers
+  document.querySelectorAll("nav.sidebar-nav button.nav-btn").forEach(btn => {
     btn.onclick = () => {
-      if (btn.disabled) return;
-      switchTab(btn.dataset.tab);
+      const tab = btn.getAttribute("data-tab");
+      if (btn.hasAttribute("data-needs-scan") && !S.scanned) {
+        return toast(I18N.t("overview.not_scanned_desc"), true);
+      }
+      setTab(tab);
     };
   });
 
-  $("gotoVaultBtn").onclick = () => switchTab("vault");
-  $("actDiscover").onclick = () => switchTab("discover");
-  $("actDesign").onclick = () => switchTab("design");
-  $("actFill").onclick = () => switchTab("fill");
-  $("actRelations").onclick = () => switchTab("relations");
-  $("actHealth").onclick = () => switchTab("health");
-  $("actRefactor").onclick = () => switchTab("refactor");
+  // Action cards on Overview
+  $("gotoVaultBtn").onclick = () => setTab("vault");
+  $("actWorkspace").onclick = () => setTab("workspace");
+  $("actDiscover").onclick = () => setTab("discover");
+  $("actDesign").onclick = () => setTab("design");
+  $("actRelations").onclick = () => setTab("relations");
+  $("actHealth").onclick = () => setTab("health");
+  $("actRefactor").onclick = () => setTab("refactor");
 
+  // Top buttons
+  $("langToggleBtn").onclick = () => I18N.toggleLocale();
+  $("themeToggleBtn").onclick = () => {
+    const cur = document.documentElement.getAttribute("data-theme") || "dark";
+    const next = cur === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    localStorage.setItem("ps_theme", next);
+  };
+  const savedTheme = localStorage.getItem("ps_theme");
+  if (savedTheme) document.documentElement.setAttribute("data-theme", savedTheme);
+
+  // Drawer
   $("drawerCloseBtn").onclick = closeDrawer;
+  $("drawerFooterCloseBtn").onclick = closeDrawer;
   $("drawerOverlay").onclick = closeDrawer;
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && $("drawerPanel").classList.contains("active")) {
-      closeDrawer();
-    }
+    if (e.key === "Escape") closeDrawer();
   });
-
-  $("browseProposalBtn").onclick = () => $("proposalFile").click();
-
-  try {
-    S.meta = await api("/api/meta");
-    $("versionBadge").textContent = `v${S.meta.version}`;
-    renderRecipesAndIntents();
-  } catch (err) {
-    toast(`無法連線至本地後端: ${err.message}`, true);
-  }
 
   setupVaultHandlers();
-  setupDesignHandlers();
-  setupFillHandlers();
-  setupRefactorHandlers();
-  setupRelationshipsHandlers();
-  setupHealthHandlers();
-  setupProposalHandlers();
   setupScopeHandlers();
+  setupWorkspaceHandlers();
+  setupDiscoverHandlers();
+  setupDesignHandlers();
+  setupRelationsHandlers();
+  setupHealthHandlers();
+  setupRefactorHandlers();
+  setupProposalHandlers();
 }
 
-function renderRecipesAndIntents() {
-  if (!S.meta) return;
-  const sel = $("recipeSelect");
-  sel.innerHTML = '<option value="">-- Choose a starter recipe (optional) --</option>' +
-    S.meta.recipes.map(r => `<option value="${esc(r.id)}">${esc(r.label)} - ${esc(r.description)}</option>`).join("");
-
-  const ibox = $("intentBoxes");
-  ibox.innerHTML = S.meta.intents.map(i => `
-    <label style="display:flex;align-items:center;gap:6px;font-size:13px">
-      <input type="checkbox" class="intent-cb" value="${esc(i.id)}" />
-      <span>${esc(i.label)}</span>
-    </label>
-  `).join("");
-}
-
-/* -------------------------------- vault scan & verify -------------------------------- */
+/* ============================================================
+   Vault Module
+   ============================================================ */
 function setupVaultHandlers() {
-  $("scanBtn").onclick = async () => {
-    const path = $("vaultPath").value.trim();
-    if (!path) return toast("Enter a vault path first", true);
-    $("scanBtn").disabled = true;
-    $("scanBtn").textContent = "Scanning…";
+  $("scanVaultBtn").onclick = async () => {
+    const path = $("vaultPathInput").value.trim();
+    if (!path) return toast(I18N.t("vault.path_label"), true);
+
     try {
-      const d = await api("/api/scan", { vault_path: path });
-      S.scan = d;
+      $("scanMsg").innerHTML = `<div class="hint">${I18N.t("safety.read_only")}...</div>`;
+      const res = await api("/api/scan", { vault_path: path });
       S.vaultPath = path;
-      $("vaultBadge").innerHTML = `<span class="label-dim">Vault:</span> <span>${esc(d.vault_name || path)}</span>`;
+      S.scanned = true;
+      $("currentVaultLabel").textContent = path.split(/[/\\]/).pop() || path;
       $("vaultBadge").className = "chip ok";
-      updateScanLocks(true);
 
-      $("scanSummary").innerHTML = `
-        <div class="card">
-          <h3 style="margin-top:0">Scan summary</h3>
-          <div class="grid cols4">
-            ${stat(d.note_count, "notes found")}
-            ${stat(d.notes_with_properties_count, "notes with properties")}
-            ${stat(d.malformed_notes_count, "malformed frontmatter", d.malformed_notes_count > 0)}
-            ${stat((d.scan_seconds || 0) + "s", "scan time")}
-          </div>
-          <div class="muted small" style="margin-top:12px">Ignored: ${esc(d.ignored_count)} notes in .obsidian / .trash</div>
-        </div>
-      `;
+      $("statNotesTotal").textContent = res.summary.note_count;
+      $("statNotesWithProps").textContent = res.summary.notes_with_properties;
+      $("statNotesNoProps").textContent = res.summary.notes_without_properties;
+      $("statNotesFailed").textContent = res.summary.notes_with_parse_failure;
+      $("vaultStatsCard").style.display = "block";
 
+      $("ovNotesCount").textContent = res.summary.note_count;
+      $("ovPropsCount").textContent = res.inventory ? res.inventory.unique_property_count : 0;
       $("overviewNotScanned").style.display = "none";
       $("overviewScanned").style.display = "block";
-      $("ovNotesCount").textContent = d.note_count;
-      $("ovPropsCount").textContent = d.property_keys_count || (d.properties ? Object.keys(d.properties).length : 0);
 
-      if (d.issues && d.issues.length) {
-        $("scanIssues").innerHTML = `<div class="card"><h3 style="margin-top:0">Scan issues</h3>` +
-          d.issues.map(i => `<div class="finding"><h4>${sevPill(i.severity)} ${esc(i.title)}</h4><div class="why">${esc(i.description)}</div></div>`).join("") +
-          `</div>`;
-      } else {
-        $("scanIssues").innerHTML = "";
-      }
+      $("scanMsg").innerHTML = `<div class="ok" style="font-weight:600">✓ ${I18N.t("toast.scan_done")} (${res.scan_seconds}s)</div>`;
+      toast(I18N.t("toast.scan_done"));
 
-      toast("Vault scan complete");
-      await loadDiscovery();
       await loadScopeFolders();
+      await loadDiscovery();
+      await loadHealth();
+      await loadSavedChecks();
     } catch (e) {
-      toast(e.message, true);
-    } finally {
-      $("scanBtn").disabled = false;
-      $("scanBtn").textContent = "Scan vault";
-    }
-  };
-
-  $("verifyBtn").onclick = async () => {
-    try {
-      const r = await api("/api/vault/verify", {});
-      $("verifyResult").innerHTML = `
-        <div class="finding" style="border-color:var(--teal);margin-top:14px">
-          <h4 class="ok">✔ Vault untouched</h4>
-          <div class="why">Checked ${esc(r.files_checked)} files against baseline manifest captured at scan time. No files were modified, created, renamed or deleted.</div>
-        </div>
-      `;
-      toast("Verification passed: vault untouched");
-    } catch (e) {
-      $("verifyResult").innerHTML = `
-        <div class="finding" style="border-color:var(--red);margin-top:14px">
-          <h4 class="bad">✕ Verification failed: ${esc(e.message)}</h4>
-        </div>
-      `;
-      toast(e.message, true);
-    }
-  };
-}
-
-/* -------------------------------- discovery -------------------------------- */
-async function loadDiscovery() {
-  try {
-    const d = await api("/api/discovery", {});
-    S.inventory = d.inventory;
-    renderDiscovery(d);
-  } catch (e) {
-    console.error("Discovery error", e);
-  }
-}
-
-function renderDiscovery(d) {
-  const inv = d.inventory || {};
-  const props = inv.properties || {};
-  const entries = Object.entries(props);
-
-  $("discoverStats").innerHTML =
-    stat(entries.length, "property keys") +
-    stat(inv.total_property_usages || 0, "total usages") +
-    stat((d.findings || []).length, "findings to review", (d.findings || []).length > 0) +
-    stat(inv.distinct_types_count || 0, "storage types observed");
-
-  const filterText = $("invFilter").value.trim().toLowerCase();
-  const filtered = entries.filter(([k]) => !filterText || k.toLowerCase().includes(filterText));
-
-  $("invTable").innerHTML = `
-    <table>
-      <thead><tr><th>Property</th><th>Observed storage</th><th>Usages</th><th>Sample values</th></tr></thead>
-      <tbody>` +
-      (filtered.length ? filtered.map(([k, v]) => `
-        <tr class="clickable" data-prop="${esc(k)}">
-          <td><code>${esc(k)}</code></td>
-          <td>${(v.observed_types || [v.primary_type || 'text']).map(t => `<span class="pill low">${esc(t)}</span>`).join(" ")}</td>
-          <td>${esc(v.count)}</td>
-          <td class="small muted">${esc((v.sample_values || []).slice(0, 4).join(", "))}</td>
-        </tr>
-      `).join("") : `<tr><td colspan="4" class="empty">No properties match filter</td></tr>`) +
-      `</tbody>
-    </table>
-  `;
-
-  $("invTable").querySelectorAll("tr[data-prop]").forEach(tr => {
-    tr.onclick = () => showPropertyDetail(tr.dataset.prop);
-  });
-
-  renderFindings("discoverFindings", d.findings || [], $("findingFilter").value);
-}
-
-$("invFilter").oninput = () => {
-  if (S.inventory) renderDiscovery({ inventory: S.inventory, findings: [] });
-};
-
-async function showPropertyDetail(key) {
-  try {
-    const d = await api("/api/property", { key: key });
-    const p = d.property;
-    const bodyHtml = `
-      <div class="card" style="margin-bottom:12px">
-        <div class="stat"><div class="n">${esc(p.count)}</div><div class="l">Usages in vault notes</div></div>
-      </div>
-      <div class="card">
-        <h4 style="margin-top:0">Observed Storage Types</h4>
-        <div>${(p.observed_types || [p.primary_type || 'text']).map(t => `<span class="pill low">${esc(t)}</span>`).join(" ")}</div>
-        <h4 style="margin-top:14px">Sample Values</h4>
-        <div class="notes-list">${(p.sample_values || []).map(v => `<div>• ${esc(v)}</div>`).join("") || '<div class="muted">None</div>'}</div>
-        <h4 style="margin-top:14px">Notes Using This Property</h4>
-        <div class="notes-list" id="noteList">${(d.notes || []).map(n => `<div>• <code>${esc(n)}</code></div>`).join("") || '<div class="muted">None</div>'}</div>
-      </div>
-    `;
-    openDrawer(`Property: ${key}`, bodyHtml);
-  } catch (e) {
-    toast(e.message, true);
-  }
-}
-
-function renderFindings(targetId, findings, catFilter) {
-  const cont = $(targetId);
-  if (!cont) return;
-  const filtered = findings.filter(f => !catFilter || f.category === catFilter);
-  cont.innerHTML = filtered.length ? filtered.map(f => `
-    <div class="finding">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <h4>${sevPill(f.severity)} ${esc(f.title)}</h4>
-        <span class="muted small">${esc(f.category)}</span>
-      </div>
-      <div class="why">${esc(f.explanation || f.description || "")}</div>
-      ${f.affected_notes && f.affected_notes.length ? `
-        <details>
-          <summary>${f.affected_notes.length} affected note(s)</summary>
-          <div class="notes-list">${f.affected_notes.map(n => `<div>• <code>${esc(n)}</code></div>`).join("")}</div>
-        </details>
-      ` : ""}
-    </div>
-  `).join("") : '<div class="empty">No findings in this category.</div>';
-}
-
-/* -------------------------------- design -------------------------------- */
-function setupDesignHandlers() {
-  $("recipeSelect").onchange = async () => {
-    const id = $("recipeSelect").value;
-    if (!id) return;
-    try {
-      const d = await api("/api/design/build", { recipe_id: id });
-      S.schema = d.schema;
-      $("schemaName").value = d.schema.schema_name;
-      reviewSchema();
-    } catch (e) {
+      $("scanMsg").innerHTML = `<div class="bad" style="font-weight:600">✕ ${esc(e.message)}</div>`;
       toast(e.message, true);
     }
   };
 
-  $("goalText").oninput = async () => {
-    const txt = $("goalText").value.trim();
-    if (txt.length < 3) return;
+  $("verifyUntouchedBtn").onclick = async () => {
     try {
-      const d = await api("/api/design/suggest", { goal_text: txt });
-      if (d.suggested_recipe_id) $("recipeSelect").value = d.suggested_recipe_id;
-    } catch (e) {}
-  };
-
-  $("buildSchemaBtn").onclick = async () => {
-    const recipeId = $("recipeSelect").value;
-    const goal = $("goalText").value.trim();
-    const name = $("schemaName").value.trim() || "my_schema";
-    const intents = Array.from(document.querySelectorAll(".intent-cb:checked")).map(cb => cb.value);
-
-    try {
-      let schema;
-      if (recipeId) {
-        const d = await api("/api/design/build", { recipe_id: recipeId, intents: intents });
-        schema = d.schema;
+      const res = await api("/api/vault/verify", {});
+      if (res.unchanged) {
+        $("verifyResult").innerHTML = `
+          <div class="ok" style="font-weight:600">${I18N.t("vault.untouched_ok")}</div>
+          <div class="hint">${I18N.t("vault.untouched_desc", { count: res.files_checked })}</div>
+        `;
       } else {
-        const d = await api("/api/design/suggest", { goal_text: goal, schema_name: name, intents: intents });
-        schema = d.schema;
+        $("verifyResult").innerHTML = `<div class="bad" style="font-weight:600">✕ ${esc(JSON.stringify(res.detail))}</div>`;
       }
-      schema.schema_name = name;
-      S.schema = schema;
-      reviewSchema();
-      toast("Schema proposed");
-    } catch (e) {
-      toast(e.message, true);
-    }
-  };
-
-  $("addPropBtn").onclick = () => {
-    if (!S.schema) S.schema = { schema_name: $("schemaName").value.trim() || "untitled", properties: [] };
-    S.schema.properties.push({
-      name: "new_property",
-      storage_type: "text",
-      ui_control: "plain_text",
-      required: false,
-      reason: "User added property",
-      allowed_values: null
-    });
-    reviewSchema();
-  };
-
-  $("exportSchemaBtn").onclick = async () => {
-    if (!S.schema) return toast("Design a schema first", true);
-    try {
-      const r = await api("/api/export", { kind: "schema", params: { schema: S.schema }, basename: "schema-" + S.schema.schema_name });
-      toast("Schema exported to " + r.output_dir);
     } catch (e) {
       toast(e.message, true);
     }
   };
 }
 
-async function reviewSchema() {
-  if (!S.schema) return;
+/* ============================================================
+   Scope Module (Entire, Folders, Single Note)
+   ============================================================ */
+async function loadScopeFolders() {
   try {
-    const d = await api("/api/design/review", { schema: S.schema });
-    renderSchemaEditor(d);
-    renderFillForm(S.schema);
+    const res = await api("/api/scope/folders", {});
+    const listEl = $("scopeFolderList");
+    if (!res.folders || !res.folders.length) {
+      listEl.innerHTML = `<div class="muted">No subfolders found in vault.</div>`;
+      return;
+    }
+    listEl.innerHTML = res.folders.map(f => `
+      <label style="display:flex; align-items:center; gap:8px; padding:3px 0; font-size:13px; cursor:pointer">
+        <input type="checkbox" class="scope-folder-cb" value="${esc(f)}" />
+        <span>📁 <code>${esc(f)}</code></span>
+      </label>
+    `).join("");
+
+    // Populate Relations Source & Target selects
+    const opts = ['<option value="__entire__">全庫 (Entire Vault)</option>'].concat(
+      res.folders.map(f => `<option value="${esc(f)}">📁 ${esc(f)}</option>`)
+    ).join("");
+    $("relSourceScopeSelect").innerHTML = opts;
+    $("relTargetScopeSelect").innerHTML = opts;
   } catch (e) {
     console.error(e);
   }
 }
 
-function renderSchemaEditor(rev) {
-  const sch = rev.schema || S.schema;
-  const props = sch.properties || [];
-  const comp = rev.property_reviews || [];
-
-  $("schemaEditor").innerHTML = `
-    <div class="card">
-      <h3 style="margin-top:0">Schema Properties (${props.length})</h3>
-      ${props.map((p, idx) => {
-        const c = comp[idx] || {};
-        return `
-          <div class="prop-editor">
-            <div class="head">
-              <strong>${esc(p.name)}</strong>
-              <button class="ghost" style="padding:2px 8px" onclick="removeProp(${idx})">✕ Remove</button>
-            </div>
-            <div class="row" style="margin-top:8px">
-              <label class="field" style="flex:2 1 200px"><span>Property key</span>
-                <input type="text" value="${esc(p.name)}" onchange="updateProp(${idx}, 'name', this.value)" /></label>
-              <label class="field" style="flex:1 1 140px"><span>Storage type</span>
-                <select onchange="updateProp(${idx}, 'storage_type', this.value)">
-                  ${(S.meta ? Object.keys(S.meta.storage_types) : ['text','list','number','checkbox','date','datetime']).map(t => `<option value="${t}" ${p.storage_type === t ? 'selected' : ''}>${t}</option>`).join("")}
-                </select></label>
-              <label class="field" style="flex:1 1 140px"><span>UI control</span>
-                <select onchange="updateProp(${idx}, 'ui_control', this.value)">
-                  ${(S.meta ? Object.keys(S.meta.ui_controls) : ['plain_text','single_choice','multi_choice','note_link']).map(u => `<option value="${u}" ${p.ui_control === u ? 'selected' : ''}>${u}</option>`).join("")}
-                </select></label>
-              <label class="field" style="flex:0 0 100px"><span style="margin-bottom:10px">Required?</span>
-                <input type="checkbox" ${p.required ? 'checked' : ''} onchange="updateProp(${idx}, 'required', this.checked)" /></label>
-            </div>
-            <label class="field"><span>Purpose / reason</span>
-              <input type="text" value="${esc(p.reason || '')}" onchange="updateProp(${idx}, 'reason', this.value)" /></label>
-            ${c.overlap_status && c.overlap_status !== 'new' ? `
-              <div class="reuse ${esc(c.overlap_status)}">
-                <strong>${esc(c.overlap_status)}:</strong> ${esc(c.message)}
-              </div>
-            ` : ""}
-          </div>
-        `;
-      }).join("")}
-    </div>
-  `;
-}
-
-function updateProp(idx, field, val) {
-  if (!S.schema || !S.schema.properties[idx]) return;
-  S.schema.properties[idx][field] = val;
-  reviewSchema();
-}
-
-function removeProp(idx) {
-  if (!S.schema || !S.schema.properties[idx]) return;
-  S.schema.properties.splice(idx, 1);
-  reviewSchema();
-}
-
-/* -------------------------------- fill & note workspace -------------------------------- */
-S.workspace = {
-  mode: "blank",
-  selectedNotePath: null,
-  inspectedNote: null,
-  properties: {},
-  deletedKeys: []
-};
-
-async function loadWorkspaceCandidates() {
-  try {
-    const d = await api("/api/workspace/candidates", {});
-    const sel = $("workspaceNoteSelect");
-    sel.innerHTML = '<option value="">-- 請選擇筆記 --</option>' +
-      (d.candidates || []).map(c => `<option value="${esc(c.path)}">${esc(c.display_label)}</option>`).join("");
-  } catch (e) {
-    console.error("Workspace candidates error", e);
-  }
-}
-
-function setupFillHandlers() {
-  $("workspaceModeSelect").onchange = async () => {
-    const mode = $("workspaceModeSelect").value;
-    S.workspace.mode = mode;
-    $("noteSelectorBox").style.display = mode === "existing" ? "block" : "none";
-    $("wsAddPropBtn").style.display = mode === "existing" ? "block" : "none";
-    if (mode === "existing") {
-      await loadWorkspaceCandidates();
-      $("fillForm").innerHTML = '<div class="empty">請由上方選單選取目標筆記。</div>';
-      $("fillPreview").textContent = "選取筆記後將自動載入現有 Frontmatter 與比對。";
-      $("workspaceDiffBox").style.display = "none";
-      $("copyFmBtn").disabled = true;
-      $("copyYamlBtn").disabled = true;
-    } else {
-      S.workspace.selectedNotePath = null;
-      S.workspace.inspectedNote = null;
-      $("workspaceDiffBox").style.display = "none";
-      if (S.schema) renderFillForm(S.schema);
-      else {
-        $("fillForm").innerHTML = '<div class="empty">Design a schema first.</div>';
-        $("fillPreview").textContent = "Design or load a schema first.";
-      }
-    }
-  };
-
-  $("workspaceNoteSelect").onchange = async () => {
-    const notePath = $("workspaceNoteSelect").value;
-    if (!notePath) return;
-    await inspectWorkspaceNote(notePath);
-  };
-
-  $("wsAddPropBtn").onclick = () => {
-    const k = prompt("請輸入新屬性名稱 (Property Key):");
-    if (!k || !k.trim()) return;
-    const cleanK = k.trim();
-    S.workspace.properties[cleanK] = "";
-    renderExistingNoteForm();
-    triggerWorkspacePreview();
-  };
-
-  $("copyFmBtn").onclick = async () => {
-    if (!S.fill.valid) return;
-    const ok = await copyText(S.fill.preview);
-    toast(ok ? "Copied frontmatter to clipboard" : "Copy failed", !ok);
-  };
-
-  $("copyYamlBtn").onclick = async () => {
-    if (!S.fill.valid) return;
-    const yOnly = S.fill.preview.replace(/^---\n/, "").replace(/\n---\n?$/, "");
-    const ok = await copyText(yOnly);
-    toast(ok ? "Copied properties YAML to clipboard" : "Copy failed", !ok);
-  };
-}
-
-async function inspectWorkspaceNote(notePath) {
-  try {
-    const d = await api("/api/workspace/inspect", { note_path: notePath });
-    S.workspace.selectedNotePath = notePath;
-    S.workspace.inspectedNote = d;
-    S.workspace.properties = Object.assign({}, d.original_properties || {});
-    S.workspace.deletedKeys = [];
-
-    if (!d.can_edit) {
-      $("fillForm").innerHTML = `
-        <div class="finding" style="border-color:var(--red)">
-          <h4 class="bad">✕ 無法安全編輯此筆記 (Fail-Closed)</h4>
-          <div class="why">${esc(d.error_reason)}</div>
-          <div class="hint">為保護資料安全，工作室拒絕編輯具損毀或重複鍵之筆記。請先至 Obsidian 中修正該筆記。</div>
-        </div>
-      `;
-      $("fillPreview").textContent = "（已鎖定：此筆記無法安全編輯）";
-      $("workspaceDiffBox").style.display = "none";
-      $("fillStatus").innerHTML = `<span class="bad">✕ ${esc(d.error_reason)}</span>`;
-      $("copyFmBtn").disabled = true;
-      $("copyYamlBtn").disabled = true;
-      S.fill.valid = false;
-      return;
-    }
-
-    renderExistingNoteForm();
-    await triggerWorkspacePreview();
-  } catch (e) {
-    toast(e.message, true);
-  }
-}
-
-function renderExistingNoteForm() {
-  const props = Object.entries(S.workspace.properties);
-  if (!props.length) {
-    $("fillForm").innerHTML = '<div class="empty">此筆記目前無任何屬性。可點擊右上角「+ 新增屬性」。</div>';
-    return;
-  }
-  $("fillForm").innerHTML = props.map(([k, v]) => `
-    <div class="prop-editor" style="margin-bottom:8px">
-      <div class="head">
-        <strong><code>${esc(k)}</code></strong>
-        <button class="ghost" style="padding:2px 8px; font-size:11.5px" onclick="removeWorkspaceProp('${esc(k)}')">✕ 刪除</button>
-      </div>
-      <div style="margin-top:6px">
-        <input type="text" class="ws-fill-inp" data-key="${esc(k)}" value="${esc(v)}" />
-      </div>
-    </div>
-  `).join("");
-
-  document.querySelectorAll(".ws-fill-inp").forEach(inp => {
-    inp.oninput = () => {
-      S.workspace.properties[inp.dataset.key] = inp.value;
-      triggerWorkspacePreview();
-    };
-  });
-}
-
-function removeWorkspaceProp(k) {
-  delete S.workspace.properties[k];
-  S.workspace.deletedKeys.push(k);
-  renderExistingNoteForm();
-  triggerWorkspacePreview();
-}
-
-function renderFillForm(sch) {
-  if (!sch || !sch.properties || !sch.properties.length) {
-    $("fillForm").innerHTML = '<div class="empty">Design a schema first.</div>';
-    return;
-  }
-  $("fillForm").innerHTML = sch.properties.map(p => `
-    <label class="field">
-      <span>${esc(p.name)} ${p.required ? '<strong class="bad">*</strong>' : ''} <span class="muted">(${esc(p.storage_type)})</span></span>
-      <input type="text" class="fill-inp" data-key="${esc(p.name)}" placeholder="${esc(p.reason || '')}" />
-    </label>
-  `).join("");
-
-  document.querySelectorAll(".fill-inp").forEach(inp => {
-    inp.oninput = triggerFillPreview;
-  });
-  triggerFillPreview();
-}
-
-async function triggerWorkspacePreview() {
-  if (S.workspace.mode === "blank") {
-    return triggerFillPreview();
-  }
-
-  try {
-    const d = await api("/api/workspace/preview", {
-      note_path: S.workspace.selectedNotePath,
-      values: S.workspace.properties,
-      schema: S.schema,
-      deleted_keys: S.workspace.deletedKeys
-    });
-
-    S.fill.preview = d.frontmatter_preview;
-    S.fill.valid = d.valid;
-
-    $("fillPreview").textContent = d.frontmatter_preview || "No frontmatter produced.";
-    const canCopy = d.valid && d.can_copy;
-    $("copyFmBtn").disabled = !canCopy;
-    $("copyYamlBtn").disabled = !canCopy;
-
-    if (d.diffs && d.diffs.length) {
-      $("workspaceDiffBox").style.display = "block";
-      $("workspaceDiffBox").innerHTML = `
-        <div style="font-size:12px; margin-bottom:6px; font-weight:600">屬性變更比對 (Diff):</div>
-        <div style="display:flex; flex-wrap:wrap; gap:6px">
-          ${d.diffs.map(df => {
-            let cls = "pill info";
-            if (df.change_type === "added") cls = "pill exact";
-            else if (df.change_type === "modified") cls = "pill medium";
-            else if (df.change_type === "deleted") cls = "pill high";
-            return `<span class="${cls}">${esc(df.key)}: ${esc(df.change_type)}</span>`;
-          }).join("")}
-        </div>
-      `;
-    } else {
-      $("workspaceDiffBox").style.display = "none";
-    }
-
-    if (d.valid) {
-      $("fillStatus").innerHTML = '<span class="ok">✔ Valid frontmatter — ready to copy</span>';
-    } else {
-      $("fillStatus").innerHTML = `<span class="bad">✕ Cannot copy:</span> ` +
-        (d.errors || []).map(e => `<div class="small bad">• ${esc(e)}</div>`).join("");
-    }
-  } catch (e) {
-    $("fillPreview").textContent = "Error: " + e.message;
-    $("copyFmBtn").disabled = true;
-    $("copyYamlBtn").disabled = true;
-  }
-}
-
-async function triggerFillPreview() {
-  if (!S.schema) return;
-  const values = {};
-  document.querySelectorAll(".fill-inp").forEach(inp => {
-    values[inp.dataset.key] = inp.value;
-  });
-  S.fill.values = values;
-
-  try {
-    const d = await api("/api/fill/preview", {
-      schema: S.schema,
-      values: values
-    });
-    S.fill.preview = d.frontmatter;
-    S.fill.valid = d.valid;
-
-    $("fillPreview").textContent = d.frontmatter || "No frontmatter produced.";
-    const canCopy = d.valid;
-    $("copyFmBtn").disabled = !canCopy;
-    $("copyYamlBtn").disabled = !canCopy;
-
-    if (d.valid) {
-      $("fillStatus").innerHTML = '<span class="ok">✔ Valid frontmatter — ready to copy</span>';
-    } else {
-      $("fillStatus").innerHTML = `<span class="bad">✕ Cannot copy:</span> ` +
-        (d.errors || []).map(e => `<div class="small bad">• ${esc(e)}</div>`).join("");
-    }
-  } catch (e) {
-    $("fillPreview").textContent = "Error: " + e.message;
-    $("copyFmBtn").disabled = true;
-    $("copyYamlBtn").disabled = true;
-  }
-}
-
-/* -------------------------------- refactor -------------------------------- */
-function setupRefactorHandlers() {
-  $("refOp").onchange = () => {
-    const op = $("refOp").value;
-    let html = "";
-    if (op === "rename") {
-      html = `
-        <label class="field"><span>Source property name</span>
-          <input type="text" id="refFrom" placeholder="old_name" /></label>
-        <label class="field"><span>New property name</span>
-          <input type="text" id="refTo" placeholder="new_name" /></label>
-      `;
-    } else if (op === "merge") {
-      html = `
-        <label class="field"><span>Source properties (comma separated)</span>
-          <input type="text" id="refFrom" placeholder="prop1, prop2" /></label>
-        <label class="field"><span>Target property</span>
-          <input type="text" id="refTo" placeholder="merged_prop" /></label>
-      `;
-    } else if (op === "normalize") {
-      html = `
-        <label class="field"><span>Property to normalize</span>
-          <input type="text" id="refFrom" placeholder="status" /></label>
-      `;
-    } else if (op === "convert_type") {
-      html = `
-        <label class="field"><span>Property to convert</span>
-          <input type="text" id="refFrom" placeholder="prop_name" /></label>
-        <label class="field"><span>Target storage type</span>
-          <select id="refTo">
-            <option value="number">number</option>
-            <option value="checkbox">checkbox</option>
-            <option value="date">date</option>
-            <option value="list">list</option>
-            <option value="text">text</option>
-          </select></label>
-      `;
-    } else if (op === "required_impact") {
-      html = `<div class="muted small" style="align-self:center;margin-bottom:12px">Uses currently active schema.</div>`;
-    }
-    $("refInputs").innerHTML = html;
-  };
-
-  $("planBtn").onclick = async () => {
-    const op = $("refOp").value;
-    const fromEl = $("refFrom");
-    const toEl = $("refTo");
-    const fromVal = fromEl ? fromEl.value.trim() : "";
-    const toVal = toEl ? toEl.value.trim() : "";
-
-    const params = { operation: op };
-    if (op === "rename") {
-      params.source = fromVal;
-      params.target = toVal;
-    } else if (op === "merge") {
-      params.sources = fromVal.split(",").map(s => s.trim()).filter(Boolean);
-      params.target = toVal;
-    } else if (op === "normalize") {
-      params.property = fromVal;
-    } else if (op === "convert_type") {
-      params.property = fromVal;
-      params.target_type = toVal;
-    } else if (op === "required_impact") {
-      if (!S.schema) return toast("Design a schema in step 3 first", true);
-      params.schema = S.schema;
-    }
-
-    try {
-      const plan = await api("/api/refactor/plan", params);
-      S.lastPlan = plan;
-      S.lastPlanParams = params;
-      renderPlanResult(plan);
-      $("exportPlanBtn").disabled = false;
-      toast("Refactor plan generated");
-    } catch (e) {
-      toast(e.message, true);
-    }
-  };
-
-  $("exportPlanBtn").onclick = async () => {
-    try {
-      const r = await api("/api/export", {
-        kind: "plan",
-        params: S.lastPlanParams,
-        basename: "plan-" + (S.lastPlan ? S.lastPlan.operation : "refactor")
-      });
-      toast("Plan exported to " + r.output_dir + (r.verification && r.verification.no_silent_omission ? " · read-back verified" : ""));
-    } catch (e) {
-      toast(e.message, true);
-    }
-  };
-}
-
-function renderPlanResult(plan) {
-  function planTable(title, list) {
-    if (!list || !list.length) return "";
-    return `
-      <h4 style="margin-top:16px">${esc(title)} (${list.length})</h4>
-      <div class="notes-list">${list.map(it => `<div>• ${typeof it === 'object' ? `<code>${esc(it.path || it.file || JSON.stringify(it))}</code>` : `<code>${esc(it)}</code>`}</div>`).join("")}</div>
-    `;
-  }
-
-  $("planResult").innerHTML = `
-    <div class="card">
-      <h3 style="margin-top:0">Plan summary: ${esc(plan.operation)}</h3>
-      <div class="grid cols4">
-        ${stat(plan.affected_notes_count || (plan.affected_notes ? plan.affected_notes.length : 0), "affected notes")}
-        ${stat((plan.conflicts || []).length, "conflicts", (plan.conflicts || []).length > 0)}
-        ${stat((plan.manual_review || []).length, "manual review", (plan.manual_review || []).length > 0)}
-        ${stat((plan.excluded || []).length, "excluded")}
-      </div>
-      ${planTable("Conflicts (will NOT be applied)", plan.conflicts)}
-      ${planTable("Manual review required", plan.manual_review)}
-      ${planTable("Notes that would change", plan.affected_notes)}
-      ${planTable("Excluded ambiguous notes", plan.excluded)}
-      ${planTable("Unreadable notes", plan.unreadable_notes)}
-    </div>
-  `;
-}
-
-/* -------------------------------- relationships -------------------------------- */
-function setupRelationshipsHandlers() {
-  $("loadInboxBtn").onclick = async () => {
-    try {
-      const d = await api("/api/relationships", {});
-      S.inbox = d;
-      $("exportInboxBtn").disabled = false;
-      const sum = d.summary || {};
-      $("inboxStats").innerHTML =
-        stat(sum.total_items || (d.items || []).length, "items to review") +
-        stat(sum.exact_matches || 0, "exact candidates") +
-        stat(sum.ambiguous || 0, "ambiguous candidates", (sum.ambiguous || 0) > 0) +
-        stat(sum.unresolved || 0, "unresolved links", (sum.unresolved || 0) > 0);
-
-      $("inboxItems").innerHTML = (d.items && d.items.length) ? d.items.map(i => `
-        <div class="finding">
-          <h4>${sevPill(i.severity)}${confPill(i.confidence)} ${esc(i.title)}</h4>
-          <div class="small">Note <code>${esc(i.note)}</code> · property <code>${esc(i.property)}</code> · current value <code>${esc(i.value)}</code></div>
-          <div class="why">${esc(i.explanation || "")}</div>
-          <div class="small"><strong>What to do:</strong> ${esc(i.action || "")}</div>
-          <div class="small muted">Candidates: ${(i.candidates && i.candidates.length) ? i.candidates.map(c => "<code>" + esc(c) + "</code>").join(", ") : "—"}</div>
-          ${i.proposed_value ? `
-            <div class="row" style="margin-top:8px">
-              <div class="fixed"><button class="ghost" data-copy="${esc(i.proposed_value)}">Copy proposed value ${esc(i.proposed_value)}</button></div>
-            </div>
-          ` : `<div class="small muted" style="margin-top:6px">No value is proposed — the app will not guess.</div>`}
-        </div>
-      `).join("") : '<div class="empty">Nothing to review. All relationship property values are clean.</div>';
-
-      $("inboxItems").querySelectorAll("[data-copy]").forEach(b => {
-        b.onclick = async () => {
-          const ok = await copyText(b.dataset.copy);
-          toast(ok ? "Copied " + b.dataset.copy : "Copy failed", !ok);
-        };
-      });
-      toast("Relationship analysis complete");
-    } catch (e) {
-      toast(e.message, true);
-    }
-  };
-
-  $("exportInboxBtn").onclick = async () => {
-    try {
-      const r = await api("/api/export", { kind: "inbox", params: {}, basename: "relationship-inbox" });
-      toast("Inbox exported to " + r.output_dir + (r.verification && r.verification.no_silent_omission ? " · read-back verified" : ""));
-    } catch (e) {
-      toast(e.message, true);
-    }
-  };
-}
-
-/* -------------------------------- health -------------------------------- */
-function setupHealthHandlers() {
-  $("healthBtn").onclick = async () => {
-    const useSchema = $("healthSchemaToggle").value === "yes";
-    if (useSchema && !S.schema) return toast("Design a schema in step 3 first, or choose 'No schema'", true);
-    const params = {
-      schema: useSchema ? S.schema : null,
-      scope_property: $("scopeProp").value.trim(),
-      scope_value: $("scopeVal").value.trim()
-    };
-    try {
-      const d = await api("/api/health", params);
-      S.health = d;
-      S.healthParams = params;
-      $("exportHealthBtn").disabled = false;
-      const sc = d.health_score || { score: 100, formula: "", score_breakdown: [] };
-      $("healthResult").innerHTML = `
-        <div class="card">
-          <h3 style="margin-top:0">Health score: ${sc.score} / 100</h3>
-          <p class="small muted">${esc(sc.formula || "")}</p>
-          <table>
-            <thead><tr><th>Category</th><th>Findings</th><th>Weight each</th><th>Raw</th><th>Cap</th><th>Applied</th></tr></thead>
-            <tbody>${(sc.score_breakdown || []).map(r => `
-              <tr>
-                <td><code>${esc(r.category)}</code></td>
-                <td>${r.finding_count}</td>
-                <td>${r.weight_per_finding}</td>
-                <td>${r.raw_deduction}</td>
-                <td>${r.category_cap}</td>
-                <td>${r.applied_deduction}</td>
-              </tr>
-            `).join("")}</tbody>
-          </table>
-          <div class="grid cols4" style="margin-top:14px">
-            ${stat((d.summary ? d.summary.finding_count : (d.findings || []).length), "findings")}
-            ${d.summary && d.summary.by_severity ? Object.entries(d.summary.by_severity).map(([k, v]) => stat(v, k + " severity", k === "high")).join("") : ""}
-          </div>
-        </div>
-        <div class="card">
-          <h3 style="margin-top:0">All findings</h3>
-          <div id="healthFindings"></div>
-        </div>
-      `;
-      renderFindings("healthFindings", d.findings || [], "");
-      toast("Health check complete");
-    } catch (e) {
-      toast(e.message, true);
-    }
-  };
-
-  $("exportHealthBtn").onclick = async () => {
-    try {
-      const r = await api("/api/export", { kind: "health", params: S.healthParams, basename: "property-health" });
-      toast(`Health report exported to ${r.output_dir} · ${r.verification.finding_count_in_file} findings written` +
-        (r.verification.no_silent_omission ? " · read-back verified" : " · MISMATCH"));
-    } catch (e) {
-      toast(e.message, true);
-    }
-  };
-}
-
-/* -------------------------------- proposal import -------------------------------- */
-function setupProposalHandlers() {
-  $("proposalFile").onchange = async (ev) => {
-    const f = ev.target.files[0];
-    if (!f) return;
-    $("proposalText").value = await f.text();
-  };
-
-  $("sampleProposalBtn").onclick = () => {
-    $("proposalText").value = JSON.stringify({
-      proposal_version: "1.0",
-      schema_name: "equipment",
-      generated_by: "Obsidian Property Architect Skill (example)",
-      properties: [
-        {
-          name: "project",
-          storage_type: "text",
-          ui_control: "note_link",
-          required: false,
-          reason: "Relate this record to an existing project note",
-          allowed_values: null,
-          confidence: 0.8
-        },
-        {
-          name: "location",
-          storage_type: "text",
-          ui_control: "single_choice",
-          required: true,
-          reason: "Know where the equipment physically is",
-          allowed_values: ["lab", "office", "storage"],
-          confidence: 0.6
-        }
-      ]
-    }, null, 2);
-  };
-
-  $("importProposalBtn").onclick = async () => {
-    const text = $("proposalText").value.trim();
-    if (!text) return toast("Paste JSON or select a file first", true);
-    try {
-      const d = await api("/api/proposal/import", { text: text });
-      let html = `
-        <div class="card">
-          <h3 style="margin-top:0">Validation</h3>
-          <p class="${d.valid ? 'ok' : 'bad'}">${d.valid ? '✔ Valid proposal (contract ' + esc(d.contract_version) + ')' : '✖ Rejected'}</p>
-          ${d.errors && d.errors.length ? `<div class="reuse exact_existing"><strong>Errors:</strong><br>${d.errors.map(esc).join("<br>")}</div>` : ""}
-          ${d.warnings && d.warnings.length ? `<div class="reuse possible_overlap"><strong>Warnings:</strong><br>${d.warnings.map(esc).join("<br>")}</div>` : ""}
-          <p class="small muted">Vault modified by this import: <strong>${d.vault_modified}</strong>. ${esc(d.trust || "")}</p>
-        </div>
-      `;
-      if (d.valid && d.comparison) {
-        html += `
-          <div class="card">
-            <h3 style="margin-top:0">Compared with your vault</h3>
-            <table>
-              <thead><tr><th>Proposed property</th><th>Type</th><th>Status in vault</th><th>Reason given</th><th>Confidence</th></tr></thead>
-              <tbody>` +
-              d.comparison.map(c => `
-                <tr>
-                  <td><code>${esc(c.proposed_name)}</code></td>
-                  <td>${esc(c.proposed_storage_type)} / ${esc(c.proposed_ui_control)}</td>
-                  <td>${esc(c.status)}${c.type_agreement ? ` <span class="pill ${c.type_agreement === 'differs' ? 'medium' : 'exact'}">type ${esc(c.type_agreement)}</span>` : ""}
-                    <div class="small muted">${esc(c.message)}</div></td>
-                  <td class="small">${esc(c.reason || '—')}</td>
-                  <td>${c.confidence == null ? '—' : esc(c.confidence)}</td>
-                </tr>
-              `).join("") +
-              `</tbody>
-            </table>
-            <div class="row" style="margin-top:14px">
-              <div class="fixed"><button class="primary" id="acceptProposalBtn">Accept into the schema editor</button></div>
-              <div class="fixed"><button class="ghost" id="rejectProposalBtn">Reject</button></div>
-            </div>
-          </div>
-        `;
-      }
-      $("proposalResult").innerHTML = html;
-
-      const acc = $("acceptProposalBtn");
-      if (acc) {
-        acc.onclick = () => {
-          S.schema = d.schema;
-          $("schemaName").value = d.schema.schema_name;
-          reviewSchema();
-          setTab("design");
-          toast("Proposal loaded into schema editor");
-        };
-      }
-      const rej = $("rejectProposalBtn");
-      if (rej) {
-        rej.onclick = () => {
-          $("proposalResult").innerHTML = "";
-          $("proposalText").value = "";
-          toast("Proposal discarded");
-        };
-      }
-    } catch (e) {
-      toast(e.message, true);
-    }
-  };
-}
-
-/* -------------------------------- scope UI handler -------------------------------- */
-async function loadScopeFolders() {
-  try {
-    const d = await api("/api/scope/folders", {});
-    const list = $("scopeFolderList");
-    if (!d.folders || !d.folders.length) {
-      list.innerHTML = '<div class="empty">No folders found in vault.</div>';
-      return;
-    }
-    list.innerHTML = d.folders.map(f => `
-      <label style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px;cursor:pointer">
-        <input type="checkbox" class="scope-folder-cb" value="${esc(f)}" />
-        <span>📁 <code>${esc(f)}</code></span>
-      </label>
-    `).join("");
-  } catch (e) {
-    console.error("Failed to load scope folders", e);
-  }
-}
-
 function setupScopeHandlers() {
   $("scopeModeSelect").onchange = () => {
-    const isFolders = $("scopeModeSelect").value === "folders";
-    $("scopeFolderSelector").style.display = isFolders ? "block" : "none";
+    const mode = $("scopeModeSelect").value;
+    $("scopeFolderSelector").style.display = mode === "folders" ? "block" : "none";
+    $("scopeSingleNoteSelector").style.display = mode === "single_note" ? "block" : "none";
   };
 
   $("applyScopeBtn").onclick = async () => {
     const mode = $("scopeModeSelect").value;
-    const sub = $("scopeIncludeSubfolders").value === "true";
-    const selectedFolders = Array.from(document.querySelectorAll(".scope-folder-cb:checked")).map(cb => cb.value);
+    let scopeSpec = { mode: mode, include_subfolders: $("scopeIncludeSubfolders").checked, folders: [], note_path: null };
 
-    if (mode === "folders" && !selectedFolders.length) {
-      return toast("Please select at least one folder", true);
+    if (mode === "folders") {
+      const selected = Array.from(document.querySelectorAll(".scope-folder-cb:checked")).map(cb => cb.value);
+      if (!selected.length) return toast("Please select at least one folder.", true);
+      scopeSpec.folders = selected;
+    } else if (mode === "single_note") {
+      const p = $("scopeSingleNoteInput").value.trim();
+      if (!p) return toast("Please specify a note path.", true);
+      scopeSpec.note_path = p;
     }
-
-    const scopeSpec = {
-      mode: mode,
-      folders: selectedFolders,
-      include_subfolders: sub
-    };
 
     try {
       const res = await api("/api/scope/apply", { scope: scopeSpec });
       S.scope = res.scope;
-      $("currentScopeLabel").textContent = mode === "entire_vault" ? "Entire Vault" : `${selectedFolders.length} folder(s) (${res.notes_in_scope} notes)`;
-      toast("Scope applied (" + res.notes_in_scope + " notes in scope)");
+      const label = mode === "entire_vault" ? I18N.t("context.entire_vault") :
+                    mode === "folders" ? `${scopeSpec.folders.length} folder(s) (${res.notes_in_scope} notes)` :
+                    `Note: ${scopeSpec.note_path}`;
+      $("currentScopeLabel").textContent = label;
+      toast(I18N.t("toast.scope_applied"));
       await loadDiscovery();
+      await loadHealth();
     } catch (e) {
       toast(e.message, true);
     }
@@ -2084,11 +1144,512 @@ function setupScopeHandlers() {
       const res = await api("/api/scope/apply", { scope: { mode: "entire_vault" } });
       $("scopeModeSelect").value = "entire_vault";
       $("scopeFolderSelector").style.display = "none";
+      $("scopeSingleNoteSelector").style.display = "none";
       document.querySelectorAll(".scope-folder-cb").forEach(cb => cb.checked = false);
       S.scope = res.scope;
-      $("currentScopeLabel").textContent = "Entire Vault";
-      toast("Scope reset to Entire Vault");
+      $("currentScopeLabel").textContent = I18N.t("context.entire_vault");
+      toast(I18N.t("toast.scope_applied"));
       await loadDiscovery();
+      await loadHealth();
+    } catch (e) {
+      toast(e.message, true);
+    }
+  };
+}
+
+/* ============================================================
+   Note Properties Workspace Module
+   ============================================================ */
+function setupWorkspaceHandlers() {
+  $("wsSearchBtn").onclick = async () => {
+    const q = $("wsNoteSearch").value.trim();
+    try {
+      const res = await api("/api/workspace/notes", { query: q });
+      const box = $("wsNoteCandidates");
+      if (!res.candidates || !res.candidates.length) {
+        box.innerHTML = `<div style="padding:10px; color:var(--muted)">查無相符筆記。</div>`;
+        box.style.display = "block";
+        return;
+      }
+      box.innerHTML = res.candidates.map(c => `
+        <div class="ws-cand-item" data-path="${esc(c.path)}" style="padding:8px 12px; cursor:pointer; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center">
+          <div>
+            <strong>${esc(c.name)}</strong>
+            <span class="muted" style="font-size:11.5px; margin-left:8px">${esc(c.path)}</span>
+          </div>
+          <div>
+            ${c.in_current_scope ? '<span class="pill ok">In Scope</span>' : '<span class="pill">Other</span>'}
+            ${c.is_ambiguous_basename ? '<span class="pill warn">Ambiguous Name</span>' : ''}
+          </div>
+        </div>
+      `).join("");
+      box.style.display = "block";
+
+      document.querySelectorAll(".ws-cand-item").forEach(item => {
+        item.onclick = () => {
+          const path = item.getAttribute("data-path");
+          box.style.display = "none";
+          $("wsNoteSearch").value = path;
+          inspectNoteInWorkspace(path);
+        };
+      });
+    } catch (e) {
+      toast(e.message, true);
+    }
+  };
+
+  $("wsCopyBtn").onclick = () => {
+    const text = $("wsYamlPreview").textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      toast(I18N.t("toast.copied"));
+    });
+  };
+}
+
+async function inspectNoteInWorkspace(notePath) {
+  try {
+    const res = await api("/api/workspace/inspect", { note_path: notePath });
+    S.currentNote = res;
+    $("currentNoteLabel").textContent = res.name;
+    $("noteBadge").style.display = "inline-flex";
+
+    const banner = $("wsNoteStatusBanner");
+    if (!res.can_edit) {
+      banner.innerHTML = `
+        <div class="card" style="border-color:var(--red); background:var(--red-soft); color:var(--red)">
+          <strong>✕ 鎖定編輯 (Fail-Closed)：</strong> ${esc(res.error_reason)}
+        </div>
+      `;
+      $("wsEditorArea").style.display = "none";
+      return;
+    }
+
+    banner.innerHTML = `
+      <div class="card" style="border-color:var(--teal); background:var(--teal-soft); color:var(--teal); margin-bottom:14px">
+        <strong>✓ 筆記已載入：</strong> <code>${esc(res.note_path)}</code> (共 ${Object.keys(res.original_properties).length} 個既有屬性)
+      </div>
+    `;
+
+    renderWorkspaceFields(res.original_properties);
+    $("wsEditorArea").style.display = "block";
+    updateWorkspacePreview();
+  } catch (e) {
+    toast(e.message, true);
+  }
+}
+
+function renderWorkspaceFields(propsMap) {
+  const container = $("wsPropFields");
+  container.innerHTML = Object.entries(propsMap).map(([k, v]) => `
+    <div class="ws-prop-row" data-key="${esc(k)}" style="display:grid; grid-template-columns:140px 1fr 36px; gap:8px; align-items:center; margin-bottom:8px">
+      <input type="text" class="ws-prop-key" value="${esc(k)}" readonly style="background:var(--panel2)" />
+      <input type="text" class="ws-prop-val" value="${esc(Array.isArray(v) ? v.join(", ") : (v == null ? "" : v))}" />
+      <button class="ghost ws-prop-del" title="刪除此屬性" style="color:var(--red); padding:4px">✕</button>
+    </div>
+  `).join("");
+
+  document.querySelectorAll(".ws-prop-val").forEach(input => {
+    input.oninput = updateWorkspacePreview;
+  });
+  document.querySelectorAll(".ws-prop-del").forEach(btn => {
+    btn.onclick = (e) => {
+      e.target.closest(".ws-prop-row").remove();
+      updateWorkspacePreview();
+    };
+  });
+
+  $("wsAddPropBtn").onclick = () => {
+    const row = document.createElement("div");
+    row.className = "ws-prop-row";
+    row.style.cssText = "display:grid; grid-template-columns:140px 1fr 36px; gap:8px; align-items:center; margin-bottom:8px";
+    row.innerHTML = `
+      <input type="text" class="ws-prop-key" placeholder="屬性名稱..." />
+      <input type="text" class="ws-prop-val" placeholder="屬性值..." />
+      <button class="ghost ws-prop-del" style="color:var(--red); padding:4px">✕</button>
+    `;
+    container.appendChild(row);
+    row.querySelector(".ws-prop-key").oninput = updateWorkspacePreview;
+    row.querySelector(".ws-prop-val").oninput = updateWorkspacePreview;
+    row.querySelector(".ws-prop-del").onclick = () => { row.remove(); updateWorkspacePreview(); };
+  };
+}
+
+async function updateWorkspacePreview() {
+  if (!S.currentNote) return;
+  const values = {};
+  const presentKeys = new Set();
+  document.querySelectorAll(".ws-prop-row").forEach(row => {
+    const k = row.querySelector(".ws-prop-key").value.trim();
+    const v = row.querySelector(".ws-prop-val").value;
+    if (k) {
+      values[k] = v;
+      presentKeys.add(k);
+    }
+  });
+
+  const deletedKeys = Object.keys(S.currentNote.original_properties).filter(k => !presentKeys.has(k));
+
+  try {
+    const res = await api("/api/workspace/preview", {
+      note_path: S.currentNote.note_path,
+      values: values,
+      deleted_keys: deletedKeys
+    });
+
+    // Render Semantic Diff
+    $("wsDiffView").innerHTML = `
+      <div class="diff-box">
+        ${res.diffs.map(d => `
+          <div class="diff-row ${esc(d.change_type)}">
+            <div><code>${esc(d.key)}</code></div>
+            <div><span class="pill ${d.change_type === 'added' ? 'ok' : d.change_type === 'deleted' ? 'bad' : d.change_type === 'modified' ? 'warn' : ''}">${esc(d.change_type)}</span></div>
+            <div class="muted" style="font-size:12px">${d.change_type === 'modified' ? esc(d.old_value) + ' → ' + esc(d.new_value) : esc(d.new_value || d.old_value || '')}</div>
+          </div>
+        `).join("")}
+      </div>
+    `;
+
+    $("wsYamlPreview").textContent = res.frontmatter_preview || "";
+
+    const canCopy = res.can_copy && res.roundtrip_matches;
+    S.fill.valid = canCopy;
+    if (canCopy) {
+      $("wsRoundtripStatus").innerHTML = `<span class="ok">${I18N.t("workspace.roundtrip_ok")}</span>`;
+      $("wsCopyBtn").disabled = false;
+      if ($("copyFmBtn")) $("copyFmBtn").disabled = false;
+      if ($("copyYamlBtn")) $("copyYamlBtn").disabled = false;
+    } else {
+      const errs = res.errors.length ? res.errors.join("<br>") : I18N.t("workspace.roundtrip_err");
+      $("wsRoundtripStatus").innerHTML = `<span class="bad">${errs}</span>`;
+      $("wsCopyBtn").disabled = true;
+      if (!S.fill.valid) {
+        if ($("copyFmBtn")) $("copyFmBtn").disabled = true;
+        if ($("copyYamlBtn")) $("copyYamlBtn").disabled = true;
+      }
+    }
+
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+/* ============================================================
+   Discover Module
+   ============================================================ */
+async function loadDiscovery() {
+  try {
+    const res = await api("/api/discovery", {});
+    const props = res.inventory ? res.inventory.properties : [];
+    $("discoveryInventoryTable").innerHTML = `
+      <table>
+        <thead><tr><th>Property</th><th>Usage</th><th>Types</th><th>Distinct Values</th><th>Action</th></tr></thead>
+        <tbody>
+          ${props.map(p => `
+            <tr>
+              <td><code>${esc(p.key)}</code></td>
+              <td><strong>${p.usage_count}</strong> <span class="muted">/ ${res.notes_in_scope}</span></td>
+              <td>${Object.entries(p.observed_types).map(([t, c]) => `<span class="pill">${esc(t)}: ${c}</span>`).join(" ")}</td>
+              <td>${p.distinct_value_count}</td>
+              <td><button class="secondary ws-drill-btn" data-key="${esc(p.key)}" style="padding:4px 8px; font-size:11.5px">查看詳情</button></td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `;
+
+    document.querySelectorAll(".ws-drill-btn").forEach(btn => {
+      btn.onclick = async () => {
+        const key = btn.getAttribute("data-key");
+        const det = await api("/api/property", { key: key });
+        openDrawer(`屬性詳情：${key}`, `
+          <div class="card">
+            <h4>數值分布 (Top Values)</h4>
+            <table>
+              <thead><tr><th>Value</th><th>Count</th></tr></thead>
+              <tbody>
+                ${det.entry.values.map(v => `<tr><td><code>${esc(v.value)}</code></td><td>${v.count}</td></tr>`).join("")}
+              </tbody>
+            </table>
+          </div>
+        `);
+      };
+    });
+
+    $("discoveryFindings").innerHTML = res.findings && res.findings.length ? res.findings.map(f => `
+      <div class="card" style="margin-bottom:10px; border-left:4px solid var(--amber)">
+        <strong>[${esc(f.severity.toUpperCase())}] ${esc(f.title)}</strong>
+        <p class="muted" style="margin:4px 0">${esc(f.explanation)}</p>
+        <div class="hint">建議操作：${esc(f.recommendation)}</div>
+      </div>
+    `).join("") : `<div class="muted">無任何異常發現事項。</div>`;
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function setupDiscoverHandlers() {
+  $("exportDiscoveryBtn").onclick = async () => {
+    try {
+      const res = await api("/api/export", { kind: "discovery" });
+      toast(`盤點報告已匯出至：${res.output_dir}`);
+    } catch (e) {
+      toast(e.message, true);
+    }
+  };
+}
+
+/* ============================================================
+   Design Module
+   ============================================================ */
+function setupDesignHandlers() {
+  $("designSuggestBtn").onclick = async () => {
+    const goal = $("designGoalInput").value.trim();
+    if (!goal) return toast("請輸入目標描述", true);
+
+    try {
+      const res = await api("/api/design/build", { goal: goal });
+      $("designReviewResult").innerHTML = `
+        <div class="grid cols3" style="margin-bottom:14px">
+          <div class="stat ok"><div class="n">${res.counts.exact_existing_in_scope || 0}</div><div class="l">Scope 內既有屬性</div></div>
+          <div class="stat"><div class="n">${res.counts.exact_existing_in_vault_only || 0}</div><div class="l">全庫其他筆記屬性</div></div>
+          <div class="stat"><div class="n">${res.counts.new || 0}</div><div class="l">全庫全新屬性</div></div>
+        </div>
+        <table>
+          <thead><tr><th>Property</th><th>Storage / Control</th><th>Status</th><th>Explanation</th></tr></thead>
+          <tbody>
+            ${res.reuse_reviews.map(r => `
+              <tr>
+                <td><code>${esc(r.proposed_name)}</code></td>
+                <td>${esc(r.schema_storage_type || '')}</td>
+                <td><span class="pill ${r.in_scope ? 'ok' : r.in_vault_only ? 'warn' : ''}">${esc(r.status)}</span></td>
+                <td class="muted" style="font-size:12px">${esc(r.message)}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+      $("designReviewCard").style.display = "block";
+    } catch (e) {
+      toast(e.message, true);
+    }
+  };
+}
+
+/* ============================================================
+   Relationships Module (4-State + Saved Checks)
+   ============================================================ */
+function setupRelationsHandlers() {
+  $("relSourcePropsBtn").onclick = () => {
+    S.relSourceType = "props";
+    $("relSourcePropsBtn").className = "secondary active";
+    $("relSourceBodyBtn").className = "secondary";
+    $("relPropFilterWrapper").style.display = "block";
+  };
+  $("relSourceBodyBtn").onclick = () => {
+    S.relSourceType = "body";
+    $("relSourceBodyBtn").className = "secondary active";
+    $("relSourcePropsBtn").className = "secondary";
+    $("relPropFilterWrapper").style.display = "none";
+  };
+
+  $("relAnalyzeBtn").onclick = async () => {
+    const srcVal = $("relSourceScopeSelect").value;
+    const tgtVal = $("relTargetScopeSelect").value;
+    const propFilter = $("relPropFilterInput").value.trim() || null;
+
+    const srcScope = srcVal === "__entire__" ? { mode: "entire_vault" } : { mode: "folders", folders: [srcVal], include_subfolders: true };
+    const tgtScope = tgtVal === "__entire__" ? { mode: "entire_vault" } : { mode: "folders", folders: [tgtVal], include_subfolders: true };
+
+    try {
+      const endpoint = S.relSourceType === "body" ? "/api/relationships/body" : "/api/relationships";
+      const payload = {
+        source_scope: srcScope,
+        target_scope: tgtScope,
+        property: propFilter
+      };
+      const res = await api(endpoint, payload);
+
+      const summary = res.summary || {};
+      $("relStatValid").textContent = summary.valid_count || 0;
+      $("relStatBroken").textContent = summary.broken_count || 0;
+      $("relStatAmbig").textContent = summary.ambiguous_count || 0;
+      $("relStatOutside").textContent = summary.outside_target_count || 0;
+      $("relResultsCard").style.display = "block";
+
+      const items = res.findings || res.items || [];
+      $("relItemsList").innerHTML = `
+        <table>
+          <thead><tr><th>Classification</th><th>Source Note</th><th>Property / Link</th><th>Target</th><th>Details</th></tr></thead>
+          <tbody>
+            ${items.map(item => `
+              <tr>
+                <td><span class="pill ${item.classification === 'VALID' ? 'valid' : item.classification === 'BROKEN' ? 'broken' : item.classification === 'AMBIGUOUS' ? 'ambiguous' : 'outside'}">${esc(item.classification)}</span></td>
+                <td><code>${esc(item.note || item.source_note)}</code></td>
+                <td><code>${esc(item.property || '[[Wikilink]]')}</code></td>
+                <td><code>${esc(item.value || item.target_raw)}</code></td>
+                <td class="muted" style="font-size:12px">${esc(item.explanation)}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+      toast("關聯分析完成！");
+    } catch (e) {
+      toast(e.message, true);
+    }
+  };
+
+  $("relSaveCheckBtn").onclick = async () => {
+    const name = prompt("請輸入此關聯檢查的名稱：", "我的專案關聯檢查");
+    if (!name) return;
+    const notes = prompt("備註說明（可選）：", "") || "";
+    const srcVal = $("relSourceScopeSelect").value;
+    const tgtVal = $("relTargetScopeSelect").value;
+    const propFilter = $("relPropFilterInput").value.trim() || null;
+
+    const chk = {
+      name: name,
+      notes: notes,
+      link_type: S.relSourceType === "body" ? "body_wikilink" : "property_link",
+      property_name: propFilter,
+      source_scope: srcVal === "__entire__" ? { mode: "entire_vault" } : { mode: "folders", folders: [srcVal], include_subfolders: true },
+      target_scope: tgtVal === "__entire__" ? { mode: "entire_vault" } : { mode: "folders", folders: [tgtVal], include_subfolders: true }
+    };
+
+    try {
+      await api("/api/relationships/saved/save", { check: chk });
+      toast(I18N.t("toast.check_saved"));
+      await loadSavedChecks();
+    } catch (e) {
+      toast(e.message, true);
+    }
+  };
+}
+
+async function loadSavedChecks() {
+  try {
+    const res = await api("/api/relationships/saved/list", {});
+    const listEl = $("savedChecksList");
+    if (!res.checks || !res.checks.length) {
+      listEl.innerHTML = `<div class="muted">目前尚無任何保存的關聯檢查條件。</div>`;
+      return;
+    }
+    listEl.innerHTML = res.checks.map(c => `
+      <div class="card" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
+        <div>
+          <strong>${esc(c.name)}</strong>
+          <span class="pill" style="margin-left:8px">${esc(c.link_type)}</span>
+          <div class="muted" style="font-size:12px; margin-top:2px">${esc(c.notes || '無備註')}</div>
+        </div>
+        <div style="display:flex; gap:8px">
+          <button class="secondary ws-run-chk" data-id="${esc(c.id)}" style="padding:4px 8px">▶ 執行</button>
+          <button class="ghost ws-del-chk" data-id="${esc(c.id)}" style="color:var(--red); padding:4px 8px">✕</button>
+        </div>
+      </div>
+    `).join("");
+
+    document.querySelectorAll(".ws-run-chk").forEach(btn => {
+      btn.onclick = async () => {
+        const id = btn.getAttribute("data-id");
+        const execRes = await api("/api/relationships/saved/execute", { id: id });
+        toast(`已執行檢查：${execRes.check_name}`);
+        setTab("relations");
+      };
+    });
+
+    document.querySelectorAll(".ws-del-chk").forEach(btn => {
+      btn.onclick = async () => {
+        const id = btn.getAttribute("data-id");
+        if (!confirm("確定要刪除此關聯檢查嗎？")) return;
+        await api("/api/relationships/saved/delete", { id: id });
+        toast(I18N.t("toast.check_deleted"));
+        await loadSavedChecks();
+      };
+    });
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+/* ============================================================
+   Health Module
+   ============================================================ */
+async function loadHealth() {
+  try {
+    const res = await api("/api/health", {});
+    $("ovHealthScore").textContent = res.health_score ? `${res.health_score.score}` : "—";
+    $("ovIssuesCount").textContent = res.summary ? res.summary.finding_count : 0;
+
+    $("healthScoreSection").innerHTML = `
+      <div class="grid cols3" style="margin-bottom:14px">
+        <div class="stat ok"><div class="n">${res.health_score.score} / 100</div><div class="l">健康度總分</div></div>
+        <div class="stat"><div class="n">${res.summary.finding_count}</div><div class="l">待檢視項目數</div></div>
+        <div class="stat alert"><div class="n">${res.summary.by_severity.high || 0}</div><div class="l">高嚴重度問題</div></div>
+      </div>
+    `;
+
+    $("healthFindingsList").innerHTML = res.findings && res.findings.length ? res.findings.map(f => `
+      <div class="card" style="margin-bottom:10px; border-left:4px solid ${f.severity === 'high' ? 'var(--red)' : f.severity === 'medium' ? 'var(--amber)' : 'var(--teal)'}">
+        <strong>[${esc(f.severity.toUpperCase())}] ${esc(f.title)}</strong>
+        <p class="muted" style="margin:4px 0">${esc(f.explanation)}</p>
+        <div class="hint">受影響筆記 (${f.affected_note_count})：${esc(f.affected_notes.slice(0, 5).join(", "))}</div>
+      </div>
+    `).join("") : `<div class="muted">知識庫健康狀態優良，無任何扣分項目。</div>`;
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function setupHealthHandlers() {
+  $("exportHealthBtn").onclick = async () => {
+    try {
+      const res = await api("/api/export", { kind: "health" });
+      toast(`健康診斷報告已匯出至：${res.output_dir}`);
+    } catch (e) {
+      toast(e.message, true);
+    }
+  };
+}
+
+/* ============================================================
+   Refactor & Proposal Handlers
+   ============================================================ */
+function setupRefactorHandlers() {
+  $("runRefactorPlanBtn").onclick = async () => {
+    const op = $("refactorOpSelect").value;
+    const p1 = $("refactorParam1Input").value.trim();
+    const p2 = $("refactorParam2Input").value.trim();
+
+    try {
+      let payload = { operation: op };
+      if (op === "rename") { payload.source = p1; payload.target = p2; }
+      else if (op === "normalize") { payload.property = p1; }
+      else if (op === "convert_type") { payload.property = p1; payload.target_type = p2; }
+
+      const res = await api("/api/refactor/plan", payload);
+      $("refactorPlanOutput").innerHTML = `
+        <div class="grid cols3" style="margin-bottom:14px">
+          <div class="stat"><div class="n">${res.in_scope_notes_to_change ? res.in_scope_notes_to_change.length : 0}</div><div class="l">Scope 內預計變更筆記</div></div>
+          <div class="stat"><div class="n">${res.out_of_scope_notes_count || 0}</div><div class="l">Scope 外既有筆記 (不變更)</div></div>
+          <div class="stat alert"><div class="n">${(res.conflicts || []).length + (res.excluded || []).length}</div><div class="l">需人工決策衝突點</div></div>
+        </div>
+        <pre>${esc(JSON.stringify(res, null, 2))}</pre>
+      `;
+      $("refactorPlanResultCard").style.display = "block";
+    } catch (e) {
+      toast(e.message, true);
+    }
+  };
+}
+
+function setupProposalHandlers() {
+  $("validateProposalBtn").onclick = async () => {
+    const text = $("proposalTextInput").value.trim();
+    if (!text) return toast("請先貼上 Proposal JSON", true);
+    try {
+      const res = await api("/api/proposal/import", { text: text });
+      $("proposalResultOutput").innerHTML = `<pre>${esc(JSON.stringify(res, null, 2))}</pre>`;
+      $("proposalResultCard").style.display = "block";
     } catch (e) {
       toast(e.message, true);
     }

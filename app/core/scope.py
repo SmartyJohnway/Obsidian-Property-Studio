@@ -4,6 +4,7 @@ REQ-024 / REQ-025 / DEC-021:
 Supports Entire Vault, Multiple Selected Folders (with union & deduplication),
 and Single Note scopes with include_subfolders toggles.
 All scope filtering executes in-memory over VaultScan without triggering disk rescans.
+Invalid Scope specifications FAIL CLOSED with ScopeValidationError and never fallback.
 """
 
 from __future__ import annotations
@@ -13,6 +14,11 @@ from enum import Enum
 from typing import Any, Sequence
 
 from app.core.model import Note, ParseIssue, VaultScan
+
+
+class ScopeValidationError(ValueError):
+    """Raised when a ScopeSpec configuration is malformed or invalid."""
+    pass
 
 
 class ScopeMode(str, Enum):
@@ -33,6 +39,18 @@ class ScopeSpec:
     include_subfolders: bool = True
     note_path: str | None = None
 
+    def validate(self) -> None:
+        """Validate Scope configuration, failing closed on invalid states (R04)."""
+        if not isinstance(self.mode, ScopeMode):
+            raise ScopeValidationError(f"Invalid ScopeMode: {self.mode}")
+
+        if self.mode == ScopeMode.FOLDERS:
+            if not self.folders or not any(str(f).strip() for f in self.folders):
+                raise ScopeValidationError("ScopeMode.FOLDERS requires at least one folder path.")
+        elif self.mode == ScopeMode.SINGLE_NOTE:
+            if not self.note_path or not str(self.note_path).strip():
+                raise ScopeValidationError("ScopeMode.SINGLE_NOTE requires a non-empty note_path.")
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "mode": self.mode.value,
@@ -43,13 +61,17 @@ class ScopeSpec:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any] | None) -> ScopeSpec:
-        if not data:
+        if data is None:
             return cls()
-        mode_str = str(data.get("mode", ScopeMode.ENTIRE_VAULT.value))
+        if not isinstance(data, dict):
+            raise ScopeValidationError("Scope data must be a dictionary.")
+
+        mode_raw = data.get("mode", ScopeMode.ENTIRE_VAULT.value)
+        mode_str = str(mode_raw).strip()
         try:
             mode = ScopeMode(mode_str)
         except ValueError:
-            mode = ScopeMode.ENTIRE_VAULT
+            raise ScopeValidationError(f"Unknown ScopeMode '{mode_str}'. Fail-closed without fallback.")
 
         folders_raw = data.get("folders", [])
         if isinstance(folders_raw, (list, tuple)):
@@ -61,12 +83,14 @@ class ScopeSpec:
         note_p = data.get("note_path")
         note_path = str(note_p).strip().replace("\\", "/").strip("/") if note_p else None
 
-        return cls(
+        spec = cls(
             mode=mode,
             folders=folders,
             include_subfolders=include_sub,
             note_path=note_path,
         )
+        spec.validate()
+        return spec
 
 
 def normalize_posix_path(p: str) -> str:
@@ -76,6 +100,7 @@ def normalize_posix_path(p: str) -> str:
 
 def is_note_in_scope(note_path: str, scope: ScopeSpec) -> bool:
     """Evaluate whether a note path belongs to the given ScopeSpec."""
+    scope.validate()
     norm_path = normalize_posix_path(note_path)
     if not norm_path:
         return False
@@ -103,7 +128,7 @@ def is_note_in_scope(note_path: str, scope: ScopeSpec) -> bool:
                     return "/" not in norm_path
             else:
                 if scope.include_subfolders:
-                    if norm_path.startswith(norm_f + "/"):
+                    if norm_path == norm_f or norm_path.startswith(norm_f + "/"):
                         return True
                 else:
                     parts = norm_path.rsplit("/", 1)
@@ -117,6 +142,7 @@ def is_note_in_scope(note_path: str, scope: ScopeSpec) -> bool:
 
 def filter_notes_by_scope(notes: Sequence[Note], scope: ScopeSpec) -> list[Note]:
     """Filter notes by ScopeSpec with union evaluation and deduplication (V11-002..004)."""
+    scope.validate()
     seen: set[str] = set()
     result: list[Note] = []
 
@@ -133,6 +159,7 @@ def filter_notes_by_scope(notes: Sequence[Note], scope: ScopeSpec) -> list[Note]
 
 def filter_scan_by_scope(scan: VaultScan, scope: ScopeSpec) -> VaultScan:
     """Produce an in-memory scoped VaultScan without rescanning the disk (V11-004)."""
+    scope.validate()
     scoped_notes = filter_notes_by_scope(scan.notes, scope)
     scoped_paths = {n.path for n in scoped_notes}
 
