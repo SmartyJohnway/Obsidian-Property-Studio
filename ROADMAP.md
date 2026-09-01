@@ -12,12 +12,12 @@
 ##### Current State
 
 Project State: `ACTIVE`  
-Current Milestone: `M011 — Full Regression Suite, Large-Vault Benchmark & Read-Only Verification`  
+Current Milestone: `M012 — Windows 10 / 11 Native Acceptance & v1.1.0 Release Closure`  
 Current Milestone Status: `IN_PROGRESS`  
-Current Task: `M011-T01`  
-Last Verified Gate: `M010 — Scope-Aware Property Refactor Planner PASS` (Baseline: `M001 PASS`)  
+Current Task: `M012-T01`  
+Last Verified Gate: `M011 — Full Regression Suite, Large-Vault Benchmark & Read-Only Verification PASS` (Baseline: `M001 PASS`)  
 Current Blocker: `None`  
-Next Action: `Execute full automated test suite, author V11-018 comprehensive byte-for-byte read-only verification across all v1.1.0 workflows, run 5,000-note benchmark, and generate formal M011 evidence artifact.`  
+Next Action: `Test run_windows.bat native launcher, execute final packaging and release closure with formal verdict PROPERTY_STUDIO_V1_1_0_RELEASE_PASS_WITH_LIMITATIONS.`  
 Last Updated: `2026-09-01`
 
 ---
@@ -418,29 +418,35 @@ Update the Property Refactor Planner to operate strictly within the selected Sco
 
 # M011 — Full Regression Suite, Large-Vault Benchmark & Read-Only Verification
 
-Status: `PLANNED`
+Status: `PASS`
 
 ### Objective
 Execute the complete regression test suite (95 v1.0.0 tests + 18 v1.1.0 tests), run the ≥5,000-note performance benchmark, and verify byte-for-byte Vault read-only integrity.
 
 ### Tasks
-- [ ] `M011-T01` Run full automated test suite (all 95 v1.0.0 tests + `V11-001`..`V11-018`).
-- [ ] `M011-T02` Execute pre/post SHA-256 Vault manifest verification across all v1.1.0 workflows (`V11-018`).
-- [ ] `M011-T03` Run deterministic repeat-scan test across varied Scope configurations.
-- [ ] `M011-T04` Run output read-back verification on Scope-aware reports, Health exports, and Refactor plans.
-- [ ] `M011-T05` Run ≥5,000-note synthetic benchmark and record scan and Scope-filtering timings.
-- [ ] `M011-T06` Verify complete offline execution without network or API keys.
-- [ ] `M011-T07` Generate formal integration evidence file `evidence/integration/m011_v110_formal_verification.json`.
+- [x] `M011-T01` Run full automated test suite (all 95 v1.0.0 tests + `V11-001`..`V11-018`).
+- [x] `M011-T02` Execute pre/post SHA-256 Vault manifest verification across all v1.1.0 workflows (`V11-018`).
+- [x] `M011-T03` Run deterministic repeat-scan test across varied Scope configurations.
+- [x] `M011-T04` Run output read-back verification on Scope-aware reports, Health exports, and Refactor plans.
+- [x] `M011-T05` Run ≥5,000-note synthetic benchmark and record scan and Scope-filtering timings.
+- [x] `M011-T06` Verify complete offline execution without network or API keys.
+- [x] `M011-T07` Generate formal integration evidence file `evidence/integration/m011_v110_formal_verification.json`.
 
 ### Acceptance Criteria
-- [ ] `M011-AC01` All 113+ automated tests PASS with zero failures.
-- [ ] `M011-AC02` `V11-018` PASS (Vault modified count = 0).
-- [ ] `M011-AC03` Determinism and export read-back PASS.
-- [ ] `M011-AC04` 5,000-note benchmark completes and is documented.
-- [ ] `M011-AC05` Zero network/AI requirements verified.
+- [x] `M011-AC01` All 113+ automated tests PASS with zero failures.
+- [x] `M011-AC02` `V11-018` PASS (Vault modified count = 0).
+- [x] `M011-AC03` Determinism and export read-back PASS.
+- [x] `M011-AC04` 5,000-note benchmark completes and is documented.
+- [x] `M011-AC05` Zero network/AI requirements verified.
+
+### Verification / Evidence
+- `evidence/integration/m011_v110_formal_verification.json`
+- `tests/test_v11_vault_readonly.py` (1/1 test passed in 0.14s)
+- `tests/test_benchmark.py` (5,000 notes scan: 4.865s, total analysis: 5.019s)
+- Full automated test suite (119/119 passed in 12.98s)
 
 ### Result
-`NOT YET VERIFIED`
+`PASS`
 
 ---
 

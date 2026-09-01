@@ -39,12 +39,12 @@ Historical reference:
 ## Current Milestone / Task
 
 Project State: `ACTIVE`  
-Current Milestone: `M011 — Full Regression Suite, Large-Vault Benchmark & Read-Only Verification`  
+Current Milestone: `M012 — Windows 10 / 11 Native Acceptance & v1.1.0 Release Closure`  
 Current Milestone Status: `IN_PROGRESS`  
-Current Task: `M011-T01 — Execute full regression test suite (v1.0.0 + v1.1.0 V11-001..018)`  
-Last Verified Gate: `M010 — Scope-Aware Property Refactor Planner PASS` (Baseline: `M001 PASS`)  
+Current Task: `M012-T01 — Test run_windows.bat native launcher and package release`  
+Last Verified Gate: `M011 — Full Regression Suite, Large-Vault Benchmark & Read-Only Verification PASS` (Baseline: `M001 PASS`)  
 Current Blocker: `None`  
-Next Action: `Execute full automated test suite, author V11-018 comprehensive byte-for-byte read-only verification across all v1.1.0 workflows, run 5,000-note benchmark, and generate formal M011 evidence artifact.`
+Next Action: `Test run_windows.bat native launcher, execute final packaging, conduct 4-file consistency check, and close release with formal verdict PROPERTY_STUDIO_V1_1_0_RELEASE_PASS_WITH_LIMITATIONS.`
 
 ---
 
@@ -101,15 +101,15 @@ Next Action: `Execute full automated test suite, author V11-018 comprehensive by
 - [x] `M008`: Body Wikilink Relationship Analysis (Strict Read-Only, zero byte change, model/API separation) implemented and verified (`V11-012`..`013` PASS, 115/115 tests PASS).
 - [x] `M009`: Saved Relationship Checks Management (Advisory, zero default rules, external storage persistence outside Vault) implemented and verified (`V11-014`..`015` PASS, 117/117 tests PASS).
 - [x] `M010`: Scope-Aware Property Refactor Planner (Scope-bounded migration plans, no silent expansion, out-of-scope disclosure) implemented and verified (`V11-017` PASS, 118/118 tests PASS).
-- [x] Full test suite executed: **118 passed in 12.11s** (Python 3.13.7).
+- [x] `M011`: Full Regression Suite (119/119 PASS), 5,000-note Benchmark (4.865s scan, 5.019s total analysis), and Comprehensive Vault Byte-for-Byte Read-Only Gate verified (`V11-018` PASS, `evidence/integration/m011_v110_formal_verification.json`).
+- [x] Full test suite executed: **119 passed in 12.98s** (Python 3.13.7).
 - [x] Four-file cross-consistency check passed.
 
 ---
 
 ## Verification Not Yet Performed (v1.1.0 New Scope)
 
-- `M011` Full Regression & 5,000-note Benchmark: `IN_PROGRESS` (`V11-018`)
-- `M012` Windows Native Acceptance & Release Closure: `PLANNED`
+- `M012` Windows Native Acceptance & Release Closure: `IN_PROGRESS`
 
 ---
 
