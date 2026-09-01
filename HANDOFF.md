@@ -39,12 +39,12 @@ Historical reference:
 ## Current Milestone / Task
 
 Project State: `ACTIVE`  
-Current Milestone: `M007 — Scope-Aware Relationship Analysis (Property Links)`  
+Current Milestone: `M008 — Body Wikilink Relationship Analysis (Strict Read-Only)`  
 Current Milestone Status: `IN_PROGRESS`  
-Current Task: `M007-T01 — Update Relationship engine in app/core/relationships.py for Source/Target Scopes`  
-Last Verified Gate: `M006 — Note Properties Workspace PASS` (Baseline: `M001 PASS`)  
+Current Task: `M008-T01 — Implement Body Wikilink extractor in app/core/body_links.py`  
+Last Verified Gate: `M007 — Scope-Aware Relationship Analysis PASS` (Baseline: `M001 PASS`)  
 Current Blocker: `None`  
-Next Action: `Update Relationship engine in app/core/relationships.py to accept Source and Target scopes, categorize OUTSIDE SELECTED TARGET, and author regression tests for V11-009..011.`
+Next Action: `Implement Body Wikilink extractor in app/core/body_links.py, separate Property Link and Body Wikilink results, and author regression tests for V11-012..013.`
 
 ---
 
@@ -97,15 +97,15 @@ Next Action: `Update Relationship engine in app/core/relationships.py to accept 
 - [x] `M004`: Scope Domain Model (`ScopeSpec`, Multi-folder Union/Dedupe, In-Memory Engine) implemented and verified (`V11-002`..`004` PASS, 104/104 tests PASS).
 - [x] `M005`: Scope-Aware Discover & Property Health isolation implemented and verified (`V11-016` PASS, 105/105 tests PASS).
 - [x] `M006`: Note Properties Workspace (Existing Note inspect/edit/diff + Blank Fill, fail-closed corrupt/duplicate-key protection) implemented and verified (`V11-005`..`008` PASS, 109/109 tests PASS).
-- [x] Full test suite executed: **109 passed in 12.78s** (Python 3.13.7).
+- [x] `M007`: Scope-Aware Relationship Analysis (Property Links with Multi-Folder Source/Target & OUTSIDE SELECTED TARGET) implemented and verified (`V11-009`..`011`, `V11-014` PASS, 112/112 tests PASS).
+- [x] Full test suite executed: **112 passed in 13.29s** (Python 3.13.7).
 - [x] Four-file cross-consistency check passed.
 
 ---
 
 ## Verification Not Yet Performed (v1.1.0 New Scope)
 
-- `M007` Scope-Aware Relationship Analysis: `IN_PROGRESS` (`V11-009`..`011`)
-- `M008` Body Wikilink Analysis (Strict Read-Only): `PLANNED` (`V11-012`..`013`)
+- `M008` Body Wikilink Analysis (Strict Read-Only): `IN_PROGRESS` (`V11-012`..`013`)
 - `M009` Saved Relationship Checks: `PLANNED` (`V11-014`..`015`)
 - `M010` Scope-Aware Refactor Planner: `PLANNED` (`V11-017`)
 - `M011` Full Regression & 5,000-note Benchmark: `PLANNED` (`V11-018`)

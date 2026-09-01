@@ -12,12 +12,12 @@
 #### Current State
 
 Project State: `ACTIVE`  
-Current Milestone: `M007 — Scope-Aware Relationship Analysis (Property Links)`  
+Current Milestone: `M008 — Body Wikilink Relationship Analysis (Strict Read-Only)`  
 Current Milestone Status: `IN_PROGRESS`  
-Current Task: `M007-T01`  
-Last Verified Gate: `M006 — Note Properties Workspace PASS` (Baseline: `M001 PASS`)  
+Current Task: `M008-T01`  
+Last Verified Gate: `M007 — Scope-Aware Relationship Analysis PASS` (Baseline: `M001 PASS`)  
 Current Blocker: `None`  
-Next Action: `Update Relationship engine in app/core/relationships.py to accept Source and Target scopes, categorize OUTSIDE SELECTED TARGET, and implement V11-009..011 regression tests.`  
+Next Action: `Implement Body Wikilink extractor in app/core/body_links.py, separate Property Link and Body Wikilink results, and implement V11-012..013 regression tests.`  
 Last Updated: `2026-09-01`
 
 ---
@@ -291,30 +291,34 @@ Implement the single-note Property Workspace supporting Existing Note inspection
 
 # M007 — Scope-Aware Relationship Analysis (Property Links)
 
-Status: `PLANNED`
+Status: `PASS`
 
 ### Objective
 Upgrade Relationship Analysis to support custom Multi-folder Source Scope and Multi-folder Target Scope, categorizing Property Link findings into VALID, BROKEN, AMBIGUOUS, and OUTSIDE SELECTED TARGET without default rules.
 
 ### Tasks
-- [ ] `M007-T01` Update Relationship engine in `app/core/relationship.py` to accept `source_scope` and `target_scope`.
-- [ ] `M007-T02` Implement target location evaluation: check whether resolved note falls within selected `target_scope`.
-- [ ] `M007-T03` Implement four-way status classifier: `VALID`, `BROKEN`, `AMBIGUOUS`, and `OUTSIDE_SELECTED_TARGET`.
-- [ ] `M007-T04` Implement Relationship UI with Source Scope selector, Target Scope selector, Property selector, and Analyze button.
-- [ ] `M007-T05` Confirm zero default rules or assumptions are loaded on fresh startup.
-- [ ] `M007-T06` Implement `V11-009` (multi-folder Source Scope), `V11-010` (multi-folder Target Scope), and `V11-011` (target outside scope classification).
-- [ ] `M007-T07` Run full suite and verify existing relationship tests PASS.
+- [x] `M007-T01` Update Relationship engine in `app/core/relationships.py` to accept `source_scope` and `target_scope`.
+- [x] `M007-T02` Implement target location evaluation: check whether resolved note falls within selected `target_scope`.
+- [x] `M007-T03` Implement four-way status classifier: `VALID`, `BROKEN`, `AMBIGUOUS`, and `OUTSIDE_SELECTED_TARGET`.
+- [x] `M007-T04` Implement Relationship UI with Source Scope selector, Target Scope selector, Property selector, and Analyze button.
+- [x] `M007-T05` Confirm zero default rules or assumptions are loaded on fresh startup.
+- [x] `M007-T06` Implement `V11-009` (multi-folder Source Scope), `V11-010` (multi-folder Target Scope), and `V11-011` (target outside scope classification).
+- [x] `M007-T07` Run full suite and verify existing relationship tests PASS.
 
 ### Acceptance Criteria
-- [ ] `M007-AC01` `V11-009` PASS.
-- [ ] `M007-AC02` `V11-010` PASS.
-- [ ] `M007-AC03` `V11-011` PASS.
-- [ ] `M007-AC04` Multi-folder Source and Target Scopes analyze accurately.
-- [ ] `M007-AC05` Links resolving outside Target Scope are explicitly categorized as `OUTSIDE SELECTED TARGET`.
-- [ ] `M007-AC06` No default relationship rules exist.
+- [x] `M007-AC01` `V11-009` PASS.
+- [x] `M007-AC02` `V11-010` PASS.
+- [x] `M007-AC03` `V11-011` PASS.
+- [x] `M007-AC04` Multi-folder Source and Target Scopes analyze accurately.
+- [x] `M007-AC05` Links resolving outside Target Scope are explicitly categorized as `OUTSIDE SELECTED TARGET`.
+- [x] `M007-AC06` No default relationship rules exist.
+
+### Verification / Evidence
+- `tests/test_v11_relationships.py` (3/3 tests passed in 0.09s)
+- Full automated test suite (112/112 passed in 13.29s)
 
 ### Result
-`NOT YET VERIFIED`
+`PASS`
 
 ---
 

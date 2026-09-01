@@ -264,7 +264,18 @@ def api_refactor_plan(body: dict[str, Any]) -> dict[str, Any]:
 
 def api_relationships(body: dict[str, Any]) -> dict[str, Any]:
     scan = STORE.require_scan()
-    return relationships.build_inbox(scan, body.get("property") or None)
+    prop_filter = body.get("property") or None
+    src_data = body.get("source_scope")
+    source_scope = ScopeSpec.from_dict(src_data) if src_data else STORE.scope
+    tgt_data = body.get("target_scope")
+    target_scope = ScopeSpec.from_dict(tgt_data) if tgt_data else None
+
+    return relationships.build_inbox(
+        scan,
+        property_filter=prop_filter,
+        source_scope=source_scope,
+        target_scope=target_scope,
+    )
 
 
 def api_health(body: dict[str, Any]) -> dict[str, Any]:
