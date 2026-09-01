@@ -1,32 +1,34 @@
 {
   "app": "Obsidian Property Studio",
   "version": "1.1.0",
-  "release_timestamp_utc": "2026-09-01T05:58:56.727596+00:00",
+  "release_timestamp_utc": "2026-09-01T07:29:31.018961+00:00",
   "formal_verdict": "PROPERTY_STUDIO_V1_1_0_RELEASE_PASS_WITH_LIMITATIONS",
   "verdict_rationale": "Windows 10 Build 19045 AMD64 native acceptance verified. Windows 11 AMD64 recorded as NOT YET VERIFIED due to test host unavailability (accepted non-blocking release limitation per human approved contract).",
-  "git_commit_head": "e3114ca9b2d0bf718bcc287a3db8e71f2b3e7298",
+  "git_commit_head": "5563fd4dcad9a0a038f6f267a1ccbdd3560fca39",
   "packaging_verification": {
     "source_zip_extract_ok": true,
     "source_zip_pytest_passed": true,
     "bundle_verify_ok": true,
     "bundle_clone_ok": true,
     "bundle_fsck_full_ok": true,
+    "bundle_clone_pytest_passed": true,
     "test_suite_passed": true
   },
   "benchmark": {
-    "scan_seconds": 4.865,
-    "total_analysis_seconds": 5.019
+    "scan_seconds": 5.062,
+    "total_analysis_seconds": 5.227,
+    "note_count": 5040
   },
   "artifacts": {
     "source_zip": {
       "filename": "Obsidian-Property-Studio-v1.1.0-source.zip",
-      "size_bytes": 528501,
-      "sha256": "3f37db4852ab369e28dcc049919c9a4f5e51d6704074bed1f3b781c86586d6cd"
+      "size_bytes": 532537,
+      "sha256": "52e67c43524709e2b431c8e4459357a37694df1b02e2da1aefcc41338f36c002"
     },
     "git_bundle": {
       "filename": "Obsidian-Property-Studio-v1.1.0.bundle",
-      "size_bytes": 344832,
-      "sha256": "7b6b34e783bb6559f7db0bee1c0f962d31af639e50b1310977bfebe4e33bed1c"
+      "size_bytes": 358246,
+      "sha256": "2a78a9ca74743e6cdd214729e640d7cdeb4e2a22907f80d0cc86c1c6ccc7fa1c"
     }
   }
 }

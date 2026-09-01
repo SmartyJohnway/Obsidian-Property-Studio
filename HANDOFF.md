@@ -5,7 +5,7 @@ From: `Antigravity — v1.1.0 release repair executor`
 To / Intended Next Executor: `Dr. J / PR #1 Merger`  
 Formal Project Root: `D:\Antigravity-Workspace\Obsidian-Property-Studio\Obsidian-Property-Studio-v1.0.0`  
 Current Branch: `feature/v1.1.0-release`  
-Last Verified Implementation Commit: Pending final release commit  
+Last Verified Implementation Commit: 5563fd4dcad9a0a038f6f267a1ccbdd3560fca39 (Will be updated with Commit 19)  
 Governance Baseline: `v1.1.0 Governance Transition (M001 PASS)`
 
 ---
@@ -49,71 +49,34 @@ Accepted Limitation: `Windows 11 AMD64 native verification recorded as NOT YET V
 
 ---
 
-## v1.1.0 Product & Architectural Truth
+## Final Audit Findings & Repair Verification Summary (Commit 19 Narrow Closure)
 
-1. **Context Architecture:**
-   ```text
-   Vault → Scope → Note → Schema
-   ```
-   - Vault: Global knowledge boundary and inventory index.
-   - Scope: Working subset (Entire Vault, One Folder, Multi-Folder, Single Note). In-memory derivation; no full Vault rescan on Scope switch.
-   - Note: Individual working note.
-   - Schema: Property definition and validation contract.
-
-2. **Relationships Model:**
-   ```text
-   Source Scope (multi-folder) → Relationship Analysis → Target Scope (multi-folder)
-   ```
-   - Property Links vs Body Wikilinks (analysis-only, strict read-only).
-   - Findings: 4-state classification (`VALID`, `BROKEN`, `AMBIGUOUS`, `OUTSIDE SELECTED TARGET`).
-   - Ad-hoc analysis by default; zero default relationship rules.
-   - User-initiated Saved Relationship Checks persist strictly outside the Vault.
-
-3. **Note Properties Workspace:**
-   - Existing Note mode: inspect, edit, semantic diff, copy frontmatter. Fails closed on duplicate keys / malformed frontmatter.
-   - New/Blank mode: schema-based fill.
-   - Enforces strict YAML serialization round-trip verification (`roundtrip_check`) before enabling copy.
-   - Never writes to or modifies disk notes.
-
-4. **i18n & Theme:**
-   - Modular `i18n.js` + `locales/zh-Hant.json` + `locales/en.json`.
-   - No CDN, localStorage preference, no HTML DOM duplication.
-   - Zero hardcoded bilingual labels; 100% pure localized prose in both languages.
-   - CSS Design Tokens for Light / Dark theme.
-
-5. **Donor Boundaries:**
-   - `index_areaagentB.html`: UX donor only.
-   - `index_areaagentD.html`: Visual/interaction donor only.
-   - Neither has functional authority; no mock backend or fake API enters production.
-
----
-
-## Final Audit Findings & Repair Verification Summary
-
-1. **True i18n Completed (R02):**
-   - Eliminated all remaining hard-coded strings in `app/ui/index.html` JavaScript and toasts.
-   - All text rendered via `I18N.t(...)` referencing symmetric `zh-Hant.json` and `en.json`.
-2. **Relationships Multi-Folder UI & Saved Checks Bug Fixed (R03):**
-   - Source Scope and Target Scope UI updated with multi-folder checklist selectors.
-   - Fixed `body_wikilink` dispatch bug in `execute_check`.
-   - Saved Checks persist via `localStorage` on client and remain pure in-memory on backend complying with Constraint 2.
-3. **Windows 10 Native Launcher + Live HTTP Walkthrough (R09):**
-   - Live HTTP Server socket testing in `tests/test_windows10_acceptance.py`.
-   - Verified static HTML, i18n locales, REST APIs, and `run_windows.bat`.
-   - Recorded evidence in `evidence/integration/m012_v110_windows10_native_acceptance.json`.
-4. **Governed Packaging Gate Upgraded (R10):**
-   - Enforced clean working tree precondition check.
-   - Created Git bundle with `--all`.
-   - Executed pytest inside freshly extracted source ZIP and freshly cloned Git bundle.
-   - Linked authentic benchmark evidence (5.149s scan, 5.324s total).
-5. **Governance Coherence (R11):**
-   - Four files (`PROJECT.md`, `ROADMAP.md`, `HANDOFF.md`, `AGENTS.md`) aligned without stale markers.
+1. **Body Wikilink Findings Regression Fixed (Bug 1: PASS):**
+   - In `app/server.py`, `api_relationships_body` returns authentic `findings` dict from `body_links.analyze_body_wikilinks` without overwriting it.
+   - Dual alias `items` and `findings` provided for 100% contract interoperability.
+2. **Relationships UI Fail-Closed Enforced (Bug 2: PASS):**
+   - In `app/ui/index.html`, `getSelectedRelScope` throws localized error `scope.select_folder_warn` when Entire Vault is unchecked and zero folders are selected.
+   - Eliminates silent whole-vault scope expansion.
+3. **Saved Checks Production Cross-Restart Persistence (Item 3: PASS):**
+   - Production UI manages dual sync with `localStorage` (`ops_saved_checks_v1`) on startup, save, and delete.
+   - Backend remains pure in-memory adhering to Constraint 2 (zero disk writes in core/server).
+4. **100% True i18n Coverage (Item 4: PASS):**
+   - Localized all remaining hard-coded strings in `app/ui/index.html` (locked fail-closed banner, delete property title, drawer table headers).
+   - Automated regression test `test_r02_true_i18n_locales_and_no_side_by_side` checks all `data-i18n` and JavaScript `I18N.t(...)` keys against `zh-Hant.json` and `en.json`.
+5. **Windows 10 Native Launcher + Live HTTP + DOM Acceptance (Item 5: PASS):**
+   - Verified native execution of `run_windows.bat` on Windows 10 (Build 19045 AMD64).
+   - Live HTTP Server socket testing verified in `tests/test_windows10_acceptance.py`.
+6. **Governed Packaging Gate Precondition & Sequencing (Item 6: PASS):**
+   - `scripts/package_v110_release.py` enforces clean git tree (raises `RuntimeError` on dirty tree).
+   - Tests execute only inside extracted source sandbox and cloned git bundle sandbox (non-mutating).
+7. **Single Source of Truth Evidence Alignment (Item 7: PASS):**
+   - All benchmark evidence synchronized to 5,040 notes, scan: 5.062s, total: 5.227s across `evidence/benchmark.json`, `m009_benchmark.json`, and `m011_v110_formal_verification.json` (139 tests passed).
 
 ---
 
 ## Verification Summary
 
-- [x] Full Pytest Suite: **139 passed** in 15.19s (`pytest -v`).
+- [x] Full Pytest Suite: **139 passed** in 17.57s (`pytest -v`).
 - [x] Windows 10 Native Acceptance: **PASS** (`evidence/integration/m012_v110_windows10_native_acceptance.json`).
 - [x] Vault Byte-for-Byte Read-Only: **PASS** (0 created, 0 modified, 0 deleted across all workflows).
 - [x] Four-File Consistency Gate: **PASS**.

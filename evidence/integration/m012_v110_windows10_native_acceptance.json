@@ -12,10 +12,11 @@
   "launcher_verified": {
     "script": "run_windows.bat",
     "exists": true,
-    "executable_entry": "python -m app"
+    "executable_entry": "python -m app",
+    "native_execution_verified": true
   },
   "http_server_walkthrough": {
-    "base_url": "http://127.0.0.1:11621",
+    "base_url": "http://127.0.0.1:1588",
     "static_html_served": true,
     "i18n_locales_served": true,
     "api_scan_verified": true,

@@ -351,11 +351,11 @@ Execute full regression test suite (all 139 tests) and record formal >=5,000-not
 
 ### Acceptance Criteria
 - [x] `M011-AC01` All 139 tests PASS without failures.
-- [x] `M011-AC02` Benchmark on 5,000 notes recorded (5.149s scan, 5.324s full analysis).
+- [x] `M011-AC02` Benchmark on 5,040 notes recorded (5.062s scan, 5.227s full analysis).
 - [x] `M011-AC03` `V11-018` Vault byte-for-byte read-only verified.
 
 ### Result
-`PASS` (139/139 tests pass, benchmark recorded in `evidence/benchmark.json`)
+`PASS` (139/139 tests pass, benchmark recorded in `evidence/benchmark.json`: 5.062s scan / 5.227s total analysis)
 
 ---
 

@@ -1,12 +1,12 @@
 """Governed Release Packaging & Verification Gate for v1.1.0 (R10).
 
 Executes comprehensive artifact construction and verification:
-1. Working tree cleanliness precondition check (excluding dist/).
+1. Working tree cleanliness precondition check (fails if uncommitted non-dist changes exist).
 2. Source ZIP creation (UTF-8 safe, excluding .git/caches/dist/temp).
 3. Git bundle creation (git bundle create <path> --all).
-4. Fresh ZIP extraction + pytest suite execution inside extracted sandbox.
-5. Git bundle verification + fresh clone + git fsck --full + pytest suite execution inside cloned sandbox.
-6. Dynamic test suite results & authentic benchmark evidence collection from evidence/benchmark.json.
+4. Fresh ZIP extraction + pytest suite execution inside extracted sandbox (non-mutating).
+5. Git bundle verification + fresh clone + git fsck --full + pytest suite execution inside cloned sandbox (non-mutating).
+6. Reads authentic benchmark evidence from evidence/benchmark.json.
 7. RELEASE_MANIFEST.json generation with verified SHA-256 hashes and byte counts.
 """
 
@@ -42,10 +42,12 @@ def check_git_clean_precondition() -> None:
     ).strip()
     if status_out:
         lines = [line.strip() for line in status_out.splitlines()]
-        # Allow only dist/ or evidence/ updates if explicitly expected
         non_dist_lines = [l for l in lines if not l.startswith("?? dist/") and not l.startswith("M dist/")]
         if non_dist_lines:
-            print(f"[WARN] Working tree contains uncommitted non-dist changes:\n{chr(10).join(non_dist_lines)}")
+            raise RuntimeError(
+                f"Working tree contains uncommitted non-dist changes. Clean tree required:\n"
+                + "\n".join(non_dist_lines)
+            )
 
 
 def build_source_zip(zip_path: str) -> None:
@@ -133,15 +135,7 @@ def verify_git_bundle(bundle_path: str) -> dict[str, Any]:
         }
 
 
-def run_test_suite_and_benchmark() -> dict[str, Any]:
-    pytest_res = subprocess.run(
-        [sys.executable, "-m", "pytest", "-v", "--tb=short"],
-        cwd=PROJECT_ROOT,
-        capture_output=True,
-        text=True,
-    )
-
-    # Read authentic benchmark evidence
+def read_benchmark_evidence() -> dict[str, Any]:
     bench_file = os.path.join(PROJECT_ROOT, "evidence", "benchmark.json")
     bench_data = {}
     bench_metrics = {"scan_seconds": None, "total_analysis_seconds": None}
@@ -155,12 +149,7 @@ def run_test_suite_and_benchmark() -> dict[str, Any]:
             "total_analysis_seconds": meas.get("total_analysis"),
             "note_count": bench_data.get("fixture", {}).get("markdown_notes"),
         }
-
-    return {
-        "pytest_returncode": pytest_res.returncode,
-        "pytest_output": pytest_res.stdout[-300:] if pytest_res.stdout else "",
-        "benchmark": bench_metrics,
-    }
+    return bench_metrics
 
 
 def main() -> None:
@@ -176,14 +165,18 @@ def main() -> None:
     # 2. Build Git Bundle (--all)
     build_git_bundle(bundle_path)
 
-    # 3. Verify Source Zip (Extraction + Pytest)
+    # 3. Verify Source Zip (Extraction + Sandbox Pytest)
     zip_verif = verify_source_zip(zip_path)
+    if not zip_verif["pytest_passed"]:
+        raise RuntimeError("Source ZIP extracted pytest failed.")
 
-    # 4. Verify Git Bundle (Verify + Clone + FSCK + Cloned Pytest)
+    # 4. Verify Git Bundle (Verify + Clone + FSCK + Cloned Sandbox Pytest)
     bundle_verif = verify_git_bundle(bundle_path)
+    if not bundle_verif["clone_pytest_passed"]:
+        raise RuntimeError("Git Bundle cloned repository pytest failed.")
 
-    # 5. Run test suite and collect authentic benchmark
-    test_run = run_test_suite_and_benchmark()
+    # 5. Collect authentic benchmark evidence
+    bench_metrics = read_benchmark_evidence()
 
     # 6. Get Git Head
     git_head = subprocess.check_output(
@@ -209,9 +202,9 @@ def main() -> None:
             "bundle_clone_ok": bundle_verif["clone_ok"],
             "bundle_fsck_full_ok": bundle_verif["fsck_full_ok"],
             "bundle_clone_pytest_passed": bundle_verif["clone_pytest_passed"],
-            "test_suite_passed": test_run["pytest_returncode"] == 0,
+            "test_suite_passed": True,
         },
-        "benchmark": test_run["benchmark"],
+        "benchmark": bench_metrics,
         "artifacts": {
             "source_zip": {
                 "filename": os.path.basename(zip_path),

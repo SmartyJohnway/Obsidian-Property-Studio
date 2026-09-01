@@ -68,7 +68,12 @@
   "scope.no_subfolders": "No subfolders found in vault.",
   "scope.select_folder_warn": "Please select at least one folder.",
   "scope.specify_note_warn": "Please specify a note path.",
+  "workspace.locked_fail_closed": "Locked Edit (Fail-Closed)",
+  "workspace.del_prop_title": "Delete this property",
+  "discover.drawer_val": "Value",
+  "discover.drawer_count": "Count",
   "workspace.title": "Note Properties Workspace",
+
   "workspace.lead": "Search notes across the entire vault, inspect original frontmatter, edit properties with live semantic diffs, and copy verified YAML.",
   "workspace.search_label": "Search or Select Note",
   "workspace.search_placeholder": "Type note name or relative path...",

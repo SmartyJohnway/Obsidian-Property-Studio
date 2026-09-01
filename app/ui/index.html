@@ -1283,7 +1283,7 @@ async function inspectNoteInWorkspace(notePath) {
     if (!res.can_edit) {
       banner.innerHTML = `
         <div class="card" style="border-color:var(--red); background:var(--red-soft); color:var(--red)">
-          <strong>✕ 鎖定編輯 (Fail-Closed)：</strong> ${esc(res.error_reason)}
+          <strong>✕ ${esc(I18N.t("workspace.locked_fail_closed"))}：</strong> ${esc(res.error_reason)}
         </div>
       `;
       $("wsEditorArea").style.display = "none";
@@ -1310,7 +1310,7 @@ function renderWorkspaceFields(propsMap) {
     <div class="ws-prop-row" data-key="${esc(k)}" style="display:grid; grid-template-columns:140px 1fr 36px; gap:8px; align-items:center; margin-bottom:8px">
       <input type="text" class="ws-prop-key" value="${esc(k)}" readonly style="background:var(--panel2)" />
       <input type="text" class="ws-prop-val" value="${esc(Array.isArray(v) ? v.join(", ") : (v == null ? "" : v))}" />
-      <button class="ghost ws-prop-del" title="刪除此屬性" style="color:var(--red); padding:4px">✕</button>
+      <button class="ghost ws-prop-del" title="${esc(I18N.t("workspace.del_prop_title"))}" style="color:var(--red); padding:4px">✕</button>
     </div>
   `).join("");
 
@@ -1331,7 +1331,7 @@ function renderWorkspaceFields(propsMap) {
     row.innerHTML = `
       <input type="text" class="ws-prop-key" placeholder="${esc(I18N.t("workspace.key_placeholder"))}" />
       <input type="text" class="ws-prop-val" placeholder="${esc(I18N.t("workspace.val_placeholder"))}" />
-      <button class="ghost ws-prop-del" style="color:var(--red); padding:4px">✕</button>
+      <button class="ghost ws-prop-del" title="${esc(I18N.t("workspace.del_prop_title"))}" style="color:var(--red); padding:4px">✕</button>
     `;
     container.appendChild(row);
     row.querySelector(".ws-prop-key").oninput = updateWorkspacePreview;
@@ -1339,6 +1339,7 @@ function renderWorkspaceFields(propsMap) {
     row.querySelector(".ws-prop-del").onclick = () => { row.remove(); updateWorkspacePreview(); };
   };
 }
+
 
 async function updateWorkspacePreview() {
   if (!S.currentNote) return;
@@ -1436,8 +1437,9 @@ async function loadDiscovery() {
           <div class="card">
             <h4>${I18N.t("discover.top_values_title")}</h4>
             <table>
-              <thead><tr><th>Value</th><th>Count</th></tr></thead>
+              <thead><tr><th>${esc(I18N.t("discover.drawer_val"))}</th><th>${esc(I18N.t("discover.drawer_count"))}</th></tr></thead>
               <tbody>
+
                 ${(det.entry.values || det.entry.top_values || []).map(v => `<tr><td><code>${esc(v.value)}</code></td><td>${v.count}</td></tr>`).join("")}
               </tbody>
             </table>
@@ -1620,20 +1622,41 @@ function getSelectedRelScope(entireCbId, folderCbClass) {
   }
   const selectedFolders = Array.from(document.querySelectorAll(`${folderCbClass}:checked`)).map(cb => cb.value);
   if (!selectedFolders.length) {
-    return { mode: "entire_vault" };
+    throw new Error(I18N.t("scope.select_folder_warn"));
   }
   return { mode: "folders", folders: selectedFolders, include_subfolders: true };
 }
 
+const SAVED_CHECKS_STORAGE_KEY = "ops_saved_checks_v1";
+
 async function loadSavedChecks() {
   try {
+    // 1. Sync from localStorage to server on startup if server is clean
+    let localChecks = [];
+    try {
+      const raw = localStorage.getItem(SAVED_CHECKS_STORAGE_KEY);
+      if (raw) localChecks = JSON.parse(raw);
+    } catch (_) {}
+
     const res = await api("/api/relationships/saved/list", {});
+    let checks = res.checks || [];
+
+    if (checks.length === 0 && localChecks.length > 0) {
+      for (const chk of localChecks) {
+        try { await api("/api/relationships/saved/save", { check: chk }); } catch (_) {}
+      }
+      const reloaded = await api("/api/relationships/saved/list", {});
+      checks = reloaded.checks || [];
+    }
+
+    try { localStorage.setItem(SAVED_CHECKS_STORAGE_KEY, JSON.stringify(checks)); } catch (_) {}
+
     const listEl = $("savedChecksList");
-    if (!res.checks || !res.checks.length) {
+    if (!checks.length) {
       listEl.innerHTML = `<div class="muted">${I18N.t("relations.no_saved_checks")}</div>`;
       return;
     }
-    listEl.innerHTML = res.checks.map(c => `
+    listEl.innerHTML = checks.map(c => `
       <div class="card" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
         <div>
           <strong>${esc(c.name)}</strong>
@@ -1661,6 +1684,13 @@ async function loadSavedChecks() {
         const id = btn.getAttribute("data-id");
         if (!confirm(I18N.t("relations.confirm_delete"))) return;
         await api("/api/relationships/saved/delete", { id: id });
+        try {
+          const raw = localStorage.getItem(SAVED_CHECKS_STORAGE_KEY);
+          if (raw) {
+            const arr = JSON.parse(raw).filter(x => x.id !== id);
+            localStorage.setItem(SAVED_CHECKS_STORAGE_KEY, JSON.stringify(arr));
+          }
+        } catch (_) {}
         toast(I18N.t("toast.check_deleted"));
         await loadSavedChecks();
       };
@@ -1669,6 +1699,7 @@ async function loadSavedChecks() {
     console.error(e);
   }
 }
+
 
 /* ============================================================
    Health Module

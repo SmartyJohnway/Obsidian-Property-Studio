@@ -324,8 +324,9 @@ def api_relationships_body(body: dict[str, Any]) -> dict[str, Any]:
         source_scope=source_scope,
         target_scope=target_scope,
     )
-    res["findings"] = res.get("items", [])
+    res["items"] = res.get("findings", [])
     return res
+
 
 
 def api_saved_checks_list(_body: dict[str, Any]) -> dict[str, Any]:

@@ -68,7 +68,12 @@
   "scope.no_subfolders": "知識庫中未找到子資料夾。",
   "scope.select_folder_warn": "請至少選擇一個資料夾。",
   "scope.specify_note_warn": "請指定單篇筆記路徑。",
+  "workspace.locked_fail_closed": "鎖定編輯 (Fail-Closed)",
+  "workspace.del_prop_title": "刪除此屬性",
+  "discover.drawer_val": "屬性數值",
+  "discover.drawer_count": "出現次數",
   "workspace.title": "單篇筆記屬性工作區",
+
   "workspace.lead": "搜尋全庫筆記，檢視既有 Frontmatter 屬性，在不修改檔案的情況下進行表單編輯、檢視語意 Diff，並複製安全合法的 YAML。",
   "workspace.search_label": "搜尋或選擇筆記",
   "workspace.search_placeholder": "輸入筆記名稱或相對路徑搜尋...",

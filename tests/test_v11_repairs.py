@@ -61,6 +61,13 @@ def test_r02_true_i18n_locales_and_no_side_by_side():
     for k in i18n_keys:
         assert k in zh, f"Key '{k}' in index.html is missing in zh-Hant.json"
 
+    # Verify all I18N.t(...) JavaScript calls reference valid keys
+    t_keys = re.findall(r'I18N\.t\(["\']([^"\']+)["\']', html_text)
+    for k in t_keys:
+        assert k in zh, f"JavaScript I18N.t key '{k}' missing in zh-Hant.json"
+        assert k in en, f"JavaScript I18N.t key '{k}' missing in en.json"
+
+
 
 # =========================================================================
 # R03: Relationships 4-State Contract & Saved Checks
