@@ -1,12 +1,12 @@
-"""Saved Relationship Checks Management Engine (M009).
+"""Saved Relationship Checks Management Engine (M009 / R03).
 
 REQ-032 / REQ-033 / DEC-026:
 1. Versioned schema for user-saved relationship checks.
-2. Stored entirely outside the Vault (in-memory, localStorage, or JSON export).
+2. Core engine operates in-memory; serialization to/from JSON for external storage.
 3. Zero default checks or built-in ontology on startup (V11-014).
 4. Round-trip serialization and execution without Vault mutations (V11-015).
-5. Purely advisory: no enforced error semantics.
-6. Core safety: app/core/ remains 100% free of file-writing APIs (Constraint 2).
+5. Supports property_link and body_wikilink analysis types accurately.
+6. Strictly adheres to Constraint 2 (app/core/ contains zero file-writing APIs).
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ class SavedCheck:
     id: str
     name: str
     notes: str = ""
-    link_type: str = "property"  # "property" | "body"
+    link_type: str = "property_link"  # "property_link" | "body_wikilink"
     property_name: str | None = None
     source_scope: ScopeSpec = field(default_factory=ScopeSpec)
     target_scope: ScopeSpec | None = None
@@ -54,11 +54,17 @@ class SavedCheck:
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "SavedCheck":
+        link_type = str(data.get("link_type", "property_link"))
+        if link_type == "body":
+            link_type = "body_wikilink"
+        elif link_type == "property":
+            link_type = "property_link"
+
         return SavedCheck(
             id=data.get("id") or str(uuid.uuid4()),
             name=str(data.get("name", "Untitled Check")),
             notes=str(data.get("notes", "")),
-            link_type=str(data.get("link_type", "property")),
+            link_type=link_type,
             property_name=data.get("property_name"),
             source_scope=ScopeSpec.from_dict(data.get("source_scope") or {}),
             target_scope=ScopeSpec.from_dict(data["target_scope"])
@@ -74,11 +80,11 @@ class SavedCheck:
 
 
 class SavedChecksStore:
-    """Manages saved checks persisted outside the Vault directory."""
+    """In-memory manager for saved checks (Constraint 2: pure in-memory core)."""
 
     def __init__(self, initial_checks: list[SavedCheck] | None = None):
         self._checks: dict[str, SavedCheck] = {}
-        if initial_checks:
+        if initial_checks is not None:
             for c in initial_checks:
                 self._checks[c.id] = c
 
@@ -111,14 +117,15 @@ class SavedChecksStore:
             checks = [SavedCheck.from_dict(item) for item in data.get("checks", [])]
             return SavedChecksStore(initial_checks=checks)
         except Exception:
-            return SavedChecksStore()
+            return SavedChecksStore(initial_checks=[])
 
     def execute_check(self, scan: VaultScan, check_id: str) -> dict[str, Any]:
         chk = self.get_check(check_id)
         if chk is None:
             raise KeyError(f"Saved check '{check_id}' not found.")
 
-        if chk.link_type == "body":
+        # Accurately dispatch body_wikilink vs property_link
+        if chk.link_type in ("body_wikilink", "body"):
             res = analyze_body_wikilinks(
                 scan,
                 source_scope=chk.source_scope,
@@ -136,5 +143,3 @@ class SavedChecksStore:
         res["executed_check"] = chk.to_dict()
         res["results"] = dict(res)
         return res
-
-

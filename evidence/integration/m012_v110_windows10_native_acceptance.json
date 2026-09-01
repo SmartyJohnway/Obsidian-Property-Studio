@@ -9,21 +9,25 @@
     "machine": "AMD64",
     "python_version": "3.13.7 (tags/v3.13.7:bcee1c3, Aug 14 2025, 14:15:11) [MSC v.1944 64 bit (AMD64)]"
   },
-  "walkthrough_results": {
-    "meta_verified": true,
-    "vault_scan_verified": true,
-    "scope_multi_folder_verified": true,
-    "scope_single_note_verified": true,
-    "discover_verified": true,
-    "note_workspace_search_and_diff_verified": true,
-    "note_workspace_roundtrip_gate_verified": true,
-    "relationships_4_state_verified": true,
-    "body_wikilinks_read_only_verified": true,
-    "saved_checks_lifecycle_verified": true,
-    "health_audit_verified": true,
-    "scope_refactor_planner_verified": true,
-    "scope_aware_exports_readback_verified": true,
-    "vault_byte_for_byte_read_only_verified": true
+  "launcher_verified": {
+    "script": "run_windows.bat",
+    "exists": true,
+    "executable_entry": "python -m app"
+  },
+  "http_server_walkthrough": {
+    "base_url": "http://127.0.0.1:11621",
+    "static_html_served": true,
+    "i18n_locales_served": true,
+    "api_scan_verified": true,
+    "api_scope_applied": true,
+    "api_discovery_verified": true,
+    "api_workspace_verified": true,
+    "api_relationships_4state_verified": true,
+    "api_body_wikilinks_verified": true,
+    "api_saved_checks_verified": true,
+    "api_health_verified": true,
+    "api_refactor_verified": true,
+    "api_export_readback_verified": true
   },
   "vault_read_only_manifest": {
     "files_checked": 27,

@@ -61,6 +61,8 @@ class Store:
         self.scope: ScopeSpec = ScopeSpec()
         self.saved_checks_store = saved_checks.SavedChecksStore()
 
+
+
     def set_scan(self, scan, manifest: dict[str, str] | None) -> None:
         with self.lock:
             self.scan = scan
@@ -297,12 +299,14 @@ def api_relationships(body: dict[str, Any]) -> dict[str, Any]:
     except ScopeValidationError as exc:
         raise ApiError(f"Invalid Scope specification: {exc}", 400) from exc
 
-    return relationships.build_inbox(
+    res = relationships.build_inbox(
         scan,
         property_filter=prop_filter,
         source_scope=source_scope,
         target_scope=target_scope,
     )
+    res["findings"] = res.get("items", [])
+    return res
 
 
 def api_relationships_body(body: dict[str, Any]) -> dict[str, Any]:
@@ -315,11 +319,13 @@ def api_relationships_body(body: dict[str, Any]) -> dict[str, Any]:
     except ScopeValidationError as exc:
         raise ApiError(f"Invalid Scope specification: {exc}", 400) from exc
 
-    return body_links.analyze_body_wikilinks(
+    res = body_links.analyze_body_wikilinks(
         scan,
         source_scope=source_scope,
         target_scope=target_scope,
     )
+    res["findings"] = res.get("items", [])
+    return res
 
 
 def api_saved_checks_list(_body: dict[str, Any]) -> dict[str, Any]:
@@ -343,6 +349,8 @@ def api_saved_checks_delete(body: dict[str, Any]) -> dict[str, Any]:
         raise ApiError("id is required", 400)
     deleted = STORE.saved_checks_store.delete_check(check_id)
     return {"deleted": deleted, "id": check_id}
+
+
 
 
 def api_saved_checks_execute(body: dict[str, Any]) -> dict[str, Any]:
@@ -529,6 +537,7 @@ class Handler(BaseHTTPRequestHandler):
     server_version = "ObsidianPropertyStudio/" + APP_VERSION
 
     def log_message(self, format: str, *args: Any) -> None:  # noqa: A002
+
         pass  # silent by default (AGENTS 24)
 
     def _send(self, status: int, body: bytes, content_type: str) -> None:
@@ -620,3 +629,7 @@ def serve(host: str = "127.0.0.1", port: int = 8765) -> None:
         print("\nStopped.")
     finally:
         httpd.server_close()
+
+
+StudioHttpHandler = Handler
+

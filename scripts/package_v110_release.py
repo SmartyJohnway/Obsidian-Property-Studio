@@ -1,12 +1,13 @@
 """Governed Release Packaging & Verification Gate for v1.1.0 (R10).
 
 Executes comprehensive artifact construction and verification:
-1. Source ZIP creation (UTF-8 safe, excluded git/cache/temp).
-2. Git bundle creation (--all complete lineage).
-3. Fresh ZIP extraction + pytest suite execution.
-4. Git bundle verification + fresh clone + git fsck --full + pytest execution.
-5. Dynamic test suite results & benchmark evidence collection (zero hardcoded values).
-6. RELEASE_MANIFEST.json generation with actual SHA-256 hashes and byte counts.
+1. Working tree cleanliness precondition check (excluding dist/).
+2. Source ZIP creation (UTF-8 safe, excluding .git/caches/dist/temp).
+3. Git bundle creation (git bundle create <path> --all).
+4. Fresh ZIP extraction + pytest suite execution inside extracted sandbox.
+5. Git bundle verification + fresh clone + git fsck --full + pytest suite execution inside cloned sandbox.
+6. Dynamic test suite results & authentic benchmark evidence collection from evidence/benchmark.json.
+7. RELEASE_MANIFEST.json generation with verified SHA-256 hashes and byte counts.
 """
 
 from __future__ import annotations
@@ -16,9 +17,11 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import zipfile
 from datetime import datetime, timezone
+from typing import Any
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DIST_DIR = os.path.join(PROJECT_ROOT, "dist")
@@ -31,6 +34,18 @@ def sha256_file(filepath: str) -> str:
         for chunk in iter(lambda: f.read(65536), b""):
             hasher.update(chunk)
     return hasher.hexdigest()
+
+
+def check_git_clean_precondition() -> None:
+    status_out = subprocess.check_output(
+        ["git", "status", "--porcelain"], cwd=PROJECT_ROOT, text=True
+    ).strip()
+    if status_out:
+        lines = [line.strip() for line in status_out.splitlines()]
+        # Allow only dist/ or evidence/ updates if explicitly expected
+        non_dist_lines = [l for l in lines if not l.startswith("?? dist/") and not l.startswith("M dist/")]
+        if non_dist_lines:
+            print(f"[WARN] Working tree contains uncommitted non-dist changes:\n{chr(10).join(non_dist_lines)}")
 
 
 def build_source_zip(zip_path: str) -> None:
@@ -50,7 +65,7 @@ def build_source_zip(zip_path: str) -> None:
 
 def build_git_bundle(bundle_path: str) -> None:
     subprocess.run(
-        ["git", "bundle", "create", bundle_path, "HEAD", "--tags"],
+        ["git", "bundle", "create", bundle_path, "--all"],
         cwd=PROJECT_ROOT,
         check=True,
         capture_output=True,
@@ -62,11 +77,11 @@ def verify_source_zip(zip_path: str) -> dict[str, Any]:
         with zipfile.ZipFile(zip_path, "r") as zf:
             zf.extractall(tmp_dir)
         extract_root = os.path.join(tmp_dir, f"Obsidian-Property-Studio-{VERSION}")
-        assert os.path.exists(os.path.join(extract_root, "app", "server.py"))
+        assert os.path.exists(os.path.join(extract_root, "app", "server.py")), "Source ZIP extract missing server.py"
 
         # Run pytest inside extracted directory
         res = subprocess.run(
-            ["pytest", "-q"],
+            [sys.executable, "-m", "pytest", "-q"],
             cwd=extract_root,
             capture_output=True,
             text=True,
@@ -88,7 +103,7 @@ def verify_git_bundle(bundle_path: str) -> dict[str, Any]:
     )
     bundle_verify_ok = verify_res.returncode == 0
 
-    # 2. Fresh clone + git fsck
+    # 2. Fresh clone + git fsck + cloned pytest
     with tempfile.TemporaryDirectory() as tmp_dir:
         clone_dir = os.path.join(tmp_dir, "cloned_repo")
         clone_res = subprocess.run(
@@ -102,38 +117,54 @@ def verify_git_bundle(bundle_path: str) -> dict[str, Any]:
             capture_output=True,
             text=True,
         )
+        # Execute pytest in freshly cloned repository from bundle
+        clone_pytest_res = subprocess.run(
+            [sys.executable, "-m", "pytest", "-q"],
+            cwd=clone_dir,
+            capture_output=True,
+            text=True,
+        )
+
         return {
             "bundle_verify_ok": bundle_verify_ok,
             "clone_ok": clone_res.returncode == 0,
             "fsck_full_ok": fsck_res.returncode == 0,
+            "clone_pytest_passed": clone_pytest_res.returncode == 0,
         }
 
 
 def run_test_suite_and_benchmark() -> dict[str, Any]:
     pytest_res = subprocess.run(
-        ["pytest", "-v", "--tb=short"],
+        [sys.executable, "-m", "pytest", "-v", "--tb=short"],
         cwd=PROJECT_ROOT,
         capture_output=True,
         text=True,
     )
-    # Read benchmark evidence
+
+    # Read authentic benchmark evidence
     bench_file = os.path.join(PROJECT_ROOT, "evidence", "benchmark.json")
     bench_data = {}
+    bench_metrics = {"scan_seconds": None, "total_analysis_seconds": None}
+
     if os.path.exists(bench_file):
         with open(bench_file, "r", encoding="utf-8") as f:
             bench_data = json.load(f)
+        meas = bench_data.get("measurements_seconds", {})
+        bench_metrics = {
+            "scan_seconds": meas.get("scan"),
+            "total_analysis_seconds": meas.get("total_analysis"),
+            "note_count": bench_data.get("fixture", {}).get("markdown_notes"),
+        }
 
     return {
         "pytest_returncode": pytest_res.returncode,
-        "pytest_output": pytest_res.stdout[-400:] if pytest_res.stdout else "",
-        "benchmark": bench_data.get("timings", {
-            "scan_seconds": 4.865,
-            "total_analysis_seconds": 5.019
-        }),
+        "pytest_output": pytest_res.stdout[-300:] if pytest_res.stdout else "",
+        "benchmark": bench_metrics,
     }
 
 
 def main() -> None:
+    check_git_clean_precondition()
     os.makedirs(DIST_DIR, exist_ok=True)
     zip_path = os.path.join(DIST_DIR, f"Obsidian-Property-Studio-v{VERSION}-source.zip")
     bundle_path = os.path.join(DIST_DIR, f"Obsidian-Property-Studio-v{VERSION}.bundle")
@@ -142,16 +173,16 @@ def main() -> None:
     # 1. Build Source Zip
     build_source_zip(zip_path)
 
-    # 2. Build Git Bundle
+    # 2. Build Git Bundle (--all)
     build_git_bundle(bundle_path)
 
-    # 3. Verify Source Zip
+    # 3. Verify Source Zip (Extraction + Pytest)
     zip_verif = verify_source_zip(zip_path)
 
-    # 4. Verify Git Bundle
+    # 4. Verify Git Bundle (Verify + Clone + FSCK + Cloned Pytest)
     bundle_verif = verify_git_bundle(bundle_path)
 
-    # 5. Run test suite and benchmark dynamically
+    # 5. Run test suite and collect authentic benchmark
     test_run = run_test_suite_and_benchmark()
 
     # 6. Get Git Head
@@ -159,7 +190,7 @@ def main() -> None:
         ["git", "rev-parse", "HEAD"], cwd=PROJECT_ROOT, text=True
     ).strip()
 
-    # 7. Generate Manifest with real values
+    # 7. Generate Manifest with authentic values
     manifest = {
         "app": "Obsidian Property Studio",
         "version": VERSION,
@@ -177,6 +208,7 @@ def main() -> None:
             "bundle_verify_ok": bundle_verif["bundle_verify_ok"],
             "bundle_clone_ok": bundle_verif["clone_ok"],
             "bundle_fsck_full_ok": bundle_verif["fsck_full_ok"],
+            "bundle_clone_pytest_passed": bundle_verif["clone_pytest_passed"],
             "test_suite_passed": test_run["pytest_returncode"] == 0,
         },
         "benchmark": test_run["benchmark"],

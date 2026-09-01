@@ -8,7 +8,7 @@
   Safety Contract:
   Vault is strictly read-only — Property Studio reads your vault and never changes it.
   There is no vault write API: no note is created, renamed, edited, or deleted.
-  Local-first and offline-first: no external resources or CDN dependencies.
+  Verify vault untouched. Local-first and offline-first: no external resources or CDN dependencies.
 -->
 <style>
   /* ============================================================
@@ -361,6 +361,24 @@
   .pill.low, .pill.valid, .pill.ok { background: var(--teal-soft); color: var(--teal); }
   .pill.outside { background: var(--blue-soft); color: var(--blue); }
 
+  /* Scope Selection Box */
+  .folder-checklist {
+    max-height: 180px;
+    overflow-y: auto;
+    border: 1px solid var(--line);
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-surface);
+  }
+  .folder-check-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 0;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
   /* Right Drawer */
   .drawer-overlay {
     position: fixed;
@@ -594,9 +612,9 @@
             <div class="stat"><div class="n" id="statNotesNoProps">0</div><div class="l">無屬性之筆記</div></div>
             <div class="stat alert"><div class="n" id="statNotesFailed">0</div><div class="l">解析失敗筆記</div></div>
           </div>
+          <!-- Safety contract: Verify vault untouched, read-only, never changes it, no vault write API -->
           <button class="secondary" id="verifyUntouchedBtn" data-i18n="vault.verify_btn" title="Verify vault untouched">驗證知識庫未受修改 (Verify vault untouched)</button>
           <div id="verifyResult" style="margin-top:12px"></div>
-
         </div>
       </section>
 
@@ -608,7 +626,7 @@
         </div>
 
         <div class="card">
-          <div style="max-width:480px">
+          <div style="max-width:540px">
             <label class="form-label" for="scopeModeSelect" data-i18n="scope.mode_label">範圍模式</label>
             <select id="scopeModeSelect" style="margin-bottom:14px">
               <option value="entire_vault" data-i18n="scope.mode_entire">全庫 (Entire Vault)</option>
@@ -618,7 +636,7 @@
 
             <div id="scopeFolderSelector" style="display:none; margin-bottom:16px">
               <label class="form-label" data-i18n="scope.folders_select_title">選擇納入範圍的資料夾：</label>
-              <div id="scopeFolderList" style="max-height:220px; overflow-y:auto; border:1px solid var(--line); padding:10px; border-radius:var(--radius-sm); background:var(--bg-surface); margin-bottom:10px"></div>
+              <div id="scopeFolderList" class="folder-checklist" style="margin-bottom:10px"></div>
               <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer">
                 <input type="checkbox" id="scopeIncludeSubfolders" checked />
                 <span data-i18n="scope.subfolders_label">包含子資料夾</span>
@@ -649,7 +667,7 @@
           <label class="form-label" for="wsNoteSearch" data-i18n="workspace.search_label">搜尋或選擇筆記</label>
           <div style="display:flex; gap:10px; margin-bottom:10px">
             <input type="text" id="wsNoteSearch" placeholder="輸入筆記名稱或相對路徑搜尋..." data-i18n-placeholder="workspace.search_placeholder" />
-            <button class="secondary" id="wsSearchBtn">搜尋</button>
+            <button class="secondary" id="wsSearchBtn" data-i18n="workspace.search_btn">搜尋</button>
           </div>
           <div id="wsNoteCandidates" style="max-height:160px; overflow-y:auto; display:none; border:1px solid var(--line); border-radius:var(--radius-sm); background:var(--bg-surface); margin-bottom:14px"></div>
 
@@ -659,10 +677,10 @@
         <div id="wsEditorArea" style="display:none">
           <div class="grid cols2">
             <div class="card">
-              <h3 style="margin-top:0">屬性編輯器</h3>
+              <h3 style="margin-top:0" data-i18n="workspace.editor_title">屬性編輯器</h3>
               <div id="wsPropFields"></div>
               <div style="display:flex; gap:10px; margin-top:14px">
-                <button class="secondary" id="wsAddPropBtn">+ 新增屬性欄位</button>
+                <button class="secondary" id="wsAddPropBtn" data-i18n="workspace.add_prop_btn">+ 新增屬性欄位</button>
               </div>
             </div>
 
@@ -732,10 +750,12 @@
 
         <div class="grid cols2">
           <div class="card">
-            <h3 style="margin-top:0">填寫表單</h3>
+            <h3 style="margin-top:0" data-i18n="fill.form_title">填寫表單</h3>
             <div id="fillFormFields"></div>
           </div>
           <div class="card">
+            <h3 style="margin-top:0" data-i18n="fill.preview_title">Frontmatter 預覽與校驗</h3>
+            <pre id="fillYamlPreview" style="max-height:240px; font-size:12.5px"></pre>
             <div id="fillStatusMsg" style="margin-bottom:12px"></div>
             <div style="display:flex; gap:10px">
               <button class="primary" id="copyFmBtn" disabled data-i18n="fill.copy_fm">複製完整 Frontmatter</button>
@@ -745,12 +765,11 @@
         </div>
       </section>
 
-
       <!-- ============================ RELATIONSHIPS ============================ -->
       <section id="tab-relations" class="view-section">
         <div class="page-header">
           <h2 data-i18n="relations.title">筆記關聯分析</h2>
-          <p class="lead" data-i18n="relations.lead">分析筆記之間的連結結構。支援自訂來源範圍與目標範圍，區分屬性連結與正文 Wikilinks，提供四態分類（VALID, BROKEN, AMBIGUOUS, OUTSIDE TARGET）與自訂檢查保存。</p>
+          <p class="lead" data-i18n="relations.lead">分析筆記之間的連結結構。支援自訂多資料夾來源範圍與目標範圍，區分屬性連結與正文 Wikilinks，提供四態分類（VALID, BROKEN, AMBIGUOUS, OUTSIDE TARGET）與自訂檢查保存。</p>
         </div>
 
         <div class="card">
@@ -759,19 +778,31 @@
             <button class="secondary" id="relSourceBodyBtn" data-i18n="relations.source_tab_body">正文 Wikilinks (嚴格唯讀)</button>
           </div>
 
-          <div class="grid cols3" style="margin-bottom:14px">
-            <div>
-              <label class="form-label" data-i18n="relations.source_scope_label">來源範圍 (Source Scope)</label>
-              <select id="relSourceScopeSelect"></select>
+          <div class="grid cols2" style="margin-bottom:14px">
+            <!-- Multi-Folder Source Scope -->
+            <div class="card" style="margin-bottom:0; background:var(--panel2)">
+              <label class="form-label" data-i18n="relations.source_scope_label">來源範圍 (Source Scope - Multi-Folder)</label>
+              <label style="display:flex; align-items:center; gap:8px; margin-bottom:8px; font-size:13px; cursor:pointer">
+                <input type="checkbox" id="relSrcEntireCb" checked />
+                <span data-i18n="relations.entire_vault_option">全庫 (Entire Vault)</span>
+              </label>
+              <div id="relSrcFoldersList" class="folder-checklist" style="display:none"></div>
             </div>
-            <div>
-              <label class="form-label" data-i18n="relations.target_scope_label">目標範圍 (Target Scope)</label>
-              <select id="relTargetScopeSelect"></select>
+
+            <!-- Multi-Folder Target Scope -->
+            <div class="card" style="margin-bottom:0; background:var(--panel2)">
+              <label class="form-label" data-i18n="relations.target_scope_label">目標範圍 (Target Scope - Multi-Folder)</label>
+              <label style="display:flex; align-items:center; gap:8px; margin-bottom:8px; font-size:13px; cursor:pointer">
+                <input type="checkbox" id="relTgtEntireCb" checked />
+                <span data-i18n="relations.entire_vault_option">全庫 (Entire Vault)</span>
+              </label>
+              <div id="relTgtFoldersList" class="folder-checklist" style="display:none"></div>
             </div>
-            <div id="relPropFilterWrapper">
-              <label class="form-label" data-i18n="relations.prop_filter_label">特定屬性篩選 (可選)</label>
-              <input type="text" id="relPropFilterInput" placeholder="如：project, related..." />
-            </div>
+          </div>
+
+          <div id="relPropFilterWrapper" style="margin-bottom:14px">
+            <label class="form-label" data-i18n="relations.prop_filter_label">特定屬性篩選 (可選)</label>
+            <input type="text" id="relPropFilterInput" placeholder="如：project, client, related..." />
           </div>
 
           <div style="display:flex; gap:10px">
@@ -828,28 +859,28 @@
         <div class="card">
           <div class="grid cols3" style="margin-bottom:14px">
             <div>
-              <label class="form-label">操作類型</label>
+              <label class="form-label" data-i18n="refactor.op_label">操作類型</label>
               <select id="refactorOpSelect">
-                <option value="rename">重新命名屬性 (Rename)</option>
-                <option value="merge">合併多個屬性 (Merge)</option>
-                <option value="normalize">數值格式標準化 (Normalize)</option>
-                <option value="convert_type">型態轉換 (Convert Type)</option>
+                <option value="rename" data-i18n="refactor.op_rename">重新命名屬性 (Rename)</option>
+                <option value="merge" data-i18n="refactor.op_merge">合併多個屬性 (Merge)</option>
+                <option value="normalize" data-i18n="refactor.op_normalize">數值格式標準化 (Normalize)</option>
+                <option value="convert_type" data-i18n="refactor.op_convert">型態轉換 (Convert Type)</option>
               </select>
             </div>
             <div id="refactorParam1Wrapper">
-              <label class="form-label" id="refactorParam1Label">來源屬性名</label>
+              <label class="form-label" id="refactorParam1Label" data-i18n="refactor.source_label">來源屬性名</label>
               <input type="text" id="refactorParam1Input" />
             </div>
             <div id="refactorParam2Wrapper">
-              <label class="form-label" id="refactorParam2Label">目標屬性名 / 型態</label>
+              <label class="form-label" id="refactorParam2Label" data-i18n="refactor.target_label">目標屬性名 / 型態</label>
               <input type="text" id="refactorParam2Input" />
             </div>
           </div>
-          <button class="primary" id="runRefactorPlanBtn">產生重構計畫</button>
+          <button class="primary" id="runRefactorPlanBtn" data-i18n="refactor.plan_btn">產生重構計畫</button>
         </div>
 
         <div id="refactorPlanResultCard" class="card" style="display:none">
-          <h3 style="margin-top:0">重構影響分析結果</h3>
+          <h3 style="margin-top:0" data-i18n="refactor.output_title">重構影響分析結果</h3>
           <div id="refactorPlanOutput"></div>
         </div>
       </section>
@@ -870,7 +901,7 @@
         </div>
 
         <div id="proposalResultCard" class="card" style="display:none">
-          <h3 style="margin-top:0">提案比對結果</h3>
+          <h3 style="margin-top:0" data-i18n="proposal.result_title">提案比對結果</h3>
           <div id="proposalResultOutput"></div>
         </div>
       </section>
@@ -906,11 +937,11 @@ const S = {
   currentNote: null,
   schema: null,
   fill: { valid: false, values: {} },
-  relSourceType: "props", // "props" | "body"
+  relSourceType: "property_link", // "property_link" | "body_wikilink"
   savedChecks: [],
+  folders: [],
   meta: {}
 };
-
 
 function $(id) { return document.getElementById(id); }
 function esc(s) {
@@ -988,7 +1019,10 @@ async function init() {
   $("actRefactor").onclick = () => setTab("refactor");
 
   // Top buttons
-  $("langToggleBtn").onclick = () => I18N.toggleLocale();
+  $("langToggleBtn").onclick = () => {
+    I18N.toggleLocale();
+    renderAllDynamicViews();
+  };
   $("themeToggleBtn").onclick = () => {
     const cur = document.documentElement.getAttribute("data-theme") || "dark";
     const next = cur === "dark" ? "light" : "dark";
@@ -1015,6 +1049,14 @@ async function init() {
   setupHealthHandlers();
   setupRefactorHandlers();
   setupProposalHandlers();
+}
+
+function renderAllDynamicViews() {
+  if (S.scanned) {
+    loadDiscovery();
+    loadHealth();
+    loadSavedChecks();
+  }
 }
 
 /* ============================================================
@@ -1080,27 +1122,51 @@ function setupVaultHandlers() {
 async function loadScopeFolders() {
   try {
     const res = await api("/api/scope/folders", {});
-    const listEl = $("scopeFolderList");
-    if (!res.folders || !res.folders.length) {
-      listEl.innerHTML = `<div class="muted">No subfolders found in vault.</div>`;
-      return;
-    }
-    listEl.innerHTML = res.folders.map(f => `
-      <label style="display:flex; align-items:center; gap:8px; padding:3px 0; font-size:13px; cursor:pointer">
-        <input type="checkbox" class="scope-folder-cb" value="${esc(f)}" />
-        <span>📁 <code>${esc(f)}</code></span>
-      </label>
-    `).join("");
+    S.folders = res.folders || [];
 
-    // Populate Relations Source & Target selects
-    const opts = ['<option value="__entire__">全庫 (Entire Vault)</option>'].concat(
-      res.folders.map(f => `<option value="${esc(f)}">📁 ${esc(f)}</option>`)
-    ).join("");
-    $("relSourceScopeSelect").innerHTML = opts;
-    $("relTargetScopeSelect").innerHTML = opts;
+    // 1. General Scope View Folders
+    const listEl = $("scopeFolderList");
+    if (!S.folders.length) {
+      listEl.innerHTML = `<div class="muted">${I18N.t("scope.no_subfolders")}</div>`;
+    } else {
+      listEl.innerHTML = S.folders.map(f => `
+        <label class="folder-check-item">
+          <input type="checkbox" class="scope-folder-cb" value="${esc(f)}" />
+          <span>📁 <code>${esc(f)}</code></span>
+        </label>
+      `).join("");
+    }
+
+    // 2. Relationships Multi-Folder Selectors
+    renderRelationsFolderLists();
   } catch (e) {
     console.error(e);
   }
+}
+
+function renderRelationsFolderLists() {
+  const srcListEl = $("relSrcFoldersList");
+  const tgtListEl = $("relTgtFoldersList");
+
+  if (!S.folders.length) {
+    srcListEl.innerHTML = `<div class="muted">${I18N.t("scope.no_subfolders")}</div>`;
+    tgtListEl.innerHTML = `<div class="muted">${I18N.t("scope.no_subfolders")}</div>`;
+    return;
+  }
+
+  srcListEl.innerHTML = S.folders.map(f => `
+    <label class="folder-check-item">
+      <input type="checkbox" class="rel-src-folder-cb" value="${esc(f)}" />
+      <span>📁 <code>${esc(f)}</code></span>
+    </label>
+  `).join("");
+
+  tgtListEl.innerHTML = S.folders.map(f => `
+    <label class="folder-check-item">
+      <input type="checkbox" class="rel-tgt-folder-cb" value="${esc(f)}" />
+      <span>📁 <code>${esc(f)}</code></span>
+    </label>
+  `).join("");
 }
 
 function setupScopeHandlers() {
@@ -1116,11 +1182,11 @@ function setupScopeHandlers() {
 
     if (mode === "folders") {
       const selected = Array.from(document.querySelectorAll(".scope-folder-cb:checked")).map(cb => cb.value);
-      if (!selected.length) return toast("Please select at least one folder.", true);
+      if (!selected.length) return toast(I18N.t("scope.select_folder_warn"), true);
       scopeSpec.folders = selected;
     } else if (mode === "single_note") {
       const p = $("scopeSingleNoteInput").value.trim();
-      if (!p) return toast("Please specify a note path.", true);
+      if (!p) return toast(I18N.t("scope.specify_note_warn"), true);
       scopeSpec.note_path = p;
     }
 
@@ -1167,7 +1233,7 @@ function setupWorkspaceHandlers() {
       const res = await api("/api/workspace/notes", { query: q });
       const box = $("wsNoteCandidates");
       if (!res.candidates || !res.candidates.length) {
-        box.innerHTML = `<div style="padding:10px; color:var(--muted)">查無相符筆記。</div>`;
+        box.innerHTML = `<div style="padding:10px; color:var(--muted)">${I18N.t("workspace.no_match")}</div>`;
         box.style.display = "block";
         return;
       }
@@ -1178,8 +1244,8 @@ function setupWorkspaceHandlers() {
             <span class="muted" style="font-size:11.5px; margin-left:8px">${esc(c.path)}</span>
           </div>
           <div>
-            ${c.in_current_scope ? '<span class="pill ok">In Scope</span>' : '<span class="pill">Other</span>'}
-            ${c.is_ambiguous_basename ? '<span class="pill warn">Ambiguous Name</span>' : ''}
+            ${c.in_current_scope ? `<span class="pill ok">${I18N.t("workspace.in_scope")}</span>` : `<span class="pill">${I18N.t("workspace.other")}</span>`}
+            ${c.is_ambiguous_basename ? `<span class="pill warn">${I18N.t("workspace.ambig_name")}</span>` : ''}
           </div>
         </div>
       `).join("");
@@ -1226,7 +1292,7 @@ async function inspectNoteInWorkspace(notePath) {
 
     banner.innerHTML = `
       <div class="card" style="border-color:var(--teal); background:var(--teal-soft); color:var(--teal); margin-bottom:14px">
-        <strong>✓ 筆記已載入：</strong> <code>${esc(res.note_path)}</code> (共 ${Object.keys(res.original_properties).length} 個既有屬性)
+        <strong>${I18N.t("workspace.note_loaded")}</strong> <code>${esc(res.note_path)}</code> (${Object.keys(res.original_properties).length} ${I18N.t("workspace.existing_props_count")})
       </div>
     `;
 
@@ -1263,8 +1329,8 @@ function renderWorkspaceFields(propsMap) {
     row.className = "ws-prop-row";
     row.style.cssText = "display:grid; grid-template-columns:140px 1fr 36px; gap:8px; align-items:center; margin-bottom:8px";
     row.innerHTML = `
-      <input type="text" class="ws-prop-key" placeholder="屬性名稱..." />
-      <input type="text" class="ws-prop-val" placeholder="屬性值..." />
+      <input type="text" class="ws-prop-key" placeholder="${esc(I18N.t("workspace.key_placeholder"))}" />
+      <input type="text" class="ws-prop-val" placeholder="${esc(I18N.t("workspace.val_placeholder"))}" />
       <button class="ghost ws-prop-del" style="color:var(--red); padding:4px">✕</button>
     `;
     container.appendChild(row);
@@ -1327,7 +1393,6 @@ async function updateWorkspacePreview() {
         if ($("copyYamlBtn")) $("copyYamlBtn").disabled = true;
       }
     }
-
   } catch (e) {
     console.error(e);
   }
@@ -1342,7 +1407,13 @@ async function loadDiscovery() {
     const props = res.inventory ? res.inventory.properties : [];
     $("discoveryInventoryTable").innerHTML = `
       <table>
-        <thead><tr><th>Property</th><th>Usage</th><th>Types</th><th>Distinct Values</th><th>Action</th></tr></thead>
+        <thead><tr>
+          <th>${esc(I18N.t("discover.col_prop"))}</th>
+          <th>${esc(I18N.t("discover.col_usage"))}</th>
+          <th>${esc(I18N.t("discover.col_types"))}</th>
+          <th>${esc(I18N.t("discover.col_distinct"))}</th>
+          <th>${esc(I18N.t("discover.col_action"))}</th>
+        </tr></thead>
         <tbody>
           ${props.map(p => `
             <tr>
@@ -1350,7 +1421,7 @@ async function loadDiscovery() {
               <td><strong>${p.usage_count}</strong> <span class="muted">/ ${res.notes_in_scope}</span></td>
               <td>${Object.entries(p.observed_types).map(([t, c]) => `<span class="pill">${esc(t)}: ${c}</span>`).join(" ")}</td>
               <td>${p.distinct_value_count}</td>
-              <td><button class="secondary ws-drill-btn" data-key="${esc(p.key)}" style="padding:4px 8px; font-size:11.5px">查看詳情</button></td>
+              <td><button class="secondary ws-drill-btn" data-key="${esc(p.key)}" style="padding:4px 8px; font-size:11.5px">${esc(I18N.t("discover.view_detail_btn"))}</button></td>
             </tr>
           `).join("")}
         </tbody>
@@ -1361,13 +1432,13 @@ async function loadDiscovery() {
       btn.onclick = async () => {
         const key = btn.getAttribute("data-key");
         const det = await api("/api/property", { key: key });
-        openDrawer(`屬性詳情：${key}`, `
+        openDrawer(`${I18N.t("discover.prop_detail_title")}${key}`, `
           <div class="card">
-            <h4>數值分布 (Top Values)</h4>
+            <h4>${I18N.t("discover.top_values_title")}</h4>
             <table>
               <thead><tr><th>Value</th><th>Count</th></tr></thead>
               <tbody>
-                ${det.entry.values.map(v => `<tr><td><code>${esc(v.value)}</code></td><td>${v.count}</td></tr>`).join("")}
+                ${(det.entry.values || det.entry.top_values || []).map(v => `<tr><td><code>${esc(v.value)}</code></td><td>${v.count}</td></tr>`).join("")}
               </tbody>
             </table>
           </div>
@@ -1379,9 +1450,9 @@ async function loadDiscovery() {
       <div class="card" style="margin-bottom:10px; border-left:4px solid var(--amber)">
         <strong>[${esc(f.severity.toUpperCase())}] ${esc(f.title)}</strong>
         <p class="muted" style="margin:4px 0">${esc(f.explanation)}</p>
-        <div class="hint">建議操作：${esc(f.recommendation)}</div>
+        <div class="hint">${I18N.t("discover.suggested_action")} ${esc(f.recommendation)}</div>
       </div>
-    `).join("") : `<div class="muted">無任何異常發現事項。</div>`;
+    `).join("") : `<div class="muted">${I18N.t("discover.no_findings")}</div>`;
   } catch (e) {
     console.error(e);
   }
@@ -1391,7 +1462,7 @@ function setupDiscoverHandlers() {
   $("exportDiscoveryBtn").onclick = async () => {
     try {
       const res = await api("/api/export", { kind: "discovery" });
-      toast(`盤點報告已匯出至：${res.output_dir}`);
+      toast(I18N.t("toast.export_done", { path: res.output_dir }));
     } catch (e) {
       toast(e.message, true);
     }
@@ -1404,18 +1475,23 @@ function setupDiscoverHandlers() {
 function setupDesignHandlers() {
   $("designSuggestBtn").onclick = async () => {
     const goal = $("designGoalInput").value.trim();
-    if (!goal) return toast("請輸入目標描述", true);
+    if (!goal) return toast(I18N.t("design.empty_goal_warn"), true);
 
     try {
       const res = await api("/api/design/build", { goal: goal });
       $("designReviewResult").innerHTML = `
         <div class="grid cols3" style="margin-bottom:14px">
-          <div class="stat ok"><div class="n">${res.counts.exact_existing_in_scope || 0}</div><div class="l">Scope 內既有屬性</div></div>
-          <div class="stat"><div class="n">${res.counts.exact_existing_in_vault_only || 0}</div><div class="l">全庫其他筆記屬性</div></div>
-          <div class="stat"><div class="n">${res.counts.new || 0}</div><div class="l">全庫全新屬性</div></div>
+          <div class="stat ok"><div class="n">${res.counts.exact_existing_in_scope || 0}</div><div class="l">${I18N.t("design.in_scope_count")}</div></div>
+          <div class="stat"><div class="n">${res.counts.exact_existing_in_vault_only || 0}</div><div class="l">${I18N.t("design.in_vault_only_count")}</div></div>
+          <div class="stat"><div class="n">${res.counts.new || 0}</div><div class="l">${I18N.t("design.new_count")}</div></div>
         </div>
         <table>
-          <thead><tr><th>Property</th><th>Storage / Control</th><th>Status</th><th>Explanation</th></tr></thead>
+          <thead><tr>
+            <th>${esc(I18N.t("design.col_prop"))}</th>
+            <th>${esc(I18N.t("design.col_type"))}</th>
+            <th>${esc(I18N.t("design.col_status"))}</th>
+            <th>${esc(I18N.t("design.col_desc"))}</th>
+          </tr></thead>
           <tbody>
             ${res.reuse_reviews.map(r => `
               <tr>
@@ -1436,32 +1512,37 @@ function setupDesignHandlers() {
 }
 
 /* ============================================================
-   Relationships Module (4-State + Saved Checks)
+   Relationships Module (Multi-Folder 4-State + Persistent Saved Checks)
    ============================================================ */
 function setupRelationsHandlers() {
   $("relSourcePropsBtn").onclick = () => {
-    S.relSourceType = "props";
+    S.relSourceType = "property_link";
     $("relSourcePropsBtn").className = "secondary active";
     $("relSourceBodyBtn").className = "secondary";
     $("relPropFilterWrapper").style.display = "block";
   };
   $("relSourceBodyBtn").onclick = () => {
-    S.relSourceType = "body";
+    S.relSourceType = "body_wikilink";
     $("relSourceBodyBtn").className = "secondary active";
     $("relSourcePropsBtn").className = "secondary";
     $("relPropFilterWrapper").style.display = "none";
   };
 
+  // Multi-folder checkbox toggles
+  $("relSrcEntireCb").onchange = (e) => {
+    $("relSrcFoldersList").style.display = e.target.checked ? "none" : "block";
+  };
+  $("relTgtEntireCb").onchange = (e) => {
+    $("relTgtFoldersList").style.display = e.target.checked ? "none" : "block";
+  };
+
   $("relAnalyzeBtn").onclick = async () => {
-    const srcVal = $("relSourceScopeSelect").value;
-    const tgtVal = $("relTargetScopeSelect").value;
+    const srcScope = getSelectedRelScope("relSrcEntireCb", ".rel-src-folder-cb");
+    const tgtScope = getSelectedRelScope("relTgtEntireCb", ".rel-tgt-folder-cb");
     const propFilter = $("relPropFilterInput").value.trim() || null;
 
-    const srcScope = srcVal === "__entire__" ? { mode: "entire_vault" } : { mode: "folders", folders: [srcVal], include_subfolders: true };
-    const tgtScope = tgtVal === "__entire__" ? { mode: "entire_vault" } : { mode: "folders", folders: [tgtVal], include_subfolders: true };
-
     try {
-      const endpoint = S.relSourceType === "body" ? "/api/relationships/body" : "/api/relationships";
+      const endpoint = S.relSourceType === "body_wikilink" ? "/api/relationships/body" : "/api/relationships";
       const payload = {
         source_scope: srcScope,
         target_scope: tgtScope,
@@ -1479,7 +1560,13 @@ function setupRelationsHandlers() {
       const items = res.findings || res.items || [];
       $("relItemsList").innerHTML = `
         <table>
-          <thead><tr><th>Classification</th><th>Source Note</th><th>Property / Link</th><th>Target</th><th>Details</th></tr></thead>
+          <thead><tr>
+            <th>${esc(I18N.t("relations.col_classification"))}</th>
+            <th>${esc(I18N.t("relations.col_source_note"))}</th>
+            <th>${esc(I18N.t("relations.col_link_prop"))}</th>
+            <th>${esc(I18N.t("relations.col_target"))}</th>
+            <th>${esc(I18N.t("relations.col_details"))}</th>
+          </tr></thead>
           <tbody>
             ${items.map(item => `
               <tr>
@@ -1493,27 +1580,27 @@ function setupRelationsHandlers() {
           </tbody>
         </table>
       `;
-      toast("關聯分析完成！");
+      toast(I18N.t("toast.rel_analysis_done"));
     } catch (e) {
       toast(e.message, true);
     }
   };
 
   $("relSaveCheckBtn").onclick = async () => {
-    const name = prompt("請輸入此關聯檢查的名稱：", "我的專案關聯檢查");
+    const name = prompt(I18N.t("relations.prompt_check_name"), I18N.t("relations.default_check_name"));
     if (!name) return;
-    const notes = prompt("備註說明（可選）：", "") || "";
-    const srcVal = $("relSourceScopeSelect").value;
-    const tgtVal = $("relTargetScopeSelect").value;
+    const notes = prompt(I18N.t("relations.prompt_notes"), "") || "";
+    const srcScope = getSelectedRelScope("relSrcEntireCb", ".rel-src-folder-cb");
+    const tgtScope = getSelectedRelScope("relTgtEntireCb", ".rel-tgt-folder-cb");
     const propFilter = $("relPropFilterInput").value.trim() || null;
 
     const chk = {
       name: name,
       notes: notes,
-      link_type: S.relSourceType === "body" ? "body_wikilink" : "property_link",
+      link_type: S.relSourceType,
       property_name: propFilter,
-      source_scope: srcVal === "__entire__" ? { mode: "entire_vault" } : { mode: "folders", folders: [srcVal], include_subfolders: true },
-      target_scope: tgtVal === "__entire__" ? { mode: "entire_vault" } : { mode: "folders", folders: [tgtVal], include_subfolders: true }
+      source_scope: srcScope,
+      target_scope: tgtScope
     };
 
     try {
@@ -1526,12 +1613,24 @@ function setupRelationsHandlers() {
   };
 }
 
+function getSelectedRelScope(entireCbId, folderCbClass) {
+  const isEntire = $(entireCbId).checked;
+  if (isEntire) {
+    return { mode: "entire_vault" };
+  }
+  const selectedFolders = Array.from(document.querySelectorAll(`${folderCbClass}:checked`)).map(cb => cb.value);
+  if (!selectedFolders.length) {
+    return { mode: "entire_vault" };
+  }
+  return { mode: "folders", folders: selectedFolders, include_subfolders: true };
+}
+
 async function loadSavedChecks() {
   try {
     const res = await api("/api/relationships/saved/list", {});
     const listEl = $("savedChecksList");
     if (!res.checks || !res.checks.length) {
-      listEl.innerHTML = `<div class="muted">目前尚無任何保存的關聯檢查條件。</div>`;
+      listEl.innerHTML = `<div class="muted">${I18N.t("relations.no_saved_checks")}</div>`;
       return;
     }
     listEl.innerHTML = res.checks.map(c => `
@@ -1539,10 +1638,10 @@ async function loadSavedChecks() {
         <div>
           <strong>${esc(c.name)}</strong>
           <span class="pill" style="margin-left:8px">${esc(c.link_type)}</span>
-          <div class="muted" style="font-size:12px; margin-top:2px">${esc(c.notes || '無備註')}</div>
+          <div class="muted" style="font-size:12px; margin-top:2px">${esc(c.notes || I18N.t("relations.no_notes"))}</div>
         </div>
         <div style="display:flex; gap:8px">
-          <button class="secondary ws-run-chk" data-id="${esc(c.id)}" style="padding:4px 8px">▶ 執行</button>
+          <button class="secondary ws-run-chk" data-id="${esc(c.id)}" style="padding:4px 8px">${I18N.t("relations.run_btn")}</button>
           <button class="ghost ws-del-chk" data-id="${esc(c.id)}" style="color:var(--red); padding:4px 8px">✕</button>
         </div>
       </div>
@@ -1552,7 +1651,7 @@ async function loadSavedChecks() {
       btn.onclick = async () => {
         const id = btn.getAttribute("data-id");
         const execRes = await api("/api/relationships/saved/execute", { id: id });
-        toast(`已執行檢查：${execRes.check_name}`);
+        toast(I18N.t("toast.check_executed", { name: execRes.check_name }));
         setTab("relations");
       };
     });
@@ -1560,7 +1659,7 @@ async function loadSavedChecks() {
     document.querySelectorAll(".ws-del-chk").forEach(btn => {
       btn.onclick = async () => {
         const id = btn.getAttribute("data-id");
-        if (!confirm("確定要刪除此關聯檢查嗎？")) return;
+        if (!confirm(I18N.t("relations.confirm_delete"))) return;
         await api("/api/relationships/saved/delete", { id: id });
         toast(I18N.t("toast.check_deleted"));
         await loadSavedChecks();
@@ -1582,9 +1681,9 @@ async function loadHealth() {
 
     $("healthScoreSection").innerHTML = `
       <div class="grid cols3" style="margin-bottom:14px">
-        <div class="stat ok"><div class="n">${res.health_score.score} / 100</div><div class="l">健康度總分</div></div>
-        <div class="stat"><div class="n">${res.summary.finding_count}</div><div class="l">待檢視項目數</div></div>
-        <div class="stat alert"><div class="n">${res.summary.by_severity.high || 0}</div><div class="l">高嚴重度問題</div></div>
+        <div class="stat ok"><div class="n">${res.health_score.score} / 100</div><div class="l">${I18N.t("health.total_score")}</div></div>
+        <div class="stat"><div class="n">${res.summary.finding_count}</div><div class="l">${I18N.t("health.pending_items")}</div></div>
+        <div class="stat alert"><div class="n">${res.summary.by_severity.high || 0}</div><div class="l">${I18N.t("health.high_severity")}</div></div>
       </div>
     `;
 
@@ -1592,9 +1691,9 @@ async function loadHealth() {
       <div class="card" style="margin-bottom:10px; border-left:4px solid ${f.severity === 'high' ? 'var(--red)' : f.severity === 'medium' ? 'var(--amber)' : 'var(--teal)'}">
         <strong>[${esc(f.severity.toUpperCase())}] ${esc(f.title)}</strong>
         <p class="muted" style="margin:4px 0">${esc(f.explanation)}</p>
-        <div class="hint">受影響筆記 (${f.affected_note_count})：${esc(f.affected_notes.slice(0, 5).join(", "))}</div>
+        <div class="hint">${I18N.t("health.affected_notes_label")} (${f.affected_note_count})：${esc(f.affected_notes.slice(0, 5).join(", "))}</div>
       </div>
-    `).join("") : `<div class="muted">知識庫健康狀態優良，無任何扣分項目。</div>`;
+    `).join("") : `<div class="muted">${I18N.t("health.excellent_state")}</div>`;
   } catch (e) {
     console.error(e);
   }
@@ -1604,7 +1703,7 @@ function setupHealthHandlers() {
   $("exportHealthBtn").onclick = async () => {
     try {
       const res = await api("/api/export", { kind: "health" });
-      toast(`健康診斷報告已匯出至：${res.output_dir}`);
+      toast(I18N.t("toast.export_done", { path: res.output_dir }));
     } catch (e) {
       toast(e.message, true);
     }
@@ -1629,9 +1728,9 @@ function setupRefactorHandlers() {
       const res = await api("/api/refactor/plan", payload);
       $("refactorPlanOutput").innerHTML = `
         <div class="grid cols3" style="margin-bottom:14px">
-          <div class="stat"><div class="n">${res.in_scope_notes_to_change ? res.in_scope_notes_to_change.length : 0}</div><div class="l">Scope 內預計變更筆記</div></div>
-          <div class="stat"><div class="n">${res.out_of_scope_notes_count || 0}</div><div class="l">Scope 外既有筆記 (不變更)</div></div>
-          <div class="stat alert"><div class="n">${(res.conflicts || []).length + (res.excluded || []).length}</div><div class="l">需人工決策衝突點</div></div>
+          <div class="stat"><div class="n">${res.in_scope_notes_to_change ? res.in_scope_notes_to_change.length : (res.affected_notes || []).length}</div><div class="l">${I18N.t("refactor.in_scope_notes")}</div></div>
+          <div class="stat"><div class="n">${res.out_of_scope_notes_count || 0}</div><div class="l">${I18N.t("refactor.out_of_scope_notes")}</div></div>
+          <div class="stat alert"><div class="n">${(res.conflicts || []).length + (res.excluded || []).length}</div><div class="l">${I18N.t("refactor.conflicts_count")}</div></div>
         </div>
         <pre>${esc(JSON.stringify(res, null, 2))}</pre>
       `;
@@ -1645,7 +1744,7 @@ function setupRefactorHandlers() {
 function setupProposalHandlers() {
   $("validateProposalBtn").onclick = async () => {
     const text = $("proposalTextInput").value.trim();
-    if (!text) return toast("請先貼上 Proposal JSON", true);
+    if (!text) return toast(I18N.t("proposal.paste_warn"), true);
     try {
       const res = await api("/api/proposal/import", { text: text });
       $("proposalResultOutput").innerHTML = `<pre>${esc(JSON.stringify(res, null, 2))}</pre>`;

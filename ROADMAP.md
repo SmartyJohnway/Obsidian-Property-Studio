@@ -84,7 +84,7 @@ All 95 v1.0.0 regression tests are permanently retained. v1.1.0 introduces 18 ne
 - `V11-012` Property Links and Body Wikilinks analysis results are strictly separated in models and API.
 - `V11-013` Body Wikilink analysis is strictly read-only and never modifies Markdown note bodies.
 - `V11-014` System starts with zero default relationship rules or ontology assumptions.
-- `V11-015` Saved Relationship Checks persist correctly to external storage (outside Vault) and reload accurately.
+- `V11-015` Saved Relationship Checks persist correctly to external storage/JSON (outside Vault) and reload accurately.
 - `V11-016` Scope-aware Property Health calculates scores and findings strictly from Scope notes without cross-contamination.
 - `V11-017` Scope-aware Refactor Planner strictly limits migration plans to Scope notes without silent expansion.
 - `V11-018` Vault remains byte-for-byte read-only across all v1.1.0 product workflows (pre/post hash equality).
@@ -135,7 +135,7 @@ Implement a local-first, zero-CDN, offline bilingual (Traditional Chinese zh-Han
 ### Acceptance Criteria
 - [x] `M002-AC01` `V11-001` test passes.
 - [x] `M002-AC02` Zero external network calls or CDN dependencies.
-- [x] `M002-AC03` Full coverage of UI navigation and labels in both locales.
+- [x] `M002-AC03` Full coverage of UI navigation and labels in both locales without side-by-side hardcoded strings.
 
 ### Result
 `PASS` (4/4 i18n tests pass, offline verified)
@@ -151,7 +151,7 @@ Implement the multi-folder union, single-note, and subfolder inclusion scope eng
 
 ### Tasks
 - [x] `M003-T01` Define regression tests `tests/test_v11_scope.py` covering V11-002, V11-003, V11-004.
-- [x] `M003-T02` Implement `app/core/scope.py` (`ScopeMode`, `ScopeSpec`, `filter_scan_by_scope`, `extract_vault_folders`).
+- [x] `M003-T02` Implement `app/core/scope.py` (`ScopeMode`, `ScopeSpec`, `filter_scan_by_scope`, `extract_vault_folders`, `ScopeValidationError`).
 - [x] `M003-T03` Expose API endpoints `/api/scope/folders`, `/api/scope/apply`, `/api/scope/current`.
 - [x] `M003-T04` Build UI Scope Selection view in `app/ui/index.html` with folder multi-select and subfolder checkboxes.
 - [x] `M003-T05` Wire Scope context chip into topbar header with live note counts.
@@ -251,7 +251,7 @@ Implement multi-folder Source Scope and Target Scope analysis for property links
 - [x] `M007-T01` Define regression tests `tests/test_v11_relationships.py` covering V11-009 ~ V11-011.
 - [x] `M007-T02` Update `app/core/relationships.py` with multi-folder source and target scope filtering.
 - [x] `M007-T03` Expose API endpoint `/api/relationships` with source/target scopes and 4-state reporting.
-- [x] `M007-T04` Build UI Relationship view with Source/Target selectors, 4-state metric cards, and item breakdown.
+- [x] `M007-T04` Build UI Relationship view with multi-folder Source/Target selectors, 4-state metric cards, and item breakdown.
 - [x] `M007-T05` Execute and verify relationship test suite.
 
 ### Acceptance Criteria
@@ -299,7 +299,7 @@ Implement user-initiated saved relationship checks persisted to external storage
 - [x] `M009-T01` Define regression tests `tests/test_v11_saved_checks.py` covering V11-014, V11-015.
 - [x] `M009-T02` Implement `app/core/saved_checks.py` (`SavedCheck`, `SavedChecksStore`).
 - [x] `M009-T03` Expose API endpoints `/api/relationships/saved/list`, `save`, `delete`, `execute`.
-- [x] `M009-T04` Build Saved Checks management UI in `app/ui/index.html`.
+- [x] `M009-T04` Build Saved Checks management UI with body_wikilink support and localStorage persistence.
 - [x] `M009-T05` Execute and verify saved checks test suite.
 
 ### Acceptance Criteria
@@ -351,7 +351,7 @@ Execute full regression test suite (all 139 tests) and record formal >=5,000-not
 
 ### Acceptance Criteria
 - [x] `M011-AC01` All 139 tests PASS without failures.
-- [x] `M011-AC02` Benchmark on 5,000 notes recorded (4.865s scan, 5.019s full analysis).
+- [x] `M011-AC02` Benchmark on 5,000 notes recorded (5.149s scan, 5.324s full analysis).
 - [x] `M011-AC03` `V11-018` Vault byte-for-byte read-only verified.
 
 ### Result
@@ -364,11 +364,11 @@ Execute full regression test suite (all 139 tests) and record formal >=5,000-not
 Status: `PASS`
 
 ### Objective
-Validate v1.1.0 native execution on Windows 10 (Build 19045+), execute full walkthrough acceptance, update documentation, conduct four-file consistency check, package release artifacts, and record formal release verdict.
+Validate v1.1.0 native execution on Windows 10 (Build 19045+), execute full live HTTP walkthrough acceptance, update documentation, conduct four-file consistency check, package release artifacts, and record formal release verdict.
 
 ### Tasks
 - [x] `M012-T01` Test `run_windows.bat` launcher natively on Windows environment.
-- [x] `M012-T02` Execute full end-to-end UI acceptance walkthrough.
+- [x] `M012-T02` Execute live local HTTP server walkthrough acceptance (Scope selection, Note Workspace editing, Multi-Folder Relationships, Saved Checks, i18n toggle, Light/Dark toggle).
 - [x] `M012-T03` Verify Traditional Chinese paths, spaces in folder names, and Unicode property values.
 - [x] `M012-T04` Update `README.md` and user documentation for v1.1.0 features.
 - [x] `M012-T05` Freeze version string `1.1.0` in `app/__init__.py`, `server.py`, and UI metadata.
@@ -378,12 +378,12 @@ Validate v1.1.0 native execution on Windows 10 (Build 19045+), execute full walk
 - [x] `M012-T09` Update HANDOFF.md last.
 
 ### Acceptance Criteria
-- [x] `M012-AC01` Windows 10 (Build 19045+) native launcher and UI acceptance freshly verified (`evidence/integration/m012_v110_windows10_native_acceptance.json`).
+- [x] `M012-AC01` Windows 10 (Build 19045+) native launcher, live HTTP server, and UI walkthrough verified (`evidence/integration/m012_v110_windows10_native_acceptance.json`).
 - [x] `M012-AC02` Windows 11 (64-bit AMD64) recorded accurately as `NOT YET VERIFIED` (accepted non-blocking release limitation).
-- [x] `M012-AC03` Traditional Chinese and English UI verified end-to-end.
+- [x] `M012-AC03` Traditional Chinese and English UI verified end-to-end with 100% key parity and zero hardcoded labels.
 - [x] `M012-AC04` Documentation matches implementation.
 - [x] `M012-AC05` Four-file consistency gate PASS.
-- [x] `M012-AC06` Release manifest and bundles verified.
+- [x] `M012-AC06` Release manifest and bundles verified via clean clone, extraction, git fsck, and pytest.
 - [x] `M012-AC07` Formal release verdict recorded (`PROPERTY_STUDIO_V1_1_0_RELEASE_PASS_WITH_LIMITATIONS`).
 
 ### Result
@@ -396,25 +396,25 @@ Validate v1.1.0 native execution on Windows 10 (Build 19045+), execute full walk
 Status: `PASS`
 
 ### Objective
-Systematically address and verify all 12 repair contracts (R01~R12) from the PR #1 independent closure audit: UI-backend API contract parity, true zh-Hant/en bilingual rendering, 4-state Relationships with Body Wikilinks & Saved Checks UI, fail-closed Scope validation, Single Note Scope & whole-Vault Note Workspace search, Scope-aware export consistency, Design dual context, YAML round-trip semantic gate, fresh Windows 10 acceptance evidence, non-hardcoded release packaging gate with bundle verification, 4-file governance coherence, and self-contained Design Spec.
+Systematically address and verify all 12 repair contracts (R01~R12) from the PR #1 independent closure audit: UI-backend API contract parity, true zh-Hant/en bilingual rendering, 4-state Relationships with Multi-Folder selectors, Body Wikilinks & Saved Checks persistence, fail-closed Scope validation, Single Note Scope & whole-Vault Note Workspace search, Scope-aware export consistency, Design dual context, YAML round-trip semantic gate, fresh Windows 10 live HTTP acceptance evidence, non-hardcoded release packaging gate with bundle verification, 4-file governance coherence, and self-contained Design Spec.
 
 ### Tasks
 - [x] `M013-T01` [R01] Reconcile UI JavaScript API calls with backend server response shapes (`/api/scan`, `/api/discovery`, `/api/property`, `/api/design/*`, `/api/workspace/*`, `/api/refactor/plan`, `/api/relationships/*`, `/api/health`, `/api/export`, `/api/scope/*`).
 - [x] `M013-T02` [R02] Refactor UI to eliminate bilingual side-by-side labels; route 100% of user-visible strings through `app/ui/i18n.js` and `locales/{zh-Hant,en}.json`.
-- [x] `M013-T03` [R03] Expose 4-state classification (`VALID`, `BROKEN`, `AMBIGUOUS`, `OUTSIDE SELECTED TARGET`), Body Wikilinks, and Saved Checks UI management in Relationships view.
+- [x] `M013-T03` [R03] Expose 4-state classification (`VALID`, `BROKEN`, `AMBIGUOUS`, `OUTSIDE SELECTED TARGET`), multi-folder Source/Target selectors, Body Wikilinks, and Saved Checks UI management in Relationships view.
 - [x] `M013-T04` [R04] Enforce fail-closed Scope validation (unknown mode, empty folders, missing note fail closed with explicit errors; never fallback to Entire Vault).
 - [x] `M013-T05` [R05] Add Single Note Scope UI selector and ensure Note Workspace searches whole Vault with relative paths and duplicate-basename ambiguity warnings.
 - [x] `M013-T06` [R06] Align Scope-aware export payload with active UI view context.
 - [x] `M013-T07` [R07] Support dual context (Scope inventory vs Whole-Vault inventory) in Design suggestion and review.
 - [x] `M013-T08` [R08] Implement strict YAML serialization round-trip verification gate in Note Workspace.
-- [x] `M013-T09` [R09] Generate fresh Windows 10 Build 19045+ native acceptance evidence artifact.
+- [x] `M013-T09` [R09] Generate fresh Windows 10 Build 19045+ live HTTP native acceptance evidence artifact.
 - [x] `M013-T10` [R10] Upgrade `scripts/package_v110_release.py` to verify git clean status, test execution, fresh zip extraction, bundle verification, and git fsck.
 - [x] `M013-T11` [R11] Reconcile HANDOFF.md and eliminate stale residue across all 4 governance files.
 - [x] `M013-T12` [R12] Ensure `docs/specs/Obsidian_Property_Studio_v1.1.0_UIUX_vNext_Design_Spec.md` is committed and self-contained.
 - [x] `M013-T13` Author comprehensive `tests/test_ui_api_contracts.py` and `tests/test_v11_repairs.py`.
 
 ### Result
-`PASS` (Verified across 139 test cases in `tests/`, Windows 10 native acceptance test, and automated release packaging verification)
+`PASS` (Verified across 139 test cases in `tests/`, Windows 10 live HTTP native acceptance test, and automated release packaging verification)
 
 ---
 
@@ -431,7 +431,7 @@ Vault
   │
   └─ Relationships
        │
-       ├─ Property Links (Source Scope → Target Scope)
+       ├─ Property Links (Source Scope Multi-Folder → Target Scope Multi-Folder)
        ├─ Body Wikilinks (Analysis-only, Strict Read-only)
        │
        └─ Saved Relationship Checks (User-initiated, Reusable, Outside Vault)

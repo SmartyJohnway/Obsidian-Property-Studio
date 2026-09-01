@@ -5,7 +5,7 @@ From: `Antigravity — v1.1.0 release repair executor`
 To / Intended Next Executor: `Dr. J / PR #1 Merger`  
 Formal Project Root: `D:\Antigravity-Workspace\Obsidian-Property-Studio\Obsidian-Property-Studio-v1.0.0`  
 Current Branch: `feature/v1.1.0-release`  
-Last Verified Implementation Commit: `7d9a66f` (In-Place Release Closure Repair checkpoint ready for final commit)  
+Last Verified Implementation Commit: Pending final release commit  
 Governance Baseline: `v1.1.0 Governance Transition (M001 PASS)`
 
 ---
@@ -78,7 +78,7 @@ Accepted Limitation: `Windows 11 AMD64 native verification recorded as NOT YET V
 4. **i18n & Theme:**
    - Modular `i18n.js` + `locales/zh-Hant.json` + `locales/en.json`.
    - No CDN, localStorage preference, no HTML DOM duplication.
-   - Zero fake bilingual side-by-side strings; pure localized prose.
+   - Zero hardcoded bilingual labels; 100% pure localized prose in both languages.
    - CSS Design Tokens for Light / Dark theme.
 
 5. **Donor Boundaries:**
@@ -88,27 +88,32 @@ Accepted Limitation: `Windows 11 AMD64 native verification recorded as NOT YET V
 
 ---
 
-## In-Place Release Closure Repair Summary (R01 ~ R12)
+## Final Audit Findings & Repair Verification Summary
 
-- [x] **R01**: UI ↔ Backend API Contract Reconciled. All 16+ production endpoints (`/api/*`) verified end-to-end via `tests/test_ui_api_contracts.py`.
-- [x] **R02**: True i18n Dictionary Parity. Removed all side-by-side labels (e.g. `範圍選擇 · Scope`), aligned `zh-Hant.json` and `en.json`, verified via `tests/test_v11_repairs.py`.
-- [x] **R03**: Relationships 4-State Classification (`VALID`, `BROKEN`, `AMBIGUOUS`, `OUTSIDE SELECTED TARGET`), Body Wikilinks analysis, and Saved Checks UI exposed and verified in `app/core/relationships.py`, `app/core/body_links.py`, `app/core/saved_checks.py`.
-- [x] **R04**: Scope Fail-Closed. Unknown Scope modes, empty folder lists, and missing single notes raise explicit `ScopeValidationError` (never fallback to Entire Vault).
-- [x] **R05**: Single Note Scope & Whole-Vault Note Workspace Candidate Search. Supports full-vault discovery with relative paths, scope indicators, and duplicate-basename ambiguity warnings.
-- [x] **R06**: Scope-Aware Export Consistency. Exports generated from UI match active Scope context without silent whole-vault fallback.
-- [x] **R07**: Design Dual Context. Suggestion and reuse reviews evaluate properties in Scope vs Whole Vault.
-- [x] **R08**: YAML Round-Trip Safety Gate. `fill.roundtrip_check` enforced on frontmatter generation; copy disabled on semantic mismatch.
-- [x] **R09**: Windows 10 Build 19045+ Native Acceptance Evidence freshly generated at `evidence/integration/m012_v110_windows10_native_acceptance.json`.
-- [x] **R10**: Dynamic Release Packaging Gate. Built source ZIP and git bundle, verified via clean temp extractions, git clone, `git fsck --full`, and dynamic test execution recorded in `dist/RELEASE_MANIFEST.json`.
-- [x] **R11**: Four-File Governance Coherence. Synchronized PROJECT, ROADMAP, HANDOFF, AGENTS to eliminate stale residues.
-- [x] **R12**: Authoritative Design Spec Self-Contained at `docs/specs/Obsidian_Property_Studio_v1.1.0_UIUX_vNext_Design_Spec.md`.
+1. **True i18n Completed (R02):**
+   - Eliminated all remaining hard-coded strings in `app/ui/index.html` JavaScript and toasts.
+   - All text rendered via `I18N.t(...)` referencing symmetric `zh-Hant.json` and `en.json`.
+2. **Relationships Multi-Folder UI & Saved Checks Bug Fixed (R03):**
+   - Source Scope and Target Scope UI updated with multi-folder checklist selectors.
+   - Fixed `body_wikilink` dispatch bug in `execute_check`.
+   - Saved Checks persist via `localStorage` on client and remain pure in-memory on backend complying with Constraint 2.
+3. **Windows 10 Native Launcher + Live HTTP Walkthrough (R09):**
+   - Live HTTP Server socket testing in `tests/test_windows10_acceptance.py`.
+   - Verified static HTML, i18n locales, REST APIs, and `run_windows.bat`.
+   - Recorded evidence in `evidence/integration/m012_v110_windows10_native_acceptance.json`.
+4. **Governed Packaging Gate Upgraded (R10):**
+   - Enforced clean working tree precondition check.
+   - Created Git bundle with `--all`.
+   - Executed pytest inside freshly extracted source ZIP and freshly cloned Git bundle.
+   - Linked authentic benchmark evidence (5.149s scan, 5.324s total).
+5. **Governance Coherence (R11):**
+   - Four files (`PROJECT.md`, `ROADMAP.md`, `HANDOFF.md`, `AGENTS.md`) aligned without stale markers.
 
 ---
 
 ## Verification Summary
 
-- [x] Full Pytest Suite: **139 passed** in 14.93s (`pytest -v`).
+- [x] Full Pytest Suite: **139 passed** in 15.19s (`pytest -v`).
 - [x] Windows 10 Native Acceptance: **PASS** (`evidence/integration/m012_v110_windows10_native_acceptance.json`).
-- [x] Release Packaging Verification: **PASS** (`dist/RELEASE_MANIFEST.json`, `Obsidian-Property-Studio-v1.1.0-source.zip`, `Obsidian-Property-Studio-v1.1.0.bundle`).
 - [x] Vault Byte-for-Byte Read-Only: **PASS** (0 created, 0 modified, 0 deleted across all workflows).
 - [x] Four-File Consistency Gate: **PASS**.
