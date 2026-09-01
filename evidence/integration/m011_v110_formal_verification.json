@@ -1,13 +1,13 @@
 {
   "benchmark": {
     "vault_notes": 5040,
-    "scan_seconds": 5.062,
-    "inventory_seconds": 0.025,
-    "discovery_report_seconds": 0.008,
-    "relationship_inbox_seconds": 0.055,
-    "health_report_seconds": 0.067,
+    "scan_seconds": 4.399,
+    "inventory_seconds": 0.022,
+    "discovery_report_seconds": 0.007,
+    "relationship_inbox_seconds": 0.048,
+    "health_report_seconds": 0.060,
     "type_conversion_plan_seconds": 0.01,
-    "total_analysis_seconds": 5.227,
+    "total_analysis_seconds": 4.546,
     "environment": {
       "python": "3.13.7",
       "os": "Windows 10 Build 19045 AMD64",
@@ -19,7 +19,7 @@
     "passed": 140,
     "failed": 0,
     "skipped": 0,
-    "duration_seconds": 15.20,
+    "duration_seconds": 13.31,
     "contracts": {
       "V11-001": "PASS (tests/test_v11_i18n.py)",
       "V11-002": "PASS (tests/test_v11_scope.py)",
