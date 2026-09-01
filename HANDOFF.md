@@ -5,8 +5,9 @@ From: `Antigravity — v1.1.0 release repair executor`
 To / Intended Next Executor: `Dr. J / Human Owner Walkthrough Re-Verification`  
 Formal Project Root: `D:\Antigravity-Workspace\Obsidian-Property-Studio\Obsidian-Property-Studio-v1.0.0`  
 Current Branch: `feature/v1.1.0-release`  
-Last Verified Implementation Commit: `013242e74e4fe51a37c0f1624647c23eaaeeb299`  
+Last Verified Implementation Commit: `893977fc20c4c4ea3b1db142d7ce11e3b618820c`  
 Governance Baseline: `v1.1.0 Governance Transition (M001 PASS)`
+
 
 
 ---
@@ -42,7 +43,7 @@ Current Task: `M014-T12 Human Production Walkthrough Re-Verification`
 Last Verified Gate: `M013 — Full Verification Gate PASS`  
 Current Blocker: `NONE`  
 Next Action: `Human Owner re-verifies repaired M014 production UI on Windows 10 browser`  
-Automated Verification: `PASS (161/161 tests PASS)`  
+Automated Verification: `PASS (162/162 tests PASS)`  
 Human Verified Acceptance: `NOT YET VERIFIED (Awaiting Human Owner Walkthrough Re-Verification)`  
 Accepted Limitation: `Windows 11 AMD64 native verification recorded as NOT YET VERIFIED due to test host unavailability (accepted non-blocking release limitation per human approved contract).`
 
@@ -64,19 +65,23 @@ Accepted Limitation: `Windows 11 AMD64 native verification recorded as NOT YET V
    - Replaced generic target input with controlled Combobox (`refactorTargetPropSelect`) + explicit `➕ 建立新屬性名稱` input.
    - Convert Type exclusively shows target type dropdown (`refactorTargetTypeSelect`) with 8 supported types.
    - Real-time warning banner alerts on target name collisions with existing Vault properties.
-5. **Automated Regression Test Suite:**
-   - Added automated tests in `tests/test_ui_integrity.py` and `tests/test_m014_human_walkthrough.py` covering handler definition integrity, DOM element presence, and headless Node.js DOM startup smoke testing.
+5. **Note Workspace — Collapsible Folder Tree Browser (No 100-Note Limit):**
+   - Implemented hierarchical collapsible folder tree in Note Properties Workspace.
+   - Removed arbitrary 100-note truncation; users can comfortably drill down directory by directory across thousands of notes with instant expand/collapse-all controls.
+6. **Automated Regression Test Suite:**
+   - Added automated tests in `tests/test_ui_integrity.py` and `tests/test_m014_human_walkthrough.py` covering handler definition integrity, DOM element presence, headless Node.js DOM startup smoke testing, and folder tree contracts.
 
 ---
 
 ## Verification Summary
 
-- [x] Full Pytest Suite: **161 passed** in 13.11s (`pytest -v`).
+- [x] Full Pytest Suite: **162 passed** in 13.27s (`pytest -v`).
 - [x] Headless Browser DOM Startup Smoke: **PASS** (Zero uncaught JS errors, presets populated, CTAs wired).
 - [x] Live Server UI Smoke: **PASS** (`python scripts/ui_smoke.py`).
 - [x] 5,000-Note Benchmark: **PASS** (scan 4.321s, total analysis 4.471s, vault unchanged, `evidence/benchmark.json`).
 - [x] Vault Byte-for-Byte Read-Only: **PASS** (0 created, 0 modified, 0 deleted across all workflows).
 - [ ] Human Acceptance Re-Verification on Windows 10: **NOT YET VERIFIED** (Awaiting Dr. J browser walkthrough).
 - [x] Four-File Consistency Gate: **PASS**.
+
 
 

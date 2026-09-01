@@ -5,7 +5,7 @@
     "python": "3.13.7",
     "platform": "Windows-10-10.0.19045-SP0",
     "bind_default": "127.0.0.1 (loopback only)",
-    "bound_for_this_run": "127.0.0.1:12616",
+    "bound_for_this_run": "127.0.0.1:13280",
     "hostname": "C04N06"
   },
   "vault": "D:\\Antigravity-Workspace\\Obsidian-Property-Studio\\Obsidian-Property-Studio-v1.0.0\\fixtures\\vaults\\main_vault",
@@ -13,7 +13,7 @@
     {
       "step": "GET / (UI)",
       "http_status": 200,
-      "bytes": 96805,
+      "bytes": 102754,
       "title_present": true,
       "external_resource_references": 0
     },
@@ -37,7 +37,7 @@
         "skipped_path_count": 2,
         "issue_count": 5
       },
-      "scan_seconds": 0.0153
+      "scan_seconds": 0.0178
     },
     {
       "step": "POST /api/design/build",

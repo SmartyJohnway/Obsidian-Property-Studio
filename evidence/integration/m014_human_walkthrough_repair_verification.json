@@ -1,16 +1,16 @@
 {
   "contract": "M014_HUMAN_UI_UX_WALKTHROUGH_REPAIR_VERIFICATION",
   "app_version": "1.1.0",
-  "timestamp": "2026-09-01T22:48:00+08:00",
+  "timestamp": "2026-09-01T23:00:00+08:00",
   "project_state": "ACTIVE",
   "milestone": "M014",
   "milestone_status": "IN_PROGRESS",
   "automated_verification": {
     "status": "PASS",
-    "total_tests": 161,
-    "passed_tests": 161,
+    "total_tests": 162,
+    "passed_tests": 162,
     "failed_tests": 0,
-    "duration_seconds": 13.11,
+    "duration_seconds": 13.27,
     "headless_dom_startup_smoke": "PASS",
     "live_http_ui_smoke": "PASS"
   },
@@ -40,9 +40,13 @@
       "status": "FIXED",
       "summary": "Replaced generic target input with operation-aware controlled controls: Combobox of existing properties + explicit new name creation input for Rename/Merge, target type select for Convert Type, and real-time name collision warning banner."
     },
+    "note_workspace_collapsible_folder_tree": {
+      "status": "FIXED",
+      "summary": "Implemented collapsible hierarchical folder tree with expand/collapse-all controls, removing 100-note arbitrary truncation to support unlimited notes comfortably across deep folder hierarchies."
+    },
     "automated_regressions": {
       "status": "FIXED",
-      "summary": "Added tests in test_ui_integrity.py and test_m014_human_walkthrough.py enforcing all init() setup calls are defined, DOM IDs exist, and headless Node.js DOM startup succeeds."
+      "summary": "Added tests in test_ui_integrity.py and test_m014_human_walkthrough.py enforcing all init() setup calls are defined, DOM IDs exist, headless Node.js DOM startup succeeds, and folder tree contract holds."
     }
   }
 }
