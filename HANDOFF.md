@@ -116,8 +116,8 @@ Next Action: `None. Obsidian Property Studio v1.1.0 release and formal integrati
 
 ## Final Release Artifacts & Checksums (v1.1.0)
 
-- **Source ZIP:** `dist/Obsidian-Property-Studio-v1.1.0-source.zip` (SHA-256: `327a58c04bcad5422d595c74be0274a0ee4e6174f24e628ad8183b0b4171e537`)
-- **Git Bundle:** `dist/Obsidian-Property-Studio-v1.1.0.bundle` (SHA-256: `158cfce157145ca3a77418d2df9e38c2b5e568be6a7ba9a024e19cb5c765475c`)
+- **Source ZIP:** `dist/Obsidian-Property-Studio-v1.1.0-source.zip` (SHA-256: `23ad2b647d27abab58c1cd39372048ab6a489bcd4e432476ad5573a36ae91623`)
+- **Git Bundle:** `dist/Obsidian-Property-Studio-v1.1.0.bundle` (SHA-256: `eab84361a194ece8c84b5ee5dde4858cbba1244ebd2a28ccd23ecbdc06ef197f`)
 - **Release Manifest:** `dist/RELEASE_MANIFEST.json`
 - **Formal Verdict:** `PROPERTY_STUDIO_V1_1_0_RELEASE_PASS_WITH_LIMITATIONS`
 
