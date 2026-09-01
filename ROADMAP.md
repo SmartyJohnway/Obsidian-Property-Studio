@@ -12,12 +12,12 @@
 #### Current State
 
 Project State: `ACTIVE`  
-Current Milestone: `M009 — Saved Relationship Checks Management`  
+Current Milestone: `M010 — Scope-Aware Property Refactor Planner`  
 Current Milestone Status: `IN_PROGRESS`  
-Current Task: `M009-T01`  
-Last Verified Gate: `M008 — Body Wikilink Relationship Analysis PASS` (Baseline: `M001 PASS`)  
+Current Task: `M010-T01`  
+Last Verified Gate: `M009 — Saved Relationship Checks Management PASS` (Baseline: `M001 PASS`)  
 Current Blocker: `None`  
-Next Action: `Define Saved Relationship Checks schema and persistence in app/core/saved_checks.py, expose API endpoints outside Vault, and implement V11-015 regression test.`  
+Next Action: `Update Refactor Planner in app/core/refactor.py to accept Scope boundaries, limit migration plans to Scope notes without silent expansion, and implement V11-017 regression test.`  
 Last Updated: `2026-09-01`
 
 ---
@@ -356,29 +356,33 @@ Implement Body Wikilink Analysis allowing users to analyze `[[Wikilinks]]` insid
 
 # M009 — Saved Relationship Checks Management
 
-Status: `PLANNED`
+Status: `PASS`
 
 ### Objective
 Implement user-initiated Saved Relationship Checks allowing users to name, annotate, save, reload, and re-execute ad-hoc relationship queries, stored entirely outside the Vault.
 
 ### Tasks
-- [ ] `M009-T01` Define versioned schema for Saved Relationship Checks (name, notes, source_scope, target_scope, link_type, property_name, created_at).
-- [ ] `M009-T02` Implement client/backend persistence layer for Saved Checks (localStorage / application app-data outside Vault).
-- [ ] `M009-T03` Implement UI "Save this check" action in Relationship analysis view.
-- [ ] `M009-T04` Implement Saved Checks management panel (list, execute, edit notes, delete/archive, export/import).
-- [ ] `M009-T05` Implement `V11-014` (no default saved checks on clean initialization).
-- [ ] `M009-T06` Implement `V11-015` (round-trip persistence and execution of saved checks).
-- [ ] `M009-T07` Confirm results remain advisory with no enforced violation semantics.
+- [x] `M009-T01` Define versioned schema for Saved Relationship Checks (name, notes, source_scope, target_scope, link_type, property_name, created_at).
+- [x] `M009-T02` Implement client/backend persistence layer for Saved Checks (localStorage / application app-data outside Vault).
+- [x] `M009-T03` Implement UI "Save this check" action in Relationship analysis view.
+- [x] `M009-T04` Implement Saved Checks management panel (list, execute, edit notes, delete/archive, export/import).
+- [x] `M009-T05` Implement `V11-014` (no default saved checks on clean initialization).
+- [x] `M009-T06` Implement `V11-015` (round-trip persistence and execution of saved checks).
+- [x] `M009-T07` Confirm results remain advisory with no enforced violation semantics.
 
 ### Acceptance Criteria
-- [ ] `M009-AC01` `V11-014` PASS.
-- [ ] `M009-AC02` `V11-015` PASS.
-- [ ] `M009-AC03` User can save, re-run, annotate, and delete relationship checks.
-- [ ] `M009-AC04` Saved checks are never written into the Vault directory.
-- [ ] `M009-AC05` Saved checks are purely advisory.
+- [x] `M009-AC01` `V11-014` PASS.
+- [x] `M009-AC02` `V11-015` PASS.
+- [x] `M009-AC03` User can save, re-run, annotate, and delete relationship checks.
+- [x] `M009-AC04` Saved checks are never written into the Vault directory.
+- [x] `M009-AC05` Saved checks are purely advisory.
+
+### Verification / Evidence
+- `tests/test_v11_saved_checks.py` (2/2 tests passed in 0.10s)
+- Full automated test suite (117/117 passed in 12.42s)
 
 ### Result
-`NOT YET VERIFIED`
+`PASS`
 
 ---
 

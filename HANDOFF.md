@@ -39,12 +39,12 @@ Historical reference:
 ## Current Milestone / Task
 
 Project State: `ACTIVE`  
-Current Milestone: `M009 — Saved Relationship Checks Management`  
+Current Milestone: `M010 — Scope-Aware Property Refactor Planner`  
 Current Milestone Status: `IN_PROGRESS`  
-Current Task: `M009-T01 — Define Saved Relationship Checks domain model and persistence in app/core/saved_checks.py`  
-Last Verified Gate: `M008 — Body Wikilink Relationship Analysis PASS` (Baseline: `M001 PASS`)  
+Current Task: `M010-T01 — Update Refactor Planner in app/core/refactor.py for Scope boundaries`  
+Last Verified Gate: `M009 — Saved Relationship Checks Management PASS` (Baseline: `M001 PASS`)  
 Current Blocker: `None`  
-Next Action: `Define Saved Relationship Checks schema and persistence in app/core/saved_checks.py, expose API endpoints outside Vault, and author regression test for V11-015.`
+Next Action: `Update Refactor Planner in app/core/refactor.py to accept Scope boundaries, limit migration plans strictly to Scope notes without silent expansion, and author regression test for V11-017.`
 
 ---
 
@@ -99,15 +99,15 @@ Next Action: `Define Saved Relationship Checks schema and persistence in app/cor
 - [x] `M006`: Note Properties Workspace (Existing Note inspect/edit/diff + Blank Fill, fail-closed corrupt/duplicate-key protection) implemented and verified (`V11-005`..`008` PASS, 109/109 tests PASS).
 - [x] `M007`: Scope-Aware Relationship Analysis (Property Links with Multi-Folder Source/Target & OUTSIDE SELECTED TARGET) implemented and verified (`V11-009`..`011`, `V11-014` PASS, 112/112 tests PASS).
 - [x] `M008`: Body Wikilink Relationship Analysis (Strict Read-Only, zero byte change, model/API separation) implemented and verified (`V11-012`..`013` PASS, 115/115 tests PASS).
-- [x] Full test suite executed: **115 passed in 12.29s** (Python 3.13.7).
+- [x] `M009`: Saved Relationship Checks Management (Advisory, zero default rules, external storage persistence outside Vault) implemented and verified (`V11-014`..`015` PASS, 117/117 tests PASS).
+- [x] Full test suite executed: **117 passed in 12.42s** (Python 3.13.7).
 - [x] Four-file cross-consistency check passed.
 
 ---
 
 ## Verification Not Yet Performed (v1.1.0 New Scope)
 
-- `M009` Saved Relationship Checks: `IN_PROGRESS` (`V11-014`..`015`)
-- `M010` Scope-Aware Refactor Planner: `PLANNED` (`V11-017`)
+- `M010` Scope-Aware Refactor Planner: `IN_PROGRESS` (`V11-017`)
 - `M011` Full Regression & 5,000-note Benchmark: `PLANNED` (`V11-018`)
 - `M012` Windows Native Acceptance & Release Closure: `PLANNED`
 

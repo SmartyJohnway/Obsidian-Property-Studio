@@ -30,6 +30,7 @@ from .core import (
     proposal,
     refactor,
     relationships,
+    saved_checks,
     scope,
 )
 from .core.manifest import assert_unchanged, vault_manifest
@@ -57,6 +58,7 @@ class Store:
         self.scope: ScopeSpec = ScopeSpec()
         self.baseline_manifest: dict[str, Any] | None = None
         self.vault_path: str | None = None
+        self.saved_checks_store = saved_checks.SavedChecksStore()
 
     def set_scan(self, scan, baseline: dict[str, Any] | None) -> None:
         with self.lock:
@@ -293,6 +295,36 @@ def api_relationships_body(body: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def api_saved_checks_list(_body: dict[str, Any]) -> dict[str, Any]:
+    checks = STORE.saved_checks_store.list_checks()
+    return {"checks": [c.to_dict() for c in checks], "total": len(checks)}
+
+
+def api_saved_checks_save(body: dict[str, Any]) -> dict[str, Any]:
+    chk = saved_checks.SavedCheck.from_dict(body.get("check") or body)
+    STORE.saved_checks_store.save_check(chk)
+    return {"status": "saved", "check": chk.to_dict()}
+
+
+def api_saved_checks_delete(body: dict[str, Any]) -> dict[str, Any]:
+    check_id = str(body.get("id", "")).strip()
+    if not check_id:
+        raise ApiError("id is required", 400)
+    deleted = STORE.saved_checks_store.delete_check(check_id)
+    return {"deleted": deleted, "id": check_id}
+
+
+def api_saved_checks_execute(body: dict[str, Any]) -> dict[str, Any]:
+    scan = STORE.require_scan()
+    check_id = str(body.get("id", "")).strip()
+    if not check_id:
+        raise ApiError("id is required", 400)
+    try:
+        return STORE.saved_checks_store.execute_check(scan, check_id)
+    except KeyError as exc:
+        raise ApiError(str(exc), 404) from exc
+
+
 def api_health(body: dict[str, Any]) -> dict[str, Any]:
     STORE.require_scan()
     scoped_scan = STORE.get_scoped_scan()
@@ -412,6 +444,10 @@ ROUTES: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "/api/refactor/plan": api_refactor_plan,
     "/api/relationships": api_relationships,
     "/api/relationships/body": api_relationships_body,
+    "/api/relationships/saved/list": api_saved_checks_list,
+    "/api/relationships/saved/save": api_saved_checks_save,
+    "/api/relationships/saved/delete": api_saved_checks_delete,
+    "/api/relationships/saved/execute": api_saved_checks_execute,
     "/api/health": api_health,
     "/api/proposal/import": api_proposal_import,
     "/api/export": api_export,
