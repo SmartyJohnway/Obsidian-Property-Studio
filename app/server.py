@@ -21,6 +21,7 @@ from typing import Any, Callable
 from urllib.parse import urlparse
 
 from .core import (
+    body_links,
     design,
     exports,
     health,
@@ -278,6 +279,20 @@ def api_relationships(body: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def api_relationships_body(body: dict[str, Any]) -> dict[str, Any]:
+    scan = STORE.require_scan()
+    src_data = body.get("source_scope")
+    source_scope = ScopeSpec.from_dict(src_data) if src_data else STORE.scope
+    tgt_data = body.get("target_scope")
+    target_scope = ScopeSpec.from_dict(tgt_data) if tgt_data else None
+
+    return body_links.analyze_body_wikilinks(
+        scan,
+        source_scope=source_scope,
+        target_scope=target_scope,
+    )
+
+
 def api_health(body: dict[str, Any]) -> dict[str, Any]:
     STORE.require_scan()
     scoped_scan = STORE.get_scoped_scan()
@@ -396,6 +411,7 @@ ROUTES: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "/api/notes/candidates": api_note_candidates,
     "/api/refactor/plan": api_refactor_plan,
     "/api/relationships": api_relationships,
+    "/api/relationships/body": api_relationships_body,
     "/api/health": api_health,
     "/api/proposal/import": api_proposal_import,
     "/api/export": api_export,

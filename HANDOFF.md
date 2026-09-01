@@ -39,12 +39,12 @@ Historical reference:
 ## Current Milestone / Task
 
 Project State: `ACTIVE`  
-Current Milestone: `M008 — Body Wikilink Relationship Analysis (Strict Read-Only)`  
+Current Milestone: `M009 — Saved Relationship Checks Management`  
 Current Milestone Status: `IN_PROGRESS`  
-Current Task: `M008-T01 — Implement Body Wikilink extractor in app/core/body_links.py`  
-Last Verified Gate: `M007 — Scope-Aware Relationship Analysis PASS` (Baseline: `M001 PASS`)  
+Current Task: `M009-T01 — Define Saved Relationship Checks domain model and persistence in app/core/saved_checks.py`  
+Last Verified Gate: `M008 — Body Wikilink Relationship Analysis PASS` (Baseline: `M001 PASS`)  
 Current Blocker: `None`  
-Next Action: `Implement Body Wikilink extractor in app/core/body_links.py, separate Property Link and Body Wikilink results, and author regression tests for V11-012..013.`
+Next Action: `Define Saved Relationship Checks schema and persistence in app/core/saved_checks.py, expose API endpoints outside Vault, and author regression test for V11-015.`
 
 ---
 
@@ -98,15 +98,15 @@ Next Action: `Implement Body Wikilink extractor in app/core/body_links.py, separ
 - [x] `M005`: Scope-Aware Discover & Property Health isolation implemented and verified (`V11-016` PASS, 105/105 tests PASS).
 - [x] `M006`: Note Properties Workspace (Existing Note inspect/edit/diff + Blank Fill, fail-closed corrupt/duplicate-key protection) implemented and verified (`V11-005`..`008` PASS, 109/109 tests PASS).
 - [x] `M007`: Scope-Aware Relationship Analysis (Property Links with Multi-Folder Source/Target & OUTSIDE SELECTED TARGET) implemented and verified (`V11-009`..`011`, `V11-014` PASS, 112/112 tests PASS).
-- [x] Full test suite executed: **112 passed in 13.29s** (Python 3.13.7).
+- [x] `M008`: Body Wikilink Relationship Analysis (Strict Read-Only, zero byte change, model/API separation) implemented and verified (`V11-012`..`013` PASS, 115/115 tests PASS).
+- [x] Full test suite executed: **115 passed in 12.29s** (Python 3.13.7).
 - [x] Four-file cross-consistency check passed.
 
 ---
 
 ## Verification Not Yet Performed (v1.1.0 New Scope)
 
-- `M008` Body Wikilink Analysis (Strict Read-Only): `IN_PROGRESS` (`V11-012`..`013`)
-- `M009` Saved Relationship Checks: `PLANNED` (`V11-014`..`015`)
+- `M009` Saved Relationship Checks: `IN_PROGRESS` (`V11-014`..`015`)
 - `M010` Scope-Aware Refactor Planner: `PLANNED` (`V11-017`)
 - `M011` Full Regression & 5,000-note Benchmark: `PLANNED` (`V11-018`)
 - `M012` Windows Native Acceptance & Release Closure: `PLANNED`

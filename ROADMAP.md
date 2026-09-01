@@ -12,12 +12,12 @@
 #### Current State
 
 Project State: `ACTIVE`  
-Current Milestone: `M008 — Body Wikilink Relationship Analysis (Strict Read-Only)`  
+Current Milestone: `M009 — Saved Relationship Checks Management`  
 Current Milestone Status: `IN_PROGRESS`  
-Current Task: `M008-T01`  
-Last Verified Gate: `M007 — Scope-Aware Relationship Analysis PASS` (Baseline: `M001 PASS`)  
+Current Task: `M009-T01`  
+Last Verified Gate: `M008 — Body Wikilink Relationship Analysis PASS` (Baseline: `M001 PASS`)  
 Current Blocker: `None`  
-Next Action: `Implement Body Wikilink extractor in app/core/body_links.py, separate Property Link and Body Wikilink results, and implement V11-012..013 regression tests.`  
+Next Action: `Define Saved Relationship Checks schema and persistence in app/core/saved_checks.py, expose API endpoints outside Vault, and implement V11-015 regression test.`  
 Last Updated: `2026-09-01`
 
 ---
@@ -100,7 +100,7 @@ Establish the formal v1.1.0 governance baseline, archive the v1.0.0 roadmap, upd
 - [x] `M001-T01` Re-enter project following mandatory order: PROJECT → ROADMAP → AGENTS → HANDOFF → git status/log → test suite.
 - [x] `M001-T02` Inspect `Obsidian_Property_Studio_v1.1.0_UIUX_vNext_Design_Spec.md`, `index_areaagentB.html`, and `index_areaagentD.html`.
 - [x] `M001-T03` Archive v1.0.0 ROADMAP.md to `docs/archive/ROADMAP_v1.0.0.md` and verify file hash.
-- [x] `M001-T04` Update `PROJECT.md` with v1.1.0 Product Truth, Scope, Success Criteria (SC-16..22), Requirements (REQ-024..035), Non-goals, and Decisions (DEC-021..029).
+- [x] `M001-T04` Update `PROJECT.md` with v1.1.0 Product Truth, Scope, Success Criteria (SC-16..22), Requirements (REQ-024..035), Non-goals, decisions (DEC-021..029).
 - [x] `M001-T05` Author new v1.1.0 active `ROADMAP.md` with discrete milestones M001~M012.
 - [x] `M001-T06` Update `AGENTS.md` Part B with v1.1.0 specific operating rules and donor boundaries.
 - [x] `M001-T07` Verify baseline test suite (all 95 v1.0.0 tests PASS).
@@ -324,29 +324,33 @@ Upgrade Relationship Analysis to support custom Multi-folder Source Scope and Mu
 
 # M008 — Body Wikilink Relationship Analysis (Strict Read-Only)
 
-Status: `PLANNED`
+Status: `PASS`
 
 ### Objective
 Implement Body Wikilink Analysis allowing users to analyze `[[Wikilinks]]` inside Markdown note bodies across Source and Target Scopes, keeping analysis strictly read-only and strictly separated from Property Links.
 
 ### Tasks
-- [ ] `M008-T01` Implement lightweight Markdown body Wikilink extractor in `app/core/body_links.py`.
-- [ ] `M008-T02` Connect extracted body links to Scope-aware relationship analyzer.
-- [ ] `M008-T03` Separate Property Link findings and Body Wikilink findings in domain models and API responses.
-- [ ] `M008-T04` Update UI Relationships view to offer Relationship Source toggle (Property Links / Body Wikilinks) or separated tabs.
-- [ ] `M008-T05` Implement `V11-012` (Property Link / Body Wikilink result separation).
-- [ ] `M008-T06` Implement `V11-013` (strict read-only body analysis; zero byte changes to note bodies).
-- [ ] `M008-T07` Verify that no feature, API, or button exists to rewrite prose or auto-repair body links.
+- [x] `M008-T01` Implement lightweight Markdown body Wikilink extractor in `app/core/body_links.py`.
+- [x] `M008-T02` Connect extracted body links to Scope-aware relationship analyzer.
+- [x] `M008-T03` Separate Property Link findings and Body Wikilink findings in domain models and API responses.
+- [x] `M008-T04` Update UI Relationships view to offer Relationship Source toggle (Property Links / Body Wikilinks) or separated tabs.
+- [x] `M008-T05` Implement `V11-012` (Property Link / Body Wikilink result separation).
+- [x] `M008-T06` Implement `V11-013` (strict read-only body analysis; zero byte changes to note bodies).
+- [x] `M008-T07` Verify that no feature, API, or button exists to rewrite prose or auto-repair body links.
 
 ### Acceptance Criteria
-- [ ] `M008-AC01` `V11-012` PASS.
-- [ ] `M008-AC02` `V11-013` PASS.
-- [ ] `M008-AC03` Body Wikilinks are correctly extracted and analyzed across Scopes.
-- [ ] `M008-AC04` Property Links and Body Wikilinks are displayed with separate metrics and labels.
-- [ ] `M008-AC05` Note bodies are strictly read-only and never modified.
+- [x] `M008-AC01` `V11-012` PASS.
+- [x] `M008-AC02` `V11-013` PASS.
+- [x] `M008-AC03` Body Wikilinks are correctly extracted and analyzed across Scopes.
+- [x] `M008-AC04` Property Links and Body Wikilinks are displayed with separate metrics and labels.
+- [x] `M008-AC05` Note bodies are strictly read-only and never modified.
+
+### Verification / Evidence
+- `tests/test_v11_body_links.py` (3/3 tests passed in 0.13s)
+- Full automated test suite (115/115 passed in 12.29s)
 
 ### Result
-`NOT YET VERIFIED`
+`PASS`
 
 ---
 
