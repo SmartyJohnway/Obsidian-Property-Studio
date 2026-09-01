@@ -20,7 +20,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Callable
 from urllib.parse import urlparse
 
-from .core import design, exports, health, inventory, proposal, refactor, relationships
+from .core import design, exports, health, inventory, proposal, refactor, relationships, scope
 from .core.manifest import assert_unchanged, vault_manifest
 from .core.fill import fill_preview
 from .core.model import (
@@ -30,8 +30,9 @@ from .core.model import (
     Schema,
 )
 from .core.scanner import ScanOptions, VaultPathError, note_name_index, scan_vault
+from .core.scope import ScopeSpec, extract_vault_folders, filter_scan_by_scope
 
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.1.0"
 UI_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui")
 
 
@@ -42,12 +43,14 @@ class Store:
         self.lock = threading.Lock()
         self.scan = None
         self.inventory = None
+        self.scope: ScopeSpec = ScopeSpec()
         self.baseline_manifest: dict[str, Any] | None = None
         self.vault_path: str | None = None
 
     def set_scan(self, scan, baseline: dict[str, Any] | None) -> None:
         with self.lock:
             self.scan = scan
+            self.scope = ScopeSpec()  # Reset to entire vault on new scan
             self.inventory = inventory.build_inventory(scan)
             self.vault_path = scan.vault_path
             if baseline is not None:
@@ -57,6 +60,12 @@ class Store:
         if self.scan is None:
             raise ApiError("Select and scan a vault first.", 400)
         return self.scan
+
+    def get_scoped_scan(self):
+        scan = self.require_scan()
+        if self.scope.mode == scope.ScopeMode.ENTIRE_VAULT:
+            return scan
+        return filter_scan_by_scope(scan, self.scope)
 
 
 class ApiError(Exception):
@@ -270,9 +279,43 @@ def api_vault_verify(_body: dict[str, Any]) -> dict[str, Any]:
     return report
 
 
+def api_scope_folders(_body: dict[str, Any]) -> dict[str, Any]:
+    scan = STORE.require_scan()
+    folders = extract_vault_folders(scan.notes)
+    return {"folders": folders, "total_folders": len(folders)}
+
+
+def api_scope_apply(body: dict[str, Any]) -> dict[str, Any]:
+    scan = STORE.require_scan()
+    spec = ScopeSpec.from_dict(body.get("scope") or body)
+    with STORE.lock:
+        STORE.scope = spec
+        scoped_scan = STORE.get_scoped_scan()
+        STORE.inventory = inventory.build_inventory(scoped_scan)
+
+    return {
+        "scope": spec.to_dict(),
+        "notes_in_scope": scoped_scan.note_count,
+        "notes_with_properties": scoped_scan.notes_with_properties,
+    }
+
+
+def api_scope_current(_body: dict[str, Any]) -> dict[str, Any]:
+    scan = STORE.require_scan()
+    scoped = STORE.get_scoped_scan()
+    return {
+        "scope": STORE.scope.to_dict(),
+        "notes_in_scope": scoped.note_count,
+        "total_vault_notes": scan.note_count,
+    }
+
+
 ROUTES: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "/api/meta": api_meta,
     "/api/scan": api_scan,
+    "/api/scope/folders": api_scope_folders,
+    "/api/scope/apply": api_scope_apply,
+    "/api/scope/current": api_scope_current,
     "/api/discovery": api_discovery,
     "/api/property": api_property_detail,
     "/api/design/suggest": api_design_suggest,

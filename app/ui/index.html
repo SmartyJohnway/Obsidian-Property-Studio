@@ -1160,6 +1160,7 @@ function setupVaultHandlers() {
 
       toast("Vault scan complete");
       await loadDiscovery();
+      await loadScopeFolders();
     } catch (e) {
       toast(e.message, true);
     } finally {
@@ -1827,25 +1828,70 @@ function setupProposalHandlers() {
 }
 
 /* -------------------------------- scope UI handler -------------------------------- */
+async function loadScopeFolders() {
+  try {
+    const d = await api("/api/scope/folders", {});
+    const list = $("scopeFolderList");
+    if (!d.folders || !d.folders.length) {
+      list.innerHTML = '<div class="empty">No folders found in vault.</div>';
+      return;
+    }
+    list.innerHTML = d.folders.map(f => `
+      <label style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px;cursor:pointer">
+        <input type="checkbox" class="scope-folder-cb" value="${esc(f)}" />
+        <span>📁 <code>${esc(f)}</code></span>
+      </label>
+    `).join("");
+  } catch (e) {
+    console.error("Failed to load scope folders", e);
+  }
+}
+
 function setupScopeHandlers() {
   $("scopeModeSelect").onchange = () => {
     const isFolders = $("scopeModeSelect").value === "folders";
     $("scopeFolderSelector").style.display = isFolders ? "block" : "none";
   };
-  $("applyScopeBtn").onclick = () => {
+
+  $("applyScopeBtn").onclick = async () => {
     const mode = $("scopeModeSelect").value;
     const sub = $("scopeIncludeSubfolders").value === "true";
-    S.scope.mode = mode;
-    S.scope.includeSubfolders = sub;
-    $("currentScopeLabel").textContent = mode === "entire_vault" ? "Entire Vault" : "Selected Folders";
-    toast("Scope applied");
+    const selectedFolders = Array.from(document.querySelectorAll(".scope-folder-cb:checked")).map(cb => cb.value);
+
+    if (mode === "folders" && !selectedFolders.length) {
+      return toast("Please select at least one folder", true);
+    }
+
+    const scopeSpec = {
+      mode: mode,
+      folders: selectedFolders,
+      include_subfolders: sub
+    };
+
+    try {
+      const res = await api("/api/scope/apply", { scope: scopeSpec });
+      S.scope = res.scope;
+      $("currentScopeLabel").textContent = mode === "entire_vault" ? "Entire Vault" : `${selectedFolders.length} folder(s) (${res.notes_in_scope} notes)`;
+      toast("Scope applied (" + res.notes_in_scope + " notes in scope)");
+      await loadDiscovery();
+    } catch (e) {
+      toast(e.message, true);
+    }
   };
-  $("resetScopeBtn").onclick = () => {
-    $("scopeModeSelect").value = "entire_vault";
-    $("scopeFolderSelector").style.display = "none";
-    S.scope.mode = "entire_vault";
-    $("currentScopeLabel").textContent = "Entire Vault";
-    toast("Scope reset to Entire Vault");
+
+  $("resetScopeBtn").onclick = async () => {
+    try {
+      const res = await api("/api/scope/apply", { scope: { mode: "entire_vault" } });
+      $("scopeModeSelect").value = "entire_vault";
+      $("scopeFolderSelector").style.display = "none";
+      document.querySelectorAll(".scope-folder-cb").forEach(cb => cb.checked = false);
+      S.scope = res.scope;
+      $("currentScopeLabel").textContent = "Entire Vault";
+      toast("Scope reset to Entire Vault");
+      await loadDiscovery();
+    } catch (e) {
+      toast(e.message, true);
+    }
   };
 }
 

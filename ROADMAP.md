@@ -12,12 +12,12 @@
 ### Current State
 
 Project State: `ACTIVE`  
-Current Milestone: `M004 — Formal Scope Domain Model & In-Memory Engine`  
+Current Milestone: `M005 — Scope-Aware Discover & Property Health`  
 Current Milestone Status: `IN_PROGRESS`  
-Current Task: `M004-T01`  
-Last Verified Gate: `M003 — Lightweight Bilingual i18n & Theme Engine PASS` (Baseline: `M001 PASS`)  
+Current Task: `M005-T01`  
+Last Verified Gate: `M004 — Formal Scope Domain Model & In-Memory Engine PASS` (Baseline: `M001 PASS`)  
 Current Blocker: `None`  
-Next Action: `Define backend ScopeSpec domain model in app/core/scope.py and build in-memory filtering engine.`  
+Next Action: `Update Discover and Health modules to evaluate within active Scope and implement V11-016 regression test.`  
 Last Updated: `2026-09-01`
 
 ---
@@ -191,29 +191,33 @@ Implement lightweight, local-first bilingual support (zh-Hant / English) and Lig
 
 # M004 — Formal Scope Domain Model & In-Memory Engine
 
-Status: `PLANNED`
+Status: `PASS`
 
 ### Objective
 Implement the backend Scope domain model (`ScopeSpec`), supporting Entire Vault, One Folder, Multi-Folder, Single Note, and `include_subfolders` with in-memory derivation without full Vault rescans.
 
 ### Tasks
-- [ ] `M004-T01` Define backend `ScopeSpec` domain dataclass and validation schema in `app/core/scope.py`.
-- [ ] `M004-T02` Implement Scope evaluation engine: folder matching, subfolder recursion, note path union, and deduplication.
-- [ ] `M004-T03` Implement in-memory Scope filter over `ScanResult` indexes (notes, properties, links).
-- [ ] `M004-T04` Expose Scope configuration and note listing endpoints in backend server API.
-- [ ] `M004-T05` Implement backend tests for Multi-folder union and nested subfolder logic.
-- [ ] `M004-T06` Implement `V11-002` (multi-folder union/dedupe), `V11-003` (subfolder filter semantics), and `V11-004` (in-memory Scope derivation without disk rescan).
-- [ ] `M004-T07` Integrate Scope Selector modal/drawer in UI Context section.
+- [x] `M004-T01` Define backend `ScopeSpec` domain dataclass and validation schema in `app/core/scope.py`.
+- [x] `M004-T02` Implement Scope evaluation engine: folder matching, subfolder recursion, note path union, and deduplication.
+- [x] `M004-T03` Implement in-memory Scope filter over `ScanResult` indexes (notes, properties, links).
+- [x] `M004-T04` Expose Scope configuration and note listing endpoints in backend server API.
+- [x] `M004-T05` Implement backend tests for Multi-folder union and nested subfolder logic.
+- [x] `M004-T06` Implement `V11-002` (multi-folder union/dedupe), `V11-003` (subfolder filter semantics), and `V11-004` (in-memory Scope derivation without disk rescan).
+- [x] `M004-T07` Integrate Scope Selector modal/drawer in UI Context section.
 
 ### Acceptance Criteria
-- [ ] `M004-AC01` `V11-002` PASS.
-- [ ] `M004-AC02` `V11-003` PASS.
-- [ ] `M004-AC03` `V11-004` PASS.
-- [ ] `M004-AC04` Multi-folder Scope accurately unions note sets and deduplicates overlapping paths.
-- [ ] `M004-AC05` Scope switching does not trigger disk I/O rescan.
+- [x] `M004-AC01` `V11-002` PASS.
+- [x] `M004-AC02` `V11-003` PASS.
+- [x] `M004-AC03` `V11-004` PASS.
+- [x] `M004-AC04` Multi-folder Scope accurately unions note sets and deduplicates overlapping paths.
+- [x] `M004-AC05` Scope switching does not trigger disk I/O rescan.
+
+### Verification / Evidence
+- `tests/test_v11_scope.py` (5/5 tests passed in 0.06s)
+- Full automated test suite (104/104 passed in 12.34s)
 
 ### Result
-`NOT YET VERIFIED`
+`PASS`
 
 ---
 
