@@ -321,6 +321,7 @@ class Handler(BaseHTTPRequestHandler):
             ".html": "text/html; charset=utf-8",
             ".js": "text/javascript; charset=utf-8",
             ".css": "text/css; charset=utf-8",
+            ".json": "application/json; charset=utf-8",
             ".svg": "image/svg+xml",
         }.get(os.path.splitext(full)[1], "application/octet-stream")
         with open(full, "rb") as fh:

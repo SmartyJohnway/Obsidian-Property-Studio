@@ -9,15 +9,15 @@
 
 ---
 
-## Current State
+### Current State
 
 Project State: `ACTIVE`  
-Current Milestone: `M003 — Lightweight Bilingual i18n & Theme Engine`  
+Current Milestone: `M004 — Formal Scope Domain Model & In-Memory Engine`  
 Current Milestone Status: `IN_PROGRESS`  
-Current Task: `M003-T01`  
-Last Verified Gate: `M002 — Modern UI Shell & Design System PASS` (Baseline: `M001 PASS`)  
+Current Task: `M004-T01`  
+Last Verified Gate: `M003 — Lightweight Bilingual i18n & Theme Engine PASS` (Baseline: `M001 PASS`)  
 Current Blocker: `None`  
-Next Action: `Implement modular i18n client engine in app/ui/i18n.js and translation dictionaries in app/ui/locales/.`  
+Next Action: `Define backend ScopeSpec domain model in app/core/scope.py and build in-memory filtering engine.`  
 Last Updated: `2026-09-01`
 
 ---
@@ -154,35 +154,38 @@ Implement the v1.1.0 modern UI shell in `app/ui/` by harvesting visual hierarchy
 ### Result
 `PASS`
 
-
 ---
 
 # M003 — Lightweight Bilingual i18n & Theme Engine
 
-Status: `PLANNED`
+Status: `PASS`
 
 ### Objective
 Implement lightweight, local-first bilingual support (zh-Hant / English) and Light / Dark theme switching with localStorage persistence and no CDN dependencies.
 
 ### Tasks
-- [ ] `M003-T01` Create `app/ui/i18n.js` client translation engine supporting key lookup and parameter interpolation (`{count}`).
-- [ ] `M003-T02` Author complete `app/ui/locales/zh-Hant.json` translation dictionary.
-- [ ] `M003-T03` Author complete `app/ui/locales/en.json` translation dictionary.
-- [ ] `M003-T04` Wire i18n switcher in top navigation, updating `<html lang>` and localStorage.
-- [ ] `M003-T05` Implement Light / Dark theme CSS variables and theme toggle in top bar.
-- [ ] `M003-T06` Ensure dynamic alerts, validation toasts, and backend error codes resolve through i18n.
-- [ ] `M003-T07` Implement regression test `V11-001` (i18n switch & locale integrity).
-- [ ] `M003-T08` Verify contrast and accessibility in both Light and Dark themes.
+- [x] `M003-T01` Create `app/ui/i18n.js` client translation engine supporting key lookup and parameter interpolation (`{count}`).
+- [x] `M003-T02` Author complete `app/ui/locales/zh-Hant.json` translation dictionary.
+- [x] `M003-T03` Author complete `app/ui/locales/en.json` translation dictionary.
+- [x] `M003-T04` Wire i18n switcher in top navigation, updating `<html lang>` and localStorage.
+- [x] `M003-T05` Implement Light / Dark theme CSS variables and theme toggle in top bar.
+- [x] `M003-T06` Ensure dynamic alerts, validation toasts, and backend error codes resolve through i18n.
+- [x] `M003-T07` Implement regression test `V11-001` (i18n switch & locale integrity).
+- [x] `M003-T08` Verify contrast and accessibility in both Light and Dark themes.
 
 ### Acceptance Criteria
-- [ ] `M003-AC01` `V11-001` PASS.
-- [ ] `M003-AC02` UI seamlessly toggles between zh-Hant and English without page reload.
-- [ ] `M003-AC03` HTML does not duplicate complete bilingual DOM trees.
-- [ ] `M003-AC04` Light and Dark themes toggle cleanly and persist across sessions.
-- [ ] `M003-AC05` No external font/script/style CDN requests are made.
+- [x] `M003-AC01` `V11-001` PASS.
+- [x] `M003-AC02` UI seamlessly toggles between zh-Hant and English without page reload.
+- [x] `M003-AC03` HTML does not duplicate complete bilingual DOM trees.
+- [x] `M003-AC04` Light and Dark themes toggle cleanly and persist across sessions.
+- [x] `M003-AC05` No external font/script/style CDN requests are made.
+
+### Verification / Evidence
+- `tests/test_v11_i18n.py` (4/4 tests passed in 0.05s)
+- Full automated test suite (99/99 passed in 11.69s)
 
 ### Result
-`NOT YET VERIFIED`
+`PASS`
 
 ---
 

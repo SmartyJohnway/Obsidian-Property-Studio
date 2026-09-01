@@ -39,12 +39,12 @@ Historical reference:
 ## Current Milestone / Task
 
 Project State: `ACTIVE`  
-Current Milestone: `M003 — Lightweight Bilingual i18n & Theme Engine`  
+Current Milestone: `M004 — Formal Scope Domain Model & In-Memory Engine`  
 Current Milestone Status: `IN_PROGRESS`  
-Current Task: `M003-T01 — Implement modular i18n client engine in app/ui/i18n.js`  
-Last Verified Gate: `M002 — Modern UI Shell & Design System PASS` (Baseline: `M001 PASS`)  
+Current Task: `M004-T01 — Define ScopeSpec domain model in app/core/scope.py`  
+Last Verified Gate: `M003 — Lightweight Bilingual i18n & Theme Engine PASS` (Baseline: `M001 PASS`)  
 Current Blocker: `None`  
-Next Action: `Implement modular i18n client engine in app/ui/i18n.js and translation dictionaries in app/ui/locales/ (zh-Hant.json, en.json), test regression V11-001.`
+Next Action: `Implement ScopeSpec domain model in app/core/scope.py, build in-memory filtering engine, and author regression tests for V11-002..004.`
 
 ---
 
@@ -93,15 +93,15 @@ Next Action: `Implement modular i18n client engine in app/ui/i18n.js and transla
 - [x] `AGENTS.md` updated with v1.1.0 donor boundary rules, safety contracts, and regression IDs.
 - [x] `M001`: Governance baseline and four-file consistency verified (`PASS`).
 - [x] `M002`: Modern UI shell (Sidebar, Topbar Context Chips, Right Drawer, Stat cards, Theme toggle) implemented and verified in `app/ui/index.html` (95/95 tests PASS).
-- [x] Full baseline test suite executed: **95 passed in 12.10s** (Python 3.13.7).
+- [x] `M003`: Lightweight Bilingual i18n (`app/ui/i18n.js`, `locales/zh-Hant.json`, `locales/en.json`) and Theme Engine implemented and verified (`V11-001` PASS, 99/99 tests PASS).
+- [x] Full test suite executed: **99 passed in 11.69s** (Python 3.13.7).
 - [x] Four-file cross-consistency check passed.
 
 ---
 
 ## Verification Not Yet Performed (v1.1.0 New Scope)
 
-- `M003` Lightweight Bilingual i18n & Theme Engine: `IN_PROGRESS` (`V11-001`)
-- `M004` Scope Domain Model & In-Memory Engine: `PLANNED` (`V11-002`..`004`)
+- `M004` Scope Domain Model & In-Memory Engine: `IN_PROGRESS` (`V11-002`..`004`)
 - `M005` Scope-Aware Discover & Property Health: `PLANNED` (`V11-016`)
 - `M006` Note Properties Workspace: `PLANNED` (`V11-005`..`008`)
 - `M007` Scope-Aware Relationship Analysis: `PLANNED` (`V11-009`..`011`)
