@@ -1,255 +1,53 @@
 # Roadmap
 
 > Project: `Obsidian Property Studio`  
-> Target Release: `v1.0.0`  
+> Target Release: `v1.1.0`  
 > Governance Standard: `Project Four-File Governance v2.1`  
-> Roadmap Type: `Formal Mainline Integration Roadmap`  
-> Recipient: `Agent B`  
-> Read-only Donors: `Agent C`, `Agent A`, `Agent D`
+> Roadmap Type: `v1.1.0 Product & UI/UX vNext Execution Roadmap`  
+> Baseline: `v1.0.0 Formal Mainline (95/95 tests PASS)`  
+> UX/Visual Donors: `index_areaagentB.html (UX donor)`, `index_areaagentD.html (Visual donor)`
 
 ---
 
-## Current State
+##### Current State
 
-Project State: `COMPLETE`  
-Current Milestone: `NONE`  
+Project State: `ACTIVE`  
+Current Milestone: `M014`  
 Current Milestone Status: `PASS`  
-Current Task: `NONE`  
-Last Verified Gate: `M011 — v1.0.0 Release Closure PASS (PROPERTY_STUDIO_V1_RELEASE_PASS)`  
-Current Blocker: `None`  
-Next Action: `None — Formal v1.0.0 integration and verification complete. Release verified and closed.`  
-Last Updated: `2026-08-31`
+Current Task: `PR #1 External Audit Review & Merge Preparation`  
+Last Verified Gate: `M014 — Human UI/UX Walkthrough Closure PASS`  
+Current Blocker: `NONE`  
+Next Action: `Awaiting external ChatGPT audit feedback on PR #1`  
+Automated Verification: `PASS (176/176 tests PASS)`  
+Human Verified Acceptance: `PASS — Human Verified (Dr. J verified on Windows 10 production UI)`  
+Accepted Limitation: `Windows 11 AMD64 native verification recorded as NOT YET VERIFIED due to test host unavailability (accepted non-blocking release limitation per human approved contract).`  
+Last Updated: `2026-09-02`
+
+
+
+
+
+
 
 ---
 
-# 1. Integration Authority
+# 1. Authority & Governance Boundaries
 
-This ROADMAP is the only authoritative execution plan for formal integration.
+This ROADMAP is the sole active authoritative execution plan for `Obsidian Property Studio v1.1.0`.
 
-The Arena candidates are no longer parallel implementations.
-
-```text
-B = MAINLINE / RECIPIENT
-C = READ-ONLY DONOR
-A = READ-ONLY DONOR
-D = READ-ONLY DONOR
-```
-
-Do not reopen the Arena winner decision unless new reproducible evidence demonstrates a material error in the accepted baseline.
+- `PROJECT.md` defines accepted v1.1.0 Product Truth, Scope, and Non-goals.
+- `ROADMAP.md` (this file) defines milestone execution, acceptance criteria, and evidence.
+- `HANDOFF.md` tracks the latest runtime recovery context.
+- `AGENTS.md` governs agent operating behavior.
+- `docs/archive/ROADMAP_v1.0.0.md` is an immutable historical snapshot and no longer tracks current progress.
+- `docs/specs/Obsidian_Property_Studio_v1.1.0_UIUX_vNext_Design_Spec.md` is the formal product and UI/UX design specification for v1.1.0.
+- `index_areaagentB.html` and `index_areaagentD.html` are visual/UX donors only; neither has functional or architectural authority.
 
 ---
 
-# 2. Expected Local Layout
+# 2. Closed Status Vocabulary
 
-Human-selected formal root:
-
-```text
-D:\Antigravity-Workspace\Obsidian-Property-Studio\
-│
-├─ Obsidian-Property-Studio-v1.0.0\        ← FORMAL REPOSITORY
-│  ├─ PROJECT.md
-│  ├─ ROADMAP.md
-│  ├─ HANDOFF.md
-│  └─ AGENTS.md
-│
-├─ AgentA_workspace-01a05750-5684-7ca8-85d9-94758fa56fb8\
-├─ AgentB_workspace-01a05750-6b01-702f-8d9e-43d693870e40\
-├─ AgentC_workspace-01a05750-6ec1-7d23-9b68-927acecae272\
-├─ AgentD_workspace-01a05750-d3d8-7d86-af4a-0f5b76b3fc57\
-│
-└─ corresponding Arena ZIP snapshots
-```
-
-The exact local names must be verified rather than assumed.
-
-Candidate roots are external donor sources, not nested project authorities.
-
----
-
-# 3. Frozen Donor Archive Identities
-
-Expected SHA-256 from the Arena submissions supplied for independent audit:
-
-```text
-Agent A ZIP
-6c5cfacc8b33531e29aefd1bd258488f249961f5719ee6ae6e4c3c4a3b00758c
-
-Agent B ZIP
-c167ffeedb88ee7e42306c9e18610a089db6e8d5868edf3a98c40c40f5d14c9f
-
-Agent C ZIP
-b23abf3bdce30151dd302effe1e7633cf37812b5ba155b0a4f195545a907d53d
-
-Agent D ZIP
-5404306a1155a5b31ae3613500733a5fc402b41e05b50738cd5daea5bca11939
-```
-
-If the local candidate ZIP differs:
-
-```text
-HOLD
-```
-
-until provenance is reconciled.
-
-Do not silently integrate a different candidate snapshot.
-
----
-
-# 4. Accepted Round 2 Integration Findings
-
-## B — Mainline strengths
-
-Use as recipient baseline:
-
-- strong parsing/inventory separation;
-- conservative duplicate/malformed handling;
-- strong refactor conflict handling;
-- conservative Relationship Inbox;
-- good beginner design workflow;
-- strong export/read-back behavior;
-- no major hidden core defect identified.
-
-Known integration improvement:
-
-### R2-B-01 — Ambiguous Fill should become fully fail-closed
-
-B currently keeps ambiguity visible via warning but can still serialize generic:
-
-```yaml
-company: '[[ACME]]'
-```
-
-when multiple same-name targets exist.
-
-Formal v1.0.0 adopts the stronger C behavior:
-
-> do not emit the confirmed relationship value until the user selects an explicit target.
-
----
-
-## C — Donor strengths / limitations
-
-Harvest candidates:
-
-- `app/core/fill.py`
-  - ambiguous target resolution;
-  - fail-closed Fill semantics.
-- `app/core/relationship.py`
-  - entity-target resolution;
-  - canonical target semantics.
-- selected beginner-facing Traditional Chinese explanations / UX patterns.
-- tests proving ambiguous note identity behavior.
-
-Do not blindly port:
-
-- goal matching logic that missed equipment/vendor in the common equipment/procurement prompt;
-- normalize manual-review count semantics without regression review.
-
-Round 2 limitations to guard:
-
-### R2-C-01
-Beginner design prompt missed `equipment/vendor`.
-
-### R2-C-02
-Duplicate-key normalize manual-review count was per duplicate occurrence rather than per affected note.
-
----
-
-## A — Donor strengths / limitations
-
-Harvest candidates:
-
-- `app/core/refactor.py`
-  - `_ambiguity_warnings`;
-  - duplicate/malformed propagation into manual review;
-  - detailed migration planning.
-- `app/core/integrity.py`
-  - useful manifest/read-only verification patterns if better than recipient.
-- related refactor tests.
-
-Do not port A relationship confirmation semantics wholesale.
-
-Round 2 defects to guard:
-
-### R2-A-01
-Malformed note contributed to ordinary `notes_without_properties` count.
-
-### R2-A-02
-Ambiguous `ACME` Fill emitted `[[ACME]]` with no ambiguity warning.
-
-### R2-A-03
-Relationship drift could be marked `confirmed: true` while multiple targets existed.
-
----
-
-## D — Donor strengths / limitations
-
-Harvest candidates:
-
-- `ops/core/export.py`
-  - `verify_migration_readback`;
-  - `verify_health_readback`;
-  - explicit output completeness checks.
-- selected Health presentation/explainability patterns.
-- user-facing safety/governance wording where useful.
-
-Do **not** port D design/refactor/relationship logic wholesale.
-
-Round 2 defects to guard:
-
-### R2-D-01
-Equipment/procurement design prompt incorrectly routed to a Reading recipe.
-
-### R2-D-02
-Normalize plan omitted a known duplicate-key note from manual review.
-
-### R2-D-03
-Relationship drift `canonical_target` could point to the source equipment note instead of entity note.
-
-### R2-D-04
-Ambiguous `ACME` Fill did not surface the actual multi-target ambiguity.
-
----
-
-# 5. Integration Strategy
-
-Use:
-
-```text
-test-first selective port
-```
-
-Never:
-
-```text
-wholesale repository copy
-direct git merge
-direct cherry-pick
-donor governance inheritance
-donor PASS inheritance
-```
-
-For each donor capability:
-
-```text
-1. write/freeze regression test
-2. reproduce recipient baseline behavior
-3. inspect donor implementation
-4. port minimum necessary code
-5. run focused tests
-6. run full suite
-7. inspect/read-back outputs
-8. update evidence
-9. continue
-```
-
----
-
-# 6. Formal Status Vocabulary
-
-Milestone:
-
+Milestone Status:
 ```text
 PLANNED
 IN_PROGRESS
@@ -258,8 +56,7 @@ PASS
 SUPERSEDED
 ```
 
-Result:
-
+Result / Verification State:
 ```text
 NOT YET VERIFIED
 PASS
@@ -268,677 +65,451 @@ SUPERSEDED
 ```
 
 Project State:
-
 ```text
 ACTIVE
 HOLD
 COMPLETE
 ```
 
-`DONE`, `COMPLETED`, `READY`, `GREEN`, etc. do not replace `PASS`.
+---
+
+# 3. v1.1.0 Engineering Regression Contracts
+
+All 95 v1.0.0 regression tests are permanently retained. v1.1.0 introduces 18 new regression contracts:
+
+- `V11-001` i18n zh-Hant / English seamless switch with deterministic local key resolution (no CDN, localStorage preference).
+- `V11-002` Multi-folder Scope correctly calculates union of selected folders and deduplicates overlapping notes.
+- `V11-003` Nested folder `include_subfolders` true/false filter semantics correctly enforced.
+- `V11-004` Scope filtering operates in-memory and does not trigger full Vault disk rescan.
+- `V11-005` Note selector handles duplicate base names across folders without auto-guessing (requires explicit path).
+- `V11-006` Existing Note Property Workspace preserves unrelated frontmatter properties across edits and diffs.
+- `V11-007` Existing Note Property Workspace fails closed on notes with duplicate keys or malformed frontmatter.
+- `V11-008` Note Property Workspace disables Copy action when frontmatter preview/validation is invalid.
+- `V11-009` Relationship Source Scope correctly accepts multiple folder roots.
+- `V11-010` Relationship Target Scope correctly accepts multiple folder roots.
+- `V11-011` Relationship analysis marks resolved links outside selected Target Scope as `OUTSIDE SELECTED TARGET`.
+- `V11-012` Property Links and Body Wikilinks analysis results are strictly separated in models and API.
+- `V11-013` Body Wikilink analysis is strictly read-only and never modifies Markdown note bodies.
+- `V11-014` System starts with zero default relationship rules or ontology assumptions.
+- `V11-015` Saved Relationship Checks persist correctly to external storage/JSON (outside Vault) and reload accurately.
+- `V11-016` Scope-aware Property Health calculates scores and findings strictly from Scope notes without cross-contamination.
+- `V11-017` Scope-aware Refactor Planner strictly limits migration plans to Scope notes without silent expansion.
+- `V11-018` Vault remains byte-for-byte read-only across all v1.1.0 product workflows (pre/post hash equality).
 
 ---
 
-# M001 — Formal Integration Baseline Freeze
+# M001 — v1.1.0 Governance Transition & Baseline Freeze
 
 Status: `PASS`
 
 ### Objective
-
-Establish a clean formal repository and freeze the exact Arena donor snapshots before touching product code.
+Establish the formal v1.1.0 governance baseline, archive the v1.0.0 roadmap, update PROJECT.md, AGENTS.md, ROADMAP.md, and verify existing 95-test baseline before modifying code.
 
 ### Tasks
-
-- [x] `M001-T01` Verify formal root path.
-- [x] `M001-T02` Inspect parent directory and resolve exact A/B/C/D donor paths.
-- [x] `M001-T03` Verify all four donor ZIP SHA-256 identities.
-- [x] `M001-T04` Confirm donor extracted directories are treated read-only.
-- [x] `M001-T05` Confirm only formal root four governance files are authoritative.
-- [x] `M001-T06` Initialize new Git repository in formal root if absent.
-- [x] `M001-T07` Record initial Git branch/HEAD/status.
-- [x] `M001-T08` Commit or otherwise freeze four-file governance baseline.
-- [x] `M001-T09` Establish integration evidence directory.
-- [x] `M001-T10` Update AGENTS Part B with verified runtime/Git facts only.
-- [x] `M001-T11` Update ROADMAP truthfully.
-- [x] `M001-T12` Update HANDOFF last.
+- [x] `M001-T01` Re-enter project following mandatory order: PROJECT → ROADMAP → AGENTS → HANDOFF → git status/log → test suite.
+- [x] `M001-T02` Archive `ROADMAP.md` (v1.0.0) to `docs/archive/ROADMAP_v1.0.0.md`.
+- [x] `M001-T03` Update `PROJECT.md` with v1.1.0 Scope, Core Capabilities, Success Criteria, and Non-Goals.
+- [x] `M001-T04` Update `AGENTS.md` with v1.1.0 donor isolation, supported platforms, and regression IDs.
+- [x] `M001-T05` Author new v1.1.0 `ROADMAP.md` with milestones M001 ~ M012.
+- [x] `M001-T06` Run baseline test suite (confirm 95/95 pass).
+- [x] `M001-T07` Create initial git commit for governance transition.
 
 ### Acceptance Criteria
-
-- [x] `M001-AC01` Formal repository is a distinct Git lineage.
-- [x] `M001-AC02` No candidate `.git` has been copied into formal root.
-- [x] `M001-AC03` A/B/C/D archive identities match expected hashes or discrepancy is HOLD.
-- [x] `M001-AC04` Donor directories are unchanged.
-- [x] `M001-AC05` Formal root four files are the only governance authorities.
-- [x] `M001-AC06` Initial Git/evidence state is recorded.
-
-### Verification / Evidence
-
-- `evidence/integration/m001_baseline_freeze.json` (all 4 SHA-256 verified, git root commit `c09adf6`, Python 3.13.7 verified)
+- [x] `M001-AC01` Clean read-order re-entry completed.
+- [x] `M001-AC02` Four governance files updated and mutually consistent.
+- [x] `M001-AC03` Baseline test suite passes (95/95).
+- [x] `M001-AC04` Initial commit completed on `feature/v1.1.0-release`.
 
 ### Result
+`PASS` (95/95 baseline tests pass, git commit verified)
 
+---
+
+# M002 — Lightweight Local-First Bilingual i18n Engine
+
+Status: `PASS`
+
+### Objective
+Implement a local-first, zero-CDN, offline bilingual (Traditional Chinese zh-Hant / English en) i18n architecture.
+
+### Tasks
+- [x] `M002-T01` Define regression test `tests/test_v11_i18n.py` covering V11-001.
+- [x] `M002-T02` Create structured locale dictionaries `app/ui/locales/zh-Hant.json` and `app/ui/locales/en.json`.
+- [x] `M002-T03` Implement client-side translation loader `app/ui/i18n.js` with `localStorage` language preference.
+- [x] `M002-T04` Implement top navigation bar language toggle (繁中 / EN) with DOM text replacement.
+- [x] `M002-T05` Execute and verify i18n test suite.
+
+### Acceptance Criteria
+- [x] `M002-AC01` `V11-001` test passes.
+- [x] `M002-AC02` Zero external network calls or CDN dependencies.
+- [x] `M002-AC03` Full coverage of UI navigation and labels in both locales without side-by-side hardcoded strings.
+
+### Result
+`PASS` (4/4 i18n tests pass, offline verified)
+
+---
+
+# M003 — Context-Aware Multi-Folder & Single-Note Scope Filter Engine
+
+Status: `PASS`
+
+### Objective
+Implement the multi-folder union, single-note, and subfolder inclusion scope engine with in-memory filtering.
+
+### Tasks
+- [x] `M003-T01` Define regression tests `tests/test_v11_scope.py` covering V11-002, V11-003, V11-004.
+- [x] `M003-T02` Implement `app/core/scope.py` (`ScopeMode`, `ScopeSpec`, `filter_scan_by_scope`, `extract_vault_folders`, `ScopeValidationError`).
+- [x] `M003-T03` Expose API endpoints `/api/scope/folders`, `/api/scope/apply`, `/api/scope/current`.
+- [x] `M003-T04` Build UI Scope Selection view in `app/ui/index.html` with folder multi-select and subfolder checkboxes.
+- [x] `M003-T05` Wire Scope context chip into topbar header with live note counts.
+- [x] `M003-T06` Execute and verify scope test suite.
+
+### Acceptance Criteria
+- [x] `M003-AC01` `V11-002`, `V11-003`, `V11-004` tests pass.
+- [x] `M003-AC02` Scope filtering executes in-memory without disk rescanning.
+- [x] `M003-AC03` UI correctly updates active scope and note count.
+
+### Result
+`PASS` (5/5 scope tests pass)
+
+---
+
+# M004 — Beginner-Friendly Schema Builder with Recipe Suggestions
+
+Status: `PASS`
+
+### Objective
+Enhance schema design with goal-driven suggestion recipes, natural language query matching, and property reuse reviews.
+
+### Tasks
+- [x] `M004-T01` Define regression tests `tests/test_v11_design.py`.
+- [x] `M004-T02` Implement recipes (Reading, Lab Equipment, Projects, Journal, Courses) in `app/core/design.py`.
+- [x] `M004-T03` Expose API endpoints `/api/design/suggest`, `/api/design/build`, `/api/design/review`.
+- [x] `M004-T04` Build UI Schema Designer with goal input, suggestion cards, and reuse badges.
+- [x] `M004-T05` Execute and verify design test suite.
+
+### Acceptance Criteria
+- [x] `M004-AC01` Design tests pass.
+- [x] `M004-AC02` Natural language goals route to appropriate recipes.
+- [x] `M004-AC03` Storage types and UI controls remain cleanly separated.
+
+### Result
+`PASS` (Design test suite pass)
+
+---
+
+# M005 — Blank Note Property Fill & Copy Engine
+
+Status: `PASS`
+
+### Objective
+Implement schema-based form filling and real-time YAML frontmatter generation with copy functionality for blank notes.
+
+### Tasks
+- [x] `M005-T01` Define regression tests `tests/test_v11_fill.py`.
+- [x] `M005-T02` Implement `fill_preview`, `render_frontmatter`, and `roundtrip_check` in `app/core/fill.py`.
+- [x] `M005-T03` Expose API endpoint `/api/fill/preview`.
+- [x] `M005-T04` Build UI Blank Note Form in `app/ui/index.html` with preview and copy buttons.
+- [x] `M005-T05` Execute and verify fill test suite.
+
+### Acceptance Criteria
+- [x] `M005-AC01` Fill tests pass.
+- [x] `M005-AC02` Copy button disables fail-closed when frontmatter is invalid.
+- [x] `M005-AC03` Form values serialize to valid Obsidian YAML.
+
+### Result
+`PASS` (Fill test suite pass)
+
+---
+
+# M006 — Note Properties Workspace (Inspect, Edit & Semantic Diff)
+
+Status: `PASS`
+
+### Objective
+Implement the single-note workspace for inspecting existing frontmatter, editing properties with live semantic diffs, and preserving unrelated properties without mutating files.
+
+### Tasks
+- [x] `M006-T01` Define regression tests `tests/test_v11_note_workspace.py` covering V11-005 ~ V11-008.
+- [x] `M006-T02` Implement `app/core/note_workspace.py` (`inspect_note_for_workspace`, `compute_workspace_diff_and_frontmatter`, `find_candidate_notes`).
+- [x] `M006-T03` Expose API endpoints `/api/workspace/notes`, `/api/workspace/inspect`, `/api/workspace/preview`.
+- [x] `M006-T04` Build UI Note Workspace view with candidate search, property table, diff view, and YAML preview.
+- [x] `M006-T05` Execute and verify note workspace test suite.
+
+### Acceptance Criteria
+- [x] `M006-AC01` `V11-005`, `V11-006`, `V11-007`, `V11-008` tests pass.
+- [x] `M006-AC02` Unrelated frontmatter properties are preserved across edits.
+- [x] `M006-AC03` Notes with duplicate keys or corrupt YAML fail closed.
+- [x] `M006-AC04` Copy button is disabled on invalid states.
+
+### Result
+`PASS` (4/4 note workspace tests pass)
+
+---
+
+# M007 — Scope-Aware Property Relationship Inbox & 4-State Analysis
+
+Status: `PASS`
+
+### Objective
+Implement multi-folder Source Scope and Target Scope analysis for property links with 4-state classification (`VALID`, `BROKEN`, `AMBIGUOUS`, `OUTSIDE SELECTED TARGET`).
+
+### Tasks
+- [x] `M007-T01` Define regression tests `tests/test_v11_relationships.py` covering V11-009 ~ V11-011.
+- [x] `M007-T02` Update `app/core/relationships.py` with multi-folder source and target scope filtering.
+- [x] `M007-T03` Expose API endpoint `/api/relationships` with source/target scopes and 4-state reporting.
+- [x] `M007-T04` Build UI Relationship view with multi-folder Source/Target selectors, 4-state metric cards, and item breakdown.
+- [x] `M007-T05` Execute and verify relationship test suite.
+
+### Acceptance Criteria
+- [x] `M007-AC01` `V11-009`, `V11-010`, `V11-011` tests pass.
+- [x] `M007-AC02` Links to notes outside target scope are classified as `OUTSIDE SELECTED TARGET`.
+- [x] `M007-AC03` Source and Target scopes support multi-folder selections.
+
+### Result
+`PASS` (3/3 relationship tests pass)
+
+---
+
+# M008 — Read-Only Body Wikilink Relationship Analysis Engine
+
+Status: `PASS`
+
+### Objective
+Implement note body `[[Wikilink]]` extraction and analysis across source and target scopes with strict read-only safety guarantees.
+
+### Tasks
+- [x] `M008-T01` Define regression tests `tests/test_v11_body_links.py` covering V11-012, V11-013.
+- [x] `M008-T02` Implement `app/core/body_links.py` (`extract_body_wikilinks_from_text`, `analyze_body_wikilinks`).
+- [x] `M008-T03` Expose API endpoint `/api/relationships/body`.
+- [x] `M008-T04` Build UI Body Wikilinks tab in Relationships view.
+- [x] `M008-T05` Execute and verify body links test suite.
+
+### Acceptance Criteria
+- [x] `M008-AC01` `V11-012`, `V11-013` tests pass.
+- [x] `M008-AC02` Property links and body wikilinks data models and UI remain strictly separated.
+- [x] `M008-AC03` Body wikilink engine is strictly read-only and never modifies note files.
+
+### Result
+`PASS` (3/3 body links tests pass)
+
+---
+
+# M009 — User-Initiated Saved Relationship Checks
+
+Status: `PASS`
+
+### Objective
+Implement user-initiated saved relationship checks persisted to external storage outside the vault, with zero default assumptions.
+
+### Tasks
+- [x] `M009-T01` Define regression tests `tests/test_v11_saved_checks.py` covering V11-014, V11-015.
+- [x] `M009-T02` Implement `app/core/saved_checks.py` (`SavedCheck`, `SavedChecksStore`).
+- [x] `M009-T03` Expose API endpoints `/api/relationships/saved/list`, `save`, `delete`, `execute`.
+- [x] `M009-T04` Build Saved Checks management UI with body_wikilink support and localStorage persistence.
+- [x] `M009-T05` Execute and verify saved checks test suite.
+
+### Acceptance Criteria
+- [x] `M009-AC01` `V11-014`, `V11-015` tests pass.
+- [x] `M009-AC02` System starts with zero default relationship rules.
+- [x] `M009-AC03` Saved checks persist outside vault directory.
+
+### Result
+`PASS` (2/2 saved checks tests pass)
+
+---
+
+# M010 — Scope-Aware Property Health & Refactor Planner Isolation
+
+Status: `PASS`
+
+### Objective
+Ensure Property Health diagnostics, scoring, and Refactor migration planning operate strictly within active Scope.
+
+### Tasks
+- [x] `M010-T01` Define regression tests `tests/test_v11_discover_health.py` and `tests/test_v11_refactor.py` covering V11-016, V11-017.
+- [x] `M010-T02` Update `app/core/refactor.py` to accept and enforce `ScopeSpec`.
+- [x] `M010-T03` Update `app/server.py` `/api/health` and `/api/refactor/plan` to bind to active `STORE.scope`.
+- [x] `M010-T04` Update Health and Refactor UI views to display active scope indicator and out-of-scope counts.
+- [x] `M010-T05` Execute and verify health and refactor test suites.
+
+### Acceptance Criteria
+- [x] `M010-AC01` `V11-016`, `V11-017` tests pass.
+- [x] `M010-AC02` Health score and findings reflect only scoped notes.
+- [x] `M010-AC03` Refactor plans never include out-of-scope notes.
+
+### Result
+`PASS` (Health & Refactor scope isolation tests pass)
+
+---
+
+# M011 — 5,000-Note Performance Benchmark & Full Suite Verification
+
+Status: `PASS`
+
+### Objective
+Execute full regression test suite (all 140 tests) and record formal >=5,000-note benchmark evidence with byte-for-byte read-only validation.
+
+### Tasks
+- [x] `M011-T01` Run 5,000-note synthetic vault benchmark generator and recorder (`scripts/benchmark.py`).
+- [x] `M011-T02` Record timing, memory, and performance observations in `evidence/benchmark.json`.
+- [x] `M011-T03` Execute comprehensive Vault read-only test `tests/test_v11_vault_readonly.py` covering V11-018.
+- [x] `M011-T04` Run full pytest suite across all modules.
+
+### Acceptance Criteria
+- [x] `M011-AC01` All 140 tests PASS without failures.
+- [x] `M011-AC02` Benchmark on 5,040 notes recorded (4.399s scan, 4.546s full analysis).
+- [x] `M011-AC03` `V11-018` Vault byte-for-byte read-only verified.
+
+### Result
+`PASS` (140/140 tests pass, benchmark recorded in `evidence/benchmark.json`: 4.399s scan / 4.546s total analysis)
+
+---
+
+# M012 — Windows 10 / 11 Native Acceptance & v1.1.0 Release Packaging
+
+Status: `PASS`
+
+### Objective
+Validate v1.1.0 native execution on Windows 10 (Build 19045+), execute full live HTTP walkthrough acceptance, update documentation, conduct four-file consistency check, package release artifacts, and record formal release verdict.
+
+### Tasks
+- [x] `M012-T01` Test `run_windows.bat` launcher natively on Windows environment with returncode 0 verification.
+- [x] `M012-T02` Execute live local HTTP server walkthrough acceptance (Scope selection, Note Workspace editing, Multi-Folder Relationships, Saved Checks, i18n toggle, Light/Dark toggle).
+- [x] `M012-T03` Verify Traditional Chinese paths, spaces in folder names, and Unicode property values.
+- [x] `M012-T04` Update `README.md` and user documentation for v1.1.0 features.
+- [x] `M012-T05` Freeze version string `1.1.0` in `app/__init__.py`, `server.py`, and UI metadata.
+- [x] `M012-T06` Run four-file consistency check (PROJECT, ROADMAP, HANDOFF, AGENTS).
+- [x] `M012-T07` Generate external release manifest and packaging bundles (`Obsidian-Property-Studio-v1.1.0-source.zip`, git bundle).
+- [x] `M012-T08` Update ROADMAP final state to COMPLETE and record release verdict.
+- [x] `M012-T09` Update HANDOFF.md last.
+
+### Acceptance Criteria
+- [x] `M012-AC01` Windows 10 (Build 19045+) native launcher execution and live HTTP server walkthrough verified (`evidence/integration/m012_v110_windows10_native_acceptance.json`).
+- [x] `M012-AC02` Windows 11 (64-bit AMD64) recorded accurately as `NOT YET VERIFIED` (accepted non-blocking release limitation per human approved contract).
+- [x] `M012-AC03` Traditional Chinese and English UI verified end-to-end with 100% key parity and zero hardcoded labels.
+- [x] `M012-AC04` Documentation matches implementation.
+- [x] `M012-AC05` Four-file consistency gate PASS.
+- [x] `M012-AC06` Release manifest and bundles verified via clean clone, extraction, git fsck, and pytest.
+- [x] `M012-AC07` Formal release verdict recorded (`PROPERTY_STUDIO_V1_1_0_RELEASE_PASS_WITH_LIMITATIONS`).
+
+### Result
+`PASS` (Evidence: `evidence/integration/m012_v110_windows10_native_acceptance.json`, external `dist/RELEASE_MANIFEST.json`)
+
+---
+
+# M013 — Release Closure Final In-Place Repair (R01~R12)
+
+Status: `PASS`
+
+### Objective
+Systematically address and verify all 12 repair contracts (R01~R12) from the PR #1 independent closure audit: UI-backend API contract parity, true zh-Hant/en bilingual rendering, 4-state Relationships with Multi-Folder selectors, Body Wikilinks & Saved Checks persistence, fail-closed Scope validation, Single Note Scope & whole-Vault Note Workspace search, Scope-aware export consistency, Design dual context, YAML round-trip semantic gate, fresh Windows 10 live HTTP acceptance evidence, non-hardcoded release packaging gate with bundle verification, 4-file governance coherence, and self-contained Design Spec.
+
+### Tasks
+- [x] `M013-T01` [R01] Reconcile UI JavaScript API calls with backend server response shapes (`/api/scan`, `/api/discovery`, `/api/property`, `/api/design/*`, `/api/workspace/*`, `/api/refactor/plan`, `/api/relationships/*`, `/api/health`, `/api/export`, `/api/scope/*`).
+- [x] `M013-T02` [R02] Refactor UI to eliminate bilingual side-by-side labels; route 100% of user-visible strings through `app/ui/i18n.js` and `locales/{zh-Hant,en}.json`.
+- [x] `M013-T03` [R03] Expose 4-state classification (`VALID`, `BROKEN`, `AMBIGUOUS`, `OUTSIDE SELECTED TARGET`), multi-folder Source/Target selectors, Body Wikilinks, and Saved Checks UI management in Relationships view.
+- [x] `M013-T04` [R04] Enforce fail-closed Scope validation (unknown mode, empty folders, missing note fail closed with explicit errors; never fallback to Entire Vault).
+- [x] `M013-T05` [R05] Add Single Note Scope UI selector and ensure Note Workspace searches whole Vault with relative paths and duplicate-basename ambiguity warnings.
+- [x] `M013-T06` [R06] Align Scope-aware export payload with active UI view context.
+- [x] `M013-T07` [R07] Support dual context (Scope inventory vs Whole-Vault inventory) in Design suggestion and review.
+- [x] `M013-T08` [R08] Implement strict YAML serialization round-trip verification gate in Note Workspace.
+- [x] `M013-T09` [R09] Generate fresh Windows 10 Build 19045+ live HTTP native acceptance evidence artifact.
+- [x] `M013-T10` [R10] Upgrade `scripts/package_v110_release.py` to verify git clean status, test execution, fresh zip extraction, bundle verification, and git fsck.
+- [x] `M013-T11` [R11] Reconcile HANDOFF.md and eliminate stale residue across all 4 governance files.
+- [x] `M013-T12` [R12] Ensure `docs/specs/Obsidian_Property_Studio_v1.1.0_UIUX_vNext_Design_Spec.md` is committed and self-contained.
+- [x] `M013-T13` Author comprehensive `tests/test_ui_api_contracts.py` and `tests/test_v11_repairs.py`.
+
+### Result
+`PASS` (Verified across 140 test cases in `tests/`, Windows 10 live HTTP native acceptance test, Refactor Merge operation contract, and automated release packaging verification)
+
+---
+
+# M014 — Human UI/UX Walkthrough Closure
+
+Status: `PASS`
+
+### Objective
+Resolve usability, discoverability, and workflow gaps identified during the Human Owner walkthrough on Windows 10 production UI: Search + Hierarchical Folder Tree in Note Workspace; structured multi-select management objects and needs in Schema Design with clear Adopt CTA and routing; i18n localization of schema review statuses; dynamic empty-state and form generation for New Frontmatter / Blank Note; controlled vocabulary dropdowns/multi-selects and human-readable primary summary view in Refactor Planner; and final release evidence closure.
+
+### Human Verified Acceptance
+- Windows 10 actual browser/UI rendering: `PASS — Human Verified`
+- Traditional Chinese UI: `PASS — Human Verified`
+- English UI: `PASS — Human Verified`
+- zh-Hant ↔ English switching: `PASS — Human Verified`
+- Dark theme: `PASS — Human Verified`
+- Light theme: `PASS — Human Verified`
+- Dark ↔ Light switching: `PASS — Human Verified`
+- Vault scan / Scope UI basic operation: `PASS — Human Verified`
+- Note Properties Workspace & Folder Tree: `PASS — Human Verified`
+- Property Vocabulary Layer & Help Drawer: `PASS — Human Verified`
+- Refactor Normalize Observed Value Mapping: `PASS — Human Verified`
+
+### Tasks
+- [x] `M014-T01` [Note Workspace] Implement Search + Hierarchical Folder Tree with Scope preference, folder hierarchy, whole-Vault navigation, and duplicate-basename path disambiguation.
+- [x] `M014-T02` [Schema Design] Replace vague free-text primary input with deterministic multi-select presets for Management Objects and Management Needs; relegate free-text to optional secondary context.
+- [x] `M014-T03` [Schema Design] Enable per-property retain/exclude checkboxes and implement `[Adopt Schema]` CTA establishing `Current Schema` in session state.
+- [x] `M014-T04` [Schema Design] Provide explicit Next Actions after adoption (`[Apply to Existing Note]` and `[Create New Frontmatter]`).
+- [x] `M014-T05` [i18n] Localize all schema recommendation explanation strings and enums (`exact_existing`, `elsewhere`, `new`, `overlap`).
+- [x] `M014-T06` [New Frontmatter] Implement informative empty state when no schema is adopted, and dynamic form control generation with live YAML preview when Current Schema exists.
+- [x] `M014-T07` [Refactor Planner] Implement controlled vocabulary UI: Scope inventory dropdown for Rename, multi-select for Merge, observed value mapping for Normalize, and controlled target types for Convert Type.
+- [x] `M014-T08` [Refactor Planner] Add conflict warning on existing target property, enforce fail-closed on empty target, and provide human-readable primary view with collapsible raw JSON.
+- [x] `M014-T09` [Automated Tests] Author `tests/test_m014_human_walkthrough.py` covering regression contracts M014-001 ~ M014-015.
+- [x] `M014-T10` [Final Evidence Closure] Execute final authoritative benchmark, synchronize all evidence documents, perform clean commit workflow, and generate external release packaging.
+- [x] `M014-T11` [Walkthrough Failure In-Place Repair] Restore missing frontend handlers (`setupDiscoverHandlers`, `setupHealthHandlers`), enforce actionable selection validation on Schema Designer, convert Relationships property filter to controlled dropdown with loading state, replace Refactor generic target with controlled combobox and new-name input, and add headless browser startup regression tests.
+- [x] `M014-T12` [Human Production Walkthrough Re-Verification] Human Owner re-verifies repaired workflows in Windows 10 production browser.
+
+### Acceptance Criteria
+- [x] `M014-AC01` Note Workspace supports both Search and Hierarchical Folder Tree with clear path disambiguation for duplicate basenames.
+
+- [x] `M014-AC02` Schema Design generates suggestions from deterministic multi-select inputs with optional free-text and actionable validation.
+- [x] `M014-AC03` `[Adopt Schema]` persists session schema and routes cleanly to Existing Note or New Frontmatter.
+- [x] `M014-AC04` New Frontmatter displays empty-state guidance when unconfigured and renders dynamic controls when configured.
+- [x] `M014-AC05` Refactor Planner uses controlled dropdowns/multi-selects, target collision warning, and displays human-readable summary by default.
+- [x] `M014-AC06` 100% of new UI strings are localized in `zh-Hant.json` and `en.json`.
+- [x] `M014-AC07` All automated tests pass (140 existing + 22 M014 walkthrough & integrity + 14 property glossary regression contracts = 176/176 tests PASS).
+- [x] `M014-AC08` Vault remains byte-for-byte read-only across all new workflows.
+- [x] `M014-AC09` Human Owner re-verifies repaired UI in real Windows 10 browser without uncaught errors or workflow dead-ends.
+
+### Result
 `PASS`
+- Automated Verification: `PASS` (176/176 automated unit & integration tests pass, `pytest -v`, 13.55s).
+- Headless Browser DOM Startup Smoke: `PASS` (Zero uncaught JS errors, presets populated, CTAs wired).
+- Property Human-Readable Vocabulary Layer: `PASS` (49 built-in entries, Presentation Layer format, safe fallback, help drawer).
+- Refactor Normalize Mapping (REQ-038): `PASS` (Scope observed values table, target selection/custom input, structured summary).
+- Note Workspace Properties & Diff: `PASS` (Property badges, ⓘ guidance drawer, dynamic custom key detection, localized).
+- 5,000-note benchmark verified: scan 4.272s, total analysis 4.413s, vault unchanged (`evidence/benchmark.json`).
+- Human Verification: `PASS` (Dr. J verified on Windows 10 production UI walkthrough).
+
+
+
+
+
+
 
 ---
 
-# M002 — Materialize Agent B as Formal Recipient
 
-Status: `PASS`
+# 4. Final v1.1.0 Integration Summary
 
-### Objective
-
-Create the starting formal implementation from Agent B without importing B's historical governance/Git/evidence state.
-
-### Allowed initial materialization candidates
-
-From B, selectively evaluate/copy:
+The v1.1.0 release evolves Obsidian Property Studio from a Whole-Vault Property Tool into a **Context-Aware Bilingual Property Governance Workspace**:
 
 ```text
-app/
-tests/
-scripts/
-requirements.txt
-requirements-dev.txt
-pytest.ini
-run_windows.bat
-run.sh
-README.md
-docs/
+Vault
+  │
+  ├─ Scope (Entire Vault, One Folder, Multi-Folder, Single Note)
+  │
+  ├─ Note Properties Workspace (Existing Note Inspect/Edit/Diff + Blank Fill)
+  │
+  ├─ Refactor Planner (Rename, Merge, Normalize, Convert Type)
+  │
+  └─ Relationships
+       │
+       ├─ Property Links (Source Scope Multi-Folder → Target Scope Multi-Folder)
+       ├─ Body Wikilinks (Analysis-only, Strict Read-only)
+       │
+       └─ Saved Relationship Checks (User-initiated, Reusable, Outside Vault)
 ```
-
-### Explicit exclusions
-
-Do not import as formal state:
-
-```text
-.git/
-PROJECT.md
-ROADMAP.md
-HANDOFF.md
-AGENTS.md
-evidence/
-uploads/
-__pycache__/
-.pytest_cache/
-developer-local caches
-```
-
-B docs/README may be copied only as implementation content and must later be reconciled with formal behavior.
-
-### Tasks
-
-- [x] `M002-T01` Record B source tree baseline.
-- [x] `M002-T02` Materialize allowed recipient files.
-- [x] `M002-T03` Re-establish project-local Python environment.
-- [x] `M002-T04` Verify install command.
-- [x] `M002-T05` Verify run command.
-- [x] `M002-T06` Run B baseline automated suite in formal repo.
-- [x] `M002-T07` Verify local UI launch.
-- [x] `M002-T08` Verify selected Vault remains read-only.
-- [x] `M002-T09` Record baseline formal evidence.
-- [x] `M002-T10` Remove/ignore stale candidate-specific path assumptions.
-
-### Acceptance Criteria
-
-- [x] `M002-AC01` Formal app launches.
-- [x] `M002-AC02` Formal baseline tests execute with actual results recorded.
-- [x] `M002-AC03` Core requires no network/AI.
-- [x] `M002-AC04` Formal root governance remains unchanged except truthful state updates.
-- [x] `M002-AC05` Donor B directory remains unchanged.
-- [x] `M002-AC06` No B evidence is misrepresented as formal evidence.
-
-### Result
-
-`PASS`
-
----
-
-# M003 — Freeze Integration Regression Oracle
-
-Status: `PASS`
-
-### Objective
-
-Convert Round 2 findings into formal tests before donor implementation is ported.
-
-### Required hidden-regression contracts
-
-#### `INT-R2-001` — Malformed is not ordinary no-properties
-
-Malformed YAML must be separately counted/reported and must not inflate ordinary property-free note counts.
-
-#### `INT-R2-002` — Duplicate-key ambiguity survives Refactor
-
-A note with duplicate `status` keys must appear in manual review/excluded ambiguity for Normalize.
-
-#### `INT-R2-003` — Ambiguous Fill fails closed
-
-Given:
-
-```text
-Companies/ACME.md
-Vendors/ACME.md
-company = ACME
-```
-
-final serialization must not emit a confirmed generic `[[ACME]]`.
-
-User must select explicit target/path.
-
-#### `INT-R2-004` — Relationship canonical target is entity
-
-For:
-
-```text
-vendor: SEW
-```
-
-with:
-
-```text
-Companies/SEW.md
-```
-
-canonical target must be `Companies/SEW.md`, not the source note containing the value.
-
-#### `INT-R2-005` — No false confirmed ambiguity
-
-A relationship finding with multiple possible targets cannot be `confirmed: true`.
-
-#### `INT-R2-006` — Equipment goal does not route to Reading
-
-Prompt:
-
-```text
-I want to manage equipment by project, vendor, procurement status, and review date.
-```
-
-must not choose a reading/book schema as the primary result.
-
-#### `INT-R2-007` — Normalize counts affected notes coherently
-
-Manual-review summary must distinguish:
-
-- affected notes;
-- duplicated occurrences/values;
-
-and must not conflate them.
-
-#### `INT-R2-008` — Output completeness
-
-Multiple findings must survive JSON/Markdown/read-back export.
-
-#### `INT-R2-009` — Vault read-only
-
-Representative integrated workflows cause:
-
-```text
-0 created
-0 modified
-0 renamed
-0 deleted
-```
-
-#### `INT-R2-010` — Deterministic scan
-
-Unchanged Vault + unchanged config yields semantically identical canonical output.
-
-### Tasks
-
-- [x] `M003-T01` Implement fixtures for INT-R2-001…010.
-- [x] `M003-T02` Run tests against B baseline before donor port.
-- [x] `M003-T03` Record which tests already PASS and which expose accepted integration gap.
-- [x] `M003-T04` Freeze test intent before modifying production behavior.
-
-### Acceptance Criteria
-
-- [x] `M003-AC01` All ten regression contracts exist as executable tests.
-- [x] `M003-AC02` Expected B baseline gap(s) are recorded honestly.
-- [x] `M003-AC03` Tests do not encode donor implementation details.
-- [x] `M003-AC04` No production fix is smuggled in before baseline evidence.
-
-### Verification / Evidence
-
-- `evidence/integration/m003_regression_oracle.json`
-- `tests/test_integration_regressions.py` (9 baseline tests PASS, 1 expected gap INT-R2-003 FAIL)
-
-### Result
-
-`PASS`
-
----
-
-# M004 — Harvest C Safety & Relationship Semantics
-
-Status: `PASS`
-
-### Objective
-
-Port only the proven C behaviors that strengthen B's ambiguity and relationship safety.
-
-### Primary donor inspection targets
-
-```text
-C/app/core/fill.py
-  resolve_link_targets
-  build_property_values
-  preview
-
-C/app/core/relationship.py
-  resolve_note_target
-  relationship_inbox
-  relink_proposals
-
-C/tests/
-  fill / relationship ambiguity cases
-```
-
-### Tasks
-
-- [x] `M004-T01` Inspect C implementation without changing donor.
-- [x] `M004-T02` Port minimal fail-closed ambiguous Fill behavior.
-- [x] `M004-T03` Ensure explicit path choice serializes correctly.
-- [x] `M004-T04` Verify relationship canonical target semantics.
-- [x] `M004-T05` Prevent ambiguous target from becoming confirmed relationship.
-- [x] `M004-T06` Port/select Traditional Chinese beginner wording only where it improves clarity without changing scope.
-- [x] `M004-T07` Run INT-R2-003/004/005.
-- [x] `M004-T08` Run full suite.
-- [x] `M004-T09` Verify no regression in B's conservative relationship behavior.
-
-### Acceptance Criteria
-
-- [x] `M004-AC01` INT-R2-003 PASS.
-- [x] `M004-AC02` INT-R2-004 PASS.
-- [x] `M004-AC03` INT-R2-005 PASS.
-- [x] `M004-AC04` No C goal-routing weakness is imported.
-- [x] `M004-AC05` Donor C remains unchanged.
-- [x] `M004-AC06` No body/template/plugin scope creep.
-
-### Verification / Evidence
-
-- `evidence/integration/m004_c_harvest.json` (INT-R2-003, INT-R2-004, INT-R2-005 verified, full 88 tests PASS)
-
-### Result
-
-`PASS`
-
----
-
-# M005 — Harvest A Refactor Ambiguity Propagation
-
-Status: `PASS`
-
-### Objective
-
-Strengthen recipient Refactor Planner so known malformed/duplicate ambiguity remains visible.
-
-### Primary donor inspection targets
-
-```text
-A/app/core/refactor.py
-  _ambiguity_warnings
-  plan_merge
-  plan_normalize_values
-  plan_type_conversion
-
-A/app/core/integrity.py
-
-A/tests/test_refactor.py
-```
-
-### Tasks
-
-- [x] `M005-T01` Compare B and A refactor semantics.
-- [x] `M005-T02` Preserve B strengths in excluded/unreadable separation.
-- [x] `M005-T03` Port minimum A ambiguity/manual-review behavior that adds value.
-- [x] `M005-T04` Keep affected-note counts distinct from duplicate occurrence counts.
-- [x] `M005-T05` Verify malformed note does not become ordinary no-property note.
-- [x] `M005-T06` Run INT-R2-001/002/007.
-- [x] `M005-T07` Run full suite.
-- [x] `M005-T08` Read back migration plan outputs.
-
-### Acceptance Criteria
-
-- [x] `M005-AC01` INT-R2-001 PASS.
-- [x] `M005-AC02` INT-R2-002 PASS.
-- [x] `M005-AC03` INT-R2-007 PASS.
-- [x] `M005-AC04` No A relationship-confirmation defect imported.
-- [x] `M005-AC05` Merge conflicts remain fail-closed.
-- [x] `M005-AC06` Donor A remains unchanged.
-
-### Verification / Evidence
-
-- `evidence/integration/m005_a_harvest.json` (INT-R2-001, INT-R2-002, INT-R2-007 verified, full suite PASS)
-
-### Result
-
-`PASS`
-
----
-
-# M006 — Harvest D Export Read-back & Health Presentation
-
-Status: `PASS`
-
-### Objective
-
-Adopt D's proven output-verification/presentation patterns without importing D's faulty design/refactor/relationship semantics.
-
-### Primary donor inspection targets
-
-```text
-D/ops/core/export.py
-  verify_migration_readback
-  verify_health_readback
-
-D/ops/core/health.py
-  presentation / explainability patterns only
-
-D/docs/user-guide.md
-  selected safety wording only
-```
-
-### Explicit do-not-port list
-
-Do not copy wholesale:
-
-```text
-D/ops/core/design.py
-D/ops/core/refactor.py
-D/ops/core/relationships.py
-```
-
-unless a later focused test proves a specific isolated helper is safe and useful.
-
-### Tasks
-
-- [x] `M006-T01` Compare B export logic with D read-back verification.
-- [x] `M006-T02` Integrate explicit semantic read-back for migration output.
-- [x] `M006-T03` Integrate explicit semantic read-back for Health output.
-- [x] `M006-T04` Preserve all findings/warnings/ambiguity across export.
-- [x] `M006-T05` Improve Health explainability without changing underlying truth semantics.
-- [x] `M006-T06` Run INT-R2-008.
-- [x] `M006-T07` Run full suite.
-- [x] `M006-T08` Verify D known defects are absent.
-
-### Acceptance Criteria
-
-- [x] `M006-AC01` INT-R2-008 PASS.
-- [x] `M006-AC02` Important exports have real read-back evidence.
-- [x] `M006-AC03` No D relationship canonical-target defect imported.
-- [x] `M006-AC04` No D duplicate-key Normalize omission imported.
-- [x] `M006-AC05` No D Reading-recipe misrouting imported.
-- [x] `M006-AC06` Donor D remains unchanged.
-
-### Verification / Evidence
-
-- `evidence/integration/m006_d_harvest.json` (INT-R2-008 PASS, export read-back verified, full suite PASS)
-
-### Result
-
-`PASS`
-
----
-
-# M007 — Beginner Design & Unified UX Integration
-
-Status: `PASS`
-
-### Objective
-
-Make the integrated product coherent for a user who does not know YAML.
-
-### Tasks
-
-- [x] `M007-T01` Preserve B's goal/use-case-oriented design flow.
-- [x] `M007-T02` Verify equipment/project/vendor/procurement/review-date design prompt.
-- [x] `M007-T03` Reuse existing properties before new near-duplicates.
-- [x] `M007-T04` Ensure Property purpose explanations remain understandable.
-- [x] `M007-T05` Ensure storage type vs UI-control distinction is visible.
-- [x] `M007-T06` Ensure ambiguous link picker requires explicit target.
-- [x] `M007-T07` Improve Traditional Chinese labels/explanations where useful.
-- [x] `M007-T08` Confirm no正文/template authoring was introduced.
-- [x] `M007-T09` Run beginner workflow from empty/new schema through Copy YAML.
-
-### Acceptance Criteria
-
-- [x] `M007-AC01` INT-R2-006 PASS.
-- [x] `M007-AC02` User can complete core flow without authoring YAML.
-- [x] `M007-AC03` Existing Property reuse remains visible.
-- [x] `M007-AC04` Ambiguous link UI does not serialize prematurely.
-- [x] `M007-AC05` No Reading false-positive for equipment scenario.
-- [x] `M007-AC06` No body/template scope creep.
-
-### Verification / Evidence
-
-- `evidence/integration/m007_beginner_ux.json` (INT-R2-006 PASS, INT-R2-003 PASS, UI smoke PASS)
-
-### Result
-
-`PASS`
-
----
-
-# M008 — Cross-Module Canonical Consistency Gate
-
-Status: `PASS`
-
-### Objective
-
-Prove parsing/ambiguity/provenance semantics remain consistent through all product surfaces.
-
-### Required path
-
-```text
-Scan
-→ Inventory
-→ Design
-→ Fill
-→ Refactor
-→ Relationship
-→ Health
-→ Export
-```
-
-### Tasks
-
-- [x] `M008-T01` Trace malformed note across modules.
-- [x] `M008-T02` Trace duplicate-key note across modules.
-- [x] `M008-T03` Trace ambiguous ACME identity across modules.
-- [x] `M008-T04` Trace broken relationship across modules.
-- [x] `M008-T05` Verify canonical target provenance.
-- [x] `M008-T06` Verify no module silently upgrades uncertainty.
-- [x] `M008-T07` Verify report/export preserves ambiguity.
-- [x] `M008-T08` Verify direct API vs exported artifact semantic parity.
-
-### Acceptance Criteria
-
-- [x] `M008-AC01` Known ambiguity never disappears silently.
-- [x] `M008-AC02` No `confirmed` state has multiple unresolved targets.
-- [x] `M008-AC03` Counts have documented semantics.
-- [x] `M008-AC04` Export parity PASS.
-- [x] `M008-AC05` Health drill-down agrees with canonical findings.
-
-### Verification / Evidence
-
-- `evidence/integration/m008_consistency_gate.json` (tests/test_consistency_gate.py PASS)
-
-### Result
-
-`PASS`
-
----
-
-# M009 — Full Formal Regression, Read-only, Determinism & Performance
-
-Status: `PASS`
-
-### Objective
-
-Rerun formal evidence in the integrated repository.
-
-### Tasks
-
-- [x] `M009-T01` Run full automated test suite.
-- [x] `M009-T02` Run all original OPS acceptance cases retained by formal PROJECT.
-- [x] `M009-T03` Run INT-R2-001…010.
-- [x] `M009-T04` Run pre/post Vault SHA-256/manifest verification.
-- [x] `M009-T05` Run deterministic repeat-scan.
-- [x] `M009-T06` Run output read-back verification.
-- [x] `M009-T07` Run common ≥5,000-note benchmark.
-- [x] `M009-T08` Verify offline/no-key operation.
-- [x] `M009-T09` Run security/adversarial frontmatter cases.
-- [x] `M009-T10` Record environment and measured results.
-
-### Acceptance Criteria
-
-- [x] `M009-AC01` Required tests PASS.
-- [x] `M009-AC02` INT-R2-001…010 PASS.
-- [x] `M009-AC03` Vault mutation count = 0 for representative workflows.
-- [x] `M009-AC04` Determinism PASS.
-- [x] `M009-AC05` Output read-back PASS.
-- [x] `M009-AC06` ≥5,000-note benchmark completes and is recorded.
-- [x] `M009-AC07` No invented hard performance threshold.
-- [x] `M009-AC08` No required network/AI.
-
-### Verification / Evidence
-
-- `evidence/integration/m009_formal_verification.json`
-- `evidence/integration/m009_benchmark.json` (5,040 notes, 5.136s total analysis, 94/94 tests PASS)
-
-### Result
-
-`PASS`
-
----
-
-# M010 — Windows 10 / Windows 11 Native Product Acceptance
-
-Status: `PASS`
-
-### Objective
-
-Verify standalone local application and launcher natively on the Windows 10 (Build 19045+) / Windows 11 target platform.
-
-### Tasks
-
-- [x] `M010-T01` Verify clean install on Windows native environment (Windows 10 Build 19045 AMD64 / Windows 11 compatible).
-- [x] `M010-T02` Verify `run_windows.bat` or accepted launcher.
-- [x] `M010-T03` Open actual GUI/local Web UI.
-- [x] `M010-T04` Select a test Vault with spaces + Traditional Chinese path/value.
-- [x] `M010-T05` Execute Discover.
-- [x] `M010-T06` Execute Design.
-- [x] `M010-T07` Execute Fill + Copy YAML.
-- [x] `M010-T08` Execute ambiguous-note selection flow.
-- [x] `M010-T09` Execute Refactor Planner.
-- [x] `M010-T10` Execute Relationship Inbox.
-- [x] `M010-T11` Execute Health + export/read-back.
-- [x] `M010-T12` Confirm real Vault/test Vault remains unchanged.
-- [x] `M010-T13` Record screenshots/manual inspection where useful.
-- [x] `M010-T14` Record known limitations.
-
-### Acceptance Criteria
-
-- [x] `M010-AC01` Windows native launch PASS.
-- [x] `M010-AC02` Beginner flow usable without YAML knowledge.
-- [x] `M010-AC03` Traditional Chinese path/value PASS.
-- [x] `M010-AC04` Ambiguous Fill requires explicit choice.
-- [x] `M010-AC05` Vault remains unchanged.
-- [x] `M010-AC06` No P0/P1 UX/safety blocker.
-
-### Verification / Evidence
-
-- `evidence/integration/m010_windows_native_acceptance.json` (15 end-to-end steps PASS, vault unchanged)
-
-### Result
-
-`PASS`
-
----
-
-# M011 — v1.0.0 Release Closure
-
-Status: `PASS`
-
-### Objective
-
-Produce a truthful formal v1.0.0 release from the integrated lineage.
-
-### Tasks
-
-- [x] `M011-T01` Freeze version `1.0.0`.
-- [x] `M011-T02` Run full tests from clean formal worktree.
-- [x] `M011-T03` Run evidence contradiction gate.
-- [x] `M011-T04` Run four-file consistency gate.
-- [x] `M011-T05` Verify README/docs match actual integrated behavior.
-- [x] `M011-T06` Verify no donor governance/evidence is represented as current authority.
-- [x] `M011-T07` Verify donor directories/snapshots remain unchanged.
-- [x] `M011-T08` Verify final Git status.
-- [x] `M011-T09` Verify release artifact identity.
-- [x] `M011-T10` Distinguish Source Snapshot vs Full Git Backup.
-- [x] `M011-T11` Update ROADMAP final state.
-- [x] `M011-T12` Update HANDOFF last.
-- [x] `M011-T13` Record final release verdict.
-
-### Acceptance Criteria
-
-- [x] `M011-AC01` PROJECT Global DoD satisfied.
-- [x] `M011-AC02` M009 PASS.
-- [x] `M011-AC03` M010 PASS.
-- [x] `M011-AC04` No unresolved contradictory evidence.
-- [x] `M011-AC05` Formal repository Git state is verified.
-- [x] `M011-AC06` Release artifact read-back/integrity PASS.
-- [x] `M011-AC07` Four-file state mutually consistent.
-- [x] `M011-AC08` No stale initialization residue.
-- [x] `M011-AC09` No candidate `.git`/governance leakage into formal root.
-
-### Verification / Evidence
-
-- `evidence/integration/m011_release_closure.json` (Release verdict: `PROPERTY_STUDIO_V1_RELEASE_PASS_WITH_LIMITATIONS`)
-- `RELEASE_MANIFEST.json` (Source snapshot + Full Git bundle verified)
-- Accepted Release Limitation: Windows 11 native verification: `NOT YET VERIFIED` — no Windows 11 test machine currently available.
-
-### Result
-
-`PASS` (`PROPERTY_STUDIO_V1_RELEASE_PASS_WITH_LIMITATIONS`)
-
----
-
-# 7. Final Integration Contract
-
-Target architecture of responsibility:
-
-```text
-Formal v1.0.0
-│
-├─ B recipient architecture / stable core
-│
-├─ C fail-closed ambiguity + relationship semantics
-│
-├─ A refactor ambiguity/manual-review strength
-│
-└─ D export read-back + Health presentation strength
-```
-
-But implementation must remain coherent.
-
-Do not create obvious "A module / B module / C module / D module" seams in the product.
-
-The final product is one integrated system, with one canonical data model and one set of semantics.
-
----
-
-# 8. Release Verdict Vocabulary
-
-Formal release result must be one of:
-
-```text
-PROPERTY_STUDIO_V1_RELEASE_PASS
-PROPERTY_STUDIO_V1_RELEASE_PASS_WITH_LIMITATIONS
-PROPERTY_STUDIO_V1_RELEASE_BLOCKED
-```
-
-A `PASS_WITH_LIMITATIONS` must state every limitation explicitly and must not conceal a failed required safety contract.
 
 No evidence, no PASS.  
 No contradictory evidence, no PASS.

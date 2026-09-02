@@ -283,6 +283,7 @@ def fill_preview(
     roundtrip = roundtrip_check(frontmatter, mapping)
     return {
         "frontmatter": frontmatter,
+        "frontmatter_preview": frontmatter,
         "yaml": render_yaml(mapping),
         "mapping_preview": canonical_from_mapping(mapping),
         "errors": errors,
@@ -291,3 +292,4 @@ def fill_preview(
         "valid": not errors and roundtrip["matches"],
         "contains_body": False,
     }
+

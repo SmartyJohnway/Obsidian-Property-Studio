@@ -1,12 +1,9 @@
-"""Local HTTP server for Obsidian Property Studio.
-
-Standard-library only (plus PyYAML in the core) so that the app runs on a plain
-Windows 11 Python install with one dependency.
+"""Local HTTP server for Obsidian Property Studio v1.1.0.
 
 Safety:
   * binds to 127.0.0.1 by default (AGENTS 24);
-  * exposes **no** endpoint that writes into a vault (AGENTS 30);
-  * all exports go to a folder outside the vault;
+  * exposes NO endpoint that writes into a vault (AGENTS 30);
+  * all exports go to a folder outside the vault (REQ-002);
   * no outbound network calls, no telemetry, no API keys.
 """
 
@@ -20,9 +17,22 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Callable
 from urllib.parse import urlparse
 
-from .core import design, exports, health, inventory, proposal, refactor, relationships
-from .core.manifest import assert_unchanged, vault_manifest
+from .core import (
+    body_links,
+    design,
+    exports,
+    health,
+    inventory,
+    note_workspace,
+    property_glossary,
+    proposal,
+    refactor,
+    relationships,
+    saved_checks,
+)
+
 from .core.fill import fill_preview
+from .core.manifest import assert_unchanged, vault_manifest
 from .core.model import (
     STORAGE_TYPE_LABELS,
     UI_CONTROL_ALLOWED_STORAGE,
@@ -30,8 +40,15 @@ from .core.model import (
     Schema,
 )
 from .core.scanner import ScanOptions, VaultPathError, note_name_index, scan_vault
+from .core.scope import (
+    ScopeMode,
+    ScopeSpec,
+    ScopeValidationError,
+    extract_vault_folders,
+    filter_scan_by_scope,
+)
 
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.1.0"
 UI_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui")
 
 
@@ -42,36 +59,53 @@ class Store:
         self.lock = threading.Lock()
         self.scan = None
         self.inventory = None
-        self.baseline_manifest: dict[str, Any] | None = None
-        self.vault_path: str | None = None
+        self.baseline_manifest: dict[str, str] | None = None
+        self.scope: ScopeSpec = ScopeSpec()
+        self.saved_checks_store = saved_checks.SavedChecksStore()
 
-    def set_scan(self, scan, baseline: dict[str, Any] | None) -> None:
+
+
+    def set_scan(self, scan, manifest: dict[str, str] | None) -> None:
         with self.lock:
             self.scan = scan
             self.inventory = inventory.build_inventory(scan)
-            self.vault_path = scan.vault_path
-            if baseline is not None:
-                self.baseline_manifest = baseline
+            self.baseline_manifest = manifest
+            self.scope = ScopeSpec()
+
+    def set_scope(self, scope: ScopeSpec) -> None:
+        with self.lock:
+            scope.validate()
+            self.scope = scope
 
     def require_scan(self):
         if self.scan is None:
-            raise ApiError("Select and scan a vault first.", 400)
+            raise ApiError("No vault is currently loaded. Run a scan first.", 400)
         return self.scan
+
+    def get_scoped_scan(self):
+        scan = self.require_scan()
+        if self.scope.mode == ScopeMode.ENTIRE_VAULT:
+            return scan
+        return filter_scan_by_scope(scan, self.scope)
+
+    def get_scoped_inventory(self):
+        scoped_scan = self.get_scoped_scan()
+        return inventory.build_inventory(scoped_scan)
+
+
+STORE = Store()
 
 
 class ApiError(Exception):
-    def __init__(self, message: str, status: int = 400, detail: Any = None):
+    def __init__(self, message: str, status: int = 400, detail: Any = None) -> None:
         super().__init__(message)
         self.message = message
         self.status = status
         self.detail = detail
 
 
-STORE = Store()
-
-
 # --------------------------------------------------------------------------
-# API handlers
+# API Handlers
 # --------------------------------------------------------------------------
 def api_meta(_body: dict[str, Any]) -> dict[str, Any]:
     return {
@@ -115,19 +149,30 @@ def api_scan(body: dict[str, Any]) -> dict[str, Any]:
 
 def api_discovery(_body: dict[str, Any]) -> dict[str, Any]:
     scan = STORE.require_scan()
-    return inventory.discovery_report(scan, STORE.inventory)
+    scoped_scan = STORE.get_scoped_scan()
+    inv = STORE.get_scoped_inventory()
+    report = inventory.discovery_report(scoped_scan, inv)
+    report["scope"] = STORE.scope.to_dict()
+    report["notes_in_scope"] = scoped_scan.note_count
+    report["total_vault_notes"] = scan.note_count
+    return report
 
 
 def api_property_detail(body: dict[str, Any]) -> dict[str, Any]:
     STORE.require_scan()
+    scoped_scan = STORE.get_scoped_scan()
+    inv = STORE.get_scoped_inventory()
     key = body.get("key", "")
-    entry = STORE.inventory.get(key) if STORE.inventory else None
+    entry = inv.get(key)
     if entry is None:
-        raise ApiError(f"Property '{key}' is not used in this vault.", 404)
+        raise ApiError(f"Property '{key}' is not used in current scope.", 404)
+    entry_dict = entry.to_dict(value_limit=200)
+    entry_dict["values"] = entry_dict.get("top_values", [])
     return {
-        "entry": entry.to_dict(value_limit=200),
+        "entry": entry_dict,
         "notes_by_type": {k: sorted(v) for k, v in sorted(entry.type_notes.items())},
     }
+
 
 
 def api_design_suggest(body: dict[str, Any]) -> dict[str, Any]:
@@ -138,23 +183,50 @@ def api_design_suggest(body: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def api_design_presets(_body: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "objects": [
+            {"id": v["id"], "name_zh": v["name_zh"], "name_en": v["name_en"], "props_count": len(v["props"])}
+            for v in design.OBJECT_PRESETS.values()
+        ],
+        "needs": [
+            {"id": v["id"], "name_zh": v["name_zh"], "name_en": v["name_en"], "props_count": len(v["props"])}
+            for v in design.NEED_PRESETS.values()
+        ],
+    }
+
+
 def api_design_build(body: dict[str, Any]) -> dict[str, Any]:
     goal = str(body.get("goal", ""))
-    schema = design.build_schema(
-        goal_text=goal,
-        recipe_id=body.get("recipe_id") or None,
-        intent_ids=tuple(body.get("intents", []) or []),
-        schema_name=body.get("schema_name") or None,
-        inv=STORE.inventory,
-    )
-    inv = STORE.inventory or inventory.Inventory()
-    return design.review_schema_against_vault(schema, inv)
+    objects = list(body.get("objects", []) or [])
+    needs = list(body.get("needs", []) or [])
+    scoped_inv = STORE.get_scoped_inventory() if STORE.scan else inventory.Inventory()
+    global_inv = STORE.inventory or scoped_inv
+
+    if objects or needs:
+        schema = design.build_schema_from_structured_inputs(
+            objects=objects,
+            needs=needs,
+            extra_text=goal,
+            schema_name=body.get("schema_name") or None,
+            inv=scoped_inv,
+        )
+    else:
+        schema = design.build_schema(
+            goal_text=goal,
+            recipe_id=body.get("recipe_id") or None,
+            intent_ids=tuple(body.get("intents", []) or []),
+            schema_name=body.get("schema_name") or None,
+            inv=scoped_inv,
+        )
+    return design.review_schema_against_vault(schema, scoped_inv, global_inv=global_inv)
 
 
 def api_design_review(body: dict[str, Any]) -> dict[str, Any]:
     schema = Schema.from_dict(body.get("schema", {}))
-    inv = STORE.inventory or inventory.Inventory()
-    return design.review_schema_against_vault(schema, inv)
+    scoped_inv = STORE.get_scoped_inventory() if STORE.scan else inventory.Inventory()
+    global_inv = STORE.inventory or scoped_inv
+    return design.review_schema_against_vault(schema, scoped_inv, global_inv=global_inv)
 
 
 def api_fill_preview(body: dict[str, Any]) -> dict[str, Any]:
@@ -164,6 +236,39 @@ def api_fill_preview(body: dict[str, Any]) -> dict[str, Any]:
     return fill_preview(schema, values, index)
 
 
+def api_workspace_candidates(body: dict[str, Any]) -> dict[str, Any]:
+    scan = STORE.require_scan()
+    query = str(body.get("query", "")).strip()
+    candidates = note_workspace.find_candidate_notes(scan, query, current_scope=STORE.scope)
+    return {"candidates": candidates, "total": len(candidates)}
+
+
+def api_workspace_inspect(body: dict[str, Any]) -> dict[str, Any]:
+    scan = STORE.require_scan()
+    note_path = str(body.get("note_path", "")).strip()
+    if not note_path:
+        raise ApiError("note_path is required", 400)
+    result = note_workspace.inspect_note_for_workspace(scan, note_path)
+    return result.to_dict()
+
+
+def api_workspace_preview(body: dict[str, Any]) -> dict[str, Any]:
+    scan = STORE.require_scan()
+    note_path = str(body.get("note_path", "")).strip()
+    note = scan.note_by_path(note_path) if note_path else None
+    values = body.get("values", {}) or {}
+    schema_data = body.get("schema")
+    schema = Schema.from_dict(schema_data) if schema_data else None
+    deleted_keys = list(body.get("deleted_keys", []) or [])
+    diff_res = note_workspace.compute_workspace_diff_and_frontmatter(
+        original_note=note,
+        updated_values=values,
+        schema=schema,
+        deleted_keys=deleted_keys,
+    )
+    return diff_res.to_dict()
+
+
 def api_note_candidates(body: dict[str, Any]) -> dict[str, Any]:
     scan = STORE.require_scan()
     query = str(body.get("query", "")).strip().casefold()
@@ -171,9 +276,7 @@ def api_note_candidates(body: dict[str, Any]) -> dict[str, Any]:
     for note in scan.notes:
         if query and query not in note.name.casefold() and query not in note.path.casefold():
             continue
-        matches.append({"name": note.name, "path": note.path})
-        if len(matches) >= 50:
-            break
+        matches.append(note.path)
     index = note_name_index(scan)
     ambiguous = sorted(name for name, paths in index.items() if len(paths) > 1)
     return {"candidates": matches, "ambiguous_names": ambiguous}
@@ -182,74 +285,214 @@ def api_note_candidates(body: dict[str, Any]) -> dict[str, Any]:
 def api_refactor_plan(body: dict[str, Any]) -> dict[str, Any]:
     scan = STORE.require_scan()
     operation = body.get("operation")
+    scope_data = body.get("scope")
+    try:
+        active_scope = ScopeSpec.from_dict(scope_data) if scope_data else STORE.scope
+    except ScopeValidationError as exc:
+        raise ApiError(f"Invalid Scope specification: {exc}", 400) from exc
+
     if operation == "rename":
-        plan = refactor.plan_rename(scan, body["source"], body["target"])
+        source = str(body.get("source", "")).strip()
+        target = str(body.get("target", "")).strip()
+        if not source:
+            raise ApiError("Source property name is required.", 400)
+        if not target:
+            raise ApiError("Target property name cannot be empty.", 400)
+        plan = refactor.plan_rename(scan, source, target, scope=active_scope)
+        # Check target conflict against global inventory
+        global_inv = STORE.inventory
+        if global_inv and target in global_inv.properties:
+            plan["target_already_exists"] = True
+            plan["target_existing_usage_count"] = global_inv.properties[target].usage_count
     elif operation == "merge":
-        plan = refactor.plan_merge(scan, list(body.get("sources", [])), body["target"])
+        sources = [str(s).strip() for s in body.get("sources", []) if str(s).strip()]
+        target = str(body.get("target", "")).strip()
+        if not sources:
+            raise ApiError("Merge requires at least one source property.", 400)
+        if not target:
+            raise ApiError("Target property name cannot be empty.", 400)
+        plan = refactor.plan_merge(scan, sources, target, scope=active_scope)
     elif operation == "normalize":
+        prop = str(body.get("property") or body.get("key") or "").strip()
+        if not prop:
+            raise ApiError("Property name is required for normalization.", 400)
+        mapping = body.get("mapping") if isinstance(body.get("mapping"), dict) else None
+        overrides = body.get("canonical_overrides") if isinstance(body.get("canonical_overrides"), dict) else None
         plan = refactor.plan_normalize(
-            scan, body["property"], body.get("canonical_overrides") or None
+            scan, prop, canonical_overrides=overrides, mapping=mapping, scope=active_scope
         )
+
     elif operation == "convert_type":
-        plan = refactor.plan_type_conversion(scan, body["property"], body["target_type"])
+        prop = str(body.get("property") or body.get("key") or "").strip()
+        target_type = str(body.get("target_type", "")).strip()
+        if not prop:
+            raise ApiError("Property name is required for type conversion.", 400)
+        valid_types = {"text", "number", "date", "checkbox", "list", "tags", "note_link", "note_link_list"}
+        if target_type not in valid_types:
+            raise ApiError(f"Target type must be one of {sorted(valid_types)}, got '{target_type}'.", 400)
+        plan = refactor.plan_type_conversion(scan, prop, target_type, scope=active_scope)
     elif operation == "required_impact":
         schema = Schema.from_dict(body.get("schema", {}))
         plan = refactor.plan_required_impact(
-            scan, schema, body.get("scope_property") or None, body.get("scope_value") or None
+            scan, schema, body.get("scope_property") or None, body.get("scope_value") or None, scope=active_scope
         )
     else:
         raise ApiError(f"Unknown refactor operation '{operation}'.", 400)
     return plan
 
 
+
 def api_relationships(body: dict[str, Any]) -> dict[str, Any]:
     scan = STORE.require_scan()
-    return relationships.build_inbox(scan, body.get("property") or None)
+    prop_filter = body.get("property") or None
+    src_data = body.get("source_scope")
+    tgt_data = body.get("target_scope")
+    try:
+        source_scope = ScopeSpec.from_dict(src_data) if src_data else STORE.scope
+        target_scope = ScopeSpec.from_dict(tgt_data) if tgt_data else None
+    except ScopeValidationError as exc:
+        raise ApiError(f"Invalid Scope specification: {exc}", 400) from exc
+
+    res = relationships.build_inbox(
+        scan,
+        property_filter=prop_filter,
+        source_scope=source_scope,
+        target_scope=target_scope,
+    )
+    res["findings"] = res.get("items", [])
+    return res
+
+
+def api_relationships_body(body: dict[str, Any]) -> dict[str, Any]:
+    scan = STORE.require_scan()
+    src_data = body.get("source_scope")
+    tgt_data = body.get("target_scope")
+    try:
+        source_scope = ScopeSpec.from_dict(src_data) if src_data else STORE.scope
+        target_scope = ScopeSpec.from_dict(tgt_data) if tgt_data else None
+    except ScopeValidationError as exc:
+        raise ApiError(f"Invalid Scope specification: {exc}", 400) from exc
+
+    res = body_links.analyze_body_wikilinks(
+        scan,
+        source_scope=source_scope,
+        target_scope=target_scope,
+    )
+    res["items"] = res.get("findings", [])
+    return res
+
+
+
+def api_saved_checks_list(_body: dict[str, Any]) -> dict[str, Any]:
+    checks = STORE.saved_checks_store.list_checks()
+    return {"checks": [c.to_dict() for c in checks], "total": len(checks)}
+
+
+def api_saved_checks_save(body: dict[str, Any]) -> dict[str, Any]:
+    chk_data = body.get("check") or body
+    try:
+        chk = saved_checks.SavedCheck.from_dict(chk_data)
+    except Exception as exc:
+        raise ApiError(f"Malformed Saved Check payload: {exc}", 400) from exc
+    STORE.saved_checks_store.save_check(chk)
+    return {"status": "saved", "check": chk.to_dict()}
+
+
+def api_saved_checks_delete(body: dict[str, Any]) -> dict[str, Any]:
+    check_id = str(body.get("id", "")).strip()
+    if not check_id:
+        raise ApiError("id is required", 400)
+    deleted = STORE.saved_checks_store.delete_check(check_id)
+    return {"deleted": deleted, "id": check_id}
+
+
+
+
+def api_saved_checks_execute(body: dict[str, Any]) -> dict[str, Any]:
+    scan = STORE.require_scan()
+    check_id = str(body.get("id", "")).strip()
+    if not check_id:
+        raise ApiError("id is required", 400)
+    try:
+        return STORE.saved_checks_store.execute_check(scan, check_id)
+    except KeyError as exc:
+        raise ApiError(str(exc), 404) from exc
 
 
 def api_health(body: dict[str, Any]) -> dict[str, Any]:
     scan = STORE.require_scan()
+    scoped_scan = STORE.get_scoped_scan()
+    inv = STORE.get_scoped_inventory()
     schema_data = body.get("schema")
     schema = Schema.from_dict(schema_data) if schema_data else None
-    return health.health_report(
-        scan,
-        STORE.inventory,
+    report = health.health_report(
+        scoped_scan,
+        inv,
         schema,
         body.get("scope_property") or None,
         body.get("scope_value") or None,
     )
+    report["scope"] = STORE.scope.to_dict()
+    report["notes_in_scope"] = scoped_scan.note_count
+    report["total_vault_notes"] = scan.note_count
+    return report
 
 
 def api_proposal_import(body: dict[str, Any]) -> dict[str, Any]:
     text = body.get("text")
     if not isinstance(text, str) or not text.strip():
         raise ApiError("Paste or open a proposal JSON file first.", 400)
-    return proposal.import_proposal(text, STORE.inventory)
+    inv = STORE.get_scoped_inventory() if STORE.scan else inventory.Inventory()
+    return proposal.import_proposal(text, inv)
 
 
 def api_export(body: dict[str, Any]) -> dict[str, Any]:
     scan = STORE.require_scan()
     kind = body.get("kind")
     params = body.get("params", {}) or {}
-    if kind == "discovery":
-        payload = inventory.discovery_report(scan, STORE.inventory)
+
+    # R06: Ensure export is Scope-aware and matches what user sees
+    if "payload" in body and isinstance(body["payload"], dict):
+        payload = body["payload"]
+    elif kind == "discovery":
+        scoped_scan = STORE.get_scoped_scan()
+        inv = STORE.get_scoped_inventory()
+        payload = inventory.discovery_report(scoped_scan, inv)
+        payload["scope"] = STORE.scope.to_dict()
+        payload["notes_in_scope"] = scoped_scan.note_count
+        payload["total_vault_notes"] = scan.note_count
     elif kind == "health":
+        scoped_scan = STORE.get_scoped_scan()
+        inv = STORE.get_scoped_inventory()
         schema_data = params.get("schema")
         payload = health.health_report(
-            scan,
-            STORE.inventory,
+            scoped_scan,
+            inv,
             Schema.from_dict(schema_data) if schema_data else None,
             params.get("scope_property") or None,
             params.get("scope_value") or None,
         )
+        payload["scope"] = STORE.scope.to_dict()
+        payload["notes_in_scope"] = scoped_scan.note_count
+        payload["total_vault_notes"] = scan.note_count
     elif kind == "inbox":
-        payload = relationships.build_inbox(scan, params.get("property") or None)
+        src_data = params.get("source_scope")
+        tgt_data = params.get("target_scope")
+        source_scope = ScopeSpec.from_dict(src_data) if src_data else STORE.scope
+        target_scope = ScopeSpec.from_dict(tgt_data) if tgt_data else None
+        payload = relationships.build_inbox(
+            scan,
+            property_filter=params.get("property") or None,
+            source_scope=source_scope,
+            target_scope=target_scope,
+        )
     elif kind == "plan":
         payload = api_refactor_plan(params)
     elif kind == "schema":
         payload = Schema.from_dict(params.get("schema", {})).to_dict()
     else:
         raise ApiError(f"Unknown export kind '{kind}'.", 400)
+
     try:
         result = exports.export_artifact(
             kind, payload, scan.vault_path, body.get("output_dir") or None,
@@ -270,42 +513,148 @@ def api_vault_verify(_body: dict[str, Any]) -> dict[str, Any]:
     return report
 
 
+def api_scope_folders(_body: dict[str, Any]) -> dict[str, Any]:
+    scan = STORE.require_scan()
+    folders = extract_vault_folders(scan.notes)
+    return {"folders": folders, "total": len(folders)}
+
+
+def api_scope_set(body: dict[str, Any]) -> dict[str, Any]:
+    STORE.require_scan()
+    scope_data = body.get("scope")
+    try:
+        scope = ScopeSpec.from_dict(scope_data)
+        STORE.set_scope(scope)
+    except ScopeValidationError as exc:
+        raise ApiError(f"Invalid Scope specification: {exc}", 400) from exc
+
+    scoped_scan = STORE.get_scoped_scan()
+    return {
+        "status": "applied",
+        "scope": STORE.scope.to_dict(),
+        "notes_in_scope": scoped_scan.note_count,
+        "total_notes": STORE.scan.note_count,
+    }
+
+
+def api_scope_current(_body: dict[str, Any]) -> dict[str, Any]:
+    STORE.require_scan()
+    scoped_scan = STORE.get_scoped_scan()
+    return {
+        "scope": STORE.scope.to_dict(),
+        "notes_in_scope": scoped_scan.note_count,
+        "total_notes": STORE.scan.note_count,
+    }
+
+
+def api_glossary_catalog(_body: dict[str, Any]) -> dict[str, Any]:
+    catalog = property_glossary.export_glossary_catalog()
+    return {"catalog": catalog, "total": len(catalog)}
+
+
+def api_glossary_property(body: dict[str, Any]) -> dict[str, Any]:
+    key = str(body.get("property") or body.get("key") or "").strip()
+    if not key:
+        raise ApiError("Property key is required.", 400)
+    entry = property_glossary.get_property_glossary_entry(key)
+
+    scope_usage = 0
+    vault_usage = 0
+    observed_values: list[dict[str, Any]] = []
+    dominant_type = None
+    if STORE.scan:
+        all_inv = STORE.inventory or inventory.build_inventory(STORE.scan)
+        if key in all_inv.properties:
+            vault_usage = all_inv.properties[key].usage_count
+            observed_values = sorted(
+                [{"value": v.value, "count": v.count} for v in all_inv.properties[key].values.values() if v.value],
+                key=lambda x: -x["count"]
+            )[:8]
+            dt = all_inv.properties[key].dominant_type
+            dominant_type = dt.value if hasattr(dt, "value") else str(dt)
+
+
+        scoped_scan = STORE.get_scoped_scan()
+        scoped_inv = inventory.build_inventory(scoped_scan)
+        if key in scoped_inv.properties:
+            scope_usage = scoped_inv.properties[key].usage_count
+
+    return {
+        "canonical_key": key,
+        "is_known": entry is not None,
+        "metadata": entry.to_dict() if entry else None,
+        "scope_usage": scope_usage,
+        "vault_usage": vault_usage,
+        "detected_type": dominant_type,
+        "common_values": observed_values,
+    }
+
+
+# --------------------------------------------------------------------------
+# Dispatch Table
+# --------------------------------------------------------------------------
 ROUTES: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "/api/meta": api_meta,
     "/api/scan": api_scan,
     "/api/discovery": api_discovery,
     "/api/property": api_property_detail,
+    "/api/design/presets": api_design_presets,
     "/api/design/suggest": api_design_suggest,
     "/api/design/build": api_design_build,
     "/api/design/review": api_design_review,
     "/api/fill/preview": api_fill_preview,
-    "/api/notes/candidates": api_note_candidates,
+    "/api/workspace/notes": api_workspace_candidates,
+    "/api/workspace/inspect": api_workspace_inspect,
+    "/api/workspace/preview": api_workspace_preview,
     "/api/refactor/plan": api_refactor_plan,
     "/api/relationships": api_relationships,
+    "/api/relationships/body": api_relationships_body,
+    "/api/relationships/saved/list": api_saved_checks_list,
+    "/api/relationships/saved/save": api_saved_checks_save,
+    "/api/relationships/saved/delete": api_saved_checks_delete,
+    "/api/relationships/saved/execute": api_saved_checks_execute,
     "/api/health": api_health,
     "/api/proposal/import": api_proposal_import,
+    "/api/proposal/validate": api_proposal_import,
     "/api/export": api_export,
     "/api/vault/verify": api_vault_verify,
+    "/api/verify_untouched": api_vault_verify,
+    "/api/scope/folders": api_scope_folders,
+    "/api/scope/set": api_scope_set,
+    "/api/scope/apply": api_scope_set,
+    "/api/scope/current": api_scope_current,
+    "/api/note_candidates": api_note_candidates,
+    "/api/notes/candidates": api_note_candidates,
+    "/api/glossary": api_glossary_catalog,
+    "/api/glossary/catalog": api_glossary_catalog,
+    "/api/glossary/property": api_glossary_property,
 }
 
 
+
+
+# --------------------------------------------------------------------------
+# HTTP Server
+# --------------------------------------------------------------------------
 class Handler(BaseHTTPRequestHandler):
-    server_version = f"PropertyStudio/{APP_VERSION}"
-    protocol_version = "HTTP/1.1"
+    server_version = "ObsidianPropertyStudio/" + APP_VERSION
 
-    def log_message(self, fmt: str, *args: Any) -> None:  # quieter console
-        if os.environ.get("PROPERTY_STUDIO_VERBOSE"):
-            super().log_message(fmt, *args)
+    def log_message(self, format: str, *args: Any) -> None:  # noqa: A002
 
-    # -- helpers ---------------------------------------------------------
+        pass  # silent by default (AGENTS 24)
+
     def _send(self, status: int, body: bytes, content_type: str) -> None:
         self.send_response(status)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(body)))
-        self.send_header("Cache-Control", "no-store")
-        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.end_headers()
         self.wfile.write(body)
+
+    def do_OPTIONS(self) -> None:  # noqa: N802
+        self._send(204, b"", "text/plain")
 
     def _send_json(self, status: int, payload: dict[str, Any]) -> None:
         body = json.dumps(payload, ensure_ascii=False, default=str).encode("utf-8")
@@ -321,6 +670,7 @@ class Handler(BaseHTTPRequestHandler):
             ".html": "text/html; charset=utf-8",
             ".js": "text/javascript; charset=utf-8",
             ".css": "text/css; charset=utf-8",
+            ".json": "application/json; charset=utf-8",
             ".svg": "image/svg+xml",
         }.get(os.path.splitext(full)[1], "application/octet-stream")
         with open(full, "rb") as fh:
@@ -382,3 +732,7 @@ def serve(host: str = "127.0.0.1", port: int = 8765) -> None:
         print("\nStopped.")
     finally:
         httpd.server_close()
+
+
+StudioHttpHandler = Handler
+

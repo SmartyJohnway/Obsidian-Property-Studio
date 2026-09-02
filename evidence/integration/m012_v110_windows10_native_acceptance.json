@@ -1,0 +1,43 @@
+{
+  "app": "Obsidian Property Studio",
+  "version": "1.1.0",
+  "evidence_id": "M012-WIN10-NATIVE-ACCEPTANCE",
+  "platform": {
+    "system": "Windows",
+    "release": "10",
+    "version": "10.0.19045",
+    "machine": "AMD64",
+    "python_version": "3.13.7 (tags/v3.13.7:bcee1c3, Aug 14 2025, 14:15:11) [MSC v.1944 64 bit (AMD64)]"
+  },
+  "launcher_verified": {
+    "script": "run_windows.bat",
+    "exists": true,
+    "executable_entry": "python -m app",
+    "native_execution_verified": true
+  },
+  "http_server_walkthrough": {
+    "base_url": "http://127.0.0.1:2586",
+    "static_html_served": true,
+    "i18n_locales_served": true,
+    "api_scan_verified": true,
+    "api_scope_applied": true,
+    "api_discovery_verified": true,
+    "api_workspace_verified": true,
+    "api_relationships_4state_verified": true,
+    "api_body_wikilinks_verified": true,
+    "api_saved_checks_verified": true,
+    "api_health_verified": true,
+    "api_refactor_verified": true,
+    "api_export_readback_verified": true
+  },
+  "vault_read_only_manifest": {
+    "files_checked": 27,
+    "files_created": 0,
+    "files_modified": 0,
+    "files_deleted": 0,
+    "unchanged": true
+  },
+  "windows_native_http_acceptance": "PASS",
+  "windows_native_launcher_invocation": "PASS",
+  "windows_11_status": "NOT YET VERIFIED (accepted non-blocking release limitation)"
+}

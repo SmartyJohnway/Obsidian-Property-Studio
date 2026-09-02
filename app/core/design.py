@@ -430,6 +430,363 @@ def _settle_choice_controls(props: list[SchemaProperty], inv: "Inventory | None"
         ).strip()
 
 
+OBJECT_PRESETS: dict[str, dict[str, Any]] = {
+    "project": {
+        "id": "project",
+        "name_zh": "專案／計畫",
+        "name_en": "Projects / Plans",
+        "type_val": "project",
+        "props": [
+            PropTemplate("owner", T.TEXT, C.NOTE_LINK, "Responsible person note link"),
+            PropTemplate("start_date", T.DATE, C.PLAIN, "Project start date"),
+            PropTemplate("due_date", T.DATE, C.PLAIN, "Project deadline"),
+            PropTemplate("priority", T.TEXT, C.SINGLE_CHOICE, "Urgency priority", allowed_values=("high", "medium", "low")),
+            PropTemplate("area", T.TEXT, C.SINGLE_CHOICE, "Life or work domain"),
+        ]
+    },
+    "task": {
+        "id": "task",
+        "name_zh": "任務／行動事項",
+        "name_en": "Tasks / Actions",
+        "type_val": "task",
+        "props": [
+            PropTemplate("due_date", T.DATE, C.PLAIN, "Due date for task"),
+            PropTemplate("project", T.TEXT, C.NOTE_LINK, "Related project note"),
+            PropTemplate("priority", T.TEXT, C.SINGLE_CHOICE, "Priority level", allowed_values=("high", "medium", "low")),
+            PropTemplate("done", T.CHECKBOX, C.PLAIN, "Completion status flag"),
+        ]
+    },
+    "concept": {
+        "id": "concept",
+        "name_zh": "知識／概念",
+        "name_en": "Knowledge / Concepts",
+        "type_val": "concept",
+        "props": [
+            PropTemplate("topics", T.LIST, C.MULTI_CHOICE, "Cross-cutting subject topics"),
+            PropTemplate("summary", T.TEXT, C.PLAIN, "Short summary of the concept"),
+            PropTemplate("parent_topic", T.TEXT, C.NOTE_LINK, "Parent concept hierarchy"),
+            PropTemplate("aliases", T.LIST, C.MULTI_CHOICE, "Alternative names or acronyms"),
+        ]
+    },
+    "reference": {
+        "id": "reference",
+        "name_zh": "參考資料／來源",
+        "name_en": "References / Sources",
+        "type_val": "reference",
+        "props": [
+            PropTemplate("author", T.TEXT, C.NOTE_LINK, "Author note or attribution"),
+            PropTemplate("source_url", T.TEXT, C.PLAIN, "Original source URL"),
+            PropTemplate("year", T.NUMBER, C.PLAIN, "Publication year"),
+            PropTemplate("topics", T.LIST, C.MULTI_CHOICE, "Related subject topics"),
+        ]
+    },
+    "standard": {
+        "id": "standard",
+        "name_zh": "法規／標準",
+        "name_en": "Regulations / Standards",
+        "type_val": "standard",
+        "props": [
+            PropTemplate("code", T.TEXT, C.PLAIN, "Official standard code or identifier"),
+            PropTemplate("effective_date", T.DATE, C.PLAIN, "Date effective or enacted"),
+            PropTemplate("authority", T.TEXT, C.NOTE_LINK, "Regulatory authority organization"),
+            PropTemplate("scope_domain", T.TEXT, C.SINGLE_CHOICE, "Applicable business domain"),
+        ]
+    },
+    "sop": {
+        "id": "sop",
+        "name_zh": "廠內規範／SOP",
+        "name_en": "Internal SOPs / Specs",
+        "type_val": "sop",
+        "props": [
+            PropTemplate("doc_number", T.TEXT, C.PLAIN, "Document number"),
+            PropTemplate("department", T.TEXT, C.SINGLE_CHOICE, "Responsible department"),
+            PropTemplate("version", T.TEXT, C.PLAIN, "Current SOP version string"),
+            PropTemplate("review_date", T.DATE, C.PLAIN, "Next scheduled review date"),
+        ]
+    },
+    "equipment": {
+        "id": "equipment",
+        "name_zh": "物品／設備／資產",
+        "name_en": "Equipment / Assets",
+        "type_val": "equipment",
+        "props": [
+            PropTemplate("serial_number", T.TEXT, C.PLAIN, "Serial number or asset tag"),
+            PropTemplate("location", T.TEXT, C.SINGLE_CHOICE, "Physical storage location"),
+            PropTemplate("owner", T.TEXT, C.NOTE_LINK, "Custodian person note"),
+            PropTemplate("purchase_date", T.DATE, C.PLAIN, "Acquisition date"),
+            PropTemplate("last_service_date", T.DATE, C.PLAIN, "Last maintenance date"),
+        ]
+    },
+    "software": {
+        "id": "software",
+        "name_zh": "軟體／工具／服務",
+        "name_en": "Software / Tools / Services",
+        "type_val": "software",
+        "props": [
+            PropTemplate("vendor", T.TEXT, C.NOTE_LINK, "Vendor or developer organization"),
+            PropTemplate("license_type", T.TEXT, C.SINGLE_CHOICE, "License classification"),
+            PropTemplate("version", T.TEXT, C.PLAIN, "Deployed software version"),
+            PropTemplate("doc_url", T.TEXT, C.PLAIN, "Documentation link"),
+        ]
+    },
+    "workflow": {
+        "id": "workflow",
+        "name_zh": "應用場景／工作流",
+        "name_en": "Workflows / Scenarios",
+        "type_val": "workflow",
+        "props": [
+            PropTemplate("trigger", T.TEXT, C.PLAIN, "Workflow trigger event"),
+            PropTemplate("inputs", T.LIST, C.MULTI_CHOICE, "Input artifacts or prerequisites"),
+            PropTemplate("outputs", T.LIST, C.MULTI_CHOICE, "Expected deliverables or outputs"),
+            PropTemplate("owner", T.TEXT, C.NOTE_LINK, "Workflow owner note"),
+        ]
+    },
+    "organization": {
+        "id": "organization",
+        "name_zh": "組織／供應商／客戶",
+        "name_en": "Organizations / Vendors",
+        "type_val": "organization",
+        "props": [
+            PropTemplate("org_type", T.TEXT, C.SINGLE_CHOICE, "Organization category", allowed_values=("vendor", "client", "partner", "internal")),
+            PropTemplate("contact_person", T.TEXT, C.NOTE_LINK, "Primary point of contact"),
+            PropTemplate("website", T.TEXT, C.PLAIN, "Official website URL"),
+        ]
+    },
+    "person": {
+        "id": "person",
+        "name_zh": "人員／聯絡人",
+        "name_en": "People / Contacts",
+        "type_val": "person",
+        "props": [
+            PropTemplate("organisation", T.TEXT, C.NOTE_LINK, "Company or organization link"),
+            PropTemplate("role", T.TEXT, C.PLAIN, "Job title or function"),
+            PropTemplate("email", T.TEXT, C.PLAIN, "Email address"),
+            PropTemplate("last_contacted", T.DATE, C.PLAIN, "Last interaction date"),
+        ]
+    },
+    "meeting": {
+        "id": "meeting",
+        "name_zh": "會議／事件",
+        "name_en": "Meetings / Events",
+        "type_val": "meeting",
+        "props": [
+            PropTemplate("date", T.DATE, C.PLAIN, "Meeting date"),
+            PropTemplate("attendees", T.LIST, C.NOTE_LINK_LIST, "Attending people links"),
+            PropTemplate("project", T.TEXT, C.NOTE_LINK, "Associated project link"),
+            PropTemplate("follow_up_required", T.CHECKBOX, C.PLAIN, "Action item flag"),
+        ]
+    },
+    "dataset": {
+        "id": "dataset",
+        "name_zh": "資料集／報表",
+        "name_en": "Datasets / Reports",
+        "type_val": "dataset",
+        "props": [
+            PropTemplate("source", T.TEXT, C.PLAIN, "Data origin system"),
+            PropTemplate("update_frequency", T.TEXT, C.SINGLE_CHOICE, "Refresh cadence", allowed_values=("daily", "weekly", "monthly", "quarterly", "ad-hoc")),
+            PropTemplate("format", T.TEXT, C.SINGLE_CHOICE, "Data storage format", allowed_values=("csv", "parquet", "json", "sql", "excel")),
+            PropTemplate("owner", T.TEXT, C.NOTE_LINK, "Data steward note"),
+        ]
+    },
+}
+
+NEED_PRESETS: dict[str, dict[str, Any]] = {
+    "progress": {
+        "id": "progress",
+        "name_zh": "進度追蹤",
+        "name_en": "Progress Tracking",
+        "props": [
+            PropTemplate("progress", T.NUMBER, C.PLAIN, "Progress percentage (0-100)"),
+            PropTemplate("status", T.TEXT, C.SINGLE_CHOICE, "Execution state", allowed_values=("planning", "in progress", "blocked", "completed", "cancelled")),
+        ]
+    },
+    "priority": {
+        "id": "priority",
+        "name_zh": "優先順序",
+        "name_en": "Priority Order",
+        "props": [
+            PropTemplate("priority", T.TEXT, C.SINGLE_CHOICE, "Urgency ranking", allowed_values=("critical", "high", "medium", "low")),
+        ]
+    },
+    "owner": {
+        "id": "owner",
+        "name_zh": "責任人／負責單位",
+        "name_en": "Assignee / Department",
+        "props": [
+            PropTemplate("owner", T.TEXT, C.NOTE_LINK, "Primary responsible person note"),
+            PropTemplate("department", T.TEXT, C.SINGLE_CHOICE, "Owning department or team"),
+        ]
+    },
+    "dates": {
+        "id": "dates",
+        "name_zh": "開始／截止日期",
+        "name_en": "Start / Due Dates",
+        "props": [
+            PropTemplate("start_date", T.DATE, C.PLAIN, "Initiation date"),
+            PropTemplate("due_date", T.DATE, C.PLAIN, "Target completion deadline"),
+        ]
+    },
+    "review": {
+        "id": "review",
+        "name_zh": "定期檢視",
+        "name_en": "Periodic Review",
+        "props": [
+            PropTemplate("review_date", T.DATE, C.PLAIN, "Next scheduled review date"),
+            PropTemplate("review_cycle", T.TEXT, C.SINGLE_CHOICE, "Review cycle interval", allowed_values=("monthly", "quarterly", "semi-annual", "annual")),
+        ]
+    },
+    "expiration": {
+        "id": "expiration",
+        "name_zh": "有效期限",
+        "name_en": "Expiration / Validity",
+        "props": [
+            PropTemplate("expiration_date", T.DATE, C.PLAIN, "Validity expiration date"),
+        ]
+    },
+    "version": {
+        "id": "version",
+        "name_zh": "版本／修訂",
+        "name_en": "Version / Revision",
+        "props": [
+            PropTemplate("version", T.TEXT, C.PLAIN, "Semantic version or revision ID"),
+            PropTemplate("revision_date", T.DATE, C.PLAIN, "Date of latest revision"),
+        ]
+    },
+    "related": {
+        "id": "related",
+        "name_zh": "關聯其他筆記",
+        "name_en": "Related Notes / Links",
+        "props": [
+            PropTemplate("related", T.LIST, C.NOTE_LINK_LIST, "Linked related entity notes"),
+        ]
+    },
+    "citation": {
+        "id": "citation",
+        "name_zh": "來源／引用",
+        "name_en": "Source / Citations",
+        "props": [
+            PropTemplate("source_url", T.TEXT, C.PLAIN, "External reference link"),
+            PropTemplate("author", T.TEXT, C.NOTE_LINK, "Originating author or creator"),
+        ]
+    },
+    "compliance": {
+        "id": "compliance",
+        "name_zh": "適用性／合規",
+        "name_en": "Compliance / Standards",
+        "props": [
+            PropTemplate("compliance_status", T.TEXT, C.SINGLE_CHOICE, "Compliance evaluation status", allowed_values=("compliant", "non-compliant", "exempt", "under-review")),
+            PropTemplate("standard_ref", T.TEXT, C.NOTE_LINK, "Referenced compliance standard"),
+        ]
+    },
+    "cost": {
+        "id": "cost",
+        "name_zh": "採購／成本",
+        "name_en": "Procurement / Cost",
+        "props": [
+            PropTemplate("cost", T.NUMBER, C.PLAIN, "Financial cost or procurement amount"),
+            PropTemplate("currency", T.TEXT, C.SINGLE_CHOICE, "Currency code", allowed_values=("TWD", "USD", "EUR", "JPY")),
+        ]
+    },
+    "location": {
+        "id": "location",
+        "name_zh": "位置／保管",
+        "name_en": "Location / Custody",
+        "props": [
+            PropTemplate("location", T.TEXT, C.SINGLE_CHOICE, "Physical place, room, or building"),
+            PropTemplate("custodian", T.TEXT, C.NOTE_LINK, "Person or team currently holding custody"),
+        ]
+    },
+    "maintenance": {
+        "id": "maintenance",
+        "name_zh": "維護／保養",
+        "name_en": "Maintenance / Service",
+        "props": [
+            PropTemplate("last_service_date", T.DATE, C.PLAIN, "Most recent service or inspection date"),
+            PropTemplate("next_service_date", T.DATE, C.PLAIN, "Upcoming maintenance schedule"),
+        ]
+    },
+}
+
+
+def build_schema_from_structured_inputs(
+    objects: list[str] | tuple[str, ...],
+    needs: list[str] | tuple[str, ...],
+    extra_text: str = "",
+    schema_name: str | None = None,
+    inv: "Inventory | None" = None,
+) -> Schema:
+    """Deterministic schema proposal synthesis from structured management objects and needs (M014 / REQ-037)."""
+    props: list[SchemaProperty] = []
+    seen: set[str] = set()
+
+    def add(template: PropTemplate, origin: str, override: dict[str, Any] | None = None):
+        if template.name in seen:
+            return
+        seen.add(template.name)
+        prop = template.to_schema_property(origin)
+        if override:
+            for key, value in override.items():
+                setattr(prop, key, value)
+        props.append(prop)
+
+    # 1. Base 'type' property
+    type_candidates = [OBJECT_PRESETS[obj_id]["type_val"] for obj_id in objects if obj_id in OBJECT_PRESETS]
+    if not type_candidates and extra_text.strip():
+        type_candidates = [_slug(extra_text)]
+    if not type_candidates:
+        type_candidates = ["item"]
+
+    add(
+        BASE_TEMPLATES[0],
+        "recipe:base",
+        {"allowed_values": tuple(type_candidates), "required": True},
+    )
+
+    # 2. Base 'status' property if not overridden
+    add(BASE_TEMPLATES[1], "recipe:base")
+
+    # 3. Add properties from selected Management Objects
+    for obj_id in objects:
+        preset = OBJECT_PRESETS.get(obj_id)
+        if not preset:
+            continue
+        for template in preset["props"]:
+            add(template, f"object:{obj_id}")
+
+    # 4. Add properties from selected Management Needs
+    for need_id in needs:
+        preset = NEED_PRESETS.get(need_id)
+        if not preset:
+            continue
+        for template in preset["props"]:
+            add(template, f"need:{need_id}")
+
+    # 5. Optional extra text intent detection
+    if extra_text.strip():
+        for detected_id in detect_intents(extra_text):
+            intent = next((i for i in INTENTS if i.id == detected_id), None)
+            if intent is not None:
+                for template in intent.properties:
+                    add(template, f"intent:{intent.id}")
+
+    # 6. Base 'tags' property
+    add(BASE_TEMPLATES[2], "recipe:base")
+
+    _settle_choice_controls(props, inv)
+
+    derived_name = schema_name
+    if not derived_name:
+        if objects:
+            derived_name = "-".join(objects)
+        elif extra_text.strip():
+            derived_name = _slug(extra_text)
+        else:
+            derived_name = "custom-schema"
+
+    description = f"Designed from {len(objects)} object preset(s) and {len(needs)} management need(s)."
+    return Schema(name=derived_name, description=description, properties=props)
+
+
 def build_schema(
     goal_text: str,
     recipe_id: str | None = None,
@@ -500,33 +857,57 @@ def build_schema(
     return Schema(name=name, description=description, properties=props)
 
 
+
 # --------------------------------------------------------------------------
-# Existing-property awareness (REQ-006 / OPS-AC-007)
+# Existing-property awareness (REQ-006 / OPS-AC-007 / R07)
 # --------------------------------------------------------------------------
-def check_property_reuse(name: str, inv: Inventory) -> dict[str, Any]:
-    """Compare a proposed property name with what the vault already uses."""
+def check_property_reuse(
+    name: str, inv: Inventory, global_inv: Inventory | None = None
+) -> dict[str, Any]:
+    """Compare a proposed property name with current Scope and Whole Vault inventories (R07)."""
+    effective_global = global_inv or inv
     result: dict[str, Any] = {
         "proposed_name": name,
         "status": "new",
+        "in_scope": False,
+        "in_vault_only": False,
         "exact_match": None,
         "case_variants": [],
         "possible_overlaps": [],
         "auto_merged": False,
     }
+
+    # 1. Check current scope inventory
     if name in inv.properties:
         entry = inv.properties[name]
         result["status"] = "exact_existing"
+        result["in_scope"] = True
         result["exact_match"] = {
             "key": entry.key,
             "usage_count": entry.usage_count,
             "dominant_type": entry.dominant_type,
             "top_values": [v.to_dict() for v in entry.top_values(8)],
             "notes": sorted(entry.notes)[:50],
+            "scope_location": "in_scope",
+        }
+    # 2. Check whole-vault inventory if not found in scope
+    elif global_inv is not None and name in global_inv.properties:
+        entry = global_inv.properties[name]
+        result["status"] = "exact_existing_in_vault_only"
+        result["in_vault_only"] = True
+        result["exact_match"] = {
+            "key": entry.key,
+            "usage_count": entry.usage_count,
+            "dominant_type": entry.dominant_type,
+            "top_values": [v.to_dict() for v in entry.top_values(8)],
+            "notes": sorted(entry.notes)[:50],
+            "scope_location": "outside_scope",
         }
 
+    # Check case variants and overlaps across global inventory
     norm = normalize_key(name)
     tokens = set(key_tokens(name))
-    for key, entry in sorted(inv.properties.items()):
+    for key, entry in sorted(effective_global.properties.items()):
         if key == name:
             continue
         if normalize_key(key) == norm:
@@ -535,6 +916,7 @@ def check_property_reuse(name: str, inv: Inventory) -> dict[str, Any]:
                     "key": key,
                     "usage_count": entry.usage_count,
                     "dominant_type": entry.dominant_type,
+                    "in_scope": key in inv.properties,
                 }
             )
             continue
@@ -548,17 +930,36 @@ def check_property_reuse(name: str, inv: Inventory) -> dict[str, Any]:
                     "dominant_type": entry.dominant_type,
                     "similarity_ratio": round(ratio, 3),
                     "confidence": "possible",
+                    "in_scope": key in inv.properties,
                 }
             )
-    if result["status"] == "new" and result["case_variants"]:
-        result["status"] = "case_variant_exists"
-    elif result["status"] == "new" and result["possible_overlaps"]:
-        result["status"] = "possible_overlap"
 
-    result["message"] = {
+    if result["status"] == "new":
+        if result["case_variants"]:
+            result["status"] = "case_variant_exists"
+        elif result["possible_overlaps"]:
+            result["status"] = "possible_overlap"
+
+    status_keys = {
+        "exact_existing": "schema.status_in_scope",
+        "exact_existing_in_vault_only": "schema.status_elsewhere",
+        "case_variant_exists": "schema.status_case_variant",
+        "possible_overlap": "schema.status_overlap",
+        "new": "schema.status_new",
+    }
+    message_keys = {
+        "exact_existing": "schema.msg_in_scope",
+        "exact_existing_in_vault_only": "schema.msg_elsewhere",
+        "case_variant_exists": "schema.msg_case_variant",
+        "possible_overlap": "schema.msg_overlap",
+        "new": "schema.msg_new",
+    }
+    messages = {
         "exact_existing": (
-            f"'{name}' already exists in this vault. Reuse it instead of creating a "
-            "second property with the same name."
+            f"'{name}' already exists in current Scope. Reuse it to keep your schema consistent."
+        ),
+        "exact_existing_in_vault_only": (
+            f"'{name}' exists elsewhere in this vault (outside current Scope). You can adopt this existing convention."
         ),
         "case_variant_exists": (
             f"This vault already uses a differently-written version of '{name}'. "
@@ -569,16 +970,23 @@ def check_property_reuse(name: str, inv: Inventory) -> dict[str, Any]:
             "for you to judge — nothing is merged automatically."
         ),
         "new": f"'{name}' is not used anywhere in this vault yet.",
-    }[result["status"]]
+    }
+    result["status_key"] = status_keys.get(result["status"], "schema.status_new")
+    result["message_key"] = message_keys.get(result["status"], "schema.msg_new")
+    result["message"] = messages.get(result["status"], "")
     return result
 
 
-def review_schema_against_vault(schema: Schema, inv: Inventory) -> dict[str, Any]:
-    """Full reuse/type comparison for every property in a schema."""
+
+def review_schema_against_vault(
+    schema: Schema, inv: Inventory, global_inv: Inventory | None = None
+) -> dict[str, Any]:
+    """Full reuse/type comparison for every property in a schema across Scope and Vault (R07)."""
     reviews = []
+    effective_global = global_inv or inv
     for prop in schema.properties:
-        review = check_property_reuse(prop.name, inv)
-        entry = inv.get(prop.name)
+        review = check_property_reuse(prop.name, inv, global_inv=global_inv)
+        entry = inv.get(prop.name) or effective_global.get(prop.name)
         if entry is not None:
             review["type_agreement"] = (
                 "matches"
@@ -594,7 +1002,9 @@ def review_schema_against_vault(schema: Schema, inv: Inventory) -> dict[str, Any
         "reuse_reviews": reviews,
         "counts": {
             "new": sum(1 for r in reviews if r["status"] == "new"),
-            "exact_existing": sum(1 for r in reviews if r["status"] == "exact_existing"),
+            "exact_existing": sum(1 for r in reviews if r["status"] in ("exact_existing", "exact_existing_in_vault_only")),
+            "exact_existing_in_scope": sum(1 for r in reviews if r["status"] == "exact_existing"),
+            "exact_existing_in_vault_only": sum(1 for r in reviews if r["status"] == "exact_existing_in_vault_only"),
             "case_variant_exists": sum(
                 1 for r in reviews if r["status"] == "case_variant_exists"
             ),
@@ -603,3 +1013,4 @@ def review_schema_against_vault(schema: Schema, inv: Inventory) -> dict[str, Any
             ),
         },
     }
+

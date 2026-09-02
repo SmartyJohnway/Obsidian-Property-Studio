@@ -1,0 +1,39 @@
+{
+  "plan_format_version": "1.1.0",
+  "operation": "required_optional_impact",
+  "apply_supported": false,
+  "notice": "Planning only. Obsidian Property Studio v1 never modifies your vault. Use this plan to make the changes yourself in Obsidian.",
+  "schema_name": "equipment",
+  "scope": {
+    "property": "type",
+    "value": "equipment",
+    "spec": null
+  },
+  "summary": {
+    "notes_in_scope": 2,
+    "required_properties": [
+      "type"
+    ],
+    "notes_missing_required": 0,
+    "notes_compliant": 2,
+    "notes_with_parse_failure": 3
+  },
+  "missing": [],
+  "unreadable_notes": [
+    {
+      "note": "Notes/Malformed.md",
+      "reason": "invalid_yaml"
+    },
+    {
+      "note": "Notes/Not A Mapping.md",
+      "reason": "not_a_mapping"
+    },
+    {
+      "note": "Notes/Unterminated.md",
+      "reason": "unterminated_frontmatter"
+    }
+  ],
+  "warnings": [
+    "Notes whose frontmatter could not be parsed are listed separately and are not counted as compliant."
+  ]
+}

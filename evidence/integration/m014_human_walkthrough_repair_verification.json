@@ -1,0 +1,70 @@
+{
+  "contract": "M014_HUMAN_UI_UX_WALKTHROUGH_REPAIR_VERIFICATION",
+  "app_version": "1.1.0",
+  "timestamp": "2026-09-02T16:35:00+08:00",
+  "project_state": "ACTIVE",
+  "milestone": "M014",
+  "milestone_status": "PASS",
+  "verified_implementation_commit": "40982371118b7c0b9ff76c4abe119c8d6eee32b4",
+  "automated_verification": {
+
+
+    "status": "PASS",
+    "total_tests": 176,
+    "passed_tests": 176,
+    "failed_tests": 0,
+    "duration_seconds": 13.55,
+    "headless_dom_startup_smoke": "PASS",
+    "live_http_ui_smoke": "PASS"
+  },
+  "vault_safety": {
+    "status": "PASS",
+    "unchanged": true,
+    "files_checked": 3
+  },
+  "human_verification": {
+    "status": "PASS",
+    "method": "Human Owner production-browser walkthrough",
+    "platform": "Windows 10 Build 19045+",
+    "verified_by": "Human Owner (Dr. J)",
+    "verified_at": "2026-09-02T12:43:40+08:00"
+  },
+  "repairs_executed": {
+    "p0_frontend_initialization": {
+      "status": "FIXED",
+      "summary": "Restored missing setupDiscoverHandlers() and setupHealthHandlers() in app/ui/index.html. Verified browser initialization executes with zero uncaught JavaScript errors."
+    },
+    "schema_designer_workflow": {
+      "status": "FIXED",
+      "summary": "Deterministic presets load reliably on startup; added actionable validation toast when no object/need is selected; preserved complete adopt-and-fill roundtrip workflow."
+    },
+    "relationships_controlled_filter": {
+      "status": "FIXED",
+      "summary": "Replaced freeform text filter with controlled select populated from Scope inventory; includes All Properties default, usage counts, and loading indicators."
+    },
+    "refactor_controlled_target": {
+      "status": "FIXED",
+      "summary": "Replaced generic target input with operation-aware controlled controls: Combobox of existing properties + explicit new name creation input for Rename/Merge, target type select for Convert Type, and real-time name collision warning banner."
+    },
+    "note_workspace_collapsible_folder_tree": {
+      "status": "FIXED",
+      "summary": "Implemented collapsible hierarchical folder tree with expand/collapse-all controls, removing 100-note arbitrary truncation to support unlimited notes comfortably across deep folder hierarchies."
+    },
+    "property_human_readable_vocabulary_layer": {
+      "status": "FIXED",
+      "summary": "Implemented app/core/property_glossary.py with 49 built-in standard properties, presentation-only bilingual labels, safe custom-property fallback, universal ⓘ button, and rich contextual Help Drawer."
+    },
+    "refactor_normalize_value_mapping": {
+      "status": "FIXED",
+      "summary": "Enhanced refactor planner with Scope observed-value controlled mapping table (REQ-038) and structured human-readable plan summary."
+    },
+    "note_workspace_badges_and_health_integration": {
+      "status": "FIXED",
+      "summary": "Integrated presentation badges and ⓘ Help Drawer into Note Properties Workspace, Semantic Diff, and Property Health findings."
+    },
+    "benchmark_evidence_architecture": {
+      "status": "FIXED",
+      "summary": "Guarded benchmark evidence writing behind PROPERTY_STUDIO_WRITE_BENCHMARK_EVIDENCE=1 to eliminate evidence drift during regular pytest runs."
+    }
+  }
+}

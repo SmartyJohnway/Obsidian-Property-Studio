@@ -1,0 +1,50 @@
+{
+  "plan_format_version": "1.1.0",
+  "operation": "rename_property",
+  "apply_supported": false,
+  "notice": "Planning only. Obsidian Property Studio v1 never modifies your vault. Use this plan to make the changes yourself in Obsidian.",
+  "source": "Project",
+  "target": "project",
+  "scope": {
+    "mode": "entire_vault"
+  },
+  "summary": {
+    "source_usage_count": 1,
+    "target_existing_usage_count": 6,
+    "notes_to_change": 1,
+    "in_scope_notes_to_change": 1,
+    "out_of_scope_notes_to_change": 0,
+    "conflicts": 0,
+    "excluded_ambiguous": 0,
+    "notes_with_parse_failure": 3
+  },
+  "affected_notes": [
+    {
+      "note": "Projects/Cascade.md",
+      "before": {
+        "Project": "Cascade"
+      },
+      "after": {
+        "project": "Cascade"
+      },
+      "storage_type": "text"
+    }
+  ],
+  "conflicts": [],
+  "excluded": [],
+  "unreadable_notes": [
+    {
+      "note": "Notes/Malformed.md",
+      "reason": "invalid_yaml"
+    },
+    {
+      "note": "Notes/Not A Mapping.md",
+      "reason": "not_a_mapping"
+    },
+    {
+      "note": "Notes/Unterminated.md",
+      "reason": "unterminated_frontmatter"
+    }
+  ],
+  "warnings": []
+}

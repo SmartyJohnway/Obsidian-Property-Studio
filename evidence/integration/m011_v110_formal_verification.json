@@ -1,0 +1,58 @@
+{
+  "benchmark": {
+    "vault_notes": 5040,
+    "scan_seconds": 4.399,
+    "inventory_seconds": 0.022,
+    "discovery_report_seconds": 0.007,
+    "relationship_inbox_seconds": 0.048,
+    "health_report_seconds": 0.060,
+    "type_conversion_plan_seconds": 0.01,
+    "total_analysis_seconds": 4.546,
+    "environment": {
+      "python": "3.13.7",
+      "os": "Windows 10 Build 19045 AMD64",
+      "arch": "x86_64"
+    }
+  },
+  "regression_suite": {
+    "total_tests": 140,
+    "passed": 140,
+    "failed": 0,
+    "skipped": 0,
+    "duration_seconds": 13.31,
+    "contracts": {
+      "V11-001": "PASS (tests/test_v11_i18n.py)",
+      "V11-002": "PASS (tests/test_v11_scope.py)",
+      "V11-003": "PASS (tests/test_v11_scope.py)",
+      "V11-004": "PASS (tests/test_v11_scope.py)",
+      "V11-005": "PASS (tests/test_v11_note_workspace.py)",
+      "V11-006": "PASS (tests/test_v11_note_workspace.py)",
+      "V11-007": "PASS (tests/test_v11_note_workspace.py)",
+      "V11-008": "PASS (tests/test_v11_note_workspace.py)",
+      "V11-009": "PASS (tests/test_v11_relationships.py)",
+      "V11-010": "PASS (tests/test_v11_relationships.py)",
+      "V11-011": "PASS (tests/test_v11_relationships.py)",
+      "V11-012": "PASS (tests/test_v11_body_links.py)",
+      "V11-013": "PASS (tests/test_v11_body_links.py)",
+      "V11-014": "PASS (tests/test_v11_saved_checks.py)",
+      "V11-015": "PASS (tests/test_v11_saved_checks.py)",
+      "V11-016": "PASS (tests/test_v11_discover_health.py)",
+      "V11-017": "PASS (tests/test_v11_refactor.py)",
+      "V11-018": "PASS (tests/test_v11_vault_readonly.py)"
+    }
+  },
+  "vault_safety": {
+    "read_only_contract": "STRICT_READ_ONLY",
+    "pre_post_sha256_comparison": "MATCH",
+    "files_created": 0,
+    "files_modified": 0,
+    "files_deleted": 0,
+    "status": "PASS"
+  },
+  "offline_contract": {
+    "telemetry": "NONE",
+    "cloud_dependencies": "NONE",
+    "api_keys_required": "NONE",
+    "status": "PASS"
+  }
+}

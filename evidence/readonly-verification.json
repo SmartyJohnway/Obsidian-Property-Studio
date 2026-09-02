@@ -1,0 +1,38 @@
+{
+  "case": "OPS-AC-005 / REQ-002",
+  "app_version": "1.1.0",
+  "environment": {
+    "python": "3.13.7",
+    "platform": "Windows-10-10.0.19045-SP0"
+  },
+  "vault": "D:\\Antigravity-Workspace\\Obsidian-Property-Studio\\Obsidian-Property-Studio-v1.0.0\\fixtures\\vaults\\main_vault",
+  "files_hashed": 27,
+  "workflow_executed": [
+    "discovery",
+    "fill",
+    "health",
+    "inbox",
+    "plan_convert",
+    "plan_merge",
+    "plan_normalize",
+    "plan_rename",
+    "plan_required",
+    "proposal_invalid",
+    "proposal_valid",
+    "schema",
+    "schema_review"
+  ],
+  "files_created": 0,
+  "files_modified": 0,
+  "files_deleted": 0,
+  "files_renamed": 0,
+  "unchanged": true,
+  "manifest_digest_before": "471cfd4688aa2b1fb710a4def9319cb2fd971a89682ea221fed8804a4e2ee5d1",
+  "manifest_digest_after": "471cfd4688aa2b1fb710a4def9319cb2fd971a89682ea221fed8804a4e2ee5d1",
+  "manifest_digest_mid_run": "471cfd4688aa2b1fb710a4def9319cb2fd971a89682ea221fed8804a4e2ee5d1",
+  "detail": {
+    "created": [],
+    "modified": [],
+    "deleted": []
+  }
+}

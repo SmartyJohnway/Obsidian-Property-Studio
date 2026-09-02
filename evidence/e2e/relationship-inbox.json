@@ -1,0 +1,216 @@
+{
+  "summary": {
+    "total_items": 7,
+    "by_kind": {
+      "ambiguous_link": 1,
+      "broken_link": 1,
+      "link_upgrade_candidate": 3,
+      "relationship_drift": 2
+    },
+    "auto_resolved": 0,
+    "scope": "property values only (no note body links are analysed or changed)",
+    "valid_count": 5,
+    "broken_count": 1,
+    "ambiguous_count": 3,
+    "outside_target_count": 0,
+    "total_evaluated_links": 12,
+    "four_state_counts": {
+      "VALID": 5,
+      "BROKEN": 1,
+      "AMBIGUOUS": 3,
+      "OUTSIDE_SELECTED_TARGET": 0
+    }
+  },
+  "items": [
+    {
+      "id": "ambiguous-link:Inbox/Ambiguous Target.md:project:[[Duplicate Name]]",
+      "kind": "ambiguous_link",
+      "classification": "AMBIGUOUS",
+      "confidence": "ambiguous",
+      "severity": "medium",
+      "note": "Inbox/Ambiguous Target.md",
+      "property": "project",
+      "value": "[[Duplicate Name]]",
+      "candidates": [
+        "A/Duplicate Name.md",
+        "B/Duplicate Name.md"
+      ],
+      "canonical_target": null,
+      "proposed_value": null,
+      "title": "'Duplicate Name' could mean 2 different notes",
+      "explanation": "Several notes share this name. Property Studio will not choose one for you.",
+      "action": "Pick the intended note, or use a full path link.",
+      "auto_resolved": false
+    },
+    {
+      "id": "broken-link:Meetings/2026-01-05 Kickoff.md:attendees:[[Missing Person]]",
+      "kind": "broken_link",
+      "classification": "BROKEN",
+      "confidence": "unresolved",
+      "severity": "high",
+      "note": "Meetings/2026-01-05 Kickoff.md",
+      "property": "attendees",
+      "value": "[[Missing Person]]",
+      "candidates": [],
+      "canonical_target": null,
+      "proposed_value": null,
+      "title": "Link 'Missing Person' points to no existing note",
+      "explanation": "This property links to a note that does not exist in this vault.",
+      "action": "Create the note, fix the spelling, or clear the value.",
+      "auto_resolved": false
+    },
+    {
+      "id": "link-upgrade:Equipment/Microscope.md:project:Apollo",
+      "kind": "link_upgrade_candidate",
+      "classification": "VALID",
+      "confidence": "exact",
+      "severity": "low",
+      "note": "Equipment/Microscope.md",
+      "property": "project",
+      "value": "Apollo",
+      "candidates": [
+        "Projects/Apollo.md"
+      ],
+      "canonical_target": "Projects/Apollo.md",
+      "proposed_value": "[[Apollo]]",
+      "title": "'Apollo' exactly matches the note Projects/Apollo.md",
+      "explanation": "This plain text value names an existing note. Turning it into a link makes the relationship visible in Obsidian's graph and backlinks.",
+      "action": "Review and, if correct, copy the proposed link value.",
+      "auto_resolved": false
+    },
+    {
+      "id": "link-upgrade:Meetings/CRLF Note.md:project:Apollo",
+      "kind": "link_upgrade_candidate",
+      "classification": "VALID",
+      "confidence": "exact",
+      "severity": "low",
+      "note": "Meetings/CRLF Note.md",
+      "property": "project",
+      "value": "Apollo",
+      "candidates": [
+        "Projects/Apollo.md"
+      ],
+      "canonical_target": "Projects/Apollo.md",
+      "proposed_value": "[[Apollo]]",
+      "title": "'Apollo' exactly matches the note Projects/Apollo.md",
+      "explanation": "This plain text value names an existing note. Turning it into a link makes the relationship visible in Obsidian's graph and backlinks.",
+      "action": "Review and, if correct, copy the proposed link value.",
+      "auto_resolved": false
+    },
+    {
+      "id": "link-upgrade:Projects/Borealis.md:owner:Ada Lovelace",
+      "kind": "link_upgrade_candidate",
+      "classification": "VALID",
+      "confidence": "exact",
+      "severity": "low",
+      "note": "Projects/Borealis.md",
+      "property": "owner",
+      "value": "Ada Lovelace",
+      "candidates": [
+        "People/Ada Lovelace.md"
+      ],
+      "canonical_target": "People/Ada Lovelace.md",
+      "proposed_value": "[[Ada Lovelace]]",
+      "title": "'Ada Lovelace' exactly matches the note People/Ada Lovelace.md",
+      "explanation": "This plain text value names an existing note. Turning it into a link makes the relationship visible in Obsidian's graph and backlinks.",
+      "action": "Review and, if correct, copy the proposed link value.",
+      "auto_resolved": false
+    },
+    {
+      "id": "relationship-drift:owner:ada lovelace",
+      "kind": "relationship_drift",
+      "classification": "AMBIGUOUS",
+      "confidence": "exact",
+      "severity": "low",
+      "note": "Projects/Apollo.md",
+      "property": "owner",
+      "value": "Ada Lovelace, [[Ada Lovelace]]",
+      "candidates": [
+        "Projects/Apollo.md",
+        "Projects/Borealis.md"
+      ],
+      "canonical_target": null,
+      "proposed_value": null,
+      "title": "'owner' refers to the same target in 2 different ways",
+      "explanation": "Mixing plain text and links (or different spellings) for the same target splits the relationship.",
+      "action": "Standardise on one form using the Refactor Planner.",
+      "auto_resolved": false,
+      "affected_notes": [
+        "Projects/Apollo.md",
+        "Projects/Borealis.md"
+      ]
+    },
+    {
+      "id": "relationship-drift:project:apollo",
+      "kind": "relationship_drift",
+      "classification": "AMBIGUOUS",
+      "confidence": "exact",
+      "severity": "low",
+      "note": "Equipment/Microscope.md",
+      "property": "project",
+      "value": "Apollo, [[Apollo]]",
+      "candidates": [
+        "Equipment/Microscope.md",
+        "Equipment/Oscilloscope.md",
+        "Meetings/2026-01-05 Kickoff.md",
+        "Meetings/CRLF Note.md"
+      ],
+      "canonical_target": null,
+      "proposed_value": null,
+      "title": "'project' refers to the same target in 2 different ways",
+      "explanation": "Mixing plain text and links (or different spellings) for the same target splits the relationship.",
+      "action": "Standardise on one form using the Refactor Planner.",
+      "auto_resolved": false,
+      "affected_notes": [
+        "Equipment/Microscope.md",
+        "Equipment/Oscilloscope.md",
+        "Meetings/2026-01-05 Kickoff.md",
+        "Meetings/CRLF Note.md"
+      ]
+    }
+  ],
+  "valid_links": [
+    {
+      "source_note": "Equipment/Oscilloscope.md",
+      "property": "project",
+      "raw_value": "[[Apollo]]",
+      "target": "Apollo",
+      "resolved_path": "Projects/Apollo.md",
+      "classification": "VALID"
+    },
+    {
+      "source_note": "Meetings/2026-01-05 Kickoff.md",
+      "property": "attendees",
+      "raw_value": "[[Ada Lovelace]]",
+      "target": "Ada Lovelace",
+      "resolved_path": "People/Ada Lovelace.md",
+      "classification": "VALID"
+    },
+    {
+      "source_note": "Meetings/2026-01-05 Kickoff.md",
+      "property": "project",
+      "raw_value": "[[Apollo]]",
+      "target": "Apollo",
+      "resolved_path": "Projects/Apollo.md",
+      "classification": "VALID"
+    },
+    {
+      "source_note": "Projects/Apollo.md",
+      "property": "owner",
+      "raw_value": "[[Ada Lovelace]]",
+      "target": "Ada Lovelace",
+      "resolved_path": "People/Ada Lovelace.md",
+      "classification": "VALID"
+    },
+    {
+      "source_note": "Projects/Delta 專案.md",
+      "property": "owner",
+      "raw_value": "[[林小明]]",
+      "target": "林小明",
+      "resolved_path": "People/林小明.md",
+      "classification": "VALID"
+    }
+  ],
+  "source_scope": null,
+  "target_scope": null
+}

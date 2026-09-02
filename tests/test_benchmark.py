@@ -127,12 +127,17 @@ def test_ops_ac_028_large_vault_benchmark(tmp_path):
             "These numbers are measured evidence only."
         ),
     }
-    os.makedirs(EVIDENCE, exist_ok=True)
-    os.makedirs(os.path.join(EVIDENCE, "integration"), exist_ok=True)
-    with open(os.path.join(EVIDENCE, "benchmark.json"), "w", encoding="utf-8", newline="\n") as fh:
-        json.dump(record, fh, indent=2, ensure_ascii=False)
-        fh.write("\n")
-    with open(os.path.join(EVIDENCE, "integration", "m009_benchmark.json"), "w", encoding="utf-8", newline="\n") as fh:
-        json.dump(record, fh, indent=2, ensure_ascii=False)
-        fh.write("\n")
+    if os.environ.get("PROPERTY_STUDIO_WRITE_BENCHMARK_EVIDENCE") == "1":
+        os.makedirs(EVIDENCE, exist_ok=True)
+        os.makedirs(os.path.join(EVIDENCE, "integration"), exist_ok=True)
+        with open(os.path.join(EVIDENCE, "benchmark.json"), "w", encoding="utf-8", newline="\n") as fh:
+            json.dump(record, fh, indent=2, ensure_ascii=False)
+            fh.write("\n")
+        with open(os.path.join(EVIDENCE, "integration", "m009_benchmark.json"), "w", encoding="utf-8", newline="\n") as fh:
+            json.dump(record, fh, indent=2, ensure_ascii=False)
+            fh.write("\n")
+    else:
+        with open(tmp_path / "benchmark_run.json", "w", encoding="utf-8") as fh:
+            json.dump(record, fh, indent=2, ensure_ascii=False)
     print(json.dumps(record["measurements_seconds"], indent=2))
+

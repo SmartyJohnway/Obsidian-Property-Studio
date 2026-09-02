@@ -1,0 +1,93 @@
+{
+  "plan_format_version": "1.1.0",
+  "operation": "normalize_values",
+  "apply_supported": false,
+  "notice": "Planning only. Obsidian Property Studio v1 never modifies your vault. Use this plan to make the changes yourself in Obsidian.",
+  "property": "status",
+  "scope": {
+    "mode": "entire_vault"
+  },
+  "summary": {
+    "usage_count": 9,
+    "distinct_values": 6,
+    "groups_to_normalize": 1,
+    "notes_to_change": 2,
+    "values_left_untouched": 3,
+    "excluded_ambiguous": 1
+  },
+  "changes": [
+    {
+      "canonical_value": "active",
+      "variants": [
+        {
+          "value": "active",
+          "count": 3,
+          "notes": [
+            "People/Ada Lovelace.md",
+            "People/林小明.md",
+            "Projects/Apollo.md"
+          ]
+        },
+        {
+          "value": "ACTIVE",
+          "count": 1,
+          "notes": [
+            "Projects/Cascade.md"
+          ]
+        },
+        {
+          "value": "Active",
+          "count": 1,
+          "notes": [
+            "Projects/Borealis.md"
+          ]
+        }
+      ],
+      "match_basis": "case/whitespace only",
+      "notes_to_change": [
+        "Projects/Borealis.md",
+        "Projects/Cascade.md"
+      ],
+      "notes_to_change_count": 2
+    }
+  ],
+  "untouched_values": [
+    {
+      "value": "archived",
+      "count": 2,
+      "reason": "only one spelling of this value exists; a different value is not assumed to mean the same thing"
+    },
+    {
+      "value": "final",
+      "count": 1,
+      "reason": "only one spelling of this value exists; a different value is not assumed to mean the same thing"
+    },
+    {
+      "value": "進行中",
+      "count": 1,
+      "reason": "only one spelling of this value exists; a different value is not assumed to mean the same thing"
+    }
+  ],
+  "excluded": [
+    {
+      "note": "Notes/Duplicate Key.md",
+      "property": "status",
+      "reason": "duplicate YAML key — value is ambiguous, so this note is excluded from the plan (fail-closed)"
+    }
+  ],
+  "unreadable_notes": [
+    {
+      "note": "Notes/Malformed.md",
+      "reason": "invalid_yaml"
+    },
+    {
+      "note": "Notes/Not A Mapping.md",
+      "reason": "not_a_mapping"
+    },
+    {
+      "note": "Notes/Unterminated.md",
+      "reason": "unterminated_frontmatter"
+    }
+  ],
+  "warnings": []
+}

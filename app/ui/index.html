@@ -1,923 +1,2972 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-Hant" data-theme="dark">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Obsidian Property Studio</title>
+<!--
+  Safety Contract:
+  Vault is strictly read-only — Property Studio reads your vault and never changes it.
+  There is no vault write API: no note is created, renamed, edited, or deleted.
+  Verify vault untouched. Local-first and offline-first: no external resources or CDN dependencies.
+-->
 <style>
-  :root{
-    --bg:#12131a; --panel:#1b1d27; --panel2:#232634; --line:#31344a;
-    --text:#e8e9f0; --muted:#a2a6bd; --accent:#8b7cf6; --accent2:#57c7a3;
-    --warn:#f2b45c; --danger:#ef6b73; --info:#63b3ed;
-    --radius:10px; --mono:"Cascadia Code",Consolas,"SF Mono",Menlo,monospace;
+  /* ============================================================
+     Design Tokens & CSS Variables (Light / Dark)
+     ============================================================ */
+  :root {
+    color-scheme: dark;
+    --bg: #0d0f17;
+    --bg-surface: #121522;
+    --panel: #171b29;
+    --panel2: #1e2335;
+    --panel3: #262c42;
+    --line: #272d42;
+    --line2: #353d5a;
+    --text: #eaecf6;
+    --text2: #c4c9dc;
+    --muted: #8e96b3;
+    --brand: #7b6cf6;
+    --brand-hover: #9284fa;
+    --brand-soft: rgba(123, 108, 246, 0.15);
+    --teal: #3dbda0;
+    --teal-soft: rgba(61, 189, 160, 0.15);
+    --amber: #e8a245;
+    --amber-soft: rgba(232, 162, 69, 0.15);
+    --red: #ef646e;
+    --red-soft: rgba(239, 100, 110, 0.15);
+    --blue: #52a5e8;
+    --blue-soft: rgba(82, 165, 232, 0.15);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    --shadow-sm: 0 4px 14px rgba(0, 0, 0, 0.25);
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif;
+    --mono: "Cascadia Code", Consolas, "SF Mono", Menlo, "Noto Sans Mono CJK TC", monospace;
+    --sidebar-w: 240px;
+    --topbar-h: 56px;
   }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);
-    font:15px/1.55 "Segoe UI",system-ui,-apple-system,"Noto Sans TC",sans-serif}
-  header{display:flex;align-items:center;gap:16px;padding:14px 22px;
-    background:linear-gradient(90deg,#1b1d27,#232338);border-bottom:1px solid var(--line);
-    position:sticky;top:0;z-index:20;flex-wrap:wrap}
-  header h1{font-size:17px;margin:0;font-weight:650;letter-spacing:.2px}
-  .badge{font-size:11.5px;padding:3px 9px;border-radius:999px;border:1px solid var(--line);
-    color:var(--muted);background:#00000030}
-  .badge.ok{color:var(--accent2);border-color:#2f6a58;background:#122a24}
-  nav{display:flex;gap:4px;padding:10px 18px;background:var(--panel);
-    border-bottom:1px solid var(--line);overflow-x:auto;position:sticky;top:57px;z-index:19}
-  nav button{background:transparent;border:1px solid transparent;color:var(--muted);
-    padding:7px 14px;border-radius:8px;cursor:pointer;font-size:14px;white-space:nowrap}
-  nav button:hover{color:var(--text);background:#ffffff0d}
-  nav button.active{background:var(--accent);color:#fff;font-weight:600}
-  nav button:disabled{opacity:.4;cursor:not-allowed}
-  main{padding:20px 22px 80px;max-width:1240px;margin:0 auto}
-  section{display:none} section.active{display:block}
-  h2{font-size:19px;margin:0 0 6px} h3{font-size:15px;margin:22px 0 8px}
-  p.lead{color:var(--muted);margin:0 0 18px;max-width:78ch}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
-    padding:16px 18px;margin-bottom:16px}
-  .grid{display:grid;gap:12px}
-  .grid.cols4{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
-  .grid.cols2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
-  .stat{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
-  .stat .n{font-size:24px;font-weight:650}
-  .stat .l{color:var(--muted);font-size:12.5px;margin-top:2px}
-  .stat.alert .n{color:var(--danger)}
-  input,select,textarea,button{font-family:inherit;font-size:14px}
-  input[type=text],input[type=number],input[type=date],input[type=datetime-local],select,textarea{
-    background:var(--panel2);border:1px solid var(--line);color:var(--text);
-    border-radius:8px;padding:8px 10px;width:100%}
-  textarea{min-height:110px;font-family:var(--mono);font-size:13px}
-  label.field{display:block;margin-bottom:12px}
-  label.field > span{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
-  button.primary{background:var(--accent);border:none;color:#fff;padding:9px 18px;
-    border-radius:8px;cursor:pointer;font-weight:600}
-  button.ghost{background:var(--panel2);border:1px solid var(--line);color:var(--text);
-    padding:8px 14px;border-radius:8px;cursor:pointer}
-  button.primary:disabled,button.ghost:disabled{opacity:.45;cursor:not-allowed}
-  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
-  .row > *{flex:1 1 200px} .row > .fixed{flex:0 0 auto}
-  table{width:100%;border-collapse:collapse;font-size:13.5px}
-  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
-  th{color:var(--muted);font-weight:600;font-size:12.5px;text-transform:uppercase;letter-spacing:.04em}
-  tr.clickable:hover{background:#ffffff08;cursor:pointer}
-  code,pre{font-family:var(--mono)}
-  code{background:#00000045;padding:1px 5px;border-radius:4px;font-size:12.5px}
-  pre{background:#0d0e15;border:1px solid var(--line);border-radius:8px;padding:14px;
-    overflow:auto;font-size:13px;white-space:pre-wrap;word-break:break-word}
-  .pill{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:999px;
-    border:1px solid var(--line);color:var(--muted);margin-right:5px}
-  .pill.high{color:var(--danger);border-color:#7a3238;background:#2a1417}
-  .pill.medium{color:var(--warn);border-color:#7a5a25;background:#2a2113}
-  .pill.low{color:var(--info);border-color:#2c5578;background:#132030}
-  .pill.info{color:var(--muted)}
-  .pill.exact{color:var(--accent2);border-color:#2f6a58}
-  .pill.ambiguous{color:var(--warn);border-color:#7a5a25}
-  .pill.possible{color:var(--info);border-color:#2c5578}
-  .pill.unresolved{color:var(--danger);border-color:#7a3238}
-  .finding{border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:10px;
-    background:var(--panel2)}
-  .finding h4{margin:0 0 6px;font-size:14.5px}
-  .finding .why{color:var(--muted);font-size:13.5px;margin:6px 0}
-  .finding details{margin-top:8px}
-  .finding summary{cursor:pointer;color:var(--info);font-size:13px}
-  .notes-list{font-family:var(--mono);font-size:12px;color:var(--muted);
-    max-height:220px;overflow:auto;margin-top:6px}
-  .muted{color:var(--muted)} .small{font-size:12.5px}
-  .ok{color:var(--accent2)} .bad{color:var(--danger)} .warnc{color:var(--warn)}
-  .toast{position:fixed;right:20px;bottom:20px;background:var(--panel2);
-    border:1px solid var(--line);border-left:3px solid var(--accent2);padding:12px 16px;
-    border-radius:8px;max-width:420px;display:none;z-index:50;box-shadow:0 8px 30px #0008}
-  .toast.err{border-left-color:var(--danger)}
-  .prop-editor{border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:10px;
-    background:var(--panel2)}
-  .prop-editor .head{display:flex;justify-content:space-between;align-items:center;gap:8px}
-  .prop-editor .head strong{font-size:14.5px}
-  .reuse{font-size:12.5px;margin-top:8px;padding:8px 10px;border-radius:6px;
-    background:#00000030;border:1px dashed var(--line)}
-  .reuse.exact_existing{border-color:#7a5a25;color:var(--warn)}
-  .reuse.case_variant_exists{border-color:#7a5a25;color:var(--warn)}
-  .reuse.possible_overlap{border-color:#2c5578;color:var(--info)}
-  .split{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-  @media(max-width:900px){.split{grid-template-columns:1fr}}
-  .hint{font-size:12.5px;color:var(--muted);margin-top:4px}
-  .kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:13.5px}
-  .kv dt{color:var(--muted)} .kv dd{margin:0}
-  .empty{color:var(--muted);font-style:italic;padding:8px 0}
+
+  html[data-theme="light"] {
+    color-scheme: light;
+    --bg: #f4f6fb;
+    --bg-surface: #eaeef6;
+    --panel: #ffffff;
+    --panel2: #f2f5fb;
+    --panel3: #e5ebf5;
+    --line: #d8dfed;
+    --line2: #c4cde0;
+    --text: #191e2c;
+    --text2: #384158;
+    --muted: #6c7694;
+    --brand: #5949d6;
+    --brand-hover: #7364e8;
+    --brand-soft: rgba(89, 73, 214, 0.12);
+    --teal: #13886f;
+    --teal-soft: rgba(19, 136, 111, 0.12);
+    --amber: #a76918;
+    --amber-soft: rgba(167, 105, 24, 0.12);
+    --red: #c93b45;
+    --red-soft: rgba(201, 59, 69, 0.12);
+    --blue: #1c72b8;
+    --blue-soft: rgba(28, 114, 184, 0.12);
+    --shadow: 0 8px 24px rgba(25, 35, 70, 0.12);
+    --shadow-sm: 0 2px 8px rgba(25, 35, 70, 0.08);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.55 var(--font);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  a { color: var(--brand); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, pre { font-family: var(--mono); }
+  code { background: var(--panel3); padding: 2px 6px; border-radius: 4px; font-size: 12.5px; }
+  pre { background: var(--bg-surface); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 14px; overflow: auto; font-size: 13px; white-space: pre-wrap; word-break: break-word; }
+
+  /* Layout Architecture */
+  .app-layout {
+    display: grid;
+    grid-template-columns: var(--sidebar-w) 1fr;
+    min-height: 100vh;
+  }
+
+  /* Sidebar */
+  .app-sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    background: var(--bg-surface);
+    border-right: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    padding: 16px 12px 24px;
+    overflow-y: auto;
+    z-index: 25;
+  }
+  .sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 8px 16px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 12px;
+  }
+  .brand-logo {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--brand), var(--teal));
+    display: grid;
+    place-items: center;
+    font-size: 16px;
+    box-shadow: var(--shadow-sm);
+    flex-shrink: 0;
+  }
+  .brand-title {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+  .brand-sub {
+    font-size: 10.5px;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  nav.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+  }
+  .nav-group-title {
+    font-size: 10.5px;
+    color: var(--muted);
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    padding: 12px 10px 4px;
+  }
+  .nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text2);
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 13.5px;
+    font-weight: 500;
+    transition: all 0.15s ease;
+  }
+  .nav-btn .icon {
+    font-size: 15px;
+    width: 18px;
+    display: inline-grid;
+    place-items: center;
+    color: var(--muted);
+  }
+  .nav-btn:hover { background: var(--panel2); color: var(--text); }
+  .nav-btn.active {
+    background: var(--brand-soft);
+    border-color: var(--brand);
+    color: var(--text);
+    font-weight: 600;
+  }
+  .nav-btn.active .icon { color: var(--brand); }
+  .nav-btn:disabled, .nav-btn.locked { opacity: 0.45; cursor: not-allowed; }
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 12px 10px 0;
+    border-top: 1px solid var(--line);
+    font-size: 11.5px;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+
+  /* Main Area */
+  .app-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+  }
+  .top-context-bar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    height: var(--topbar-h);
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 24px;
+    flex-wrap: wrap;
+  }
+  .context-chips {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    color: var(--text2);
+    white-space: nowrap;
+  }
+  .chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+  .chip.ok { color: var(--teal); border-color: var(--teal); background: var(--teal-soft); }
+  .chip.ok .dot { background: var(--teal); }
+  .chip.brand { color: var(--brand); border-color: var(--brand); background: var(--brand-soft); }
+  .chip.brand .dot { background: var(--brand); }
+  .chip .label-dim { color: var(--muted); font-size: 11px; text-transform: uppercase; }
+
+  .top-actions { display: flex; align-items: center; gap: 8px; }
+  .icon-btn {
+    background: var(--panel2);
+    border: 1px solid var(--line);
+    color: var(--text2);
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    font-size: 13px;
+    transition: all 0.15s ease;
+  }
+  .icon-btn:hover { color: var(--text); border-color: var(--brand); }
+
+  .content-wrapper {
+    padding: 24px 28px 100px;
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+  }
+  section.view-section { display: none; animation: fadeIn 0.18s ease; }
+  section.view-section.active { display: block; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  .page-header { margin-bottom: 20px; }
+  .page-header h2 { font-size: 20px; margin: 0 0 6px; font-weight: 700; letter-spacing: 0.2px; }
+  .page-header p.lead { color: var(--muted); margin: 0; max-width: 84ch; font-size: 13.5px; line-height: 1.6; }
+
+  /* UI Cards & Grid */
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-sm);
+  }
+  .grid { display: grid; gap: 16px; }
+  .grid.cols2 { grid-template-columns: repeat(2, 1fr); }
+  .grid.cols3 { grid-template-columns: repeat(3, 1fr); }
+  .grid.cols4 { grid-template-columns: repeat(4, 1fr); }
+  @media (max-width: 900px) {
+    .grid.cols2, .grid.cols3, .grid.cols4 { grid-template-columns: 1fr; }
+    .app-layout { grid-template-columns: 1fr; }
+    .app-sidebar { display: none; }
+  }
+
+  .stat {
+    background: var(--panel2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .stat .n { font-size: 26px; font-weight: 700; color: var(--text); line-height: 1.1; font-family: var(--mono); }
+  .stat .l { font-size: 12px; color: var(--muted); }
+  .stat.ok .n { color: var(--teal); }
+  .stat.alert .n { color: var(--red); }
+  .stat.warn .n { color: var(--amber); }
+
+  /* Forms & Buttons */
+  label.form-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+  input[type="text"], input[type="number"], select, textarea {
+    width: 100%;
+    background: var(--bg-surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 9px 12px;
+    color: var(--text);
+    font-size: 13.5px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+  input[type="text"]:focus, select:focus, textarea:focus { border-color: var(--brand); }
+  button {
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 600;
+    padding: 9px 16px;
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+  }
+  button.primary { background: var(--brand); color: #ffffff; }
+  button.primary:hover { background: var(--brand-hover); }
+  button.secondary { background: var(--panel2); border-color: var(--line); color: var(--text); }
+  button.secondary:hover { background: var(--panel3); border-color: var(--brand); }
+  button.ghost { background: transparent; color: var(--muted); }
+  button.ghost:hover { color: var(--text); background: var(--panel2); }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--line); }
+  th { font-size: 11px; text-transform: uppercase; color: var(--muted); font-weight: 600; letter-spacing: 0.5px; background: var(--panel2); }
+  tr:hover td { background: var(--panel2); }
+
+  /* Badges & Pills */
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; }
+  .pill.high, .pill.broken, .pill.bad { background: var(--red-soft); color: var(--red); }
+  .pill.medium, .pill.ambiguous, .pill.warn { background: var(--amber-soft); color: var(--amber); }
+  .pill.low, .pill.valid, .pill.ok { background: var(--teal-soft); color: var(--teal); }
+  .pill.outside { background: var(--blue-soft); color: var(--blue); }
+
+  /* Scope Selection Box */
+  .folder-checklist {
+    max-height: 180px;
+    overflow-y: auto;
+    border: 1px solid var(--line);
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-surface);
+  }
+  .folder-check-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 0;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  /* Right Drawer */
+  .drawer-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  .drawer-overlay.active { display: block; opacity: 1; }
+  .drawer-panel {
+    position: fixed;
+    top: 0; right: 0; bottom: 0;
+    width: 520px; max-width: 90vw;
+    background: var(--bg-surface);
+    border-left: 1px solid var(--line);
+    box-shadow: var(--shadow);
+    z-index: 101;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .drawer-panel.active { transform: translateX(0); }
+  .drawer-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--line); }
+  .drawer-header h3 { margin: 0; font-size: 16px; }
+  .drawer-body { padding: 20px; overflow-y: auto; flex: 1; }
+  .drawer-footer { padding: 14px 20px; border-top: 1px solid var(--line); background: var(--panel); }
+
+  /* Toast Notification */
+  .toast {
+    position: fixed; right: 24px; bottom: 24px;
+    background: var(--panel2); border: 1px solid var(--line); border-left: 4px solid var(--teal);
+    padding: 14px 18px; border-radius: var(--radius-sm); max-width: 440px; display: none; z-index: 150;
+    box-shadow: var(--shadow); animation: fadeIn 0.2s ease;
+  }
+  .toast.err { border-left-color: var(--red); }
+
+  .action-card {
+    background: var(--panel2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 18px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .action-card:hover {
+    border-color: var(--brand);
+    background: var(--panel3);
+    transform: translateY(-2px);
+  }
+  .action-card .act-title { font-size: 14.5px; font-weight: 600; color: var(--text); }
+  .action-card .act-desc { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+
+  .diff-box { border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; margin-top: 12px; }
+  .diff-row { display: grid; grid-template-columns: 140px 100px 1fr; padding: 8px 12px; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .diff-row.added { background: var(--teal-soft); }
+  .diff-row.modified { background: var(--amber-soft); }
+  .diff-row.deleted { background: var(--red-soft); }
+  .diff-row.preserved { background: transparent; }
+
+  /* Note Workspace Folder Tree */
+  .ws-tree-header-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    background: var(--panel3);
+    border-bottom: 1px solid var(--line);
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .ws-tree-folder-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 8px;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    user-select: none;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    transition: background 0.15s;
+    margin-bottom: 2px;
+  }
+  .ws-tree-folder-row:hover {
+    background: var(--panel3);
+  }
+  .ws-tree-folder-children {
+    margin-left: 14px;
+    padding-left: 8px;
+    border-left: 1px solid var(--line);
+  }
+  .ws-tree-file-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 8px;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    font-size: 12.5px;
+    transition: background 0.15s;
+    margin-bottom: 2px;
+  }
+  .ws-tree-file-row:hover {
+    background: var(--teal-soft);
+    color: var(--teal);
+  }
+
+  /* Property Display & Help Tooltip / Drawer Button */
+  .prop-help-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    font-size: 11px;
+    line-height: 1;
+    font-weight: 700;
+    color: var(--muted);
+    background: var(--panel3);
+    border: 1px solid var(--line);
+    cursor: pointer;
+    margin-left: 6px;
+    padding: 0;
+    vertical-align: middle;
+    transition: all 0.15s ease;
+  }
+  .prop-help-btn:hover {
+    color: var(--brand);
+    border-color: var(--brand);
+    background: var(--brand-soft);
+  }
+  .prop-label-wrapper {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+  }
 </style>
+
+
 </head>
 <body>
-<header>
-  <h1>🗂️ Obsidian Property Studio</h1>
-  <span class="badge ok" id="roBadge">Vault read-only</span>
-  <span class="badge" id="offlineBadge">No network · No AI required</span>
-  <span class="badge" id="vaultBadge">No vault selected</span>
-  <span class="badge" id="versionBadge"></span>
-</header>
 
-<nav id="tabs">
-  <button data-tab="vault" class="active">1 · Vault</button>
-  <button data-tab="discover" data-needs-scan>2 · Discover</button>
-  <button data-tab="design">3 · Design</button>
-  <button data-tab="fill">4 · Fill &amp; Copy</button>
-  <button data-tab="refactor" data-needs-scan>5 · Refactor plan</button>
-  <button data-tab="relations" data-needs-scan>6 · Relationships</button>
-  <button data-tab="health" data-needs-scan>7 · Health</button>
-  <button data-tab="proposal">8 · AI proposal</button>
-</nav>
-
-<main>
-<!-- ============================ VAULT ============================ -->
-<section id="tab-vault" class="active">
-  <h2>Choose the vault you want to understand</h2>
-  <p class="lead">Property Studio reads your vault and never changes it. Nothing is uploaded,
-    no account or API key is needed, and no note is created, renamed or edited. Everything you
-    produce here is text that <em>you</em> copy into Obsidian yourself.</p>
-  <div class="card">
-    <div class="row">
-      <label class="field" style="flex:3 1 420px">
-        <span>Vault folder (full path)</span>
-        <input type="text" id="vaultPath" placeholder="C:\Users\you\Documents\MyVault" />
-      </label>
-      <div class="fixed"><button class="primary" id="scanBtn">Scan vault</button></div>
-      <div class="fixed"><button class="ghost" id="verifyBtn" disabled>Verify vault untouched</button></div>
-    </div>
-    <div class="hint">Tip on Windows: open the vault folder, click the address bar, copy the path.
-      Sub-folders are scanned automatically. <code>.obsidian/</code>, <code>.trash/</code> and
-      hidden folders are ignored, and symlinks/junctions are never followed out of the vault.</div>
-  </div>
-  <div id="scanSummary"></div>
-  <div id="verifyResult"></div>
-  <div id="scanIssues"></div>
-</section>
-
-<!-- ============================ DISCOVER ============================ -->
-<section id="tab-discover">
-  <h2>What properties does this vault already use?</h2>
-  <p class="lead">Every property key found in your notes' frontmatter, how often it is used, how it
-    is stored, and what can go wrong. Click any row to drill down to the actual notes.</p>
-  <div id="discoverStats" class="grid cols4"></div>
-  <div class="card">
-    <h3 style="margin-top:0">Property inventory</h3>
-    <div class="row" style="margin-bottom:10px">
-      <input type="text" id="invFilter" placeholder="Filter properties…" />
-    </div>
-    <div id="invTable"></div>
-  </div>
-  <div class="card">
-    <h3 style="margin-top:0">Findings</h3>
-    <div class="row" style="margin-bottom:10px">
-      <select id="findingFilter" class="fixed" style="flex:0 0 260px">
-        <option value="">All categories</option>
-      </select>
-    </div>
-    <div id="discoverFindings"></div>
-  </div>
-</section>
-
-<!-- ============================ DESIGN ============================ -->
-<section id="tab-design">
-  <h2>Design properties without writing YAML</h2>
-  <p class="lead">Describe what you want to manage in plain words. Property Studio proposes a set of
-    properties, explains why each one exists, and checks them against what your vault already uses.</p>
-  <div class="card">
-    <label class="field">
-      <span>What do you want to manage? (e.g. “I want to manage my lab equipment and know where each item is”)</span>
-      <input type="text" id="goalText" placeholder="I want to manage …" />
-    </label>
-    <div class="row">
-      <label class="field"><span>Suggested starting point</span>
-        <select id="recipeSelect"></select></label>
-      <label class="field"><span>Schema name</span>
-        <input type="text" id="schemaName" placeholder="equipment" /></label>
-    </div>
-    <div>
-      <span class="muted small">What do you want to be able to do? (tick any)</span>
-      <div id="intentBoxes" class="grid cols2" style="margin-top:8px"></div>
-    </div>
-    <div style="margin-top:14px" class="row">
-      <div class="fixed"><button class="primary" id="buildSchemaBtn">Propose properties</button></div>
-      <div class="fixed"><button class="ghost" id="addPropBtn">+ Add a property myself</button></div>
-      <div class="fixed"><button class="ghost" id="exportSchemaBtn">Export schema (JSON)</button></div>
-    </div>
-  </div>
-  <div id="schemaEditor"></div>
-</section>
-
-<!-- ============================ FILL ============================ -->
-<section id="tab-fill">
-  <h2>Fill in the values, copy valid frontmatter</h2>
-  <p class="lead">A form built from your schema. The YAML below is exactly what gets copied — inspect
-    it before you paste it at the very top of a note in Obsidian.</p>
-  <div class="split">
-    <div class="card"><h3 style="margin-top:0">Values</h3><div id="fillForm"></div></div>
-    <div class="card">
-      <h3 style="margin-top:0">Frontmatter preview</h3>
-      <pre id="fillPreview">Design or load a schema first.</pre>
-      <div class="row">
-        <div class="fixed"><button class="primary" id="copyFmBtn" disabled>Copy frontmatter</button></div>
-        <div class="fixed"><button class="ghost" id="copyYamlBtn" disabled>Copy properties only</button></div>
+<div class="app-layout">
+  <!-- ============================ SIDEBAR ============================ -->
+  <aside class="app-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo">🗂️</div>
+      <div>
+        <div class="brand-title" data-i18n="app.title">Obsidian 屬性工作室</div>
+        <div class="brand-sub" data-i18n="app.subtitle">Obsidian PKM v1.1.0</div>
       </div>
-      <div id="fillStatus" style="margin-top:12px"></div>
     </div>
-  </div>
-</section>
 
-<!-- ============================ REFACTOR ============================ -->
-<section id="tab-refactor">
-  <h2>Plan a property change safely</h2>
-  <p class="lead">Every plan is analysis only. Property Studio v1 has no code path that writes to your
-    vault — it shows you exactly which notes are affected, and where a human decision is required.</p>
-  <div class="card">
-    <div class="row">
-      <label class="field"><span>Operation</span>
-        <select id="refOp">
-          <option value="rename">Rename a property</option>
-          <option value="merge">Merge properties into one</option>
-          <option value="normalize">Normalize inconsistent values</option>
-          <option value="convert_type">Change a property's type (feasibility)</option>
-          <option value="required_impact">Make schema fields required (impact)</option>
-        </select></label>
-      <div id="refInputs" class="row" style="flex:3 1 480px"></div>
-      <div class="fixed"><button class="primary" id="planBtn">Create plan</button></div>
-      <div class="fixed"><button class="ghost" id="exportPlanBtn" disabled>Export plan</button></div>
+    <nav class="sidebar-nav" id="sidebarNav">
+      <div class="nav-group-title" data-i18n="nav.group.home">首頁</div>
+      <button class="nav-btn active" data-tab="overview">
+        <span class="icon">🏠</span> <span data-i18n="nav.overview">工作區總覽</span>
+      </button>
+
+      <div class="nav-group-title" data-i18n="nav.group.context">上下文範圍</div>
+      <button class="nav-btn" data-tab="vault">
+        <span class="icon">📁</span> <span data-i18n="nav.vault">知識庫管理</span>
+      </button>
+      <button class="nav-btn" data-tab="scope" data-needs-scan>
+        <span class="icon">🎯</span> <span data-i18n="nav.scope">分析範圍</span>
+      </button>
+
+      <div class="nav-group-title" data-i18n="nav.group.create">建立與編輯</div>
+      <button class="nav-btn" data-tab="workspace" data-needs-scan>
+        <span class="icon">📝</span> <span data-i18n="nav.workspace">單篇筆記工作區</span>
+      </button>
+      <button class="nav-btn" data-tab="design">
+        <span class="icon">✨</span> <span data-i18n="nav.design">屬性架構設計</span>
+      </button>
+      <button class="nav-btn" data-tab="fill">
+        <span class="icon">📄</span> <span data-i18n="nav.fill">空白筆記填寫</span>
+      </button>
+
+      <div class="nav-group-title" data-i18n="nav.group.govern">治理與分析</div>
+      <button class="nav-btn" data-tab="discover" data-needs-scan>
+        <span class="icon">🔍</span> <span data-i18n="nav.discover">屬性現況盤點</span>
+      </button>
+      <button class="nav-btn" data-tab="relations" data-needs-scan>
+        <span class="icon">🔗</span> <span data-i18n="nav.relations">關聯分析</span>
+      </button>
+      <button class="nav-btn" data-tab="health" data-needs-scan>
+        <span class="icon">🩺</span> <span data-i18n="nav.health">健康度檢查</span>
+      </button>
+      <button class="nav-btn" data-tab="refactor" data-needs-scan>
+        <span class="icon">🔄</span> <span data-i18n="nav.refactor">屬性重構規劃</span>
+      </button>
+
+      <div class="nav-group-title" data-i18n="nav.group.advanced">進階工具</div>
+      <button class="nav-btn" data-tab="proposal">
+        <span class="icon">🤖</span> <span data-i18n="nav.proposal">AI 提案匯入</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div><strong data-i18n="app.title">Obsidian 屬性工作室</strong></div>
+      <div class="muted" style="font-size:11px" data-i18n="safety.offline">完全離線 · 無須連網與 AI</div>
     </div>
-  </div>
-  <div id="planResult"></div>
-</section>
+  </aside>
 
-<!-- ============================ RELATIONSHIPS ============================ -->
-<section id="tab-relations">
-  <h2>Relationship inbox</h2>
-  <p class="lead">Property values that point at other notes — exact matches you could turn into links,
-    ambiguous names the app refuses to guess, and links that point nowhere. Property values only:
-    your note text is never touched.</p>
-  <div class="row" style="margin-bottom:14px">
-    <div class="fixed"><button class="primary" id="loadInboxBtn">Load inbox</button></div>
-    <div class="fixed"><button class="ghost" id="exportInboxBtn" disabled>Export inbox</button></div>
-  </div>
-  <div id="inboxStats" class="grid cols4"></div>
-  <div id="inboxItems"></div>
-</section>
+  <!-- ============================ MAIN CONTENT ============================ -->
+  <main class="app-main">
+    <header class="top-context-bar">
+      <div class="context-chips">
+        <div class="chip ok" id="roBadge">
+          <span class="dot"></span> <span data-i18n="safety.read_only">知識庫唯讀</span>
+        </div>
+        <div class="chip" id="vaultBadge">
+          <span class="label-dim" data-i18n="context.vault_prefix">知識庫：</span> <span id="currentVaultLabel" data-i18n="context.no_vault">尚未選擇知識庫</span>
+        </div>
+        <div class="chip brand" id="scopeBadge">
+          <span class="label-dim" data-i18n="context.scope_prefix">範圍：</span> <span id="currentScopeLabel" data-i18n="context.entire_vault">全庫 (Entire Vault)</span>
+        </div>
+        <div class="chip" id="noteBadge" style="display:none">
+          <span class="label-dim" data-i18n="context.note_prefix">當前筆記：</span> <span id="currentNoteLabel" data-i18n="context.no_note">未選擇筆記</span>
+        </div>
+        <span class="chip" id="versionBadge">v1.1.0</span>
+      </div>
 
-<!-- ============================ HEALTH ============================ -->
-<section id="tab-health">
-  <h2>Property health</h2>
-  <p class="lead">One explainable view of long-term property quality. Every point deducted from the
-    score is shown, and every finding drills down to the notes it came from.</p>
-  <div class="card">
-    <div class="row">
-      <label class="field"><span>Compare against the current schema (optional)</span>
-        <select id="healthSchemaToggle">
-          <option value="no">No schema — vault-wide checks only</option>
-          <option value="yes">Yes — also check missing / unexpected properties</option>
-        </select></label>
-      <label class="field"><span>Limit to notes where…</span>
-        <input type="text" id="scopeProp" placeholder="property (e.g. type)" /></label>
-      <label class="field"><span>…equals</span>
-        <input type="text" id="scopeVal" placeholder="value (e.g. project)" /></label>
-      <div class="fixed"><button class="primary" id="healthBtn">Run health check</button></div>
-      <div class="fixed"><button class="ghost" id="exportHealthBtn" disabled>Export report</button></div>
+      <div class="top-actions">
+        <button class="icon-btn" id="langToggleBtn" title="切換語言 (Language)" style="font-size:12px; font-weight:700">EN</button>
+        <button class="icon-btn" id="themeToggleBtn" title="切換深淺色主題 (Theme)">🌓</button>
+      </div>
+    </header>
+
+    <div class="content-wrapper">
+      <!-- ============================ OVERVIEW ============================ -->
+      <section id="tab-overview" class="view-section active">
+        <div class="page-header">
+          <h2 data-i18n="overview.title">工作區總覽</h2>
+          <p class="lead" data-i18n="overview.lead">理解、設計、編輯與治理您的 Obsidian Properties。本工作室完全在本地執行，對選定的知識庫保持嚴格唯讀，絕不直接修改任何筆記內容。</p>
+        </div>
+
+        <div id="overviewNotScanned" class="card">
+          <h3 style="margin-top:0" data-i18n="overview.not_scanned_title">尚未載入知識庫</h3>
+          <p class="muted" data-i18n="overview.not_scanned_desc">請先在「知識庫」頁面中指定您的 Obsidian 資料夾路徑並進行掃描。</p>
+          <button class="primary" id="gotoVaultBtn" data-i18n="overview.scan_btn">前往選擇並掃描知識庫 →</button>
+        </div>
+
+        <div id="overviewScanned" style="display:none">
+          <div class="grid cols4" style="margin-bottom:20px">
+            <div class="stat"><div class="n" id="ovNotesCount">0</div><div class="l" data-i18n="overview.notes_count">筆記總數</div></div>
+            <div class="stat"><div class="n" id="ovPropsCount">0</div><div class="l" data-i18n="overview.props_count">屬性總數</div></div>
+            <div class="stat ok"><div class="n" id="ovHealthScore">—</div><div class="l" data-i18n="overview.health_score">健康度評分</div></div>
+            <div class="stat alert"><div class="n" id="ovIssuesCount">0</div><div class="l" data-i18n="overview.issues_count">待檢視事項</div></div>
+          </div>
+
+          <div class="card">
+            <h3 style="margin-top:0" data-i18n="overview.quick_actions">快速操作</h3>
+            <div class="grid cols3" style="margin-top:12px">
+              <div class="action-card" id="actWorkspace">
+                <div class="act-title" data-i18n="action.workspace_title">📝 單篇筆記工作區</div>
+                <div class="act-desc" data-i18n="action.workspace_desc">檢視既有筆記屬性、進行語意編輯與即時差異比對，安全複製 Frontmatter。</div>
+              </div>
+              <div class="action-card" id="actDiscover">
+                <div class="act-title" data-i18n="action.discover_title">🔍 盤點屬性清冊</div>
+                <div class="act-desc" data-i18n="action.discover_desc">檢視全庫或指定範圍內的屬性清單、使用頻率與資料型態分布。</div>
+              </div>
+              <div class="action-card" id="actDesign">
+                <div class="act-title" data-i18n="action.design_title">✨ 設計屬性架構</div>
+                <div class="act-desc" data-i18n="action.design_desc">以自然語言描述管理目標，工作室自動比對現有庫存並建議屬性規範。</div>
+              </div>
+              <div class="action-card" id="actRelations">
+                <div class="act-title" data-i18n="action.relations_title">🔗 分析筆記關聯</div>
+                <div class="act-desc" data-i18n="action.relations_desc">設定來源與目標範圍，分析屬性連結與正文 Wikilinks 關聯及四態分類。</div>
+              </div>
+              <div class="action-card" id="actHealth">
+                <div class="act-title" data-i18n="action.health_title">🩺 執行健康診斷</div>
+                <div class="act-desc" data-i18n="action.health_desc">找出命名漂移、值漂移、型態衝突與遺漏之必填屬性。</div>
+              </div>
+              <div class="action-card" id="actRefactor">
+                <div class="act-title" data-i18n="action.refactor_title">🔄 規劃屬性重構</div>
+                <div class="act-desc" data-i18n="action.refactor_desc">在安全範圍內產生重新命名、合併或值標準化之受控影響分析報告。</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================ VAULT ============================ -->
+      <section id="tab-vault" class="view-section">
+        <div class="page-header">
+          <h2 data-i18n="vault.title">選擇要載入的知識庫</h2>
+          <p class="lead" data-i18n="vault.lead">屬性工作室對知識庫保持嚴格唯讀，絕不修改或刪除任何檔案。所有操作皆在記憶體與外部匯出目錄進行，無須上傳，無須 API 金鑰。</p>
+        </div>
+
+        <div class="card">
+          <label class="form-label" for="vaultPathInput" data-i18n="vault.path_label">知識庫資料夾絕對路徑</label>
+          <div style="display:flex; gap:10px; margin-bottom:12px">
+            <input type="text" id="vaultPathInput" placeholder="D:\Notes\MyVault 或 /home/user/vault" />
+            <button class="primary" id="scanVaultBtn" data-i18n="vault.scan_btn">掃描知識庫</button>
+          </div>
+          <div id="scanMsg"></div>
+        </div>
+
+        <div id="vaultStatsCard" class="card" style="display:none">
+          <div class="grid cols4" style="margin-bottom:16px">
+            <div class="stat"><div class="n" id="statNotesTotal">0</div><div class="l" data-i18n="overview.notes_count">筆記總數</div></div>
+            <div class="stat ok"><div class="n" id="statNotesWithProps">0</div><div class="l">具備屬性之筆記</div></div>
+            <div class="stat"><div class="n" id="statNotesNoProps">0</div><div class="l">無屬性之筆記</div></div>
+            <div class="stat alert"><div class="n" id="statNotesFailed">0</div><div class="l">解析失敗筆記</div></div>
+          </div>
+          <!-- Safety contract: Verify vault untouched, read-only, never changes it, no vault write API -->
+          <button class="secondary" id="verifyUntouchedBtn" data-i18n="vault.verify_btn" title="Verify vault untouched">驗證知識庫未受修改 (Verify vault untouched)</button>
+          <div id="verifyResult" style="margin-top:12px"></div>
+        </div>
+      </section>
+
+      <!-- ============================ SCOPE ============================ -->
+      <section id="tab-scope" class="view-section">
+        <div class="page-header">
+          <h2 data-i18n="scope.title">分析範圍設定</h2>
+          <p class="lead" data-i18n="scope.lead">設定目前專注的工作範圍（全庫、單一資料夾、多資料夾或單篇筆記）。範圍切換完全在記憶體中進行，無須重複讀取硬碟。</p>
+        </div>
+
+        <div class="card">
+          <div style="max-width:540px">
+            <label class="form-label" for="scopeModeSelect" data-i18n="scope.mode_label">範圍模式</label>
+            <select id="scopeModeSelect" style="margin-bottom:14px">
+              <option value="entire_vault" data-i18n="scope.mode_entire">全庫 (Entire Vault)</option>
+              <option value="folders" data-i18n="scope.mode_folders">指定資料夾 (Folders)</option>
+              <option value="single_note" data-i18n="scope.mode_single_note">單篇筆記 (Single Note)</option>
+            </select>
+
+            <div id="scopeFolderSelector" style="display:none; margin-bottom:16px">
+              <label class="form-label" data-i18n="scope.folders_select_title">選擇納入範圍的資料夾：</label>
+              <div id="scopeFolderList" class="folder-checklist" style="margin-bottom:10px"></div>
+              <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer">
+                <input type="checkbox" id="scopeIncludeSubfolders" checked />
+                <span data-i18n="scope.subfolders_label">包含子資料夾</span>
+              </label>
+            </div>
+
+            <div id="scopeSingleNoteSelector" style="display:none; margin-bottom:16px">
+              <label class="form-label" for="scopeSingleNoteInput" data-i18n="scope.note_select_title">指定單篇筆記路徑：</label>
+              <input type="text" id="scopeSingleNoteInput" placeholder="例如：Projects/Alpha.md" />
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:14px">
+              <button class="primary" id="applyScopeBtn" data-i18n="scope.apply_btn">套用範圍</button>
+              <button class="secondary" id="resetScopeBtn" data-i18n="scope.reset_btn">重設為全庫</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================ NOTE WORKSPACE ============================ -->
+      <!-- ============================ NOTE WORKSPACE ============================ -->
+      <section id="tab-workspace" class="view-section">
+        <div class="page-header">
+          <h2 data-i18n="workspace.title">單篇筆記屬性工作區</h2>
+          <p class="lead" data-i18n="workspace.lead">搜尋全庫筆記，檢視既有 Frontmatter 屬性，在不修改檔案的情況下進行表單編輯、檢視語意 Diff，並複製安全合法的 YAML。</p>
+        </div>
+
+        <div class="card">
+          <label class="form-label" for="wsNoteSearch" data-i18n="workspace.search_label">搜尋或選擇筆記</label>
+          <div style="position:relative; margin-bottom:10px">
+            <div style="display:flex; gap:10px">
+              <input type="text" id="wsNoteSearch" placeholder="🔍 輸入筆記名稱搜尋，或點擊右側瀏覽資料夾樹..." data-i18n-placeholder="ws.browse_placeholder" autocomplete="off" />
+              <button class="secondary" id="wsSearchBtn" data-i18n="workspace.search_btn">搜尋</button>
+              <button class="secondary" id="wsDropdownToggleBtn" data-i18n="ws.browse_tree_btn">📂 瀏覽資料夾樹</button>
+            </div>
+            <div id="wsNoteCandidates" style="position:absolute; top:100%; left:0; right:0; max-height:400px; overflow-y:auto; display:none; border:1px solid var(--line); border-radius:var(--radius-sm); background:var(--panel2); box-shadow:var(--shadow); z-index:50; margin-top:4px; padding:4px"></div>
+          </div>
+
+
+          <div id="wsNoteStatusBanner"></div>
+        </div>
+
+        <div id="wsEditorArea" style="display:none">
+          <div class="grid cols2">
+            <div class="card">
+              <h3 style="margin-top:0" data-i18n="workspace.editor_title">屬性編輯器</h3>
+              <div id="wsPropFields"></div>
+              <div style="display:flex; gap:10px; margin-top:14px">
+                <button class="secondary" id="wsAddPropBtn" data-i18n="workspace.add_prop_btn">+ 新增屬性欄位</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <h3 style="margin-top:0" data-i18n="workspace.diff_title">屬性變更比對 (Semantic Diff)</h3>
+              <div id="wsDiffView"></div>
+
+              <h3 style="margin-top:20px" data-i18n="workspace.preview_title">YAML Frontmatter 預覽</h3>
+              <pre id="wsYamlPreview" style="max-height:220px; font-size:12.5px"></pre>
+
+              <div id="wsRoundtripStatus" style="margin-bottom:12px; font-size:13px"></div>
+              <button class="primary" id="wsCopyBtn" data-i18n="workspace.copy_btn">複製 Frontmatter</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================ DISCOVER ============================ -->
+      <section id="tab-discover" class="view-section">
+        <div class="page-header">
+          <h2 data-i18n="discover.title">屬性清冊盤點</h2>
+          <p class="lead" data-i18n="discover.lead">統計當前範圍內筆記 Frontmatter 中出現的所有屬性鍵、使用次數、儲存型態與異常項目。</p>
+        </div>
+
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px">
+            <h3 style="margin:0" data-i18n="discover.inventory_title">屬性清冊清單</h3>
+            <button class="secondary" id="exportDiscoveryBtn" data-i18n="discover.export_btn">匯出盤點報告</button>
+          </div>
+          <div id="discoveryInventoryTable"></div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-top:0" data-i18n="discover.findings_title">診斷事項與警示</h3>
+          <div id="discoveryFindings"></div>
+        </div>
+      </section>
+
+      <!-- ============================ DESIGN ============================ -->
+      <section id="tab-design" class="view-section">
+        <div class="page-header">
+          <h2 data-i18n="design.title">屬性架構設計</h2>
+          <p class="lead" data-i18n="design.lead">選擇您欲記錄的管理對象與需求。工作室將依確定性原則建議最佳屬性組合，並自動與目前範圍及全庫既有詞彙比對，避免重複造輪子。</p>
+        </div>
+
+        <div class="card">
+          <!-- A. Management Objects Multi-select -->
+          <div style="margin-bottom:16px">
+            <label class="form-label" style="font-size:14px; font-weight:600" data-i18n="design.objects_title">A. 你在管理什麼？（管理對象，可複選）</label>
+            <div id="designObjectsList" class="folder-checklist" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:8px; max-height:160px; padding:10px"></div>
+          </div>
+
+          <!-- B. Management Needs Multi-select -->
+          <div style="margin-bottom:16px">
+            <label class="form-label" style="font-size:14px; font-weight:600" data-i18n="design.needs_title">B. 你需要追蹤什麼？（管理需求，可複選）</label>
+            <div id="designNeedsList" class="folder-checklist" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:8px; max-height:160px; padding:10px"></div>
+          </div>
+
+          <!-- C. Optional Extra Text -->
+          <div style="margin-bottom:16px">
+            <label class="form-label" for="designGoalInput" data-i18n="design.extra_label">C. 其他特殊需求（選填）</label>
+            <input type="text" id="designGoalInput" placeholder="例如：這是美國工廠設備導入專案，需要追蹤供應商與法規..." data-i18n-placeholder="design.extra_placeholder" />
+          </div>
+
+          <button class="primary" id="designSuggestBtn" data-i18n="design.suggest_btn">產生建議架構</button>
+        </div>
+
+        <div id="designReviewCard" class="card" style="display:none">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px">
+            <h3 style="margin:0" data-i18n="design.review_title">架構審查與比對</h3>
+            <button class="primary" id="designAdoptBtn" data-i18n="design.adopt_btn">採用此屬性架構 (Adopt Schema)</button>
+          </div>
+          <div id="designReviewResult"></div>
+        </div>
+
+        <!-- Next Actions Card upon adoption -->
+        <div id="designNextActionsCard" class="card" style="display:none; border-left:4px solid var(--teal); background:var(--teal-soft)">
+          <h3 style="margin-top:0" data-i18n="design.next_actions_title">架構已採用！接下來要做什麼？</h3>
+          <div class="grid cols2" style="margin-top:12px">
+            <div class="action-card" id="designGoToWorkspace">
+              <div class="act-title" data-i18n="design.next_apply_existing">套用到既有筆記 (Apply to Existing Note)</div>
+              <div class="act-desc" data-i18n="design.next_apply_existing_desc">選擇一篇現有 Note，讀入目前 Properties 後調整與補齊</div>
+            </div>
+            <div class="action-card" id="designGoToFill">
+              <div class="act-title" data-i18n="design.next_create_blank">建立新筆記 Frontmatter (New Frontmatter)</div>
+              <div class="act-desc" data-i18n="design.next_create_blank_desc">填入屬性值並即時產生可複製的合法 YAML Frontmatter</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================ FILL ============================ -->
+      <section id="tab-fill" class="view-section">
+        <div class="page-header">
+          <h2 data-i18n="fill.title">新筆記屬性產生器</h2>
+          <p class="lead" data-i18n="fill.lead">依據設計的 Schema 填寫屬性值。下方將即時產生合法的 YAML Frontmatter，供您複製貼上到 Obsidian 筆記頂端。</p>
+        </div>
+
+        <!-- Empty State if no schema adopted -->
+        <div id="fillEmptyStateCard" class="card" style="text-align:center; padding:36px 20px">
+          <div style="font-size:36px; margin-bottom:12px">📋</div>
+          <h3 style="margin-top:0" data-i18n="fill.empty_title">尚未選擇屬性架構</h3>
+          <p class="muted" style="max-width:440px; margin:0 auto 16px auto" data-i18n="fill.empty_desc">若要建立新筆記的 Frontmatter，請先選擇或建立一組屬性架構。</p>
+          <button class="primary" id="fillGoToDesignBtn" data-i18n="fill.go_to_design">前往屬性架構設計 →</button>
+        </div>
+
+        <!-- Active Schema Form when adopted -->
+        <div id="fillActiveFormArea" style="display:none">
+          <div class="card" style="margin-bottom:14px; background:var(--panel2)">
+            <span data-i18n="fill.current_schema_prefix">目前採用架構：</span>
+            <strong id="fillCurrentSchemaName">—</strong>
+            <span class="muted" id="fillCurrentSchemaPropsCount" style="margin-left:8px"></span>
+          </div>
+
+          <div class="grid cols2">
+            <div class="card">
+              <h3 style="margin-top:0" data-i18n="fill.form_title">填寫表單</h3>
+              <div id="fillFormFields"></div>
+            </div>
+            <div class="card">
+              <h3 style="margin-top:0" data-i18n="fill.preview_title">Frontmatter 預覽與校驗</h3>
+              <pre id="fillYamlPreview" style="max-height:240px; font-size:12.5px"></pre>
+              <div id="fillStatusMsg" style="margin-bottom:12px"></div>
+              <div style="display:flex; gap:10px">
+                <button class="primary" id="copyFmBtn" disabled data-i18n="fill.copy_fm">複製完整 Frontmatter</button>
+                <button class="secondary" id="copyYamlBtn" disabled data-i18n="fill.copy_yaml">僅複製 Properties YAML</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ============================ RELATIONSHIPS ============================ -->
+      <section id="tab-relations" class="view-section">
+        <div class="page-header">
+          <h2 data-i18n="relations.title">筆記關聯分析</h2>
+          <p class="lead" data-i18n="relations.lead">分析筆記之間的連結結構。支援自訂多資料夾來源範圍與目標範圍，區分屬性連結與正文 Wikilinks，提供四態分類（VALID, BROKEN, AMBIGUOUS, OUTSIDE TARGET）與自訂檢查保存。</p>
+        </div>
+
+        <div class="card">
+          <div style="display:flex; gap:12px; margin-bottom:16px; border-bottom:1px solid var(--line); padding-bottom:12px">
+            <button class="secondary active" id="relSourcePropsBtn" data-i18n="relations.source_tab_props">屬性連結 (Property Links)</button>
+            <button class="secondary" id="relSourceBodyBtn" data-i18n="relations.source_tab_body">正文 Wikilinks (嚴格唯讀)</button>
+          </div>
+
+          <div class="grid cols2" style="margin-bottom:14px">
+            <!-- Multi-Folder Source Scope -->
+            <div class="card" style="margin-bottom:0; background:var(--panel2)">
+              <label class="form-label" data-i18n="relations.source_scope_label">來源範圍 (Source Scope - Multi-Folder)</label>
+              <label style="display:flex; align-items:center; gap:8px; margin-bottom:8px; font-size:13px; cursor:pointer">
+                <input type="checkbox" id="relSrcEntireCb" checked />
+                <span data-i18n="relations.entire_vault_option">全庫 (Entire Vault)</span>
+              </label>
+              <div id="relSrcFoldersList" class="folder-checklist" style="display:none"></div>
+            </div>
+
+            <!-- Multi-Folder Target Scope -->
+            <div class="card" style="margin-bottom:0; background:var(--panel2)">
+              <label class="form-label" data-i18n="relations.target_scope_label">目標範圍 (Target Scope - Multi-Folder)</label>
+              <label style="display:flex; align-items:center; gap:8px; margin-bottom:8px; font-size:13px; cursor:pointer">
+                <input type="checkbox" id="relTgtEntireCb" checked />
+                <span data-i18n="relations.entire_vault_option">全庫 (Entire Vault)</span>
+              </label>
+              <div id="relTgtFoldersList" class="folder-checklist" style="display:none"></div>
+            </div>
+          </div>
+
+          <div id="relPropFilterWrapper" style="margin-bottom:14px">
+            <label class="form-label" data-i18n="relations.prop_filter_label">特定屬性篩選 (可選)</label>
+            <select id="relPropFilterSelect" class="form-control">
+              <option value="" data-i18n="relations.all_properties">全部屬性 (All Properties)</option>
+            </select>
+          </div>
+
+          <div style="display:flex; gap:10px">
+            <button class="primary" id="relAnalyzeBtn" data-i18n="relations.analyze_btn">執行關聯分析</button>
+            <button class="secondary" id="relSaveCheckBtn" data-i18n="relations.save_check_btn">保存此檢查條件</button>
+          </div>
+        </div>
+
+        <div id="relResultsCard" class="card" style="display:none">
+          <div class="grid cols4" style="margin-bottom:18px">
+            <div class="stat ok"><div class="n" id="relStatValid">0</div><div class="l" data-i18n="relations.state_valid">正常連結 (VALID)</div></div>
+            <div class="stat alert"><div class="n" id="relStatBroken">0</div><div class="l" data-i18n="relations.state_broken">斷鏈 (BROKEN)</div></div>
+            <div class="stat warn"><div class="n" id="relStatAmbig">0</div><div class="l" data-i18n="relations.state_ambiguous">歧義連結 (AMBIGUOUS)</div></div>
+            <div class="stat"><div class="n" id="relStatOutside">0</div><div class="l" data-i18n="relations.state_outside">目標超出範圍 (OUTSIDE TARGET)</div></div>
+          </div>
+
+          <div id="relItemsList"></div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-top:0" data-i18n="relations.saved_checks_title">已保存的關聯檢查</h3>
+          <div id="savedChecksList"></div>
+        </div>
+      </section>
+
+      <!-- ============================ HEALTH ============================ -->
+      <section id="tab-health" class="view-section">
+        <div class="page-header">
+          <h2 data-i18n="health.title">屬性健康度診斷</h2>
+          <p class="lead" data-i18n="health.lead">針對當前範圍內的屬性品質進行透明、可解釋的評分與診斷，找出拼寫分歧、型態混亂與孤立屬性。</p>
+        </div>
+
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px">
+            <h3 style="margin:0" data-i18n="health.score_title">健康評分與扣分分析</h3>
+            <button class="secondary" id="exportHealthBtn" data-i18n="health.export_btn">匯出健康報告</button>
+          </div>
+          <div id="healthScoreSection"></div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-top:0" data-i18n="health.findings_title">所有診斷項目</h3>
+          <div id="healthFindingsList"></div>
+        </div>
+      </section>
+
+      <!-- ============================ REFACTOR ============================ -->
+      <section id="tab-refactor" class="view-section">
+        <div class="page-header">
+          <h2 data-i18n="refactor.title">安全重構規劃</h2>
+          <p class="lead" data-i18n="refactor.lead">所有重構規劃皆為唯讀分析。絕不會自動寫入知識庫，明確揭露受影響筆記與需人工決策之衝突點。</p>
+        </div>
+
+        <div class="card">
+          <div class="grid cols3" style="margin-bottom:14px">
+            <div>
+              <label class="form-label" data-i18n="refactor.op_label">操作類型</label>
+              <select id="refactorOpSelect">
+                <option value="rename" data-i18n="refactor.op_rename">重新命名屬性 (Rename)</option>
+                <option value="merge" data-i18n="refactor.op_merge">合併多個屬性 (Merge)</option>
+                <option value="normalize" data-i18n="refactor.op_normalize">數值格式標準化 (Normalize)</option>
+                <option value="convert_type" data-i18n="refactor.op_convert">型態轉換 (Convert Type)</option>
+              </select>
+            </div>
+
+            <!-- Param 1: Source Property (Dropdown / Multi-select / Select) -->
+            <div id="refactorParam1Wrapper">
+              <label class="form-label" id="refactorParam1Label" data-i18n="refactor.source_label">來源屬性名</label>
+              <select id="refactorSourceSelect"></select>
+              <div id="refactorMergeSourcesList" class="folder-checklist" style="display:none; max-height:140px"></div>
+            </div>
+
+            <!-- Param 2: Target Property / Type -->
+            <div id="refactorParam2Wrapper">
+              <label class="form-label" id="refactorParam2Label" data-i18n="refactor.target_prop_label">目標屬性名稱</label>
+              <select id="refactorTargetPropSelect" class="form-control"></select>
+              <input type="text" id="refactorTargetNewNameInput" style="display:none; margin-top:8px" data-i18n-placeholder="refactor.new_name_placeholder" placeholder="請輸入全新屬性名稱..." />
+              <select id="refactorTargetTypeSelect" style="display:none">
+                <option value="text">Text (文字)</option>
+                <option value="number">Number (數字)</option>
+                <option value="date">Date (日期)</option>
+                <option value="checkbox">Checkbox (核取方塊)</option>
+                <option value="list">List (清單)</option>
+                <option value="tags">Tags (標籤清單)</option>
+                <option value="note_link">Note Link (筆記連結 [[...]])</option>
+                <option value="note_link_list">Note Link List (筆記連結清單)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Normalize Observed Value Mapping Section (REQ-038) -->
+          <div id="refactorNormalizeSection" style="display:none; margin-bottom:14px; border:1px solid var(--line); border-radius:var(--radius-sm); padding:12px; background:var(--panel2)">
+            <label class="form-label" style="margin-bottom:8px" data-i18n="refactor.normalize_mapping_title">數值對照與標準化設定 (Value Mapping)</label>
+            <div id="refactorNormalizeTableContainer"></div>
+          </div>
+
+          <!-- Dynamic Target Conflict Warning Banner -->
+          <div id="refactorConflictWarnBanner" style="display:none; margin-bottom:14px; padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--amber); background:var(--amber-soft); color:var(--text); font-size:13px"></div>
+
+          <button class="primary" id="runRefactorPlanBtn" data-i18n="refactor.plan_btn">產生重構計畫</button>
+        </div>
+
+
+        <div id="refactorPlanResultCard" class="card" style="display:none">
+          <h3 style="margin-top:0" data-i18n="refactor.human_summary_title">重構影響摘要</h3>
+          <div id="refactorHumanSummary"></div>
+
+          <!-- Collapsible Raw Plan JSON View (Advanced/Evidence) -->
+          <details style="margin-top:16px; border-top:1px solid var(--line); padding-top:12px">
+            <summary style="cursor:pointer; font-weight:600; color:var(--muted); font-size:13px" data-i18n="refactor.raw_json_view">查看原始計畫 JSON</summary>
+            <div id="refactorPlanOutput" style="margin-top:10px"></div>
+          </details>
+        </div>
+      </section>
+
+
+      <!-- ============================ PROPOSAL ============================ -->
+      <section id="tab-proposal" class="view-section">
+        <div class="page-header">
+          <h2 data-i18n="proposal.title">外部 AI 提案匯入</h2>
+          <p class="lead" data-i18n="proposal.lead">匯入由外部 Agent 或工具產生的版本化 Schema Proposal JSON。工作室將進行純本地校驗並與您的知識庫進行比對。</p>
+        </div>
+
+        <div class="card">
+          <label class="form-label" data-i18n="proposal.paste_label">貼上 Proposal JSON 或選擇檔案</label>
+          <textarea id="proposalTextInput" rows="6" placeholder="{\n  \"proposal_contract_version\": \"1.0.0\",\n  ...\n}"></textarea>
+          <div style="display:flex; gap:10px; margin-top:12px">
+            <button class="primary" id="validateProposalBtn" data-i18n="proposal.validate_btn">校驗並比對提案</button>
+          </div>
+        </div>
+
+        <div id="proposalResultCard" class="card" style="display:none">
+          <h3 style="margin-top:0" data-i18n="proposal.result_title">提案比對結果</h3>
+          <div id="proposalResultOutput"></div>
+        </div>
+      </section>
     </div>
+  </main>
+</div>
+
+<!-- ============================ RIGHT DRAWER ============================ -->
+<div class="drawer-overlay" id="drawerOverlay"></div>
+<div class="drawer-panel" id="drawerPanel">
+  <div class="drawer-header">
+    <h3 id="drawerTitle" data-i18n="drawer.title">詳細資訊下鑽</h3>
+    <button class="ghost icon-btn" id="drawerCloseBtn" data-i18n-title="drawer.close">✕</button>
   </div>
-  <div id="healthResult"></div>
-</section>
-
-<!-- ============================ PROPOSAL ============================ -->
-<section id="tab-proposal">
-  <h2>Import an external AI / Agent schema proposal</h2>
-  <p class="lead">Optional. The app itself needs no AI. A proposal is untrusted advisory input: it is
-    validated against the versioned contract, compared with your real vault, and never applied to it.</p>
-  <div class="card">
-    <div class="row" style="margin-bottom:10px">
-      <div class="fixed"><input type="file" id="proposalFile" accept=".json,application/json" /></div>
-      <div class="fixed"><button class="ghost" id="sampleProposalBtn">Insert example</button></div>
-      <div class="fixed"><button class="primary" id="importProposalBtn">Validate &amp; compare</button></div>
-    </div>
-    <textarea id="proposalText" placeholder='{"proposal_version":"1.0","schema_name":"equipment","properties":[…]}'></textarea>
-    <div class="hint">Contract: <code>proposal_version</code> (currently <code>1.0</code>),
-      <code>schema_name</code>, and <code>properties[]</code> with
-      <code>name</code>, <code>storage_type</code>, optional <code>ui_control</code>,
-      <code>required</code>, <code>reason</code>, <code>allowed_values</code>, <code>confidence</code>.
-      See <code>docs/PROPOSAL_CONTRACT.md</code>.</div>
+  <div class="drawer-body" id="drawerBody"></div>
+  <div class="drawer-footer">
+    <button class="secondary" id="drawerFooterCloseBtn" data-i18n="drawer.close">關閉 (Esc)</button>
   </div>
-  <div id="proposalResult"></div>
-</section>
-</main>
+</div>
 
-<div class="toast" id="toast"></div>
+<!-- Toast -->
+<div class="toast" id="globalToast"></div>
 
+<script src="i18n.js"></script>
 <script>
-"use strict";
+/* ============================================================
+   Application Runtime State & API Layer
+   ============================================================ */
 const S = {
-  meta:null, scanned:false, discovery:null, schema:null, fillValues:{},
-  lastPlan:null, lastPlanParams:null, inbox:null, health:null, healthParams:null,
-  noteCandidates:[], ambiguousNames:[]
+  vaultPath: "",
+  scanned: false,
+  scope: { mode: "entire_vault", folders: [], include_subfolders: true, note_path: null },
+  notesInScope: 0,
+  currentNote: null,
+  currentSchema: null,
+  designPresets: null,
+  lastReviewResult: null,
+  inventory: null,
+  fill: { valid: false, values: {} },
+  relSourceType: "property_link", // "property_link" | "body_wikilink"
+  savedChecks: [],
+  folders: [],
+  meta: {}
 };
-const $ = (id)=>document.getElementById(id);
-const esc = (s)=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
-function toast(msg, isErr){
-  const t=$("toast"); t.textContent=msg; t.className="toast"+(isErr?" err":"");
-  t.style.display="block"; clearTimeout(t._h); t._h=setTimeout(()=>t.style.display="none", 5200);
+function $(id) { return document.getElementById(id); }
+function esc(s) {
+  if (s == null) return "";
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
-async function api(path, body){
-  const res = await fetch(path, {method:"POST", headers:{"Content-Type":"application/json"},
-    body: JSON.stringify(body||{})});
-  const data = await res.json();
-  if(!res.ok){ throw new Error(data.error || ("HTTP "+res.status)); }
+
+async function api(path, payload = {}) {
+  const resp = await fetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  const data = await resp.json();
+  if (!resp.ok) {
+    throw new Error(data.error || ("API Error (" + resp.status + ")"));
+  }
   return data;
 }
-function setTab(name){
-  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active", b.dataset.tab===name));
-  document.querySelectorAll("section").forEach(s=>s.classList.toggle("active", s.id==="tab-"+name));
-  window.scrollTo({top:0});
-}
-document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
-  if(b.hasAttribute("data-needs-scan") && !S.scanned){ toast("Scan a vault first (step 1).", true); return; }
-  setTab(b.dataset.tab);
-});
-function stat(n,l,alert){return `<div class="stat${alert?" alert":""}"><div class="n">${esc(n)}</div><div class="l">${esc(l)}</div></div>`;}
-function sevPill(s){return `<span class="pill ${esc(s)}">${esc(s)}</span>`;}
-function confPill(c){return `<span class="pill ${esc(c)}">${esc(c)}</span>`;}
-async function copyText(text){
-  try{ await navigator.clipboard.writeText(text); return true; }
-  catch(e){
-    const ta=document.createElement("textarea"); ta.value=text; document.body.appendChild(ta);
-    ta.select(); const ok=document.execCommand("copy"); ta.remove(); return ok;
-  }
+
+function toast(msg, isErr = false) {
+  const el = $("globalToast");
+  el.textContent = msg;
+  el.className = isErr ? "toast err" : "toast";
+  el.style.display = "block";
+  setTimeout(() => { el.style.display = "none"; }, 3500);
 }
 
-/* ------------------------------- meta ------------------------------- */
-(async function init(){
-  try{
-    S.meta = await api("/api/meta");
-    $("versionBadge").textContent = "v"+S.meta.version;
-    const rs=$("recipeSelect");
-    rs.innerHTML = `<option value="">(let the app choose from my words)</option>` +
-      S.meta.recipes.map(r=>`<option value="${esc(r.id)}">${esc(r.label)} — ${esc(r.description)}</option>`).join("");
-    $("intentBoxes").innerHTML = S.meta.intents.map(i=>
-      `<label class="small"><input type="checkbox" class="intent" value="${esc(i.id)}" /> ${esc(i.label)}</label>`).join("");
-  }catch(e){ toast("Could not reach the local app: "+e.message, true); }
-})();
-
-/* ------------------------------- vault ------------------------------ */
-$("scanBtn").onclick = async ()=>{
-  const path = $("vaultPath").value.trim();
-  if(!path){ toast("Enter the vault folder path.", true); return; }
-  $("scanBtn").disabled=true; $("scanBtn").textContent="Scanning…";
-  try{
-    const d = await api("/api/scan", {vault_path: path});
-    S.discovery = d; S.scanned = true;
-    $("vaultBadge").textContent = d.summary.vault_path;
-    $("verifyBtn").disabled = false;
-    renderScanSummary(d); renderDiscover(d); renderRefactorInputs();
-    toast(`Scanned ${d.summary.note_count} notes in ${d.scan_seconds}s. Vault not modified.`);
-  }catch(e){ toast(e.message, true); $("scanSummary").innerHTML=`<div class="card bad">${esc(e.message)}</div>`; }
-  finally{ $("scanBtn").disabled=false; $("scanBtn").textContent="Scan vault"; }
-};
-
-function renderScanSummary(d){
-  const s = d.summary;
-  $("scanSummary").innerHTML = `<div class="card"><h3 style="margin-top:0">Scan result</h3>
-    <div class="grid cols4">
-      ${stat(s.note_count,"Markdown notes")}
-      ${stat(s.notes_with_properties,"notes with properties")}
-      ${stat(s.notes_without_properties,"notes without properties")}
-      ${stat(s.notes_with_parse_failure,"notes whose properties could NOT be read", s.notes_with_parse_failure>0)}
-      ${stat(d.inventory.unique_property_count,"unique property keys")}
-      ${stat(s.skipped_path_count,"paths skipped on purpose")}
-      ${stat(d.scan_seconds+"s","scan time")}
-      ${stat(d.baseline_file_count,"files hashed for the read-only check")}
-    </div>
-    <p class="small muted" style="margin-bottom:0">Notes that failed to parse are reported separately —
-      they are never counted as “no properties”.</p></div>`;
-  const issues = d.issues || [], skipped = d.skipped || [];
-  let html = "";
-  if(issues.length){
-    html += `<div class="card"><h3 style="margin-top:0">Parse warnings &amp; errors (${issues.length})</h3>
-      <table><thead><tr><th>Note</th><th>Status</th><th>Message</th></tr></thead><tbody>` +
-      issues.map(i=>`<tr><td><code>${esc(i.note_path)}</code></td><td>${sevPill(i.severity)}<code>${esc(i.status)}</code></td>
-        <td>${esc(i.message)} <span class="muted small">${esc(i.detail)}</span></td></tr>`).join("") +
-      `</tbody></table></div>`;
-  }
-  if(skipped.length){
-    html += `<div class="card"><h3 style="margin-top:0">Skipped paths (${skipped.length})</h3>
-      <table><thead><tr><th>Path</th><th>Reason</th></tr></thead><tbody>` +
-      skipped.map(s2=>`<tr><td><code>${esc(s2.path)}</code></td><td class="muted">${esc(s2.reason)}</td></tr>`).join("")+
-      `</tbody></table></div>`;
-  }
-  $("scanIssues").innerHTML = html;
-}
-
-$("verifyBtn").onclick = async ()=>{
-  try{
-    const r = await api("/api/vault/verify", {});
-    $("verifyResult").innerHTML = `<div class="card">
-      <h3 style="margin-top:0">Vault integrity check</h3>
-      <div class="grid cols4">
-        ${stat(r.files_checked,"files hashed (SHA-256)")}
-        ${stat(r.files_created,"files created", r.files_created>0)}
-        ${stat(r.files_modified,"files modified", r.files_modified>0)}
-        ${stat(r.files_deleted,"files deleted", r.files_deleted>0)}
-      </div>
-      <p class="${r.unchanged?"ok":"bad"}" style="margin-bottom:0">${r.unchanged
-        ? "✔ Byte-for-byte identical to when the vault was scanned."
-        : "✖ Difference detected — see details below."}</p>
-      <p class="small muted">Digest before <code>${esc(r.before_digest.slice(0,16))}…</code> ·
-        after <code>${esc(r.after_digest.slice(0,16))}…</code></p></div>`;
-  }catch(e){ toast(e.message, true); }
-};
-
-/* ------------------------------ discover ----------------------------- */
-function renderDiscover(d){
-  const s=d.summary;
-  $("discoverStats").innerHTML =
-    stat(d.inventory.unique_property_count,"unique properties") +
-    stat(s.notes_with_properties,"notes with properties") +
-    stat(d.findings.length,"findings") +
-    stat(s.notes_with_parse_failure,"unreadable notes", s.notes_with_parse_failure>0);
-  renderInventory();
-  const cats = [...new Set(d.findings.map(f=>f.category))].sort();
-  $("findingFilter").innerHTML = `<option value="">All categories (${d.findings.length})</option>` +
-    cats.map(c=>`<option value="${esc(c)}">${esc(c)} (${d.findings.filter(f=>f.category===c).length})</option>`).join("");
-  renderFindings("discoverFindings", d.findings, "");
-}
-$("invFilter").oninput = renderInventory;
-$("findingFilter").onchange = ()=> renderFindings("discoverFindings", S.discovery.findings, $("findingFilter").value);
-
-function renderInventory(){
-  if(!S.discovery) return;
-  const q = $("invFilter").value.trim().toLowerCase();
-  const rows = S.discovery.inventory.properties.filter(p=>!q || p.key.toLowerCase().includes(q));
-  if(!rows.length){ $("invTable").innerHTML = `<div class="empty">No properties found.</div>`; return; }
-  $("invTable").innerHTML = `<table><thead><tr><th>Property</th><th>Notes</th><th>Stored as</th>
-    <th>Distinct values</th><th>Most common values</th></tr></thead><tbody>` +
-    rows.map(p=>`<tr class="clickable" data-key="${esc(p.key)}">
-      <td><code>${esc(p.key)}</code>${p.ambiguous_notes.length?' <span class="pill high">duplicate key</span>':''}</td>
-      <td>${p.usage_count}</td>
-      <td>${Object.entries(p.observed_types).map(([k,v])=>`<span class="pill">${esc(k)} ×${v}</span>`).join("")}</td>
-      <td>${p.distinct_value_count}</td>
-      <td class="muted small">${p.top_values.slice(0,4).map(v=>esc(v.value)+" ("+v.count+")").join(", ")}</td>
-    </tr>`).join("") + `</tbody></table><div id="propDetail"></div>`;
-  document.querySelectorAll("#invTable tr.clickable").forEach(tr=>tr.onclick=()=>showProperty(tr.dataset.key));
-}
-async function showProperty(key){
-  try{
-    const d = await api("/api/property", {key});
-    const e = d.entry;
-    $("propDetail").innerHTML = `<div class="card" style="margin-top:14px">
-      <h3 style="margin-top:0">Property <code>${esc(e.key)}</code></h3>
-      <dl class="kv">
-        <dt>Used in</dt><dd>${e.usage_count} notes (${e.empty_count} empty)</dd>
-        <dt>Stored as</dt><dd>${Object.entries(e.observed_types).map(([k,v])=>`${esc(k)} ×${v}`).join(", ")}</dd>
-        <dt>Distinct values</dt><dd>${e.distinct_value_count}</dd>
-      </dl>
-      <h4>Value distribution</h4>
-      <table><thead><tr><th>Value</th><th>Count</th><th>Notes</th></tr></thead><tbody>${
-        e.top_values.map(v=>`<tr><td><code>${esc(v.value)}</code></td><td>${v.count}</td>
-          <td class="muted small">${v.notes.slice(0,8).map(esc).join("<br>")}${v.notes.length>8?" …":""}</td></tr>`).join("")
-      }</tbody></table>
-      <details><summary>All notes using this property (${e.notes.length})</summary>
-        <div class="notes-list">${e.notes.map(esc).join("<br>")}</div></details>
-    </div>`;
-    $("propDetail").scrollIntoView({behavior:"smooth", block:"nearest"});
-  }catch(e){ toast(e.message, true); }
-}
-
-function renderFindings(targetId, findings, category){
-  const list = findings.filter(f=>!category || f.category===category);
-  const el = $(targetId);
-  if(!list.length){ el.innerHTML = `<div class="empty">Nothing found — that is good news.</div>`; return; }
-  el.innerHTML = list.map(f=>`<div class="finding">
-    <h4>${sevPill(f.severity)}${confPill(f.confidence)} ${esc(f.title)}</h4>
-    <div class="why">${esc(f.explanation)}</div>
-    <div class="small"><strong>What you can do:</strong> ${esc(f.recommendation)}</div>
-    <div class="small muted" style="margin-top:6px">category <code>${esc(f.category)}</code> ·
-      properties ${f.property_keys.map(k=>"<code>"+esc(k)+"</code>").join(", ")||"—"} ·
-      ${f.affected_note_count} affected note(s)</div>
-    <details><summary>Show affected notes &amp; evidence</summary>
-      <div class="notes-list">${f.affected_notes.map(esc).join("<br>")||"—"}</div>
-      <pre class="small">${esc(JSON.stringify(f.evidence,null,2))}</pre>
-    </details></div>`).join("");
-}
-
-/* ------------------------------- design ------------------------------ */
-$("buildSchemaBtn").onclick = async ()=>{
-  const goal = $("goalText").value.trim();
-  const intents = [...document.querySelectorAll(".intent:checked")].map(c=>c.value);
-  if(!goal && !$("recipeSelect").value){ toast("Describe what you want to manage, or pick a starting point.", true); return; }
-  try{
-    const d = await api("/api/design/build", {goal, recipe_id:$("recipeSelect").value,
-      intents, schema_name:$("schemaName").value.trim()});
-    S.schema = d.schema; renderSchemaEditor(d);
-    $("schemaName").value = d.schema.schema_name;
+function setTab(tabId) {
+  document.querySelectorAll("nav.sidebar-nav button.nav-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.getAttribute("data-tab") === tabId);
+  });
+  document.querySelectorAll("section.view-section").forEach(sec => {
+    sec.classList.toggle("active", sec.id === `tab-${tabId}`);
+  });
+  if (tabId === "refactor") {
+    populateRefactorSourceOptions();
+  } else if (tabId === "fill") {
     renderFillForm();
-    toast("Proposed "+d.schema.properties.length+" properties. Review, edit, then go to Fill.");
-  }catch(e){ toast(e.message, true); }
-};
-$("goalText").addEventListener("change", async ()=>{
-  const goal=$("goalText").value.trim(); if(!goal) return;
-  try{
-    const d = await api("/api/design/suggest",{goal});
-    if(d.recipes.length){ $("recipeSelect").value = d.recipes[0].id; }
-    d.detected_intents.forEach(id=>{
-      const box=[...document.querySelectorAll(".intent")].find(c=>c.value===id); if(box) box.checked=true;
-    });
-  }catch(e){}
-});
-$("addPropBtn").onclick = ()=>{
-  if(!S.schema){ S.schema = {format_version:"1.0", schema_name:$("schemaName").value.trim()||"my_notes",
-    description:"", properties:[]}; }
-  S.schema.properties.push({name:"new_property", storage_type:"text", ui_control:"plain",
-    required:false, reason:"", allowed_values:null, origin:"user", confidence:null});
-  reviewSchema();
-};
-async function reviewSchema(){
-  try{
-    const d = await api("/api/design/review", {schema:S.schema});
-    S.schema = d.schema; renderSchemaEditor(d); renderFillForm();
-  }catch(e){ toast(e.message, true); }
+  }
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
-function renderSchemaEditor(d){
-  const schema = d.schema, reviews = d.reuse_reviews||[];
-  const types = Object.entries(S.meta.storage_types).filter(([k])=>!["empty","unsupported"].includes(k));
-  const html = `<div class="card">
-    <h3 style="margin-top:0">Schema <code>${esc(schema.schema_name)}</code>
-      <span class="muted small">${esc(schema.description||"")}</span></h3>
-    ${d.validation_errors.length?`<div class="reuse exact_existing">⚠ ${d.validation_errors.map(esc).join("<br>")}</div>`:""}
-    <div class="small muted" style="margin-bottom:10px">
-      ${d.counts.exact_existing} already in your vault · ${d.counts.case_variant_exists} differently-spelled variants ·
-      ${d.counts.possible_overlap} possible overlaps · ${d.counts.new} new</div>
-    ${schema.properties.map((p,i)=>{
-      const r = reviews[i]||{};
-      const overlaps = (r.possible_overlaps||[]).map(o=>`<code>${esc(o.key)}</code> (${o.usage_count} notes, similarity ${o.similarity_ratio})`).join(", ");
-      const variants = (r.case_variants||[]).map(o=>`<code>${esc(o.key)}</code> (${o.usage_count} notes)`).join(", ");
-      return `<div class="prop-editor" data-i="${i}">
-        <div class="head"><strong><code>${esc(p.name)}</code></strong>
-          <span>
-            <span class="pill">${esc(p.storage_type_label||p.storage_type)}</span>
-            <span class="pill">${esc(p.ui_control)}</span>
-            ${p.required?'<span class="pill medium">required</span>':'<span class="pill">optional</span>'}
-            <button class="ghost small" data-del="${i}">Remove</button></span></div>
-        <div class="row" style="margin-top:10px">
-          <label class="field"><span>Property name</span>
-            <input type="text" data-f="name" data-i="${i}" value="${esc(p.name)}" /></label>
-          <label class="field"><span>Stored in Obsidian as</span>
-            <select data-f="storage_type" data-i="${i}">${types.map(([k,v])=>
-              `<option value="${esc(k)}" ${k===p.storage_type?"selected":""}>${esc(v)}</option>`).join("")}</select></label>
-          <label class="field"><span>Input style (UI only)</span>
-            <select data-f="ui_control" data-i="${i}">${Object.keys(S.meta.ui_controls).map(k=>
-              `<option value="${esc(k)}" ${k===p.ui_control?"selected":""}>${esc(k)}</option>`).join("")}</select></label>
-          <label class="field"><span>Required?</span>
-            <select data-f="required" data-i="${i}">
-              <option value="false" ${!p.required?"selected":""}>Optional</option>
-              <option value="true" ${p.required?"selected":""}>Required</option></select></label>
-        </div>
-        <div class="row">
-          <label class="field"><span>Allowed values (comma separated — for choice inputs)</span>
-            <input type="text" data-f="allowed_values" data-i="${i}"
-              value="${esc((p.allowed_values||[]).join(", "))}" /></label>
-          <label class="field"><span>Why this property exists</span>
-            <input type="text" data-f="reason" data-i="${i}" value="${esc(p.reason||"")}" /></label>
-        </div>
-        <div class="hint">Serialization: ${esc((p.serialization||{}).serializes_as||"")} —
-          ${esc((p.serialization||{}).note||"")}</div>
-        <div class="reuse ${esc(r.status||"new")}">
-          ${esc(r.message||"")}
-          ${r.exact_match?`<br>Existing usage: ${r.exact_match.usage_count} notes, mostly stored as
-            <code>${esc(r.exact_match.dominant_type)}</code>${r.type_agreement==="differs"
-              ? ` <span class="warnc">— your schema says <code>${esc(r.schema_storage_type)}</code>, which would create a type conflict.</span>`:""}
-            <br>Top values: ${(r.exact_match.top_values||[]).slice(0,6).map(v=>"<code>"+esc(v.value)+"</code>").join(", ")||"—"}
-            <br><button class="ghost small" data-reuse="${i}">Reuse the existing property as-is</button>`:""}
-          ${variants?`<br>Existing variants: ${variants}`:""}
-          ${overlaps?`<br>Possible overlap (your judgement, nothing is merged): ${overlaps}`:""}
-        </div></div>`;}).join("")}
-    </div>`;
-  $("schemaEditor").innerHTML = html;
-  $("schemaEditor").querySelectorAll("[data-f]").forEach(inp=>{
-    inp.onchange = ()=>{
-      const i=+inp.dataset.i, f=inp.dataset.f; let v=inp.value;
-      if(f==="required") v = (v==="true");
-      if(f==="allowed_values") v = v.trim()? v.split(",").map(x=>x.trim()).filter(Boolean) : null;
-      S.schema.properties[i][f]=v; reviewSchema();
-    };
-  });
-  $("schemaEditor").querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{
-    S.schema.properties.splice(+b.dataset.del,1); reviewSchema(); });
-  $("schemaEditor").querySelectorAll("[data-reuse]").forEach(b=>b.onclick=()=>{
-    const i=+b.dataset.reuse, r=(d.reuse_reviews||[])[i];
-    if(r && r.exact_match){ S.schema.properties[i].storage_type = r.exact_match.dominant_type;
-      toast(`Reusing existing property '${r.exact_match.key}' with its current type.`); reviewSchema(); }
-  });
-}
-$("exportSchemaBtn").onclick = async ()=>{
-  if(!S.schema){ toast("Design a schema first.", true); return; }
-  try{
-    const r = await api("/api/export",{kind:"schema", params:{schema:S.schema},
-      basename:"schema-"+(S.schema.schema_name||"unnamed")});
-    toast("Schema exported to "+r.files[0].path);
-  }catch(e){ toast(e.message, true); }
-};
 
-/* -------------------------------- fill -------------------------------- */
-function renderFillForm(){
-  if(!S.schema || !S.schema.properties.length){ $("fillForm").innerHTML =
-    `<div class="empty">Design a schema in step 3 first.</div>`; return; }
-  $("fillForm").innerHTML = S.schema.properties.map(p=>{
-    const id = "fv_"+p.name, val = S.fillValues[p.name] ?? "";
-    let input;
-    const av = p.allowed_values||[];
-    if(p.ui_control==="single_choice" && av.length){
-      input = `<select id="${esc(id)}" data-p="${esc(p.name)}"><option value=""></option>` +
-        av.map(v=>`<option ${String(val)===String(v)?"selected":""}>${esc(v)}</option>`).join("")+`</select>`;
-    } else if(p.ui_control==="multi_choice" && av.length){
-      input = `<select id="${esc(id)}" data-p="${esc(p.name)}" multiple size="${Math.min(av.length,5)}">` +
-        av.map(v=>`<option ${Array.isArray(val)&&val.includes(v)?"selected":""}>${esc(v)}</option>`).join("")+`</select>`;
-    } else if(p.storage_type==="checkbox"){
-      input = `<select id="${esc(id)}" data-p="${esc(p.name)}"><option value=""></option>
-        <option value="true" ${val===true||val==="true"?"selected":""}>Yes (true)</option>
-        <option value="false" ${val===false||val==="false"?"selected":""}>No (false)</option></select>`;
-    } else if(p.storage_type==="date"){
-      input = `<input type="date" id="${esc(id)}" data-p="${esc(p.name)}" value="${esc(val)}" />`;
-    } else if(p.storage_type==="datetime"){
-      input = `<input type="datetime-local" id="${esc(id)}" data-p="${esc(p.name)}" value="${esc(val)}" />`;
-    } else if(p.storage_type==="number"){
-      input = `<input type="number" step="any" id="${esc(id)}" data-p="${esc(p.name)}" value="${esc(val)}" />`;
-    } else if(p.ui_control==="note_link"||p.ui_control==="note_link_list"){
-      input = `<input type="text" id="${esc(id)}" data-p="${esc(p.name)}" list="noteList"
-        placeholder="${p.ui_control==="note_link_list"?"Note A, Note B":"Start typing a note name…"}"
-        value="${esc(Array.isArray(val)?val.join(", "):val)}" />`;
-    } else if(p.storage_type==="list"||p.storage_type==="tags"){
-      input = `<input type="text" id="${esc(id)}" data-p="${esc(p.name)}"
-        placeholder="value1, value2" value="${esc(Array.isArray(val)?val.join(", "):val)}" />`;
+function openDrawer(title, html) {
+  $("drawerTitle").textContent = title;
+  $("drawerBody").innerHTML = html;
+  $("drawerOverlay").classList.add("active");
+  $("drawerPanel").classList.add("active");
+}
+
+function closeDrawer() {
+  $("drawerOverlay").classList.remove("active");
+  $("drawerPanel").classList.remove("active");
+}
+
+/* ============================================================
+   Property Display Metadata & Glossary Layer (Shared UI Source)
+   ============================================================ */
+let GLOSSARY_CACHE = {};
+
+async function loadGlossaryCatalog() {
+  try {
+    const res = await api("/api/glossary");
+    GLOSSARY_CACHE = res.catalog || {};
+  } catch (e) {
+    console.warn("Failed to load glossary catalog:", e);
+  }
+}
+
+function formatPropertyLabel(canonicalKey) {
+  if (!canonicalKey) return "";
+  const k = canonicalKey.trim();
+  const entry = GLOSSARY_CACHE[k.toLowerCase()];
+  if (!entry) return k;
+  const isZh = I18N.currentLocale === "zh-Hant";
+  const label = isZh ? entry.label_zh : entry.label_en;
+  if (!label || label.trim() === k) {
+    return k;
+  }
+  return `${label} (${k})`;
+}
+
+
+function renderPropertyBadge(canonicalKey) {
+  if (!canonicalKey) return "";
+  const k = canonicalKey.trim();
+  const entry = GLOSSARY_CACHE[k.toLowerCase()];
+  const isZh = I18N.currentLocale === "zh-Hant";
+  const tooltip = entry ? (isZh ? entry.short_description_zh : entry.short_description_en) : I18N.t("property.custom_tooltip");
+  const display = formatPropertyLabel(k);
+  return `
+    <span class="prop-label-wrapper">
+      <span>${esc(display)}</span>
+      <button type="button" class="prop-help-btn" data-prop="${esc(k)}" title="${esc(tooltip)}">ⓘ</button>
+    </span>
+  `;
+}
+
+async function openPropertyHelpDrawer(canonicalKey) {
+  if (!canonicalKey) return;
+  const k = canonicalKey.trim();
+  openDrawer(`${I18N.t("property.help_title")} — ${k}`, `<div style="padding:20px; text-align:center; color:var(--muted)">Loading...</div>`);
+
+  try {
+    const res = await api("/api/glossary/property", { property: k });
+    const isZh = I18N.currentLocale === "zh-Hant";
+    const meta = res.metadata;
+    const isKnown = res.is_known && meta;
+
+    let html = `
+      <div style="display:flex; flex-direction:column; gap:14px">
+        <div class="card" style="background:var(--panel2)">
+          <div style="font-size:18px; font-weight:700; color:var(--text)">
+            ${esc(formatPropertyLabel(k))}
+          </div>
+          <div style="font-size:12px; color:var(--muted); font-family:var(--mono); margin-top:3px">
+            ${esc(I18N.t("property.canonical_key"))}: <strong>${esc(k)}</strong>
+          </div>
+        </div>
+    `;
+
+    if (isKnown) {
+      html += `
+        <div class="card">
+          <div style="font-size:12px; font-weight:700; color:var(--teal); text-transform:uppercase; margin-bottom:4px">
+            ${esc(I18N.t("property.purpose"))}
+          </div>
+          <div style="font-size:13.5px; line-height:1.5; color:var(--text)">
+            ${esc(isZh ? meta.long_description_zh : meta.long_description_en)}
+          </div>
+
+          <div style="font-size:12px; font-weight:700; color:var(--teal); text-transform:uppercase; margin-top:12px; margin-bottom:4px">
+            ${esc(I18N.t("property.usage_hint"))}
+          </div>
+          <div style="font-size:13px; line-height:1.5; color:var(--muted)">
+            ${esc(isZh ? meta.usage_hint_zh : meta.usage_hint_en)}
+          </div>
+        </div>
+
+        <div class="grid cols2" style="gap:10px">
+          <div class="card" style="padding:10px">
+            <div style="font-size:11.5px; color:var(--muted)">${esc(I18N.t("property.storage_type"))}</div>
+            <div style="font-weight:600; font-size:13px; margin-top:2px">${esc(meta.typical_type)}</div>
+          </div>
+          <div class="card" style="padding:10px">
+            <div style="font-size:11.5px; color:var(--muted)">${esc(I18N.t("property.ui_control"))}</div>
+            <div style="font-weight:600; font-size:13px; margin-top:2px">${esc(meta.typical_control)}</div>
+          </div>
+        </div>
+      `;
+      if (meta.examples && meta.examples.length) {
+        html += `
+          <div class="card" style="padding:12px">
+            <div style="font-size:12px; font-weight:700; color:var(--muted); margin-bottom:6px">${esc(I18N.t("property.examples"))}</div>
+            <div style="display:flex; flex-wrap:wrap; gap:6px">
+              ${meta.examples.map(ex => `<code style="font-size:12px; padding:2px 6px; background:var(--panel3); border-radius:4px">${esc(ex)}</code>`).join("")}
+            </div>
+          </div>
+        `;
+      }
     } else {
-      input = `<input type="text" id="${esc(id)}" data-p="${esc(p.name)}" value="${esc(val)}" />`;
+      html += `
+        <div class="card" style="border-left:3px solid var(--amber)">
+          <div style="font-size:13px; font-weight:600; color:var(--amber); margin-bottom:4px">${esc(I18N.t("property.custom_notice"))}</div>
+          <div style="font-size:12.5px; color:var(--muted)">
+            ${esc(I18N.t("property.custom_explanation"))}
+          </div>
+        </div>
+      `;
     }
-    return `<label class="field"><span>${esc(p.name)}${p.required?" *":""}
-      <span class="pill">${esc(p.storage_type)}</span></span>${input}
-      <div class="hint">${esc(p.reason||"")}</div></label>`;
-  }).join("") + `<datalist id="noteList"></datalist>`;
-  $("fillForm").querySelectorAll("[data-p]").forEach(el=>{
-    el.oninput = el.onchange = ()=>{
-      const name = el.dataset.p;
-      S.fillValues[name] = el.multiple ? [...el.selectedOptions].map(o=>o.value) : el.value;
-      updatePreview();
+
+
+    html += `
+      <div class="grid cols2" style="gap:10px">
+        <div class="stat">
+          <div class="n" style="font-size:20px">${res.scope_usage || 0}</div>
+          <div class="l">${esc(I18N.t("property.scope_usage"))}</div>
+        </div>
+        <div class="stat">
+          <div class="n" style="font-size:20px">${res.vault_usage || 0}</div>
+          <div class="l">${esc(I18N.t("property.vault_usage"))}</div>
+        </div>
+      </div>
+    `;
+
+    if (res.common_values && res.common_values.length) {
+      html += `
+        <div class="card" style="padding:12px">
+          <div style="font-size:12px; font-weight:700; color:var(--muted); margin-bottom:6px">${esc(I18N.t("property.observed_values"))}</div>
+          <table style="font-size:12px">
+            <thead><tr><th>${esc(I18N.t("discover.drawer_val"))}</th><th style="width:70px">${esc(I18N.t("discover.drawer_count"))}</th></tr></thead>
+            <tbody>
+              ${res.common_values.map(cv => `<tr><td><code>${esc(cv.value)}</code></td><td>${cv.count}</td></tr>`).join("")}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    html += `</div>`;
+    $("drawerBody").innerHTML = html;
+  } catch (e) {
+    $("drawerBody").innerHTML = `<div style="padding:20px; color:var(--red)">${esc(e.message)}</div>`;
+  }
+}
+
+// Global delegated click listener for property help badges
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest(".prop-help-btn");
+  if (btn) {
+    e.preventDefault();
+    e.stopPropagation();
+    const key = btn.getAttribute("data-prop");
+    if (key) openPropertyHelpDrawer(key);
+  }
+});
+
+/* ============================================================
+   Initialization & Navigation
+   ============================================================ */
+async function init() {
+  await I18N.init();
+  await loadGlossaryCatalog();
+
+  // Navigation handlers
+  document.querySelectorAll("nav.sidebar-nav button.nav-btn").forEach(btn => {
+    btn.onclick = () => {
+      const tab = btn.getAttribute("data-tab");
+
+      if (btn.hasAttribute("data-needs-scan") && !S.scanned) {
+        return toast(I18N.t("overview.not_scanned_desc"), true);
+      }
+      setTab(tab);
     };
   });
-  loadNoteCandidates(); updatePreview();
+
+  // Action cards on Overview
+  $("gotoVaultBtn").onclick = () => setTab("vault");
+  $("actWorkspace").onclick = () => setTab("workspace");
+  $("actDiscover").onclick = () => setTab("discover");
+  $("actDesign").onclick = () => setTab("design");
+  $("actRelations").onclick = () => setTab("relations");
+  $("actHealth").onclick = () => setTab("health");
+  $("actRefactor").onclick = () => setTab("refactor");
+
+  // Fill empty state navigation
+  if ($("fillGoToDesignBtn")) {
+    $("fillGoToDesignBtn").onclick = () => setTab("design");
+  }
+
+  // Top buttons
+  $("langToggleBtn").onclick = () => {
+    I18N.toggleLocale();
+    renderAllDynamicViews();
+  };
+  $("themeToggleBtn").onclick = () => {
+    const cur = document.documentElement.getAttribute("data-theme") || "dark";
+    const next = cur === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    localStorage.setItem("ps_theme", next);
+  };
+  const savedTheme = localStorage.getItem("ps_theme");
+  if (savedTheme) document.documentElement.setAttribute("data-theme", savedTheme);
+
+  // Drawer
+  $("drawerCloseBtn").onclick = closeDrawer;
+  $("drawerFooterCloseBtn").onclick = closeDrawer;
+  $("drawerOverlay").onclick = closeDrawer;
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeDrawer();
+  });
+
+  setupVaultHandlers();
+  setupScopeHandlers();
+  setupWorkspaceHandlers();
+  setupDiscoverHandlers();
+  setupDesignHandlers();
+  setupFillHandlers();
+  setupRelationsHandlers();
+  setupHealthHandlers();
+  setupRefactorHandlers();
+  setupProposalHandlers();
+
+  await loadDesignPresets();
 }
-async function loadNoteCandidates(){
-  if(!S.scanned) return;
-  try{
-    const d = await api("/api/notes/candidates", {query:""});
-    S.noteCandidates = d.candidates; S.ambiguousNames = d.ambiguous_names;
-    const dl = $("noteList");
-    if(dl) dl.innerHTML = d.candidates.map(c=>`<option value="${esc(c.name)}">${esc(c.path)}</option>`).join("");
-  }catch(e){}
-}
-let previewTimer=null;
-function updatePreview(){
-  clearTimeout(previewTimer);
-  previewTimer = setTimeout(async ()=>{
-    if(!S.schema) return;
-    try{
-      const d = await api("/api/fill/preview", {schema:S.schema, values:S.fillValues});
-      S.fill = d;
-      $("fillPreview").textContent = d.frontmatter || "(nothing filled in yet)";
-      const canCopy = Boolean(d.valid && (!d.errors || !d.errors.length) && d.frontmatter);
-      if($("copyFmBtn")) $("copyFmBtn").disabled = !canCopy;
-      if($("copyYamlBtn")) $("copyYamlBtn").disabled = !canCopy;
-      const rt = d.roundtrip;
-      $("fillStatus").innerHTML =
-        (d.errors.length?`<div class="reuse exact_existing"><strong>Fix before copying (Copying disabled):</strong><br>${d.errors.map(esc).join("<br>")}</div>`:"") +
-        (d.warnings.length?`<div class="reuse possible_overlap"><strong>Check these:</strong><br>${d.warnings.map(esc).join("<br>")}</div>`:"") +
-        `<div class="small ${rt.matches?"ok":"bad"}" style="margin-top:8px">
-          ${rt.matches?"✔ Verified: this YAML parses back to exactly the values shown above."
-            :"✖ Round-trip problem: "+esc((rt.differences||[]).join("; "))}</div>
-         <div class="small muted">Properties only — no note body or template is generated.</div>`;
-    }catch(e){
-      if($("copyFmBtn")) $("copyFmBtn").disabled = true;
-      if($("copyYamlBtn")) $("copyYamlBtn").disabled = true;
-      $("fillStatus").innerHTML = `<div class="bad small">${esc(e.message)}</div>`;
-    }
-  }, 180);
-}
-$("copyFmBtn").onclick = async ()=>{
-  if(!S.fill || !S.fill.frontmatter){ toast("Nothing to copy yet.", true); return; }
-  if(!S.fill.valid || (S.fill.errors && S.fill.errors.length)){
-    toast("Cannot copy: fix errors/ambiguities first (" + (S.fill.errors[0] || "invalid") + ")", true);
+
+function updateContextBarLabels() {
+  if (!S.scanned) {
+    $("currentVaultLabel").textContent = I18N.t("context.no_vault");
+    $("currentScopeLabel").textContent = I18N.t("context.no_vault");
     return;
   }
-  const shown = $("fillPreview").textContent;
-  if(shown !== S.fill.frontmatter){ toast("Preview is out of date — try again.", true); return; }
-  toast(await copyText(S.fill.frontmatter) ? "Frontmatter copied — paste it at the very top of a note."
-    : "Copy failed; select the text manually.", false);
-};
-$("copyYamlBtn").onclick = async ()=>{
-  if(!S.fill || !S.fill.yaml){ toast("Nothing to copy yet.", true); return; }
-  if(!S.fill.valid || (S.fill.errors && S.fill.errors.length)){
-    toast("Cannot copy: fix errors/ambiguities first (" + (S.fill.errors[0] || "invalid") + ")", true);
+  const scope = S.scope || { mode: "entire_vault" };
+  if (scope.mode === "entire_vault") {
+    $("currentScopeLabel").textContent = I18N.t("context.entire_vault");
+  } else if (scope.mode === "folders") {
+    $("currentScopeLabel").textContent = I18N.t("context.folders_summary", {
+      count: (scope.folders || []).length,
+      notes: S.notesInScope || 0
+    });
+  } else if (scope.mode === "single_note") {
+    $("currentScopeLabel").textContent = I18N.t("context.single_note_summary", {
+      path: scope.note_path || ""
+    });
+  }
+  if (S.currentNote) {
+    $("currentNoteLabel").textContent = S.currentNote.name || S.currentNote.note_path;
+  }
+}
+
+function renderAllDynamicViews() {
+  updateContextBarLabels();
+  renderDesignPresets();
+  if (S.scanned) {
+    loadDiscovery();
+    loadHealth();
+    loadSavedChecks();
+    populateRelPropFilterOptions();
+    populateRefactorSourceOptions();
+    populateRefactorTargetOptions();
+  }
+  if (S.currentNote && S.currentNote.can_edit && S.currentNote.original_properties) {
+    const currentValues = {};
+    document.querySelectorAll(".ws-prop-row").forEach(row => {
+      const k = row.querySelector(".ws-prop-key").value.trim();
+      const v = row.querySelector(".ws-prop-val").value;
+      if (k) currentValues[k] = v;
+    });
+    renderWorkspaceFields(Object.keys(currentValues).length ? currentValues : S.currentNote.original_properties);
+    updateWorkspacePreview();
+  }
+}
+
+
+
+
+/* ============================================================
+   Vault Module
+   ============================================================ */
+function setupVaultHandlers() {
+  $("scanVaultBtn").onclick = async () => {
+    const path = $("vaultPathInput").value.trim();
+    if (!path) return toast(I18N.t("vault.path_label"), true);
+
+    try {
+      $("scanMsg").innerHTML = `<div class="hint">${I18N.t("safety.read_only")}...</div>`;
+      const res = await api("/api/scan", { vault_path: path });
+      S.vaultPath = path;
+      S.scanned = true;
+      $("currentVaultLabel").textContent = path.split(/[/\\]/).pop() || path;
+      $("vaultBadge").className = "chip ok";
+
+      $("statNotesTotal").textContent = res.summary.note_count;
+      $("statNotesWithProps").textContent = res.summary.notes_with_properties;
+      $("statNotesNoProps").textContent = res.summary.notes_without_properties;
+      $("statNotesFailed").textContent = res.summary.notes_with_parse_failure;
+      $("vaultStatsCard").style.display = "block";
+
+      $("ovNotesCount").textContent = res.summary.note_count;
+      $("ovPropsCount").textContent = res.inventory ? res.inventory.unique_property_count : 0;
+      $("overviewNotScanned").style.display = "none";
+      $("overviewScanned").style.display = "block";
+
+      $("scanMsg").innerHTML = `<div class="ok" style="font-weight:600">✓ ${I18N.t("toast.scan_done")} (${res.scan_seconds}s)</div>`;
+      toast(I18N.t("toast.scan_done"));
+
+      await loadScopeFolders();
+      await loadDiscovery();
+      await loadHealth();
+      await loadSavedChecks();
+      populateRefactorSourceOptions();
+    } catch (e) {
+      $("scanMsg").innerHTML = `<div class="bad" style="font-weight:600">✕ ${esc(e.message)}</div>`;
+      toast(e.message, true);
+    }
+  };
+
+  $("verifyUntouchedBtn").onclick = async () => {
+    try {
+      const res = await api("/api/vault/verify", {});
+      if (res.unchanged) {
+        $("verifyResult").innerHTML = `
+          <div class="ok" style="font-weight:600">${I18N.t("vault.untouched_ok")}</div>
+          <div class="hint">${I18N.t("vault.untouched_desc", { count: res.files_checked })}</div>
+        `;
+      } else {
+        $("verifyResult").innerHTML = `<div class="bad" style="font-weight:600">✕ ${esc(JSON.stringify(res.detail))}</div>`;
+      }
+    } catch (e) {
+      toast(e.message, true);
+    }
+  };
+}
+
+/* ============================================================
+   Scope Module
+   ============================================================ */
+async function loadScopeFolders() {
+  try {
+    const res = await api("/api/scope/folders", {});
+    S.folders = res.folders || [];
+
+    const listEl = $("scopeFolderList");
+    if (!S.folders.length) {
+      listEl.innerHTML = `<div class="muted">${I18N.t("scope.no_subfolders")}</div>`;
+    } else {
+      listEl.innerHTML = S.folders.map(f => `
+        <label class="folder-check-item">
+          <input type="checkbox" class="scope-folder-cb" value="${esc(f)}" />
+          <span>📁 <code>${esc(f)}</code></span>
+        </label>
+      `).join("");
+    }
+
+    renderRelationsFolderLists();
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function renderRelationsFolderLists() {
+  const srcEl = $("relSrcFoldersList");
+  const tgtEl = $("relTgtFoldersList");
+  if (!srcEl || !tgtEl) return;
+
+  const html = (cls) => S.folders.map(f => `
+    <label class="folder-check-item">
+      <input type="checkbox" class="${cls}" value="${esc(f)}" />
+      <span>📁 <code>${esc(f)}</code></span>
+    </label>
+  `).join("");
+
+  srcEl.innerHTML = html("rel-src-folder-cb");
+  tgtEl.innerHTML = html("rel-tgt-folder-cb");
+}
+
+function setupScopeHandlers() {
+  $("scopeModeSelect").onchange = (e) => {
+    const mode = e.target.value;
+    $("scopeFolderSelector").style.display = mode === "folders" ? "block" : "none";
+    $("scopeSingleNoteSelector").style.display = mode === "single_note" ? "block" : "none";
+  };
+
+  $("applyScopeBtn").onclick = async () => {
+    const mode = $("scopeModeSelect").value;
+    let scopeSpec = { mode: mode, include_subfolders: $("scopeIncludeSubfolders").checked, folders: [], note_path: null };
+
+    if (mode === "folders") {
+      const selected = Array.from(document.querySelectorAll(".scope-folder-cb:checked")).map(cb => cb.value);
+      if (!selected.length) return toast(I18N.t("scope.select_folder_warn"), true);
+      scopeSpec.folders = selected;
+    } else if (mode === "single_note") {
+      const p = $("scopeSingleNoteInput").value.trim();
+      if (!p) return toast(I18N.t("scope.specify_note_warn"), true);
+      scopeSpec.note_path = p;
+    }
+
+    try {
+      const res = await api("/api/scope/apply", { scope: scopeSpec });
+      S.scope = res.scope;
+      S.notesInScope = res.notes_in_scope;
+      updateContextBarLabels();
+      toast(I18N.t("toast.scope_applied"));
+      await loadDiscovery();
+      await loadHealth();
+      populateRefactorSourceOptions();
+    } catch (e) {
+      toast(e.message, true);
+    }
+  };
+
+  $("resetScopeBtn").onclick = async () => {
+    try {
+      const res = await api("/api/scope/apply", { scope: { mode: "entire_vault" } });
+      $("scopeModeSelect").value = "entire_vault";
+      $("scopeFolderSelector").style.display = "none";
+      $("scopeSingleNoteSelector").style.display = "none";
+      document.querySelectorAll(".scope-folder-cb").forEach(cb => cb.checked = false);
+      S.scope = res.scope;
+      S.notesInScope = res.notes_in_scope;
+      updateContextBarLabels();
+      toast(I18N.t("toast.scope_applied"));
+      await loadDiscovery();
+      await loadHealth();
+      populateRefactorSourceOptions();
+    } catch (e) {
+      toast(e.message, true);
+    }
+  };
+}
+
+/* ============================================================
+   Note Properties Workspace Module (Searchable Combobox + Collapsible Folder Tree)
+   ============================================================ */
+function setupWorkspaceHandlers() {
+  const searchInput = $("wsNoteSearch");
+  const candBox = $("wsNoteCandidates");
+  const toggleBtn = $("wsDropdownToggleBtn");
+
+  const buildTree = (candidates) => {
+    const root = { name: "/", fullPath: "", subfolders: {}, notes: [], totalCount: 0 };
+    for (const c of candidates) {
+      const parts = c.path.split("/");
+      parts.pop(); // remove note file name
+      let curr = root;
+      let pathAcc = "";
+      for (const p of parts) {
+        pathAcc = pathAcc ? `${pathAcc}/${p}` : p;
+        if (!curr.subfolders[p]) {
+          curr.subfolders[p] = { name: p, fullPath: pathAcc, subfolders: {}, notes: [], totalCount: 0 };
+        }
+        curr = curr.subfolders[p];
+      }
+      curr.notes.push(c);
+    }
+
+    const calcCounts = (node) => {
+      let count = node.notes.length;
+      for (const sub of Object.values(node.subfolders)) {
+        count += calcCounts(sub);
+      }
+      node.totalCount = count;
+      return count;
+    };
+    calcCounts(root);
+    return root;
+  };
+
+  const renderFileRow = (c) => `
+    <div class="ws-tree-file-row ws-cand-item" data-path="${esc(c.path)}">
+      <div>
+        <span>📄 <strong>${esc(c.name)}</strong></span>
+        ${c.is_ambiguous_basename ? `<span class="muted" style="font-size:11px; margin-left:6px">(${esc(c.path)})</span>` : ''}
+      </div>
+      <div>
+        ${c.in_current_scope ? `<span class="pill ok">${I18N.t("workspace.in_scope")}</span>` : `<span class="pill">${I18N.t("workspace.other")}</span>`}
+        ${c.is_ambiguous_basename ? `<span class="pill warn" title="${esc(I18N.t("ws.duplicate_warning"))}">${I18N.t("workspace.ambig_name")}</span>` : ''}
+      </div>
+    </div>
+  `;
+
+  const renderTreeNode = (folder, isRoot = false) => {
+    let html = "";
+    if (!isRoot) {
+      html += `
+        <div class="ws-tree-folder-row" data-path="${esc(folder.fullPath)}">
+          <span style="display:flex; align-items:center; gap:6px">
+            <span class="ws-tree-icon" style="font-size:11px; display:inline-block; width:12px">▶</span>
+            <span>📁 <strong>${esc(folder.name)}</strong></span>
+          </span>
+          <span class="muted" style="font-size:11.5px">${folder.totalCount} ${I18N.t("ws.notes_count_suffix")}</span>
+        </div>
+        <div class="ws-tree-folder-children" style="display:none">
+      `;
+    }
+
+    // Sort subfolders alphabetically
+    const subfolderKeys = Object.keys(folder.subfolders).sort((a, b) => a.localeCompare(b));
+    for (const key of subfolderKeys) {
+      html += renderTreeNode(folder.subfolders[key], false);
+    }
+
+    // Sort notes alphabetically
+    const sortedNotes = folder.notes.slice().sort((a, b) => a.name.localeCompare(b.name));
+    for (const n of sortedNotes) {
+      html += renderFileRow(n);
+    }
+
+    if (!isRoot) {
+      html += `</div>`;
+    }
+    return html;
+  };
+
+  const renderTree = (candidates) => {
+    const tree = buildTree(candidates);
+    const totalCount = candidates.length;
+
+    let html = `
+      <div class="ws-tree-header-bar">
+        <span>${I18N.t("ws.folder_tree_title")} (${totalCount} ${I18N.t("ws.notes_count_suffix")})</span>
+        <div style="display:flex; gap:6px">
+          <button class="ghost ws-tree-expand-all" style="padding:2px 6px; font-size:11px">${I18N.t("ws.expand_all")}</button>
+          <button class="ghost ws-tree-collapse-all" style="padding:2px 6px; font-size:11px">${I18N.t("ws.collapse_all")}</button>
+        </div>
+      </div>
+      <div style="padding:6px">
+        ${renderTreeNode(tree, true)}
+      </div>
+    `;
+
+    candBox.innerHTML = html;
+    candBox.style.display = "block";
+
+    // Bind folder toggle
+    candBox.querySelectorAll(".ws-tree-folder-row").forEach(row => {
+      row.onclick = (e) => {
+        e.stopPropagation();
+        const children = row.nextElementSibling;
+        const icon = row.querySelector(".ws-tree-icon");
+        if (children && children.classList.contains("ws-tree-folder-children")) {
+          const isClosed = children.style.display === "none";
+          children.style.display = isClosed ? "block" : "none";
+          if (icon) icon.textContent = isClosed ? "▼" : "▶";
+        }
+      };
+    });
+
+    // Bind expand all / collapse all
+    const expandBtn = candBox.querySelector(".ws-tree-expand-all");
+    if (expandBtn) {
+      expandBtn.onclick = (e) => {
+        e.stopPropagation();
+        candBox.querySelectorAll(".ws-tree-folder-children").forEach(c => c.style.display = "block");
+        candBox.querySelectorAll(".ws-tree-icon").forEach(i => i.textContent = "▼");
+      };
+    }
+    const collapseBtn = candBox.querySelector(".ws-tree-collapse-all");
+    if (collapseBtn) {
+      collapseBtn.onclick = (e) => {
+        e.stopPropagation();
+        candBox.querySelectorAll(".ws-tree-folder-children").forEach(c => c.style.display = "none");
+        candBox.querySelectorAll(".ws-tree-icon").forEach(i => i.textContent = "▶");
+      };
+    }
+
+    // Bind file selection
+    candBox.querySelectorAll(".ws-cand-item").forEach(item => {
+      item.onclick = (e) => {
+        e.stopPropagation();
+        const path = item.getAttribute("data-path");
+        candBox.style.display = "none";
+        searchInput.value = path;
+        inspectNoteInWorkspace(path);
+      };
+    });
+  };
+
+  const renderSearchResults = (candidates) => {
+    if (!candidates.length) {
+      candBox.innerHTML = `<div style="padding:10px; color:var(--muted)">${I18N.t("workspace.no_match")}</div>`;
+      candBox.style.display = "block";
+      return;
+    }
+
+    const scopeNotes = candidates.filter(c => c.in_current_scope);
+    const otherNotes = candidates.filter(c => !c.in_current_scope);
+
+    let html = `
+      <div class="ws-tree-header-bar">
+        <span>${I18N.t("ws.search_results_title")} (${candidates.length} ${I18N.t("ws.notes_count_suffix")})</span>
+      </div>
+      <div style="padding:6px">
+    `;
+    if (scopeNotes.length) {
+      html += `<div style="padding:4px 8px; font-size:11px; font-weight:700; color:var(--teal); background:var(--panel3); border-radius:4px; margin-bottom:4px">${I18N.t("ws.scope_notes_group")} (${scopeNotes.length})</div>`;
+      html += scopeNotes.map(c => renderFileRow(c)).join("");
+    }
+    if (otherNotes.length) {
+      html += `<div style="padding:4px 8px; font-size:11px; font-weight:700; color:var(--muted); background:var(--panel3); border-radius:4px; margin-top:8px; margin-bottom:4px">${I18N.t("ws.other_notes_group")} (${otherNotes.length})</div>`;
+      html += otherNotes.map(c => renderFileRow(c)).join("");
+    }
+    html += `</div>`;
+
+    candBox.innerHTML = html;
+    candBox.style.display = "block";
+
+    candBox.querySelectorAll(".ws-cand-item").forEach(item => {
+      item.onclick = (e) => {
+        e.stopPropagation();
+        const path = item.getAttribute("data-path");
+        candBox.style.display = "none";
+        searchInput.value = path;
+        inspectNoteInWorkspace(path);
+      };
+    });
+  };
+
+  const queryAndRenderCandidates = async (query = "") => {
+    try {
+      const res = await api("/api/workspace/notes", { query: query });
+      const candidates = res.candidates || [];
+      if (!query) {
+        renderTree(candidates);
+      } else {
+        renderSearchResults(candidates);
+      }
+    } catch (e) {
+      toast(e.message, true);
+    }
+  };
+
+  let debounceTimer = null;
+  searchInput.oninput = () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      queryAndRenderCandidates(searchInput.value.trim());
+    }, 200);
+  };
+
+  searchInput.onfocus = () => {
+    queryAndRenderCandidates(searchInput.value.trim());
+  };
+
+  $("wsSearchBtn").onclick = () => {
+    queryAndRenderCandidates(searchInput.value.trim());
+  };
+
+  toggleBtn.onclick = (e) => {
+    e.stopPropagation();
+    if (candBox.style.display === "block") {
+      candBox.style.display = "none";
+    } else {
+      queryAndRenderCandidates("");
+    }
+  };
+
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest("#tab-workspace .card")) {
+      candBox.style.display = "none";
+    }
+  });
+
+  $("wsCopyBtn").onclick = () => {
+    const text = $("wsYamlPreview").textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      toast(I18N.t("toast.copied"));
+    });
+  };
+}
+
+
+async function inspectNoteInWorkspace(notePath) {
+  try {
+    const res = await api("/api/workspace/inspect", { note_path: notePath });
+    S.currentNote = res;
+    $("currentNoteLabel").textContent = res.name;
+    $("noteBadge").style.display = "inline-flex";
+
+    const banner = $("wsNoteStatusBanner");
+    if (!res.can_edit) {
+      banner.innerHTML = `
+        <div class="card" style="border-color:var(--red); background:var(--red-soft); color:var(--red)">
+          <strong>✕ ${esc(I18N.t("workspace.locked_fail_closed"))}：</strong> ${esc(res.error_reason)}
+        </div>
+      `;
+      $("wsEditorArea").style.display = "none";
+      return;
+    }
+
+    banner.innerHTML = `
+      <div class="card" style="border-color:var(--teal); background:var(--teal-soft); color:var(--teal); margin-bottom:14px">
+        <strong>${I18N.t("workspace.note_loaded")}</strong> <code>${esc(res.note_path)}</code> (${Object.keys(res.original_properties).length} ${I18N.t("workspace.existing_props_count")})
+      </div>
+    `;
+
+    renderWorkspaceFields(res.original_properties);
+    $("wsEditorArea").style.display = "block";
+    updateWorkspacePreview();
+  } catch (e) {
+    toast(e.message, true);
+  }
+}
+
+function renderWorkspaceFields(propsMap) {
+  const container = $("wsPropFields");
+  container.innerHTML = Object.entries(propsMap).map(([k, v]) => `
+    <div class="ws-prop-row" data-key="${esc(k)}" style="display:grid; grid-template-columns:220px 1fr 36px; gap:8px; align-items:center; margin-bottom:8px; padding:6px 8px; background:var(--panel2); border-radius:var(--radius-sm)">
+      <div style="display:flex; align-items:center; overflow:hidden">
+        <input type="hidden" class="ws-prop-key" value="${esc(k)}" />
+        ${renderPropertyBadge(k)}
+      </div>
+      <input type="text" class="ws-prop-val form-control" value="${esc(Array.isArray(v) ? v.join(", ") : (v == null ? "" : v))}" placeholder="${esc(I18N.t("workspace.val_placeholder"))}" />
+      <button class="ghost ws-prop-del" title="${esc(I18N.t("workspace.del_prop_title"))}" style="color:var(--red); padding:4px; font-weight:bold">✕</button>
+    </div>
+  `).join("");
+
+  document.querySelectorAll(".ws-prop-val").forEach(input => {
+    input.oninput = updateWorkspacePreview;
+  });
+  document.querySelectorAll(".ws-prop-del").forEach(btn => {
+    btn.onclick = (e) => {
+      e.target.closest(".ws-prop-row").remove();
+      updateWorkspacePreview();
+    };
+  });
+
+  $("wsAddPropBtn").onclick = () => {
+    const row = document.createElement("div");
+    row.className = "ws-prop-row";
+    row.style.cssText = "display:grid; grid-template-columns:220px 1fr 36px; gap:8px; align-items:center; margin-bottom:8px; padding:6px 8px; background:var(--panel2); border-radius:var(--radius-sm)";
+    row.innerHTML = `
+      <div class="ws-custom-key-wrapper" style="display:flex; align-items:center; gap:4px">
+        <input type="text" class="ws-prop-key form-control" style="font-size:12.5px; width:100%" placeholder="${esc(I18N.t("workspace.key_placeholder"))}" />
+        <span class="ws-dynamic-badge"></span>
+      </div>
+      <input type="text" class="ws-prop-val form-control" placeholder="${esc(I18N.t("workspace.val_placeholder"))}" />
+      <button class="ghost ws-prop-del" title="${esc(I18N.t("workspace.del_prop_title"))}" style="color:var(--red); padding:4px; font-weight:bold">✕</button>
+    `;
+    container.appendChild(row);
+    const keyInput = row.querySelector(".ws-prop-key");
+    const valInput = row.querySelector(".ws-prop-val");
+    const badgeSpan = row.querySelector(".ws-dynamic-badge");
+    const delBtn = row.querySelector(".ws-prop-del");
+
+    keyInput.oninput = () => {
+      const val = keyInput.value.trim();
+      if (val) {
+        const tooltip = GLOSSARY_CACHE[val.toLowerCase()] ? formatPropertyLabel(val) : I18N.t("property.custom_tooltip");
+        badgeSpan.innerHTML = `<button type="button" class="prop-help-btn" data-prop="${esc(val)}" title="${esc(tooltip)}">ⓘ</button>`;
+      } else {
+        badgeSpan.innerHTML = "";
+      }
+      updateWorkspacePreview();
+    };
+
+    valInput.oninput = updateWorkspacePreview;
+    delBtn.onclick = () => { row.remove(); updateWorkspacePreview(); };
+    keyInput.focus();
+  };
+}
+
+
+async function updateWorkspacePreview() {
+  if (!S.currentNote) return;
+  const values = {};
+  const presentKeys = new Set();
+  document.querySelectorAll(".ws-prop-row").forEach(row => {
+    const k = row.querySelector(".ws-prop-key").value.trim();
+    const v = row.querySelector(".ws-prop-val").value;
+    if (k) {
+      values[k] = v;
+      presentKeys.add(k);
+    }
+  });
+
+  const deletedKeys = Object.keys(S.currentNote.original_properties).filter(k => !presentKeys.has(k));
+
+  try {
+    const res = await api("/api/workspace/preview", {
+      note_path: S.currentNote.note_path,
+      values: values,
+      schema: S.currentSchema,
+      deleted_keys: deletedKeys
+    });
+
+    // Render Semantic Diff
+    $("wsDiffView").innerHTML = `
+      <div class="diff-box">
+        ${res.diffs.map(d => `
+          <div class="diff-row ${esc(d.change_type)}">
+            <div>${renderPropertyBadge(d.key)}</div>
+            <div><span class="pill ${d.change_type === 'added' ? 'ok' : d.change_type === 'deleted' ? 'bad' : d.change_type === 'modified' ? 'warn' : ''}">${esc(d.change_type)}</span></div>
+            <div class="muted" style="font-size:12px">${d.change_type === 'modified' ? esc(d.old_value) + ' → ' + esc(d.new_value) : esc(d.new_value || d.old_value || '')}</div>
+          </div>
+        `).join("")}
+      </div>
+    `;
+
+
+    $("wsYamlPreview").textContent = res.frontmatter_preview || "";
+
+    const canCopy = res.can_copy && res.roundtrip_matches;
+    if (canCopy) {
+      $("wsRoundtripStatus").innerHTML = `<span class="ok">${I18N.t("workspace.roundtrip_ok")}</span>`;
+      $("wsCopyBtn").disabled = false;
+    } else {
+      const errs = res.errors.length ? res.errors.join("<br>") : I18N.t("workspace.roundtrip_err");
+      $("wsRoundtripStatus").innerHTML = `<span class="bad">${errs}</span>`;
+      $("wsCopyBtn").disabled = true;
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+/* ============================================================
+   Discover Module
+   ============================================================ */
+async function loadDiscovery() {
+  try {
+    const res = await api("/api/discovery", {});
+    S.inventory = res.inventory;
+    const props = res.inventory ? res.inventory.properties : [];
+    $("discoveryInventoryTable").innerHTML = `
+      <table>
+        <thead><tr>
+          <th>${esc(I18N.t("discover.col_prop"))}</th>
+          <th>${esc(I18N.t("discover.col_usage"))}</th>
+          <th>${esc(I18N.t("discover.col_types"))}</th>
+          <th>${esc(I18N.t("discover.col_distinct"))}</th>
+          <th>${esc(I18N.t("discover.col_action"))}</th>
+        </tr></thead>
+        <tbody>
+          ${props.map(p => `
+            <tr>
+              <td>${renderPropertyBadge(p.key)}</td>
+              <td><strong>${p.usage_count}</strong> <span class="muted">/ ${res.notes_in_scope}</span></td>
+              <td>${Object.entries(p.observed_types).map(([t, c]) => `<span class="pill">${esc(t)}: ${c}</span>`).join(" ")}</td>
+              <td>${p.distinct_value_count}</td>
+              <td><button class="secondary ws-drill-btn" data-key="${esc(p.key)}" style="padding:4px 8px; font-size:11.5px">${esc(I18N.t("discover.view_detail_btn"))}</button></td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `;
+
+    document.querySelectorAll(".ws-drill-btn").forEach(btn => {
+      btn.onclick = async () => {
+        const key = btn.getAttribute("data-key");
+        const det = await api("/api/property", { key: key });
+        openDrawer(`${I18N.t("discover.prop_detail_title")}${key}`, `
+          <div class="card">
+            <h4>${I18N.t("discover.top_values_title")}</h4>
+            <table>
+              <thead><tr><th>${esc(I18N.t("discover.drawer_val"))}</th><th>${esc(I18N.t("discover.drawer_count"))}</th></tr></thead>
+              <tbody>
+                ${(det.entry.values || det.entry.top_values || []).map(v => `<tr><td><code>${esc(v.value)}</code></td><td>${v.count}</td></tr>`).join("")}
+              </tbody>
+            </table>
+          </div>
+        `);
+      };
+    });
+
+    $("discoveryFindings").innerHTML = res.findings && res.findings.length ? res.findings.map(f => `
+      <div class="card" style="margin-bottom:10px; border-left:4px solid var(--amber)">
+        <strong>[${esc(f.severity.toUpperCase())}] ${esc(f.title)}</strong>
+        <p class="muted" style="margin:4px 0">${esc(f.explanation)}</p>
+        <div class="hint">${I18N.t("discover.suggested_action")} ${esc(f.recommendation)}</div>
+      </div>
+    `).join("") : `<div class="muted">${I18N.t("discover.no_findings")}</div>`;
+
+    populateRelPropFilterOptions();
+    populateRefactorSourceOptions();
+    populateRefactorTargetOptions();
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function setupDiscoverHandlers() {
+  const btn = $("exportDiscoveryBtn");
+  if (btn) {
+    btn.onclick = async () => {
+      try {
+        const res = await api("/api/export", { kind: "discovery" });
+        toast(I18N.t("toast.export_done", { path: res.output_dir }));
+      } catch (e) {
+        toast(e.message, true);
+      }
+    };
+  }
+}
+
+/* ============================================================
+   Design Module (Structured Presets + Adopt Schema + Next Actions)
+   ============================================================ */
+async function loadDesignPresets() {
+  try {
+    const res = await api("/api/design/presets", {});
+    S.designPresets = res;
+    renderDesignPresets();
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function renderDesignPresets() {
+  if (!S.designPresets) return;
+  const isZh = I18N.currentLocale === "zh-Hant";
+
+  const objList = $("designObjectsList");
+  if (objList) {
+    objList.innerHTML = S.designPresets.objects.map(o => `
+      <label class="folder-check-item">
+        <input type="checkbox" class="design-obj-cb" value="${esc(o.id)}" />
+        <span>${esc(isZh ? o.name_zh : o.name_en)}</span>
+      </label>
+    `).join("");
+  }
+
+  const needList = $("designNeedsList");
+  if (needList) {
+    needList.innerHTML = S.designPresets.needs.map(n => `
+      <label class="folder-check-item">
+        <input type="checkbox" class="design-need-cb" value="${esc(n.id)}" />
+        <span>${esc(isZh ? n.name_zh : n.name_en)}</span>
+      </label>
+    `).join("");
+  }
+}
+
+function setupDesignHandlers() {
+  $("designSuggestBtn").onclick = async () => {
+    const selectedObjs = Array.from(document.querySelectorAll(".design-obj-cb:checked")).map(cb => cb.value);
+    const selectedNeeds = Array.from(document.querySelectorAll(".design-need-cb:checked")).map(cb => cb.value);
+    const extraGoal = $("designGoalInput").value.trim();
+
+    if (!selectedObjs.length && !selectedNeeds.length) {
+      return toast(I18N.t("design.require_selection_warn"), true);
+    }
+
+    try {
+      const res = await api("/api/design/build", {
+        objects: selectedObjs,
+        needs: selectedNeeds,
+        goal: extraGoal
+      });
+
+      S.lastReviewResult = res;
+
+      $("designReviewResult").innerHTML = `
+        <div class="grid cols3" style="margin-bottom:14px">
+          <div class="stat ok"><div class="n">${res.counts.exact_existing_in_scope || 0}</div><div class="l">${I18N.t("design.in_scope_count")}</div></div>
+          <div class="stat"><div class="n">${res.counts.exact_existing_in_vault_only || 0}</div><div class="l">${I18N.t("design.in_vault_only_count")}</div></div>
+          <div class="stat"><div class="n">${res.counts.new || 0}</div><div class="l">${I18N.t("design.new_count")}</div></div>
+        </div>
+        <table>
+          <thead><tr>
+            <th style="width:40px; text-align:center">${esc(I18N.t("design.retain_col"))}</th>
+            <th>${esc(I18N.t("design.col_prop"))}</th>
+            <th>${esc(I18N.t("design.col_type"))}</th>
+            <th>${esc(I18N.t("design.col_status"))}</th>
+            <th>${esc(I18N.t("design.col_desc"))}</th>
+          </tr></thead>
+          <tbody>
+            ${res.reuse_reviews.map(r => `
+              <tr>
+                <td style="text-align:center"><input type="checkbox" class="design-retain-cb" checked data-prop="${esc(r.proposed_name)}" /></td>
+                <td>${renderPropertyBadge(r.proposed_name)}</td>
+                <td>${esc(r.schema_storage_type || '')}</td>
+                <td><span class="pill ${r.in_scope ? 'ok' : r.in_vault_only ? 'warn' : ''}">${esc(I18N.t(r.status_key || `schema.status_${r.status}`))}</span></td>
+                <td class="muted" style="font-size:12px">${esc(I18N.t(r.message_key, { name: r.proposed_name }) || r.message)}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+      $("designReviewCard").style.display = "block";
+      $("designNextActionsCard").style.display = "none";
+    } catch (e) {
+      toast(e.message, true);
+    }
+  };
+
+  $("designAdoptBtn").onclick = () => {
+    if (!S.lastReviewResult || !S.lastReviewResult.schema) return;
+    const retainedProps = new Set(
+      Array.from(document.querySelectorAll(".design-retain-cb:checked")).map(cb => cb.getAttribute("data-prop"))
+    );
+
+    const baseSchema = S.lastReviewResult.schema;
+    const filteredProps = (baseSchema.properties || []).filter(p => retainedProps.has(p.name));
+
+    S.currentSchema = {
+      name: baseSchema.name || "custom-schema",
+      description: baseSchema.description || "",
+      properties: filteredProps
+    };
+
+    $("designNextActionsCard").style.display = "block";
+    toast(I18N.t("toast.schema_adopted", { name: S.currentSchema.name }));
+    renderFillForm();
+  };
+
+  $("designGoToWorkspace").onclick = () => setTab("workspace");
+  $("designGoToFill").onclick = () => setTab("fill");
+}
+
+/* ============================================================
+   Fill Module (New Frontmatter Generator)
+   ============================================================ */
+function setupFillHandlers() {
+  $("copyFmBtn").onclick = () => {
+    if (!S.fill.valid) {
+      toast(I18N.t("fill.invalid_status"), true);
+      return;
+    }
+    const text = $("fillYamlPreview").textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      toast(I18N.t("toast.copied"));
+    });
+  };
+
+  $("copyYamlBtn").onclick = () => {
+    if (!S.fill.valid) {
+      toast(I18N.t("fill.invalid_status"), true);
+      return;
+    }
+    let text = $("fillYamlPreview").textContent;
+    if (text.startsWith("---\n")) text = text.slice(4);
+    if (text.endsWith("\n---\n")) text = text.slice(0, -5);
+    else if (text.endsWith("\n---")) text = text.slice(0, -4);
+    navigator.clipboard.writeText(text).then(() => {
+      toast(I18N.t("toast.copied"));
+    });
+  };
+}
+
+
+function renderFillForm() {
+  const emptyState = $("fillEmptyStateCard");
+  const activeArea = $("fillActiveFormArea");
+  if (!emptyState || !activeArea) return;
+
+  if (!S.currentSchema || !S.currentSchema.properties || !S.currentSchema.properties.length) {
+    emptyState.style.display = "block";
+    activeArea.style.display = "none";
     return;
   }
-  toast(await copyText(S.fill.yaml) ? "Properties copied (without the --- lines)." : "Copy failed.", false);
-};
 
-/* ------------------------------ refactor ------------------------------ */
-function propOptions(){
-  const props = (S.discovery && S.discovery.inventory.properties) || [];
-  return props.map(p=>`<option value="${esc(p.key)}">${esc(p.key)} (${p.usage_count})</option>`).join("");
-}
-function renderRefactorInputs(){
-  const op = $("refOp").value, opts = propOptions();
-  let html = "";
-  if(op==="rename"){
-    html = `<label class="field"><span>Rename this property</span><select id="ref_source">${opts}</select></label>
-            <label class="field"><span>…to this name</span><input type="text" id="ref_target" placeholder="new_name" /></label>`;
-  } else if(op==="merge"){
-    html = `<label class="field"><span>Merge these properties (ctrl-click for several)</span>
-              <select id="ref_sources" multiple size="5">${opts}</select></label>
-            <label class="field"><span>…into</span><input type="text" id="ref_target" placeholder="target_property" /></label>`;
-  } else if(op==="normalize"){
-    html = `<label class="field"><span>Normalize values of</span><select id="ref_prop">${opts}</select></label>`;
-  } else if(op==="convert_type"){
-    html = `<label class="field"><span>Property</span><select id="ref_prop">${opts}</select></label>
-            <label class="field"><span>Change type to</span><select id="ref_type">
-              <option value="text">Text</option><option value="list">List</option>
-              <option value="number">Number</option><option value="checkbox">Checkbox</option>
-              <option value="date">Date</option><option value="datetime">Date &amp; time</option>
-              <option value="note_link">Note link ([[…]] text)</option></select></label>`;
-  } else {
-    html = `<label class="field"><span>Uses the schema from step 3</span>
-              <input type="text" value="${esc(S.schema?S.schema.schema_name:"(no schema yet)")}" disabled /></label>
-            <label class="field"><span>Only notes where property</span><input type="text" id="ref_scope_p" placeholder="type" /></label>
-            <label class="field"><span>equals</span><input type="text" id="ref_scope_v" placeholder="project" /></label>`;
-  }
-  $("refInputs").innerHTML = html;
-}
-$("refOp").onchange = renderRefactorInputs;
-$("planBtn").onclick = async ()=>{
-  const op = $("refOp").value; let params={operation:op};
-  try{
-    if(op==="rename"){ params.source=$("ref_source").value; params.target=$("ref_target").value.trim();
-      if(!params.target) throw new Error("Enter the new property name."); }
-    else if(op==="merge"){ params.sources=[...$("ref_sources").selectedOptions].map(o=>o.value);
-      params.target=$("ref_target").value.trim();
-      if(!params.sources.length||!params.target) throw new Error("Pick source properties and a target name."); }
-    else if(op==="normalize"){ params.property=$("ref_prop").value; }
-    else if(op==="convert_type"){ params.property=$("ref_prop").value; params.target_type=$("ref_type").value; }
-    else { if(!S.schema) throw new Error("Design a schema in step 3 first.");
-      params.schema=S.schema; params.scope_property=$("ref_scope_p").value.trim();
-      params.scope_value=$("ref_scope_v").value.trim(); }
-    const plan = await api("/api/refactor/plan", params);
-    S.lastPlan = plan; S.lastPlanParams = params; $("exportPlanBtn").disabled=false;
-    renderPlan(plan);
-  }catch(e){ toast(e.message, true); }
-};
-function planTable(title, rows, cls){
-  if(!rows || !rows.length) return `<h3>${esc(title)} (0)</h3><div class="empty">None.</div>`;
-  const keys = [...new Set(rows.flatMap(r=>Object.keys(r)))];
-  return `<h3 class="${cls||""}">${esc(title)} (${rows.length})</h3>
-    <table><thead><tr>${keys.map(k=>`<th>${esc(k)}</th>`).join("")}</tr></thead><tbody>` +
-    rows.map(r=>`<tr>${keys.map(k=>{
-      const v=r[k]; const t = (v && typeof v==="object")? JSON.stringify(v) : (v==null?"":String(v));
-      return `<td class="small">${esc(t)}</td>`;}).join("")}</tr>`).join("") + `</tbody></table>`;
-}
-function renderPlan(plan){
-  const s = plan.summary;
-  $("planResult").innerHTML = `<div class="card">
-    <h3 style="margin-top:0">Plan — ${esc(plan.operation)}</h3>
-    <div class="reuse possible_overlap">${esc(plan.notice)} Apply-to-vault capability: <strong>${plan.apply_supported}</strong>.</div>
-    <div class="grid cols4" style="margin-top:12px">${
-      Object.entries(s).map(([k,v])=>stat(typeof v==="object"?JSON.stringify(v):v, k.replace(/_/g," "),
-        /conflict|unresolved|ambiguous|missing/.test(k) && v>0)).join("")}</div>
-    ${plan.warnings&&plan.warnings.length?`<div class="reuse exact_existing" style="margin-top:12px">${plan.warnings.map(esc).join("<br>")}</div>`:""}
-    ${planTable("Conflicts — manual review required", plan.conflicts, "bad")}
-    ${planTable("Ambiguous — you must decide", plan.ambiguous)}
-    ${planTable("Unresolved — cannot be converted", plan.unresolved)}
-    ${planTable("Manual review", plan.manual_review)}
-    ${planTable("Notes that would change", plan.affected_notes)}
-    ${planTable("Value groups to normalize", plan.changes)}
-    ${planTable("Convertible values", plan.convertible)}
-    ${planTable("Notes missing required properties", plan.missing)}
-    ${planTable("Values left untouched (not assumed equivalent)", plan.untouched_values)}
-    ${planTable("Excluded — ambiguous duplicate keys", plan.excluded)}
-    ${planTable("Notes whose frontmatter could not be read", plan.unreadable_notes)}
-  </div>`;
-}
-$("exportPlanBtn").onclick = async ()=>{
-  try{
-    const r = await api("/api/export",{kind:"plan", params:S.lastPlanParams,
-      basename:"plan-"+S.lastPlan.operation});
-    toast("Plan exported (JSON + Markdown) to "+r.output_dir+
-      (r.verification.no_silent_omission?" · read-back verified":""));
-  }catch(e){ toast(e.message, true); }
-};
+  emptyState.style.display = "none";
+  activeArea.style.display = "block";
+  $("fillCurrentSchemaName").textContent = S.currentSchema.name;
+  $("fillCurrentSchemaPropsCount").textContent = `(${S.currentSchema.properties.length} ${I18N.t("workspace.existing_props_count")})`;
 
-/* ---------------------------- relationships ---------------------------- */
-$("loadInboxBtn").onclick = async ()=>{
-  try{
-    const d = await api("/api/relationships", {});
-    S.inbox = d; $("exportInboxBtn").disabled=false;
-    $("inboxStats").innerHTML = stat(d.summary.total_items,"items to review") +
-      Object.entries(d.summary.by_kind).map(([k,v])=>stat(v,k.replace(/_/g," "))).join("") +
-      stat(d.summary.auto_resolved,"resolved automatically by the app");
-    $("inboxItems").innerHTML = d.items.length? d.items.map(i=>`<div class="finding">
-      <h4>${sevPill(i.severity)}${confPill(i.confidence)} ${esc(i.title)}</h4>
-      <div class="small">Note <code>${esc(i.note)}</code> · property <code>${esc(i.property)}</code> ·
-        current value <code>${esc(i.value)}</code></div>
-      <div class="why">${esc(i.explanation)}</div>
-      <div class="small"><strong>What to do:</strong> ${esc(i.action)}</div>
-      <div class="small muted">Candidates: ${i.candidates.length? i.candidates.map(c=>"<code>"+esc(c)+"</code>").join(", ") : "—"}</div>
-      ${i.proposed_value?`<div class="row" style="margin-top:8px"><div class="fixed">
-        <button class="ghost" data-copy="${esc(i.proposed_value)}">Copy proposed value ${esc(i.proposed_value)}</button></div></div>`:
-        `<div class="small muted" style="margin-top:6px">No value is proposed — the app will not guess.</div>`}
-    </div>`).join("") : `<div class="empty">Nothing to review.</div>`;
-    $("inboxItems").querySelectorAll("[data-copy]").forEach(b=>b.onclick=async()=>{
-      toast(await copyText(b.dataset.copy)?"Copied "+b.dataset.copy:"Copy failed", false); });
-  }catch(e){ toast(e.message, true); }
-};
-$("exportInboxBtn").onclick = async ()=>{
-  try{ const r = await api("/api/export",{kind:"inbox", params:{}, basename:"relationship-inbox"});
-    toast("Inbox exported to "+r.output_dir+(r.verification.no_silent_omission?" · read-back verified":""));
-  }catch(e){ toast(e.message, true); }
-};
-
-/* -------------------------------- health -------------------------------- */
-$("healthBtn").onclick = async ()=>{
-  const useSchema = $("healthSchemaToggle").value==="yes";
-  if(useSchema && !S.schema){ toast("Design a schema in step 3 first, or choose 'No schema'.", true); return; }
-  const params = {schema: useSchema? S.schema : null,
-    scope_property:$("scopeProp").value.trim(), scope_value:$("scopeVal").value.trim()};
-  try{
-    const d = await api("/api/health", params);
-    S.health = d; S.healthParams = params; $("exportHealthBtn").disabled=false;
-    const sc = d.health_score;
-    $("healthResult").innerHTML = `<div class="card">
-      <h3 style="margin-top:0">Health score: ${sc.score} / 100</h3>
-      <p class="small muted">${esc(sc.formula)}</p>
-      <table><thead><tr><th>Category</th><th>Findings</th><th>Weight each</th><th>Raw</th><th>Cap</th><th>Applied</th></tr></thead>
-        <tbody>${sc.score_breakdown.map(r=>`<tr><td><code>${esc(r.category)}</code></td><td>${r.finding_count}</td>
-          <td>${r.weight_per_finding}</td><td>${r.raw_deduction}</td><td>${r.category_cap}</td>
-          <td>${r.applied_deduction}</td></tr>`).join("")}</tbody></table>
-      <div class="grid cols4" style="margin-top:14px">
-        ${stat(d.summary.finding_count,"findings")}
-        ${Object.entries(d.summary.by_severity).map(([k,v])=>stat(v,k+" severity",k==="high")).join("")}</div>
-    </div><div class="card"><h3 style="margin-top:0">All findings</h3><div id="healthFindings"></div></div>`;
-    renderFindings("healthFindings", d.findings, "");
-  }catch(e){ toast(e.message, true); }
-};
-$("exportHealthBtn").onclick = async ()=>{
-  try{
-    const r = await api("/api/export",{kind:"health", params:S.healthParams, basename:"property-health"});
-    toast(`Health report exported to ${r.output_dir} · ${r.verification.finding_count_in_file} findings written`+
-      (r.verification.no_silent_omission?" · read-back verified":" · MISMATCH"));
-  }catch(e){ toast(e.message, true); }
-};
-
-/* ------------------------------- proposal ------------------------------- */
-$("proposalFile").onchange = async (ev)=>{
-  const f = ev.target.files[0]; if(!f) return;
-  $("proposalText").value = await f.text();
-};
-$("sampleProposalBtn").onclick = ()=>{
-  $("proposalText").value = JSON.stringify({
-    proposal_version:"1.0", schema_name:"equipment",
-    generated_by:"Obsidian Property Architect Skill (example)",
-    properties:[
-      {name:"project", storage_type:"text", ui_control:"note_link", required:false,
-       reason:"Relate this record to an existing project note", allowed_values:null, confidence:0.8},
-      {name:"location", storage_type:"text", ui_control:"single_choice", required:true,
-       reason:"Know where the equipment physically is", allowed_values:["lab","office","storage"], confidence:0.6}
-    ]}, null, 2);
-};
-$("importProposalBtn").onclick = async ()=>{
-  try{
-    const d = await api("/api/proposal/import", {text:$("proposalText").value});
-    let html = `<div class="card"><h3 style="margin-top:0">Validation</h3>
-      <p class="${d.valid?"ok":"bad"}">${d.valid?"✔ Valid proposal (contract "+esc(d.contract_version)+")":"✖ Rejected"}</p>
-      ${d.errors.length?`<div class="reuse exact_existing"><strong>Errors:</strong><br>${d.errors.map(esc).join("<br>")}</div>`:""}
-      ${d.warnings.length?`<div class="reuse possible_overlap"><strong>Warnings:</strong><br>${d.warnings.map(esc).join("<br>")}</div>`:""}
-      <p class="small muted">Vault modified by this import: <strong>${d.vault_modified}</strong>. ${esc(d.trust||"")}</p></div>`;
-    if(d.valid && d.comparison){
-      html += `<div class="card"><h3 style="margin-top:0">Compared with your vault</h3>
-        <table><thead><tr><th>Proposed property</th><th>Type</th><th>Status in vault</th><th>Reason given</th><th>Confidence</th></tr></thead><tbody>` +
-        d.comparison.map(c=>`<tr><td><code>${esc(c.proposed_name)}</code></td>
-          <td>${esc(c.proposed_storage_type)} / ${esc(c.proposed_ui_control)}</td>
-          <td>${esc(c.status)}${c.type_agreement?` <span class="pill ${c.type_agreement==="differs"?"medium":"exact"}">type ${esc(c.type_agreement)}</span>`:""}
-            <div class="small muted">${esc(c.message)}</div></td>
-          <td class="small">${esc(c.reason||"—")}</td><td>${c.confidence==null?"—":esc(c.confidence)}</td></tr>`).join("") +
-        `</tbody></table>
-        <div class="row" style="margin-top:12px"><div class="fixed">
-          <button class="primary" id="acceptProposalBtn">Accept into the schema editor (you can still edit)</button></div>
-          <div class="fixed"><button class="ghost" id="rejectProposalBtn">Reject</button></div></div></div>`;
+  const formEl = $("fillFormFields");
+  formEl.innerHTML = S.currentSchema.properties.map(p => {
+    let controlHtml = "";
+    if (p.allowed_values && p.allowed_values.length) {
+      controlHtml = `
+        <select class="fill-prop-input" data-name="${esc(p.name)}" data-type="${esc(p.storage_type)}">
+          <option value="">-- 選擇 --</option>
+          ${p.allowed_values.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join("")}
+        </select>
+      `;
+    } else if (p.storage_type === "checkbox") {
+      controlHtml = `<input type="checkbox" class="fill-prop-input-cb" data-name="${esc(p.name)}" data-type="${esc(p.storage_type)}" />`;
+    } else if (p.storage_type === "number") {
+      controlHtml = `<input type="number" class="fill-prop-input" data-name="${esc(p.name)}" data-type="${esc(p.storage_type)}" placeholder="0" />`;
+    } else if (p.storage_type === "date") {
+      controlHtml = `<input type="date" class="fill-prop-input" data-name="${esc(p.name)}" data-type="${esc(p.storage_type)}" />`;
+    } else {
+      controlHtml = `<input type="text" class="fill-prop-input" data-name="${esc(p.name)}" data-type="${esc(p.storage_type)}" placeholder="${p.ui_control === 'note_link' ? '[[Note Name]]' : '輸入屬性值...'}" />`;
     }
-    $("proposalResult").innerHTML = html;
-    const acc = $("acceptProposalBtn");
-    if(acc) acc.onclick = ()=>{ S.schema = d.schema; $("schemaName").value = d.schema.schema_name;
-      reviewSchema(); setTab("design"); toast("Proposal loaded into the schema editor. Nothing was applied to your vault."); };
-    const rej = $("rejectProposalBtn");
-    if(rej) rej.onclick = ()=>{ $("proposalResult").innerHTML=""; $("proposalText").value=""; toast("Proposal discarded."); };
-  }catch(e){ toast(e.message, true); }
-};
+
+    return `
+      <div style="margin-bottom:12px">
+        <label class="form-label" style="display:flex; justify-content:space-between; align-items:center">
+          <span>${renderPropertyBadge(p.name)} ${p.required ? '<span style="color:var(--red)">*</span>' : ''}</span>
+          <span class="muted" style="font-size:11.5px">${esc(p.storage_type)}</span>
+        </label>
+        ${controlHtml}
+      </div>
+    `;
+  }).join("");
+
+
+  document.querySelectorAll(".fill-prop-input").forEach(input => {
+    input.oninput = updateFillPreview;
+    input.onchange = updateFillPreview;
+  });
+  document.querySelectorAll(".fill-prop-input-cb").forEach(cb => {
+    cb.onchange = updateFillPreview;
+  });
+
+  updateFillPreview();
+}
+
+async function updateFillPreview() {
+  if (!S.currentSchema) return;
+  const values = {};
+
+  document.querySelectorAll(".fill-prop-input").forEach(input => {
+    const k = input.getAttribute("data-name");
+    const v = input.value.trim();
+    if (v) values[k] = v;
+  });
+  document.querySelectorAll(".fill-prop-input-cb").forEach(cb => {
+    const k = cb.getAttribute("data-name");
+    values[k] = cb.checked;
+  });
+
+  try {
+    const res = await api("/api/fill/preview", {
+      schema: S.currentSchema,
+      values: values
+    });
+
+    $("fillYamlPreview").textContent = res.frontmatter_preview || "";
+
+    const isValid = res.valid && !res.has_ambiguities;
+    S.fill.valid = isValid;
+
+    if (isValid) {
+      $("fillStatusMsg").innerHTML = `<span class="ok">${I18N.t("fill.valid_status")}</span>`;
+      $("copyFmBtn").disabled = false;
+      $("copyYamlBtn").disabled = false;
+    } else {
+      const errText = res.errors.length ? res.errors.join("<br>") : I18N.t("fill.invalid_status");
+      $("fillStatusMsg").innerHTML = `<span class="bad">${errText}</span>`;
+      $("copyFmBtn").disabled = true;
+      $("copyYamlBtn").disabled = true;
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+/* ============================================================
+   Relationships Module
+   ============================================================ */
+function populateRelPropFilterOptions() {
+  const props = S.inventory ? S.inventory.properties : [];
+  const sel = $("relPropFilterSelect");
+  if (!sel) return;
+  const curVal = sel.value;
+  sel.innerHTML = `
+    <option value="">${esc(I18N.t("relations.all_properties"))}</option>
+    ${props.map(p => `
+      <option value="${esc(p.key)}">${esc(formatPropertyLabel(p.key))} — ${p.usage_count} ${esc(I18N.t("property.notes_used", { count: p.usage_count }))}</option>
+    `).join("")}
+  `;
+  if (curVal && Array.from(sel.options).some(o => o.value === curVal)) {
+    sel.value = curVal;
+  }
+}
+
+function setupRelationsHandlers() {
+  $("relSourcePropsBtn").onclick = () => {
+    S.relSourceType = "property_link";
+    $("relSourcePropsBtn").className = "secondary active";
+    $("relSourceBodyBtn").className = "secondary";
+    $("relPropFilterWrapper").style.display = "block";
+  };
+  $("relSourceBodyBtn").onclick = () => {
+    S.relSourceType = "body_wikilink";
+    $("relSourceBodyBtn").className = "secondary active";
+    $("relSourcePropsBtn").className = "secondary";
+    $("relPropFilterWrapper").style.display = "none";
+  };
+
+  $("relSrcEntireCb").onchange = (e) => {
+    $("relSrcFoldersList").style.display = e.target.checked ? "none" : "block";
+  };
+  $("relTgtEntireCb").onchange = (e) => {
+    $("relTgtFoldersList").style.display = e.target.checked ? "none" : "block";
+  };
+
+  $("relAnalyzeBtn").onclick = async () => {
+    const btn = $("relAnalyzeBtn");
+    try {
+      const srcScope = getSelectedRelScope("relSrcEntireCb", ".rel-src-folder-cb");
+      const tgtScope = getSelectedRelScope("relTgtEntireCb", ".rel-tgt-folder-cb");
+      const propFilter = $("relPropFilterSelect").value.trim() || null;
+
+      btn.disabled = true;
+      btn.textContent = I18N.t("relations.loading");
+
+      const endpoint = S.relSourceType === "body_wikilink" ? "/api/relationships/body" : "/api/relationships";
+      const payload = {
+        source_scope: srcScope,
+        target_scope: tgtScope,
+        property: propFilter
+      };
+      const res = await api(endpoint, payload);
+
+      const summary = res.summary || {};
+      $("relStatValid").textContent = summary.valid_count || 0;
+      $("relStatBroken").textContent = summary.broken_count || 0;
+      $("relStatAmbig").textContent = summary.ambiguous_count || 0;
+      $("relStatOutside").textContent = summary.outside_target_count || 0;
+      $("relResultsCard").style.display = "block";
+
+      const items = res.findings || res.items || [];
+      $("relItemsList").innerHTML = items.length ? `
+        <table>
+          <thead><tr>
+            <th>${esc(I18N.t("relations.col_classification"))}</th>
+            <th>${esc(I18N.t("relations.col_source_note"))}</th>
+            <th>${esc(I18N.t("relations.col_link_prop"))}</th>
+            <th>${esc(I18N.t("relations.col_target"))}</th>
+            <th>${esc(I18N.t("relations.col_details"))}</th>
+          </tr></thead>
+          <tbody>
+            ${items.map(item => `
+              <tr>
+                <td><span class="pill ${item.classification === 'VALID' ? 'valid' : item.classification === 'BROKEN' ? 'broken' : item.classification === 'AMBIGUOUS' ? 'ambiguous' : 'outside'}">${esc(item.classification)}</span></td>
+                <td><code>${esc(item.note || item.source_note)}</code></td>
+                <td>${item.property ? renderPropertyBadge(item.property) : '<code>[[Wikilink]]</code>'}</td>
+                <td><code>${esc(item.value || item.target_raw)}</code></td>
+                <td class="muted" style="font-size:12px">${esc(item.explanation)}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      ` : `<div class="muted" style="padding:16px; text-align:center">${esc(I18N.t("relations.empty"))}</div>`;
+      toast(I18N.t("toast.rel_analysis_done"));
+    } catch (e) {
+      toast(e.message, true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = I18N.t("relations.analyze_btn");
+    }
+  };
+
+  $("relSaveCheckBtn").onclick = async () => {
+    try {
+      const srcScope = getSelectedRelScope("relSrcEntireCb", ".rel-src-folder-cb");
+      const tgtScope = getSelectedRelScope("relTgtEntireCb", ".rel-tgt-folder-cb");
+      const name = prompt(I18N.t("relations.prompt_check_name"), I18N.t("relations.default_check_name"));
+      if (!name) return;
+      const notes = prompt(I18N.t("relations.prompt_notes"), "") || "";
+      const propFilter = $("relPropFilterSelect").value.trim() || null;
+
+      const chk = {
+        name: name,
+        notes: notes,
+        link_type: S.relSourceType,
+        property_name: propFilter,
+        source_scope: srcScope,
+        target_scope: tgtScope
+      };
+
+      await api("/api/relationships/saved/save", { check: chk });
+      toast(I18N.t("toast.check_saved"));
+      await loadSavedChecks();
+    } catch (e) {
+      toast(e.message, true);
+    }
+  };
+}
+
+function getSelectedRelScope(entireCbId, folderCbClass) {
+  const isEntire = $(entireCbId).checked;
+  if (isEntire) {
+    return { mode: "entire_vault" };
+  }
+  const selected = Array.from(document.querySelectorAll(`${folderCbClass}:checked`)).map(cb => cb.value);
+  return {
+    mode: "folders",
+    folders: selected,
+    include_subfolders: true
+  };
+}
+
+const SAVED_CHECKS_STORAGE_KEY = "ops_saved_relationship_checks_v110";
+
+async function loadSavedChecks() {
+  try {
+    const res = await api("/api/relationships/saved/list", {});
+    let checks = res.checks || [];
+
+    if (checks.length === 0) {
+      try {
+        const raw = localStorage.getItem(SAVED_CHECKS_STORAGE_KEY);
+        if (raw) {
+          const arr = JSON.parse(raw);
+          if (Array.isArray(arr) && arr.length > 0) {
+            for (const c of arr) {
+              await api("/api/relationships/saved/save", { check: c });
+            }
+            const res2 = await api("/api/relationships/saved/list", {});
+            checks = res2.checks || [];
+          }
+        }
+      } catch (_) {}
+    } else {
+      try {
+        localStorage.setItem(SAVED_CHECKS_STORAGE_KEY, JSON.stringify(checks));
+      } catch (_) {}
+    }
+
+    S.savedChecks = checks;
+    const listEl = $("savedChecksList");
+    if (!listEl) return;
+
+    if (!checks.length) {
+      listEl.innerHTML = `<div class="muted" style="padding:8px 0">${I18N.t("relations.no_saved_checks")}</div>`;
+      return;
+    }
+
+    listEl.innerHTML = checks.map(c => `
+      <div class="card" style="margin-bottom:8px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; background:var(--panel2)">
+        <div>
+          <div style="font-weight:600; font-size:13.5px">${esc(c.name)}</div>
+          <div class="muted" style="font-size:12px">${esc(c.notes || I18N.t("relations.no_notes"))} · <code>${esc(c.link_type)}</code> · <code>${esc(c.property_name || I18N.t("relations.all_properties"))}</code></div>
+        </div>
+        <div style="display:flex; gap:6px">
+          <button class="primary rel-run-check-btn" data-id="${esc(c.id)}" style="padding:4px 10px; font-size:12px">${esc(I18N.t("relations.run_btn"))}</button>
+          <button class="ghost rel-del-check-btn" data-id="${esc(c.id)}" style="padding:4px 8px; font-size:12px; color:var(--red)">✕</button>
+        </div>
+      </div>
+    `).join("");
+
+    document.querySelectorAll(".rel-run-check-btn").forEach(btn => {
+      btn.onclick = async () => {
+        const id = btn.getAttribute("data-id");
+        const chk = S.savedChecks.find(x => x.id === id);
+        if (!chk) return;
+        try {
+          const res = await api("/api/relationships/saved/execute", { id: id });
+          const summary = res.summary || {};
+          $("relStatValid").textContent = summary.valid_count || 0;
+          $("relStatBroken").textContent = summary.broken_count || 0;
+          $("relStatAmbig").textContent = summary.ambiguous_count || 0;
+          $("relStatOutside").textContent = summary.outside_target_count || 0;
+          $("relResultsCard").style.display = "block";
+
+          const items = res.findings || res.items || [];
+          $("relItemsList").innerHTML = items.length ? `
+            <table>
+              <thead><tr>
+                <th>${esc(I18N.t("relations.col_classification"))}</th>
+                <th>${esc(I18N.t("relations.col_source_note"))}</th>
+                <th>${esc(I18N.t("relations.col_link_prop"))}</th>
+                <th>${esc(I18N.t("relations.col_target"))}</th>
+                <th>${esc(I18N.t("relations.col_details"))}</th>
+              </tr></thead>
+              <tbody>
+                ${items.map(item => `
+                  <tr>
+                    <td><span class="pill ${item.classification === 'VALID' ? 'valid' : item.classification === 'BROKEN' ? 'broken' : item.classification === 'AMBIGUOUS' ? 'ambiguous' : 'outside'}">${esc(item.classification)}</span></td>
+                    <td><code>${esc(item.note || item.source_note)}</code></td>
+                    <td>${item.property ? renderPropertyBadge(item.property) : '<code>[[Wikilink]]</code>'}</td>
+                    <td><code>${esc(item.value || item.target_raw)}</code></td>
+                    <td class="muted" style="font-size:12px">${esc(item.explanation)}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          ` : `<div class="muted" style="padding:16px; text-align:center">${esc(I18N.t("relations.empty"))}</div>`;
+          toast(I18N.t("toast.check_executed", { name: chk.name }));
+        } catch (e) {
+          toast(e.message, true);
+        }
+      };
+    });
+
+    document.querySelectorAll(".rel-del-check-btn").forEach(btn => {
+      btn.onclick = async () => {
+        const id = btn.getAttribute("data-id");
+        if (!confirm(I18N.t("relations.confirm_delete"))) return;
+        await api("/api/relationships/saved/delete", { id: id });
+        try {
+          const raw = localStorage.getItem(SAVED_CHECKS_STORAGE_KEY);
+          if (raw) {
+            const arr = JSON.parse(raw).filter(x => x.id !== id);
+            localStorage.setItem(SAVED_CHECKS_STORAGE_KEY, JSON.stringify(arr));
+          }
+        } catch (_) {}
+        toast(I18N.t("toast.check_deleted"));
+        await loadSavedChecks();
+      };
+    });
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+/* ============================================================
+   Health Module
+   ============================================================ */
+async function loadHealth() {
+  try {
+    const res = await api("/api/health", {});
+    $("ovHealthScore").textContent = res.health_score ? `${res.health_score.score}` : "—";
+    $("ovIssuesCount").textContent = res.summary ? res.summary.finding_count : 0;
+
+    $("healthScoreSection").innerHTML = `
+      <div class="grid cols3" style="margin-bottom:14px">
+        <div class="stat ok"><div class="n">${res.health_score.score} / 100</div><div class="l">${I18N.t("health.total_score")}</div></div>
+        <div class="stat"><div class="n">${res.summary.finding_count}</div><div class="l">${I18N.t("health.pending_items")}</div></div>
+        <div class="stat alert"><div class="n">${res.summary.by_severity.high || 0}</div><div class="l">${I18N.t("health.high_severity")}</div></div>
+      </div>
+    `;
+
+    $("healthFindingsList").innerHTML = res.findings && res.findings.length ? res.findings.map(f => {
+      const propBadges = f.property_keys && f.property_keys.length ? `
+        <div style="margin:6px 0; display:flex; align-items:center; gap:6px; flex-wrap:wrap">
+          <span class="muted" style="font-size:12px">${esc(I18N.t("health.related_properties"))}:</span>
+          ${f.property_keys.map(pk => renderPropertyBadge(pk)).join(" ")}
+        </div>
+      ` : "";
+      return `
+        <div class="card" style="margin-bottom:10px; border-left:4px solid ${f.severity === 'high' ? 'var(--red)' : f.severity === 'medium' ? 'var(--amber)' : 'var(--teal)'}">
+          <strong>[${esc(f.severity.toUpperCase())}] ${esc(f.title)}</strong>
+          <p class="muted" style="margin:4px 0">${esc(f.explanation)}</p>
+          ${propBadges}
+          <div class="hint">${I18N.t("health.affected_notes_label")} (${f.affected_note_count})：${esc(f.affected_notes.slice(0, 5).join(", "))}</div>
+        </div>
+      `;
+    }).join("") : `<div class="muted">${I18N.t("health.excellent_state")}</div>`;
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function setupHealthHandlers() {
+  const btn = $("exportHealthBtn");
+  if (btn) {
+    btn.onclick = async () => {
+      try {
+        const res = await api("/api/export", { kind: "health" });
+        toast(I18N.t("toast.export_done", { path: res.output_dir }));
+      } catch (e) {
+        toast(e.message, true);
+      }
+    };
+  }
+}
+
+/* ============================================================
+   Refactor & Proposal Handlers (Controlled Vocabulary + Human Summary)
+   ============================================================ */
+function populateRefactorSourceOptions() {
+  const props = S.inventory ? S.inventory.properties : [];
+  const srcSelect = $("refactorSourceSelect");
+  const mergeList = $("refactorMergeSourcesList");
+
+  if (srcSelect) {
+    const curVal = srcSelect.value;
+    srcSelect.innerHTML = props.length ? props.map(p => `
+      <option value="${esc(p.key)}">${esc(formatPropertyLabel(p.key))} — ${p.usage_count} ${esc(I18N.t("property.notes_used", { count: p.usage_count }))}</option>
+    `).join("") : `<option value="">${esc(I18N.t("refactor.no_available_properties_option"))}</option>`;
+    if (curVal && Array.from(srcSelect.options).some(o => o.value === curVal)) {
+      srcSelect.value = curVal;
+    }
+  }
+
+  if (mergeList) {
+    mergeList.innerHTML = props.length ? props.map(p => `
+      <label class="folder-check-item">
+        <input type="checkbox" class="refactor-merge-cb" value="${esc(p.key)}" />
+        <span>${renderPropertyBadge(p.key)} <span class="muted">(${p.usage_count})</span></span>
+      </label>
+    `).join("") : `<div class="muted">${esc(I18N.t("refactor.no_available_properties"))}</div>`;
+  }
+
+
+  if ($("refactorOpSelect").value === "normalize") {
+    populateNormalizeTable(srcSelect.value);
+  }
+}
+
+function populateRefactorTargetOptions() {
+  const props = S.inventory ? S.inventory.properties : [];
+  const tgtSelect = $("refactorTargetPropSelect");
+  if (!tgtSelect) return;
+  const curVal = tgtSelect.value;
+  tgtSelect.innerHTML = `
+    <option value="">${esc(I18N.t("refactor.choose_or_new"))}</option>
+    <option value="__new__">${esc(I18N.t("refactor.create_new_name"))}</option>
+    ${props.map(p => `
+      <option value="${esc(p.key)}">${esc(formatPropertyLabel(p.key))} — ${p.usage_count} ${esc(I18N.t("property.notes_used", { count: p.usage_count }))}</option>
+    `).join("")}
+  `;
+  if (curVal && Array.from(tgtSelect.options).some(o => o.value === curVal)) {
+    tgtSelect.value = curVal;
+  }
+}
+
+async function populateNormalizeTable(selectedPropKey) {
+  const container = $("refactorNormalizeTableContainer");
+  if (!container) return;
+
+  if (!selectedPropKey || !S.inventory) {
+    container.innerHTML = `<div class="muted">${I18N.t("refactor.no_observed_values")}</div>`;
+    return;
+  }
+
+  const propEntry = (S.inventory.properties || []).find(p => p.key === selectedPropKey);
+  const valuesList = propEntry && propEntry.values ? Object.values(propEntry.values).filter(v => v.value && v.value.trim()) : [];
+
+  if (!valuesList.length) {
+    container.innerHTML = `<div class="muted">${I18N.t("refactor.no_observed_values")}</div>`;
+    return;
+  }
+
+  // Sort by count desc
+  valuesList.sort((a, b) => b.count - a.count);
+
+  const rowsHtml = valuesList.map(v => {
+    const others = valuesList.filter(o => o.value !== v.value);
+    const targetOptions = others.map(ov => `<option value="${esc(ov.value)}">${esc(ov.value)} (${ov.count})</option>`).join("");
+
+    return `
+      <tr class="refactor-norm-row" data-orig="${esc(v.value)}">
+        <td>
+          <code>${esc(v.value)}</code>
+          <span class="muted" style="margin-left:6px">(${v.count} ${esc(I18N.t("property.notes_used", { count: v.count }))})</span>
+        </td>
+        <td>
+          <div style="display:flex; gap:6px; align-items:center">
+            <select class="refactor-norm-target-select form-control" style="font-size:12px; padding:4px 8px">
+              <option value="${esc(v.value)}">${esc(I18N.t("refactor.keep_original"))} (${esc(v.value)})</option>
+              ${targetOptions}
+              <option value="__custom__">${esc(I18N.t("refactor.custom_target_val"))}</option>
+            </select>
+            <input type="text" class="refactor-norm-custom-input" style="display:none; font-size:12px; width:130px; padding:4px 6px" placeholder="${esc(I18N.t("refactor.custom_target_val"))}" />
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join("");
+
+  container.innerHTML = `
+    <table style="font-size:12.5px; margin:0">
+      <thead><tr>
+        <th>${esc(I18N.t("refactor.observed_val_col"))}</th>
+        <th style="min-width:240px">${esc(I18N.t("refactor.target_val_col"))}</th>
+      </tr></thead>
+      <tbody>
+        ${rowsHtml}
+      </tbody>
+    </table>
+  `;
+
+
+  container.querySelectorAll(".refactor-norm-target-select").forEach(sel => {
+    sel.onchange = (e) => {
+      const row = e.target.closest(".refactor-norm-row");
+      const customInput = row.querySelector(".refactor-norm-custom-input");
+      if (e.target.value === "__custom__") {
+        customInput.style.display = "block";
+        customInput.focus();
+      } else {
+        customInput.style.display = "none";
+      }
+    };
+  });
+}
+
+function setupRefactorHandlers() {
+  const checkTargetConflict = (targetName) => {
+    const warnEl = $("refactorConflictWarnBanner");
+    if (!targetName || !S.inventory) {
+      warnEl.style.display = "none";
+      return;
+    }
+    const match = (S.inventory.properties || []).find(p => p.key === targetName);
+    if (match) {
+      warnEl.innerHTML = I18N.t("refactor.rename_target_conflict_warn", { target: targetName, count: match.usage_count });
+      warnEl.style.display = "block";
+    } else {
+      warnEl.style.display = "none";
+    }
+  };
+
+  const updateRefactorLabels = () => {
+    const op = $("refactorOpSelect").value;
+    const srcSelect = $("refactorSourceSelect");
+    const mergeList = $("refactorMergeSourcesList");
+    const tgtSelect = $("refactorTargetPropSelect");
+    const tgtNewNameInput = $("refactorTargetNewNameInput");
+    const tgtTypeSelect = $("refactorTargetTypeSelect");
+    const normSection = $("refactorNormalizeSection");
+    const warnEl = $("refactorConflictWarnBanner");
+
+    warnEl.style.display = "none";
+
+    if (op === "rename") {
+      $("refactorParam1Wrapper").style.display = "block";
+      $("refactorParam2Wrapper").style.display = "block";
+      srcSelect.style.display = "block";
+      mergeList.style.display = "none";
+      normSection.style.display = "none";
+      tgtSelect.style.display = "block";
+      tgtNewNameInput.style.display = (tgtSelect.value === "__new__" ? "block" : "none");
+      tgtTypeSelect.style.display = "none";
+      $("refactorParam1Label").textContent = I18N.t("refactor.source_label");
+      $("refactorParam2Label").textContent = I18N.t("refactor.target_prop_label");
+    } else if (op === "merge") {
+      $("refactorParam1Wrapper").style.display = "block";
+      $("refactorParam2Wrapper").style.display = "block";
+      srcSelect.style.display = "none";
+      mergeList.style.display = "block";
+      normSection.style.display = "none";
+      tgtSelect.style.display = "block";
+      tgtNewNameInput.style.display = (tgtSelect.value === "__new__" ? "block" : "none");
+      tgtTypeSelect.style.display = "none";
+      $("refactorParam1Label").textContent = I18N.t("refactor.sources_merge_label");
+      $("refactorParam2Label").textContent = I18N.t("refactor.target_merge_label");
+    } else if (op === "normalize") {
+      $("refactorParam1Wrapper").style.display = "block";
+      $("refactorParam2Wrapper").style.display = "none";
+      srcSelect.style.display = "block";
+      mergeList.style.display = "none";
+      normSection.style.display = "block";
+      $("refactorParam1Label").textContent = I18N.t("refactor.source_label");
+      populateNormalizeTable(srcSelect.value);
+    } else if (op === "convert_type") {
+      $("refactorParam1Wrapper").style.display = "block";
+      $("refactorParam2Wrapper").style.display = "block";
+      srcSelect.style.display = "block";
+      mergeList.style.display = "none";
+      normSection.style.display = "none";
+      tgtSelect.style.display = "none";
+      tgtNewNameInput.style.display = "none";
+      tgtTypeSelect.style.display = "block";
+      $("refactorParam1Label").textContent = I18N.t("refactor.source_label");
+      $("refactorParam2Label").textContent = I18N.t("refactor.target_type_label");
+    }
+  };
+
+  $("refactorOpSelect").onchange = updateRefactorLabels;
+
+  $("refactorSourceSelect").onchange = (e) => {
+    if ($("refactorOpSelect").value === "normalize") {
+      populateNormalizeTable(e.target.value);
+    }
+  };
+
+  $("refactorTargetPropSelect").onchange = (e) => {
+    const val = e.target.value;
+    const tgtNewNameInput = $("refactorTargetNewNameInput");
+    if (val === "__new__") {
+      tgtNewNameInput.style.display = "block";
+      tgtNewNameInput.focus();
+      checkTargetConflict(tgtNewNameInput.value.trim());
+    } else {
+      tgtNewNameInput.style.display = "none";
+      checkTargetConflict(val.trim());
+    }
+  };
+
+  $("refactorTargetNewNameInput").oninput = (e) => {
+    checkTargetConflict(e.target.value.trim());
+  };
+
+  $("runRefactorPlanBtn").onclick = async () => {
+    const op = $("refactorOpSelect").value;
+    const tgtSelectVal = $("refactorTargetPropSelect").value;
+    const effectiveTarget = (tgtSelectVal === "__new__") ? $("refactorTargetNewNameInput").value.trim() : tgtSelectVal.trim();
+
+    try {
+      let payload = { operation: op };
+      if (op === "rename") {
+        const src = $("refactorSourceSelect").value;
+        if (!src) return toast(I18N.t("refactor.source_label"), true);
+        if (!effectiveTarget) return toast(I18N.t("refactor.target_label"), true);
+        payload.source = src;
+        payload.target = effectiveTarget;
+      } else if (op === "merge") {
+        const sources = Array.from(document.querySelectorAll(".refactor-merge-cb:checked")).map(cb => cb.value);
+        if (!sources.length) return toast(I18N.t("refactor.sources_merge_label"), true);
+        if (!effectiveTarget) return toast(I18N.t("refactor.target_merge_label"), true);
+        payload.sources = sources;
+        payload.target = effectiveTarget;
+      } else if (op === "normalize") {
+        const src = $("refactorSourceSelect").value;
+        if (!src) return toast(I18N.t("refactor.source_label"), true);
+        payload.property = src;
+
+        const mapping = {};
+        document.querySelectorAll(".refactor-norm-row").forEach(row => {
+          const orig = row.getAttribute("data-orig");
+          const sel = row.querySelector(".refactor-norm-target-select");
+          const customInput = row.querySelector(".refactor-norm-custom-input");
+          const targetVal = (sel && sel.value === "__custom__") ? (customInput ? customInput.value.trim() : "") : (sel ? sel.value.trim() : "");
+          if (targetVal && targetVal !== orig) {
+            mapping[orig] = targetVal;
+          }
+        });
+        payload.mapping = mapping;
+      } else if (op === "convert_type") {
+        const src = $("refactorSourceSelect").value;
+        const tgtType = $("refactorTargetTypeSelect").value;
+        if (!src) return toast(I18N.t("refactor.source_label"), true);
+        payload.property = src;
+        payload.target_type = tgtType;
+      }
+
+      const res = await api("/api/refactor/plan", payload);
+
+      // Render Human-Readable Summary
+      const summary = res.summary || {};
+      const affectedNotes = res.in_scope_notes_to_change || res.affected_notes || [];
+      const conflicts = res.conflicts || [];
+      const excluded = res.excluded || [];
+      const changes = res.changes || [];
+      const untouched = res.untouched_values || [];
+
+      let detailsHtml = "";
+      if (op === "normalize" && changes.length > 0) {
+        detailsHtml = `
+          <div class="card" style="background:var(--panel2); margin-bottom:12px">
+            <h4 style="margin-top:0">${esc(I18N.t("refactor.normalize_mapping_title"))} (${changes.length})</h4>
+            <div style="font-size:12.5px; color:var(--muted); margin-bottom:8px">
+              ${esc(I18N.t("refactor.normalize_summary", { groups: changes.length, notes: summary.notes_to_change || 0, untouched: untouched.length }))}
+            </div>
+            <table style="font-size:12.5px">
+              <thead><tr><th>原值 (Variants)</th><th style="width:30px; text-align:center">→</th><th>目標標準值</th><th style="width:80px; text-align:right">影響篇數</th></tr></thead>
+              <tbody>
+                ${changes.map(ch => `
+                  <tr>
+                    <td>${ch.variants.map(v => `<code>${esc(v.value)}</code> <span class="muted">(${v.count})</span>`).join(", ")}</td>
+                    <td style="color:var(--teal); font-weight:bold; text-align:center">→</td>
+                    <td><strong style="color:var(--teal)"><code>${esc(ch.canonical_value)}</code></strong></td>
+                    <td style="text-align:right; font-weight:600">${ch.notes_to_change_count}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+
+      $("refactorHumanSummary").innerHTML = `
+        <div class="grid cols3" style="margin-bottom:14px">
+          <div class="stat ok"><div class="n">${summary.notes_to_change != null ? summary.notes_to_change : (Array.isArray(affectedNotes) ? affectedNotes.length : affectedNotes)}</div><div class="l">${I18N.t("refactor.in_scope_notes")}</div></div>
+          <div class="stat"><div class="n">${summary.out_of_scope_notes_to_change || res.out_of_scope_notes_count || 0}</div><div class="l">${I18N.t("refactor.out_of_scope_notes")}</div></div>
+          <div class="stat ${(conflicts.length + excluded.length) ? 'alert' : ''}"><div class="n">${conflicts.length + excluded.length}</div><div class="l">${I18N.t("refactor.conflicts_count")}</div></div>
+        </div>
+
+        ${res.target_already_exists ? `
+          <div class="card" style="border-left:4px solid var(--amber); background:var(--amber-soft); margin-bottom:12px">
+            <strong>⚠ ${esc(I18N.t("refactor.rename_target_conflict_warn", { target: payload.target, count: res.target_existing_usage_count || 0 }))}</strong>
+          </div>
+        ` : ''}
+
+        ${detailsHtml}
+
+        <div class="card" style="background:var(--panel2)">
+          <h4 style="margin-top:0">${I18N.t("refactor.affected_notes_view")} (${Array.isArray(affectedNotes) ? affectedNotes.length : (summary.notes_to_change || 0)})</h4>
+          <ul style="max-height:160px; overflow-y:auto; padding-left:20px; font-size:12.5px; margin:0">
+            ${(Array.isArray(affectedNotes) ? affectedNotes : []).slice(0, 100).map(n => `<li><code>${esc(n.note || n)}</code></li>`).join("")}
+          </ul>
+        </div>
+      `;
+
+      $("refactorPlanOutput").innerHTML = `<pre style="font-size:12px">${esc(JSON.stringify(res, null, 2))}</pre>`;
+      $("refactorPlanResultCard").style.display = "block";
+    } catch (e) {
+      toast(e.message, true);
+    }
+  };
+
+  updateRefactorLabels();
+}
+
+
+function setupProposalHandlers() {
+  $("validateProposalBtn").onclick = async () => {
+    const text = $("proposalTextInput").value.trim();
+    if (!text) return toast(I18N.t("proposal.paste_warn"), true);
+    try {
+      const res = await api("/api/proposal/import", { text: text });
+      $("proposalResultOutput").innerHTML = `<pre>${esc(JSON.stringify(res, null, 2))}</pre>`;
+      $("proposalResultCard").style.display = "block";
+    } catch (e) {
+      toast(e.message, true);
+    }
+  };
+}
+
+window.addEventListener("DOMContentLoaded", init);
 </script>
 </body>
 </html>
+

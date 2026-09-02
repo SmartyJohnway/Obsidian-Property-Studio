@@ -1,0 +1,64 @@
+{
+  "plan_format_version": "1.1.0",
+  "operation": "merge_properties",
+  "apply_supported": false,
+  "notice": "Planning only. Obsidian Property Studio v1 never modifies your vault. Use this plan to make the changes yourself in Obsidian.",
+  "sources": [
+    "project_name"
+  ],
+  "target": "project",
+  "scope": {
+    "mode": "entire_vault"
+  },
+  "summary": {
+    "notes_to_change": 1,
+    "conflicts": 1,
+    "manual_review": 0,
+    "excluded_ambiguous": 0,
+    "usage": {
+      "project_name": 2,
+      "project": 6
+    }
+  },
+  "affected_notes": [
+    {
+      "note": "Archive/Old Project.md",
+      "before": {
+        "project_name": "Legacy"
+      },
+      "after": {
+        "project": "Legacy"
+      },
+      "resolution": "identical values — safe to merge"
+    }
+  ],
+  "conflicts": [
+    {
+      "note": "Archive/Merged Candidate.md",
+      "reason": "conflicting_values",
+      "detail": "This note holds different values for the properties being merged. The product will not choose a winner.",
+      "values": {
+        "project_name": "Legacy Apollo",
+        "project": "Apollo Legacy"
+      },
+      "resolution": "manual review required"
+    }
+  ],
+  "manual_review": [],
+  "excluded": [],
+  "unreadable_notes": [
+    {
+      "note": "Notes/Malformed.md",
+      "reason": "invalid_yaml"
+    },
+    {
+      "note": "Notes/Not A Mapping.md",
+      "reason": "not_a_mapping"
+    },
+    {
+      "note": "Notes/Unterminated.md",
+      "reason": "unterminated_frontmatter"
+    }
+  ],
+  "warnings": []
+}
