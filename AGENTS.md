@@ -658,9 +658,10 @@ Perform:
 
 # Part B — Project-Specific Operating Rules
 
-> Project: `Obsidian Property Studio v1.1.0 Development Cycle`  
+> Project: `Obsidian Property Studio v1.2.0 Development Cycle`  
 > Formal Root: `D:\Antigravity-Workspace\Obsidian-Property-Studio\Obsidian-Property-Studio-v1.0.0`  
-> Recipient Baseline: `Agent B (v1.0.0 historical recipient)`  
+> Historical Baseline: `v1.1.0 Formal Mainline (Published Release cca408c)`  
+> Recipient Lineage: `Agent B (v1.0.0 recipient) + v1.1.0 Context/Bilingual Expansion`  
 > Historical Donors: `Agent C`, `Agent A`, `Agent D`  
 > v1.1.0 UI/UX Donors: `index_areaagentB.html (UX donor only)`, `index_areaagentD.html (Visual donor only)`
 
@@ -1248,6 +1249,73 @@ V11-015 Saved Check round-trip persistence
 V11-016 Scope-aware Health
 V11-017 Scope-aware Refactor does not expand scope
 V11-018 Vault byte-for-byte read-only after all v1.1 flows
+```
+
+---
+
+## 45. v1.2.0 Specific Safety & Governance Contracts
+
+### 45.1 No Dead-End CTA Contract
+Every primary Call-to-Action (CTA) across all UI modules must reach a deterministic, visible result, a terminal artifact (such as validated frontmatter copied to clipboard), or an explicit, meaningful next action. A CTA does NOT pass verification merely because a button exists, an event handler is attached, or a backend API returns HTTP 200. Every primary workflow must achieve complete closure under the Workflow Closure Matrix.
+
+### 45.2 Explicit Context Transfer Across Modules
+Cross-module navigation and workflows (e.g., Schema Designer `[Adopt Schema]` → `[Apply to Existing Note]` → Note Workspace Reconciliation, or Health Finding → `[Inspect in Note Workspace]`, or AI Proposal → Candidate Editor) must carry required IDs and diagnostic context (`schema_id`, `finding_id`, `property_key`, `note_path`) explicitly via structured request/state parameters. Modules must never rely on accidental global state or unverified session remnants.
+
+### 45.3 Governance State Persisted Strictly Outside Vault
+All user-defined governance metadata—including User Property Glossary entries, Named Schemas, Schema Versions, Scope Expected Schema assignments, Saved Relationship Checks, and Governance Profiles—must be stored in application-local storage (`~/.property_studio/` or app config directory) strictly outside the selected Vault directory. The selected Vault remains an untrusted, byte-for-byte read-only input source.
+
+### 45.4 Canonical Key Immutability
+Human-readable presentation labels (e.g., `狀態 (status)`, `Status (status)`) exist strictly in the presentation and advisory layers. Canonical YAML Property keys (`status`) must never be translated, renamed, or modified during frontmatter rendering, diff generation, or schema reconciliation.
+
+### 45.5 AI Advisory Boundary & Deterministic Gate
+AI proposals, suggested schemas, and outputs from the companion AI Skill (`obsidian-property-advisor`) are strictly advisory. No AI-generated proposal may enter the governed Schema Library or be applied to notes without passing deterministic contract validation and receiving explicit human review and approval. The core application must remain 100% functional offline without AI dependencies.
+
+### 45.6 Maintained Workflow Closure Matrix
+All release gates for v1.2.0 must maintain and execute an authoritative Workflow Closure Matrix mapping every primary user CTA to automated integration tests and human walkthrough verification.
+
+### 45.7 Schema Migration Planning-Only Guarantee
+Schema Versioning and Migration Planning evaluate active Scope notes to produce human-readable impact plans and advisory summaries. The Migration Planner must NEVER execute automated write operations against notes in the selected Vault.
+
+---
+
+## 46. Required v1.2.0 Regression Contract Families
+
+Before v1.2.0 release closure, all of the following contract families must PASS:
+
+```text
+V12-WFC-*   Workflow Closure Contract & cross-module state transfer
+V12-GLO-*   User Property Glossary CRUD, persistence & 3-level precedence hierarchy
+V12-SCH-*   Named Schema Library CRUD, metadata & out-of-vault persistence
+V12-REC-*   Schema to Existing Note Reconciliation (4 states: Matches, Missing, Conflict, Preserved)
+V12-SCP-*   Scope to Expected Schema assignment association & persistence
+V12-DRIFT-* Desired vs Actual Schema Drift diagnostics in Property Health
+V12-HLT-*   Health finding to exact Note Workspace drilldown with preserved context
+V12-AIP-*   External AI Proposal Review workspace (compatibility analysis, Accept, Edit, Reject)
+V12-SKL-*   Companion Skill contract adherence, fixtures validation & decoupled execution
+V12-MIG-*   Schema Versioning diffing & Scope-aware Migration Planning
+V12-PROF-*  Governance Profile JSON import/export round-trip & fail-closed validation
+V12-RO-*    Vault strict byte-for-byte read-only guarantee across all v1.2 workflows
+V12-I18N-*  100% zh-Hant / English bilingual parity across all v1.2 UI modules
+```
+
+---
+
+## 47. Formal Release Rules for v1.2.0
+
+Before `PROPERTY_STUDIO_V1_2_0_RELEASE_PASS` (or `PASS_WITH_LIMITATIONS`):
+
+```text
+[ ] M015 through M022 PASS in ROADMAP.md.
+[ ] Full automated regression suite passes (176 retained + all new v1.2 contracts).
+[ ] Complete Workflow Closure Matrix verified with zero dead-end CTAs.
+[ ] 5,000-note benchmark recorded in evidence/benchmark.json.
+[ ] Vault byte-for-byte read-only integrity verified (0 created, 0 modified, 0 deleted).
+[ ] Governance Profile import/export round-trip verified.
+[ ] Windows 10 Build 19045+ native launcher and UI acceptance verified by Human Owner.
+[ ] Windows 11 status accurately declared.
+[ ] Formal Git status clean.
+[ ] Four-file consistency gate PASS (PROJECT, ROADMAP, AGENTS, HANDOFF).
+[ ] HANDOFF updated last.
 ```
 
 ---
