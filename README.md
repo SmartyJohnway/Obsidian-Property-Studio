@@ -1,78 +1,124 @@
 # Obsidian Property Studio
 
+[English](README.md) | [繁體中文](README.zh-TW.md)
+
 **Understand, design, fill and govern Obsidian Properties — without learning YAML.**
 
-Version 1.1.0 · Local-first · Windows 10 & 11 supported · **Your vault is never modified**
+Version 1.1.0 · Standalone Local-first · Read-only · **Your Vault is never modified**
 
 ---
 
 ## What it does
 
-Obsidian's Properties turn a pile of Markdown files into something you can filter, group and
-relate. Property Studio is a local application that runs on your own machine and helps you:
+Obsidian's Properties turn a collection of Markdown notes into a structured knowledge base that you can filter, group, and query. **Obsidian Property Studio** is a standalone local application that runs 100% on your machine to help you understand and govern your note properties with human-readable semantics and strict read-only safety guarantees:
 
 | Module | What you get |
 | --- | --- |
-| **1 · Vault & Scope** | Point at a vault folder and choose your Scope (Entire Vault, One Folder, Multi-Folder, Single Note). Everything is strictly read-only; a SHA-256 manifest lets you prove it. |
-| **2 · Discover** | Property inventory computed strictly within your active Scope, compared against global counts. Click any finding to inspect exact notes and values in the Right Drawer. |
-| **3 · Design** | Describe a goal in natural language. Get suggested properties with plain-language explanations, checked against existing vault properties. |
-| **4 · Note Workspace** | Inspect and edit properties of existing notes with real-time semantic diff and fail-closed corrupt/duplicate-key frontmatter protection, or generate new blank frontmatter. |
-| **5 · Scope Refactor** | Rename / merge / normalize / change type / make fields required — as an **analysis bounded by Scope**, disclosing in-scope vs out-of-scope counts with no silent expansion. |
-| **6 · Relationships** | Multi-folder Source Scope and Target Scope analysis. Categorizes Property Links and Body Wikilinks (`[[Links]]`) into Valid, Broken, Ambiguous, and `OUTSIDE SELECTED TARGET`. |
-| **7 · Saved Checks** | User-initiated, advisory relationship checks with custom notes and Scopes, stored entirely outside the Vault with zero pre-populated assumptions. |
-| **8 · Health** | Explainable property health score and actionable findings calculated exclusively from Scope notes without cross-contamination. |
-| **9 · AI proposal** | Optional. Import a versioned schema proposal JSON produced by an external agent; validated and compared with your real vault, never applied to it. |
+| **1 · Vault & Scope** | Select a vault folder and define an active Scope (**Entire Vault**, **One Folder**, **Multiple Folders**, or **Single Note**). Switching scopes requires zero disk rescans. Pre/post SHA-256 manifests prove your vault remains completely untouched. |
+| **2 · Discover** | Real-time property inventory computed within your active Scope, compared against whole-vault counts. Inspect property storage types, usage counts, value variants, and malformed frontmatter in the contextual Right Drawer. |
+| **3 · Schema Designer** | Design structured frontmatter using deterministic multi-select presets for **Management Objects** (e.g., Projects, Persons, Books) and **Management Needs** (e.g., Progress Tracking, Relationships), with optional free-text context. Suggestions explain why properties are recommended, allow selective retain/exclude, and offer an **Adopt Schema** action that routes directly to Note Workspace or New Frontmatter. |
+| **4 · Note Workspace** | Deep-dive into individual notes via **Search** or the **Hierarchical Folder Tree** (with Expand/Collapse All and no arbitrary 100-note limits). Disambiguates duplicate note basenames by relative path. Edit properties with real-time **Semantic Diff**, bilingual vocabulary badges, and copy-only YAML output. Fails closed on corrupt frontmatter or duplicate YAML keys. |
+| **5 · New Frontmatter** | Dynamic form control generation based on the adopted schema. Configure properties with live YAML preview, validation, and copy-only output. Never creates files in your vault. |
+| **6 · Refactor Planner** | Scope-bounded planning for **Rename**, **Merge**, **Normalize Values**, and **Convert Types**. Features controlled property dropdowns, target collision warnings, and a **Scope Observed Values Mapping Table** for controlled normalization. Renders a structured human-readable plan summary by default. Planning-only with **zero apply** capability. |
+| **7 · Relationships** | Multi-folder Source Scope to Multi-folder Target Scope analysis. Evaluates **Property Links** and read-only **Body Wikilinks** (`[[Wikilinks]]`) across four deterministic states: `VALID`, `BROKEN`, `AMBIGUOUS`, and `OUTSIDE SELECTED TARGET`. |
+| **8 · Saved Checks** | User-initiated, advisory relationship queries with custom notes and scopes. Stored safely in local browser storage (`localStorage`) with zero pre-populated assumptions or default ontology rules. |
+| **9 · Property Health** | Scope-aware health scoring and explainable findings (missing properties, type drift, ambiguous links). Jump directly from findings to affected notes in the Note Workspace. |
+| **10 · AI Proposal** | Optional. Import versioned schema proposal JSON files generated by external AI agents; validates and compares proposals against your actual vault structure without applying changes. Core application requires no AI. |
 
-## Safety guarantees (v1.1.0)
+---
 
-* **Strictly Read-only.** No note is created, edited, renamed, moved or deleted. Note bodies and `.obsidian/` are never touched.
-* **No “Apply to vault” button exists.** Refactoring is planning only — there is no vault-write code path in the product, enforced by automated tests.
-* **Nothing leaves your machine.** No outbound network calls, no telemetry, no cloud dependency, no account, no API keys.
-* **No AI required.** Every feature operates 100% offline with deterministic algorithms.
-* **Fail-Closed Ambiguity.** Ambiguous property names, duplicate YAML keys, and ambiguous note links fail closed with clear warnings and never auto-guess.
-* **Reports and Checks never touch your vault.** Exports go to `%USERPROFILE%\.obsidian-property-studio\exports` (or a chosen external folder). Saved Checks persist outside the Vault.
+## Human-Readable Property Vocabulary Layer
 
-## Requirements
+Obsidian Property Studio v1.1.0 introduces a dedicated **Property Vocabulary Layer** designed for human-centric Personal Knowledge Management (PKM):
 
-* Python **3.10 or newer** (tested and verified on Python 3.13.7)
-* One dependency: **PyYAML**
-* Any modern browser (runs locally at `http://127.0.0.1:8765`)
+* **Bilingual Presentation Badges:** Front-end presentation displays human-friendly labels alongside canonical keys:
+  * Traditional Chinese UI: `狀態 (status)`, `負責人 (owner)`, `截止日期 (due_date)`
+  * English UI: `Status (status)`, `Owner (owner)`, `Due Date (due_date)`
+* **Canonical YAML Key Safety:** Canonical property keys (`status`, `owner`, etc.) remain strictly immutable and are never translated in output YAML.
+* **Safe Custom Property Fallback:** Unrecognized or user-created custom properties safely display their observed keys without semantic guessing.
+* **Universal ⓘ Guidance Drawer:** Clicking the `ⓘ` button beside any property badge opens a contextual Help Drawer showing:
+  * Purpose & Usage Hints
+  * Typical Storage Types & Input Controls
+  * Standard Example Values
+  * Current Scope Usage & Whole-Vault Frequency
+  * Top Observed Values in your vault
 
-## Install & run — Windows 10 & 11
+---
+
+## Safety Guarantees (v1.1.0)
+
+* **Strictly Read-Only:** No note is created, edited, renamed, moved, or deleted. Markdown note bodies and the `.obsidian/` configuration folder are never touched.
+* **No "Apply to Vault" Mechanism:** Refactor operations are strictly planning-only. There is no vault-mutation code path in the backend, enforced by automated regression suites.
+* **100% Local & Offline:** No external network requests, no telemetry, no cloud dependency, no account registration, and no API keys required.
+* **No Required AI:** Every analysis, schema recommendation, and health check executes deterministically via local Python algorithms.
+* **Fail-Closed on Ambiguity:** Ambiguous property names, duplicate frontmatter keys, and ambiguous note links fail closed with clear warnings and never guess intent.
+* **External Artifact Storage:** Reports and exports are saved to user-designated external directories or local browser storage.
+
+---
+
+## System Requirements
+
+* Python **3.10 or newer** (tested and verified on Python 3.13.7 AMD64)
+* Core dependency: **PyYAML**
+* Any modern web browser (Google Chrome, Microsoft Edge, Firefox)
+
+---
+
+## Platform Verification & Support
+
+* **Windows 10 (Build 19045+, 64-bit AMD64):** `PASS — Human Verified` (Full native browser walkthrough and server socket acceptance tested).
+* **Windows 11 (64-bit AMD64):** Supported target platform. Native execution verification has not yet been executed due to test host machine availability (accepted non-blocking release limitation).
+* **macOS / Linux:** Fully supported via local Python CLI / script execution (`run.sh` / `python3 -m app`).
+
+---
+
+## Installation & Launch
+
+### Windows 10 & 11
 
 ```bat
-:: 1. Install dependencies from the project folder:
+:: 1. Install dependencies from the project root:
 py -m pip install -r requirements.txt
 
 :: 2. Launch the application (starts local server and opens your browser):
 run_windows.bat
 ```
 
-Equivalent manual command:
+Manual commands:
 
 ```bat
-py -m app                      :: http://127.0.0.1:8765
-py -m app --port 9000          :: custom port
-py -m app --no-browser         :: headless / manual browser open
+py -m app                      :: Launches at http://127.0.0.1:8765
+py -m app --port 9000          :: Use a custom port
+py -m app --no-browser         :: Headless mode (manual browser open)
 ```
 
-macOS / Linux:
+### macOS / Linux
 
 ```bash
 python3 -m pip install -r requirements.txt
 ./run.sh                       # or: python3 -m app
 ```
 
-The server binds strictly to `127.0.0.1` (loopback only).
+The server binds strictly to `127.0.0.1` (loopback only). To stop the app, press `Ctrl+C` in the terminal.
 
-Stop the app with `Ctrl+C` in the terminal window.
+---
 
-## New in v1.1.0
+## Key Highlights in v1.1.0
 
-1. **Lightweight Bilingual Engine (zh-Hant / English):** Seamless live UI translation toggle with local storage persistence and no CDN scripts.
-2. **Light / Dark Theme Engine:** Modern high-contrast dark and light themes with token-based CSS variables.
+1. **Lightweight Bilingual Engine (zh-Hant / English):** Seamless live UI localization with instant language switching and persistent preference.
+2. **Light / Dark Theme Engine:** Modern high-contrast dark and light themes with token-based CSS design tokens.
 3. **Formal Scope Domain Model:** Focus analysis on specific folders, nested subfolders, or single notes without disk rescans.
-4. **Note Properties Workspace:** Deep-dive into existing notes, edit properties with instant semantic diffs, copy verified YAML, and fail-closed on corrupt frontmatter.
-5. **Body Wikilink Analysis:** Strict read-only discovery of Markdown body `[[Wikilinks]]`, strictly separated from Property Links.
-6. **User Saved Relationship Checks:** Name, annotate, save, reload, and execute relationship queries stored safely outside the Vault.
-7. **Scope-Aware Refactor Planner:** Migration planning strictly respects Scope boundaries, preventing silent whole-vault changes while disclosing out-of-scope counts.
+4. **Hierarchical Folder Tree:** Browse all vault notes with full folder hierarchy, expand/collapse-all controls, and path disambiguation.
+5. **Human-Readable Property Vocabulary:** Built-in PKM glossary with bilingual labels and contextual ⓘ Help Drawer.
+6. **Controlled Value Normalization:** Observed-value mapping tables for Scope-aware refactor planning.
+7. **Body Wikilink Analysis:** Strict read-only discovery and categorization of Markdown body `[[Wikilinks]]`.
+8. **Saved Relationship Checks:** Persistent, user-defined relationship queries stored safely outside the vault.
+9. **Scope-Aware Property Health:** Explainable diagnostic findings calculated strictly within active Scope boundaries.
+10. **Automated Verification Suite:** 176 automated test contracts and 5,000-note performance benchmark verification.
+
+---
+
+## License
+
+MIT License.
+
