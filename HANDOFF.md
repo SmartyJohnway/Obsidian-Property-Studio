@@ -5,11 +5,14 @@ From: `Antigravity — v1.1.0 release repair executor`
 To / Intended Next Executor: `Dr. J / Next Development Cycle Executor`  
 Formal Project Root: `D:\Antigravity-Workspace\Obsidian-Property-Studio\Obsidian-Property-Studio-v1.0.0`  
 Current Branch: `main`  
-Last Verified Implementation Commit: `40982371118b7c0b9ff76c4abe119c8d6eee32b4`  
+Released Tag Commit: `cca408c0456e1fe94e8224bd6550cf30c7274926` (Tag `v1.1.0`)  
+Post-Release Governance HEAD: `065decc2b4d8341fd08c93fbe7142071cc40aba5`  
+GitHub Release: `https://github.com/SmartyJohnway/Obsidian-Property-Studio/releases/tag/v1.1.0`  
 Merged PR: `PR #1 (Merge commit 26c6db4a1d732bfd5a2a7bb92c21ac3f7cba6171)`  
 Governance Baseline: `v1.1.0 Governance Transition (M001 PASS)`
 
 ---
+
 
 ## Governance Reminder
 
