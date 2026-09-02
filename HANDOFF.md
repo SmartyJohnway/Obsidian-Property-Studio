@@ -1,7 +1,7 @@
 # Handoff
 
-Updated: `2026-09-02`  
-From: `Antigravity — v1.2.0 governance transition executor`  
+Updated: `2026-09-03`  
+From: `Antigravity — v1.2.0 governance transition & architecture freeze executor`  
 To / Intended Next Executor: `Dr. J / v1.2.0 Development Executor`  
 Formal Project Root: `D:\Antigravity-Workspace\Obsidian-Property-Studio\Obsidian-Property-Studio-v1.0.0`  
 Published Baseline: `v1.1.0 — CLOSED`  
@@ -10,12 +10,30 @@ Post-v1.1 Governance Baseline (main HEAD): `ce92caf7bc572f2c15881dc751cd92818eaa
 Current Target: `v1.2.0`  
 Active Branch: `feature/v1.2.0`  
 Active Milestone: `M015`  
-Last Verified Governance Commit: `33c06b26fb63775206d518c11fbc22eff26af02f`  
+Active Milestone Status: `PASS`  
+Current Task: `NONE`  
+Last Verified Gate: `M015 — v1.2 Governance Transition & Architecture Freeze PASS`  
+Last Verified Governance Commit: `c04c355a5ace1ec027716352f37c084f40576d90`  
 GitHub Release: `https://github.com/SmartyJohnway/Obsidian-Property-Studio/releases/tag/v1.1.0`  
-Specification: `docs/specs/Obsidian_Property_Studio_v1.2.0_Spec.md`  
+GitHub PR: `PR #2 (Draft, feat(v1.2): Personal Property Governance System)`  
+Authoritative Specification: `docs/specs/Obsidian_Property_Studio_v1.2.0_Spec.md`  
 Specification SHA-256: `8760e592381685c4a31ae5eac2b8692fd8fa80ebc6a8ad7044fcb4c037f7187b`  
 Archived v1.1 Roadmap: `docs/archive/ROADMAP_v1.1.0.md`  
 Archived Roadmap SHA-256: `d68f8ac57411896dd1b2b10b0716629f2d12c46b1e0bb6a2a1368c961ee7ac2a`
+
+---
+
+## Architecture Freeze Artifacts (M015 PASS)
+
+1. **App-Local Governance Storage & Persistence:**
+   - Path: `docs/specs/v1.2.0_App_Local_Governance_Storage.md`
+   - SHA-256: `7e9f17552258d04ea786ad8d070724adb6680de803e923df56cb2d524a9d9f07`
+2. **Workflow Closure Matrix & Baseline CTA Contracts:**
+   - Path: `docs/specs/v1.2.0_Workflow_Closure_Matrix.md`
+   - SHA-256: `5f977e9ca864097cfa5fab7d78c50b948400b0af6134f6d18000db7a7de0a5ca`
+3. **Proposal Contract Compatibility & AI Advisory Boundary:**
+   - Path: `docs/specs/v1.2.0_Proposal_Contract_Compatibility.md`
+   - SHA-256: `50c3f1b5494094a3bbbe6c03acf582fd8c1a1b24a6781dcc3f5c60fc020be64b`
 
 ---
 
@@ -38,6 +56,7 @@ Read order:
 5. git status / git log
 6. relevant source code, tests, and evidence
 7. `docs/specs/Obsidian_Property_Studio_v1.2.0_Spec.md` (authoritative v1.2.0 planning specification)
+8. `docs/specs/v1.2.0_*.md` (frozen architecture specifications)
 
 ---
 
@@ -46,40 +65,39 @@ Read order:
 Project State: `ACTIVE`  
 Current Target: `v1.2.0`  
 Current Milestone: `M015`  
-Current Milestone Status: `IN_PROGRESS`  
-Current Task: `M015-T01`  
-Last Verified Gate: `M014 — Human UI/UX Walkthrough Closure PASS (v1.1.0 released)`  
+Current Milestone Status: `PASS`  
+Current Task: `NONE`  
+Last Verified Gate: `M015 — v1.2 Governance Transition & Architecture Freeze PASS`  
 Current Blocker: `NONE`  
-Next Action: `Complete M015 architecture freeze and obtain Human/External review before beginning M016 implementation.`  
+Next Action: `Awaiting Human Owner (Dr. J) review and approval of M015 architecture freeze before starting M016 implementation.`  
 Implementation State: `NOT STARTED`  
-Automated Verification: `NOT YET VERIFIED`  
+M016 Implementation Start: `NOT YET APPROVED`  
+Automated Verification: `PASS (176/176 baseline tests pass)`  
 Human Verified Acceptance: `NOT YET VERIFIED`  
 Accepted Limitation: `Windows 11 AMD64 native verification recorded as NOT YET VERIFIED due to test host unavailability (accepted non-blocking release limitation per human approved contract).`
 
 ---
 
-## v1.2.0 Governance Transition Checkpoint Summary
+## M015 Architecture Freeze Summary
 
-1. **Approved Specification Installed:**
-   - Authoritative Spec installed at `docs/specs/Obsidian_Property_Studio_v1.2.0_Spec.md` (SHA-256: `8760e592381685c4a31ae5eac2b8692fd8fa80ebc6a8ad7044fcb4c037f7187b`).
-   - Defines product evolution into a Personal Property Governance System.
-2. **v1.1.0 Roadmap Archived:**
-   - Exact copy archived at `docs/archive/ROADMAP_v1.1.0.md` (SHA-256: `d68f8ac57411896dd1b2b10b0716629f2d12c46b1e0bb6a2a1368c961ee7ac2a`).
-   - Pre-transition milestones M001 through M014 and publication evidence preserved immutably.
-3. **Four Governance Files Synchronized:**
-   - `PROJECT.md`: Updated with v1.2 position, REQ-040 ~ REQ-052, SC-23 ~ SC-33, DEC-030 ~ DEC-036, deliverables, and DoD.
-   - `ROADMAP.md`: Active execution plan initialized for milestones M015 ~ M022, current status `IN_PROGRESS` for M015, implementation `NOT STARTED`.
-   - `AGENTS.md`: Updated with durable v1.2 rules (No Dead-End CTA, explicit state transfer, outside-vault persistence, canonical key immutability, AI advisory boundary, Workflow Closure Matrix).
-   - `HANDOFF.md`: Updated last to record the governance transition checkpoint.
-4. **Product Implementation Status:**
-   - `NOT STARTED`. No v1.2 product code or schema implementation has been started in this transition task.
-5. **Baseline Verification:**
-   - Retained test suite passes cleanly (`176 passed in 15.63s`, `pytest`).
+1. **P0 / P1 Scope Fidelity Restored:**
+   - `PROJECT.md`, `ROADMAP.md`, and `AGENTS.md` strictly align with the approved Spec.
+   - P0 (Must Ship): Workflow Closure (REQ-040), Editable Glossary (REQ-041), Named Schema Library (REQ-042), Reconciliation (REQ-043), Scope Expected Schema (REQ-044), Schema Drift (REQ-045), AI Proposal Workflow (REQ-046), Companion Skill (REQ-047), Health Drilldown (REQ-048), App-local Persistence (REQ-051).
+   - P1 (Should Ship / Human-approved Deferral): Schema Versioning & Migration Planning (REQ-049), Governance Profile Import/Export (REQ-050). P1 must either PASS or be explicitly approved for deferral by Human Owner prior to release; silent omission is prohibited.
+   - REQ-052 (Backward Compatibility & Fail-Closed Upgrade) remains a cross-cutting mandatory safety invariant.
+2. **Three Architecture Specifications Frozen:**
+   - `v1.2.0_App_Local_Governance_Storage.md`: Resolved storage directory (`%APPDATA%/ObsidianPropertyStudio/`), atomic replacement write, versioned format, corrupt quarantine, and path containment check guaranteeing zero Vault mutation.
+   - `v1.2.0_Workflow_Closure_Matrix.md`: 13-attribute governed closure matrix covering all primary user CTAs across Shell, Scope, Note Workspace, Discover, Schema Designer, New Frontmatter, Glossary, Schemas, Relationships, Health, Refactor, Migration, Proposal Review, and Profile I/O.
+   - `v1.2.0_Proposal_Contract_Compatibility.md`: Backward-compatible v1.0/v1.1 JSON Schema specification, single source of truth for fixtures and Skill, explicit review actions (`[Accept as Named Schema]`, `[Edit Candidate]`, `[Reject]`), and decoupled Companion Skill boundary.
+3. **Product Implementation Status:**
+   - `NOT STARTED`. Strict governance-only checkpoint; zero product implementation modified.
+4. **Baseline Test Suite Verification:**
+   - All 176 retained tests pass seamlessly (`176 passed in 13.85s`, `pytest`).
    - Vault strict byte-for-byte read-only safety invariant confirmed.
 
 ---
 
 ## Immediate Next Actions
 
-1. Review and freeze M015 architecture deliverables (app-local storage layout, Workflow Closure Matrix baseline, Proposal Contract compatibility strategy).
-2. Obtain Human Owner (Dr. J) / external review on M015 architecture freeze before commencing M016 implementation.
+1. Human Owner (Dr. J) external review and approval of M015 Architecture Freeze deliverables.
+2. Upon approval, proceed to M016 (Workflow Closure Foundation & State Transfer).
