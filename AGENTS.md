@@ -1305,12 +1305,12 @@ V12-I18N-*  100% zh-Hant / English bilingual parity across all v1.2 UI modules
 Before `PROPERTY_STUDIO_V1_2_0_RELEASE_PASS` (or `PASS_WITH_LIMITATIONS`):
 
 ```text
-[ ] M015 through M022 PASS in ROADMAP.md.
-[ ] Full automated regression suite passes (176 retained + all new v1.2 contracts).
-[ ] Complete Workflow Closure Matrix verified with zero dead-end CTAs.
+[ ] All P0 Milestones (M015, M016, M017, M018, M019, M020, M022) PASS in ROADMAP.md.
+[ ] Milestone M021 (P1: Schema Versioning, Migration Planning & Governance Profile) is either PASS (implemented) OR formally approved for deferral by Human Owner with recorded decision.
+[ ] Full automated regression suite passes (176 retained baseline + all active v1.2 contracts).
+[ ] Complete Workflow Closure Matrix verified with zero dead-end CTAs for all shipped workflows.
 [ ] 5,000-note benchmark recorded in evidence/benchmark.json.
 [ ] Vault byte-for-byte read-only integrity verified (0 created, 0 modified, 0 deleted).
-[ ] Governance Profile import/export round-trip verified.
 [ ] Windows 10 Build 19045+ native launcher and UI acceptance verified by Human Owner.
 [ ] Windows 11 status accurately declared.
 [ ] Formal Git status clean.

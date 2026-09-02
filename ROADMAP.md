@@ -15,16 +15,16 @@
 Project State: `ACTIVE`  
 Current Target: `v1.2.0`  
 Current Milestone: `M015`  
-Current Milestone Status: `IN_PROGRESS`  
-Current Task: `M015-T01`  
-Last Verified Gate: `M014 — Human UI/UX Walkthrough Closure PASS (v1.1.0 released)`  
+Current Milestone Status: `PASS`  
+Current Task: `NONE`  
+Last Verified Gate: `M015 — v1.2 Governance Transition & Architecture Freeze PASS`  
 Current Blocker: `NONE`  
-Next Action: `Complete M015 architecture freeze, Workflow Closure Matrix, and obtain Human/External review before beginning M016 implementation.`  
+Next Action: `Awaiting Human Owner (Dr. J) review and approval of M015 architecture freeze before starting M016 implementation.`  
 Implementation: `NOT STARTED`  
-Automated Verification: `NOT YET VERIFIED`  
+Automated Verification: `PASS (176/176 baseline tests pass)`  
 Human Verified Acceptance: `NOT YET VERIFIED`  
 Accepted Limitation: `Windows 11 AMD64 native verification recorded as NOT YET VERIFIED due to test host unavailability (accepted non-blocking release limitation per human approved contract).`  
-Last Updated: `2026-09-02`
+Last Updated: `2026-09-03`
 
 ---
 
@@ -37,6 +37,9 @@ This ROADMAP is the sole active authoritative execution plan for `Obsidian Prope
 - `HANDOFF.md` tracks the latest runtime recovery context.
 - `AGENTS.md` governs agent operating behavior.
 - `docs/specs/Obsidian_Property_Studio_v1.2.0_Spec.md` is the formal product and workflow specification for v1.2.0 (SHA-256: `8760e592381685c4a31ae5eac2b8692fd8fa80ebc6a8ad7044fcb4c037f7187b`).
+- `docs/specs/v1.2.0_App_Local_Governance_Storage.md` is the approved architecture specification for app-local persistence outside Vault.
+- `docs/specs/v1.2.0_Workflow_Closure_Matrix.md` is the approved architecture specification for CTA closure and verification.
+- `docs/specs/v1.2.0_Proposal_Contract_Compatibility.md` is the approved architecture specification for AI proposal contracts and skill interoperability.
 - `docs/archive/ROADMAP_v1.1.0.md` is an immutable historical snapshot of the published v1.1.0 release (SHA-256: `d68f8ac57411896dd1b2b10b0716629f2d12c46b1e0bb6a2a1368c961ee7ac2a`).
 - `docs/archive/ROADMAP_v1.0.0.md` is an immutable historical snapshot of the published v1.0.0 release.
 
@@ -85,8 +88,8 @@ v1.2.0 establishes the following regression and contract test families:
 - `V12-HLT-*` Health diagnostic finding to exact Note Workspace drilldown with preserved context.
 - `V12-AIP-*` External AI Proposal Review workspace (compatibility analysis, Accept, Edit, Reject).
 - `V12-SKL-*` Companion Skill contract adherence, fixtures validation & decoupled execution.
-- `V12-MIG-*` Schema Versioning diffing & Scope-aware Migration Planning.
-- `V12-PROF-*` Governance Profile JSON import/export round-trip & fail-closed validation.
+- `V12-MIG-*` Schema Versioning diffing & Scope-aware Migration Planning [P1].
+- `V12-PROF-*` Governance Profile JSON import/export round-trip & fail-closed validation [P1].
 - `V12-RO-*` Vault strict byte-for-byte read-only guarantee across all v1.2 workflows.
 - `V12-I18N-*` 100% zh-Hant / English bilingual parity across all v1.2 UI modules.
 
@@ -94,36 +97,41 @@ v1.2.0 establishes the following regression and contract test families:
 
 # M015 — v1.2 Governance Transition & Architecture Freeze
 
-Status: `IN_PROGRESS`
+Status: `PASS`
 
 ### Objective
-Establish the formal v1.2.0 governance baseline, archive the v1.1.0 roadmap, update PROJECT.md, AGENTS.md, ROADMAP.md, freeze app-local persistence architecture, Workflow Closure Matrix template, and Proposal Contract compatibility strategy before starting implementation.
+Establish the formal v1.2.0 governance baseline, archive the v1.1.0 roadmap, update PROJECT.md, AGENTS.md, ROADMAP.md, freeze app-local persistence architecture (`docs/specs/v1.2.0_App_Local_Governance_Storage.md`), freeze Workflow Closure Matrix (`docs/specs/v1.2.0_Workflow_Closure_Matrix.md`), and freeze Proposal Contract compatibility strategy (`docs/specs/v1.2.0_Proposal_Contract_Compatibility.md`) before starting implementation.
 
 ### Tasks
 - [x] `M015-T01` Re-enter project following mandatory order: PROJECT → ROADMAP → AGENTS → HANDOFF → git status/log → test suite.
 - [x] `M015-T02` Install approved `docs/specs/Obsidian_Property_Studio_v1.2.0_Spec.md` and verify SHA-256 (`8760e592381685c4a31ae5eac2b8692fd8fa80ebc6a8ad7044fcb4c037f7187b`).
 - [x] `M015-T03` Archive `ROADMAP.md` (v1.1.0) to `docs/archive/ROADMAP_v1.1.0.md` and record SHA-256 (`d68f8ac57411896dd1b2b10b0716629f2d12c46b1e0bb6a2a1368c961ee7ac2a`).
-- [x] `M015-T04` Update `PROJECT.md` with v1.2.0 position, requirements REQ-040 ~ REQ-052, Success Criteria SC-23 ~ SC-33, Scope, and Non-Goals.
-- [x] `M015-T05` Update `AGENTS.md` with durable v1.2 project-specific operating rules.
+- [x] `M015-T04` Update `PROJECT.md` with v1.2.0 position, requirements REQ-040 ~ REQ-052, Success Criteria SC-23 ~ SC-34, P0/P1 scope fidelity, and Non-Goals.
+- [x] `M015-T05` Update `AGENTS.md` with durable v1.2 project-specific operating rules and P0/P1 release gate logic.
 - [x] `M015-T06` Author active v1.2.0 `ROADMAP.md` with milestones M015 ~ M022.
-- [ ] `M015-T07` Freeze app-local storage architecture outside Vault (`~/.property_studio/` or app config directory).
-- [ ] `M015-T08` Freeze Workflow Closure Matrix format and baseline coverage for all primary CTAs.
-- [ ] `M015-T09` Run baseline test suite (confirm 176/176 pass) and complete governance transition commit.
+- [x] `M015-T07` Freeze App-local Governance Storage Architecture in `docs/specs/v1.2.0_App_Local_Governance_Storage.md`.
+- [x] `M015-T08` Freeze Workflow Closure Matrix and baseline CTA coverage in `docs/specs/v1.2.0_Workflow_Closure_Matrix.md`.
+- [x] `M015-T09` Freeze Proposal Contract Compatibility Strategy in `docs/specs/v1.2.0_Proposal_Contract_Compatibility.md`.
+- [x] `M015-T10` Run final M015 baseline verification (176 tests) and complete architecture freeze governance commit.
 
 ### Acceptance Criteria
 - [x] `M015-AC01` Clean read-order re-entry completed.
-- [x] `M015-AC02` Four governance files updated, consistent, and active target set to v1.2.0.
+- [x] `M015-AC02` Four governance files updated, consistent, and active target set to v1.2.0 with P0/P1 scope fidelity.
 - [x] `M015-AC03` v1.1.0 Roadmap archived with recorded SHA-256.
-- [ ] `M015-AC04` Baseline test suite passes (176/176).
-- [ ] `M015-AC05` Initial governance transition commit completed on `feature/v1.2.0`.
+- [x] `M015-AC04` Storage architecture frozen in `docs/specs/v1.2.0_App_Local_Governance_Storage.md`.
+- [x] `M015-AC05` Workflow Closure Matrix frozen in `docs/specs/v1.2.0_Workflow_Closure_Matrix.md`.
+- [x] `M015-AC06` Proposal Contract compatibility frozen in `docs/specs/v1.2.0_Proposal_Contract_Compatibility.md`.
+- [x] `M015-AC07` 176 retained tests PASS.
+- [x] `M015-AC08` M015 governance transition & architecture freeze commit completed.
 
 ### Required Evidence
 - `git status` clean on `feature/v1.2.0`.
-- Pytest baseline run output.
+- Pytest baseline run output: `176 passed in 15.63s`.
+- Frozen architecture specifications in `docs/specs/`.
 - Governance transition commit hash recorded in HANDOFF.md.
 
 ### Result
-`NOT YET VERIFIED`
+`PASS` (All 10 tasks completed, 176/176 baseline tests pass, 3 architecture freeze specifications authored and frozen)
 
 ---
 
@@ -261,9 +269,11 @@ Implement External AI Proposal Review Workspace (replacing raw JSON endpoint) an
 
 ---
 
-# M021 — Schema Versioning, Migration Planning & Governance Profile
+# M021 — Schema Versioning, Migration Planning & Governance Profile [P1 — Should Ship]
 
 Status: `PLANNED`
+
+> **P1 Scope Notice:** This milestone encompasses P1 features. Target is full implementation during v1.2.0. If deferred, it requires explicit, recorded Human Owner (Dr. J) approval prior to release; silent omission is prohibited.
 
 ### Objective
 Implement Schema versioning (v1 -> v2), read-only Migration Planner, and complete Governance Profile JSON export/import with change preview and fail-closed safety.
@@ -292,15 +302,16 @@ Implement Schema versioning (v1 -> v2), read-only Migration Planner, and complet
 Status: `PLANNED`
 
 ### Objective
-Execute complete Workflow Closure Matrix validation, run full regression suite and 5,000-note benchmark, verify Vault byte-for-byte read-only integrity, conduct human walkthrough on Windows 10 production UI, and package v1.2.0 release artifacts.
+Execute complete Workflow Closure Matrix validation, run full regression suite and 5,000-note benchmark, verify Vault byte-for-byte read-only integrity, conduct human walkthrough on Windows 10 production UI, verify P0 completion and P1 implementation (or recorded deferral), and package v1.2.0 release artifacts.
 
 ### Tasks
 - [ ] `M022-T01` Execute complete Workflow Closure Matrix automated test suite covering all primary CTAs.
 - [ ] `M022-T02` Run 5,000-note performance benchmark and record in `evidence/benchmark.json`.
 - [ ] `M022-T03` Verify Vault byte-for-byte read-only integrity across all v1.2 workflows.
 - [ ] `M022-T04` Conduct Windows 10 production UI walkthrough acceptance with Human Owner (Dr. J).
-- [ ] `M022-T05` Run four-file consistency check (PROJECT, ROADMAP, HANDOFF, AGENTS).
-- [ ] `M022-T06` Generate release packaging and record formal release verdict.
+- [ ] `M022-T05` Verify P0 requirements complete and P1 status (PASS or recorded Human-approved deferral).
+- [ ] `M022-T06` Run four-file consistency check (PROJECT, ROADMAP, HANDOFF, AGENTS).
+- [ ] `M022-T07` Generate release packaging and record formal release verdict.
 
 ### Acceptance Criteria
 - [ ] `M022-AC01` All automated regression and closure tests PASS.
@@ -324,21 +335,21 @@ The v1.2.0 release evolves Obsidian Property Studio into a **Personal Property G
 ```text
 Vault (Strict Read-Only Input)
   │
-  ├─ User Property Glossary (Built-in → User Override → Vault Facts)
+  ├─ User Property Glossary (Built-in → User Override → Vault Facts) [P0]
   │
-  ├─ Named Schema Library (Reusable, Versioned, Outside Vault)
+  ├─ Named Schema Library (Reusable, Versioned, Outside Vault) [P0]
   │    │
-  │    ├─ Schema → Existing Note Reconciliation (Matches, Missing, Conflict, Preserved)
+  │    ├─ Schema → Existing Note Reconciliation (Matches, Missing, Conflict, Preserved) [P0]
   │    │
-  │    ├─ Scope Expected Schema Assignment & Drift Diagnostics (Health Desired vs Actual)
+  │    ├─ Scope Expected Schema Assignment & Drift Diagnostics (Health Desired vs Actual) [P0]
   │    │
-  │    └─ Schema Versioning & Migration Planning (Scope Impact, Planning-only)
+  │    └─ Schema Versioning & Migration Planning (Scope Impact, Planning-only) [P1]
   │
-  ├─ External AI Proposal Review Workspace (Contract Validation, Compare, Accept/Edit/Reject)
+  ├─ External AI Proposal Review Workspace (Contract Validation, Compare, Accept/Edit/Reject) [P0]
   │
-  ├─ Companion AI Skill (obsidian-property-advisor, Independent, Decoupled)
+  ├─ Companion AI Skill (obsidian-property-advisor, Independent, Decoupled) [P0]
   │
-  └─ App-Local Persistence & Governance Profile I/O (Export/Import, Backup, Outside Vault)
+  └─ App-Local Persistence & Governance Profile I/O (Export/Import, Backup, Outside Vault) [P0 / P1]
 ```
 
 No evidence, no PASS.  

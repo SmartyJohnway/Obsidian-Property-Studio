@@ -32,7 +32,7 @@ Obsidian 的 Properties 可以把 Markdown Vault 從單純的文件集合提升�
   - 使用者在設計或選取 Schema 後，需要能直接與既有筆記進行架構調和（Reconciliation），明確辨識相符、缺漏、衝突與架構外保留屬性；
   - 健檢發現的問題需要能一鍵鑽取（Drilldown）至確切筆記工作區並攜帶問題情境；
   - 外部 AI / Agent 產生的 Schema 建議需要完整的人性化審查工作流程（可檢視、編輯、接受為具名架構或拒絕），並搭配獨立的 Obsidian Property Advisor Companion Skill；
-  - 架構演進時需要支援版本化與跨版本遷移規劃（Migration Planning），以及整體治理設定檔（Governance Profile）的匯出/匯入與本機持久化。
+  - 架構演進時支援版本化與跨版本遷移規劃（Migration Planning），以及整體治理設定檔（Governance Profile）的匯出/匯入與本機持久化。
 
 本專案建立一個 **獨立、local-first、read-only-by-default 的 Personal Property Governance System**，讓使用者可以透過 GUI / local Web App 建立並治理屬於自己的 Property 系統，同時嚴格保持 Vault 的安全唯讀。
 
@@ -53,7 +53,7 @@ Desired vs Actual Drift
         +
 Existing Note Reconciliation
         +
-Migration Planning
+Migration Planning [P1]
         +
 External AI Proposal Review
         +
@@ -137,38 +137,21 @@ v1.1.0 開發週期已於 2026-09-02 完成正式發布與封存（Release tag: 
 
 ### [v1.2.0 New Success Criteria]
 
-### SC-23 — Workflow Closure & Zero Dead-End CTA
-所有主要 CTA 必須具備完整的工作流程閉環（Starting State → User Intent → Action → State Transfer → Deterministic Processing → Visible Result → Terminal Artifact / Meaningful Next Action），並納入受治理的 Workflow Closure Matrix，不接受僅更換畫面或僅回傳 HTTP 200 作為完成。
+#### P0 Success Criteria (Must Ship)
+- **SC-23 — Workflow Closure & Zero Dead-End CTA**: 所有主要 CTA 必須具備完整的工作流程閉環（Starting State → User Intent → Action → State Transfer → Deterministic Processing → Visible Result → Terminal Artifact / Meaningful Next Action），並納入受治理的 Workflow Closure Matrix，不接受僅更換畫面或僅回傳 HTTP 200 作為完成。
+- **SC-24 — User-Editable Property Glossary**: 使用者可自訂與管理個人屬性詞彙庫（Canonical Key, 繁中標籤, 英文標籤, 說明, 使用指引, 範例值, 別名, 分類），遵循 `內建詞彙 → 使用者覆寫 → 觀察到的事實` 優先序，且保證 Canonical YAML Key 永遠不被翻譯或修改。
+- **SC-25 — Named Schema Library**: 使用者可將採用的屬性架構儲存為具名架構（Named Schema），包含版本、屬性清單、必填/選填標示與中繼資料，支援 CRUD 操作並持久化於 Vault 外部。
+- **SC-26 — Schema to Existing Note Reconciliation**: 支援將 Named Schema 或 Current Schema 套用至既有筆記，呈現「相符 Matches」、「缺漏 Missing」、「衝突 Conflict」與「架構外保留 Outside Schema」四種調和狀態，保留無關屬性，輸出語意 Diff 與驗證通過的 Frontmatter。
+- **SC-27 — Scope to Expected Schema Assignment & Drift Analysis**: 支援將特定 Scope 指派預期 Named Schema，Property Health 能精確對比 Desired vs Actual，檢視缺少預期屬性、型態不符、數值漂移、非預期屬性等架構漂移情況。
+- **SC-28 — External AI Proposal Review & Schema Candidate Workflow**: 外部 AI Proposal JSON 匯入後，提供完整的人性化審查工作介面（呈現與當前 Scope、全庫、詞彙庫及架構庫的比對結果），支援接受為具名架構、線上編輯候選架構或明確拒絕。
+- **SC-29 — Obsidian Property Advisor Companion Skill**: 提供獨立、解耦的 AI Companion Skill，遵循明確的觸發情境、意圖釐清原則與屬性建議規範，產出符合 Proposal Contract 的建議，核心 App 完全不依賴 Skill。
+- **SC-30 — Health Finding to Exact Note Drilldown**: Health 診斷問題可一鍵鑽取至確切筆記工作區，並跨視圖完整傳遞問題情境（finding_id, property_key, finding_type, expected_schema_id），在工作區高亮標示相關問題。
+- **SC-31 — App-Local Governance Persistence**: 所有治理狀態（詞彙庫、架構庫、Scope 指派、Saved Checks、偏好設定）持久化於 Vault 外部的應用程式目錄中。
+- **SC-32 — Fail-Closed Backward Compatibility (Safety Invariant)**: 完整相容 v1.1 資料結構與測試基準，遇到毀損或不相容的設定時 fail-closed 拒絕載入並提示修復，絕不靜默丟棄或強制覆寫使用者資料。
 
-### SC-24 — User-Editable Property Glossary
-使用者可自訂與管理個人屬性詞彙庫（Canonical Key, 繁中標籤, 英文標籤, 說明, 使用指引, 範例值, 別名, 分類），遵循 `內建詞彙 → 使用者覆寫 → 觀察到的事實` 優先序，且保證 Canonical YAML Key 永遠不被翻譯或修改。
-
-### SC-25 — Named Schema Library
-使用者可將採用的屬性架構儲存為具名架構（Named Schema），包含版本、屬性清單、必填/選填標示與中繼資料，支援 CRUD 操作並持久化於 Vault 外部。
-
-### SC-26 — Schema to Existing Note Reconciliation
-支援將 Named Schema 或 Current Schema 套用至既有筆記，呈現「相符 Matches」、「缺漏 Missing」、「衝突 Conflict」與「架構外保留 Outside Schema」四種調和狀態，保留無關屬性，輸出語意 Diff 與驗證通過的 Frontmatter。
-
-### SC-27 — Scope to Expected Schema Assignment & Drift Analysis
-支援將特定 Scope 指派預期 Named Schema，Property Health 能精確對比 Desired vs Actual，檢視缺少預期屬性、型態不符、數值漂移、非預期屬性等架構漂移情況。
-
-### SC-28 — External AI Proposal Review & Schema Candidate Workflow
-外部 AI Proposal JSON 匯入後，提供完整的人性化審查工作介面（呈現與當前 Scope、全庫、詞彙庫及架構庫的比對結果），支援接受為具名架構、線上編輯候選架構或明確拒絕。
-
-### SC-29 — Obsidian Property Advisor Companion Skill
-提供獨立、解耦的 AI Companion Skill，遵循明確的觸發情境、意圖釐清原則與屬性建議規範，產出符合 Proposal Contract 的建議，核心 App 完全不依賴 Skill。
-
-### SC-30 — Health Finding to Exact Note Drilldown
-Health 診斷問題可一鍵鑽取至確切筆記工作區，並跨視圖完整傳遞問題情境（finding_id, property_key, finding_type, expected_schema_id），在工作區高亮標示相關問題。
-
-### SC-31 — Schema Versioning & Migration Planning
-Named Schema 支援跨版本對比（新增、刪除、型態變更、數值詞彙變更、必填變更），Migration Planner 能針對選定 Scope 產出結構化遷移計畫（純唯讀規劃，不自動套用至 Vault）。
-
-### SC-32 — App-Local Governance Persistence & Profile Import/Export
-所有治理狀態（詞彙庫、架構庫、Scope 指派、Saved Checks、偏好設定）持久化於 Vault 外部的應用程式目錄中，並支援整份 Governance Profile 的匯出與匯入（含版本檢查、預覽與 fail-closed 驗證）。
-
-### SC-33 — Fail-Closed Backward Compatibility
-完整相容 v1.1 資料結構與測試基準，遇到毀損或不相容的設定時 fail-closed 拒絕載入並提示修復，絕不靜默丟棄或強制覆寫使用者資料。
+#### P1 Success Criteria (Should Ship / Eligible for Human-Approved Deferral)
+- **SC-33 — Schema Versioning & Migration Planning [P1]**: Named Schema 支援跨版本對比（新增、刪除、型態變更、數值詞彙變更、必填變更），Migration Planner 能針對選定 Scope 產出結構化遷移計畫（純唯讀規劃，不自動套用至 Vault）。若未完成，必須取得 Human Owner 明確核准延期，不得靜默遺漏。
+- **SC-34 — Governance Profile Import / Export [P1]**: 支援整份 Governance Profile JSON 的匯出與匯入（含版本檢查、變更預覽與 fail-closed 驗證）。若未完成，必須取得 Human Owner 明確核准延期，不得靜默遺漏。
 
 ---
 
@@ -176,60 +159,21 @@ Named Schema 支援跨版本對比（新增、刪除、型態變更、數值詞�
 
 ### In Scope (v1.2.0)
 
-#### A. User Property Glossary Management
-- 使用者自訂屬性展示層詞彙與中繼資料（繁中標籤、英文標籤、說明、指引、範例值、別名、分類）。
-- 詞彙優先層次：`System Built-in → User Override → Observed Vault Facts`。
-- 全站通用 Help Drawer 即時讀取使用者詞彙庫。
-- 保證 Canonical YAML Property Key 原始不變。
+#### P0 Modules (Must Ship)
+- **A. User Property Glossary Management (REQ-041)**: 展示層詞彙與中繼資料 CRUD，優先層次 `System Built-in → User Override → Observed Vault Facts`，Help Drawer 整合，Canonical Key 不變性。
+- **B. Named Schema Library & CRUD (REQ-042)**: 具名架構庫管理介面與後端引擎，支援建立、讀取、編輯、刪除與中繼資料儲存，儲存於 Vault 外部。
+- **C. Schema → Existing Note Reconciliation Workspace (REQ-043)**: 4 種調和狀態（`✓ Matches`, `＋ Missing`, `⚠ Conflict`, `• Outside Schema Preserved`），保留無關屬性，語意 Diff 與 Frontmatter 預覽/複製。
+- **D. Scope → Expected Schema Assignment & Drift Detection (REQ-044, REQ-045)**: 手動指派預期架構，Property Health 支援 Desired vs Actual 架構漂移診斷。
+- **E. External AI Proposal Review Workspace (REQ-046)**: Proposal 審查 UI，對比 Scope/Vault/Glossary/Schemas，支援 `[Accept as Named Schema]`, `[Edit Candidate]`, `[Reject Proposal]`。
+- **F. Obsidian Property Advisor Companion Skill (REQ-047)**: 獨立 Companion Skill 規格與範例（`skills/obsidian-property-advisor/`），產出符合 Proposal Contract 建議，核心 App 零相依。
+- **G. Health Finding → Exact Note Drilldown (REQ-048)**: Health 問題一鍵跳轉至 Note Properties Workspace 並攜帶情境。
+- **H. App-Local Governance Persistence (REQ-051)**: 本機儲存架構（`%APPDATA%/ObsidianPropertyStudio/` 或 `~/.property_studio/`），獨立於 Vault。
+- **I. Workflow Closure Contract & Zero Dead-End CTAs (REQ-040)**: 維護全 CTA 工作流程閉環矩陣與驗證測試。
+- **J. Backward Compatibility & Fail-Closed Safety (REQ-052)**: 跨模組強制安全性不變性。
 
-#### B. Named Schema Library & CRUD
-- 具名架構庫（Named Schema Library）管理介面與後端引擎。
-- 支援建立、讀取、編輯、刪除、版本設定、中繼資料儲存。
-- 從 Schema Designer 採用時支援「儲存為具名架構」。
-- 資料儲存於 Vault 外部。
-
-#### C. Schema → Existing Note Reconciliation Workspace
-- 將 Named / Current Schema 與選定既有筆記進行調和（Reconciliation）。
-- 四種狀態：`✓ Existing & Matches`, `＋ Missing from Note`, `⚠ Conflict with Schema`, `• Outside Schema (Preserved)`。
-- 保留既有無關屬性。
-- 整合語意 Diff、驗證後 Frontmatter 預覽與複製功能。
-
-#### D. Scope → Expected Schema Assignment & Drift Detection
-- 為特定 Scope 設定預期 Named Schema（手動指派，無強制預設）。
-- Property Health 模組支援「Desired vs Actual」架構漂移分析。
-- 檢測：缺少屬性、型態衝突、受控值漂移、非預期額外屬性。
-
-#### E. External AI Proposal Review Workspace
-- 取代 raw JSON 終點，提供結構化 Proposal 審查 UI。
-- 對比 Current Scope、Whole Vault、Property Glossary、Named Schema Library。
-- 顯示相容狀態、型態衝突、數值衝突、別名警告。
-- 主要操作：`[Accept as Named Schema]`, `[Edit Candidate]`, `[Reject Proposal]`, `[Reconcile with Existing Note]`。
-
-#### F. Obsidian Property Advisor Skill (Decoupled Companion Skill)
-- 獨立的 AI Companion Skill 規格、提示詞與範例（`skills/obsidian-property-advisor/`）。
-- 意圖釐清指引（詢問知識管理用途而非 YAML 語法）。
-- 產生符合 Proposal Contract 的輸出。
-- 核心 App 不依賴 Skill，不要求 API Key。
-
-#### G. Health Finding → Exact Note Drilldown
-- Health 面板的受影響筆記清單支援一鍵跳轉至 Note Properties Workspace。
-- 跨模組明確傳遞情境（finding_id, property, type, note_path）。
-- 工作區顯示導航來源與待處理問題提示。
-
-#### H. Schema Versioning & Migration Planning
-- 具名架構版本管理（v1 → v2）。
-- 架構差異比對（新增、移除、型態變更、受控值變更、必填變更）。
-- 產生 Scope 範圍內的唯讀遷移影響計畫（嚴格 Planning-only，絕不修改 Vault）。
-
-#### I. App-Local Governance Persistence & Governance Profile I/O
-- 本機儲存目錄架構（獨立於 Vault）。
-- Governance Profile JSON 匯出與匯入（含架構校驗、變更預覽、fail-closed 防護）。
-
-#### J. Testing & Governance
-- 保留全套 176 項 v1.1.0 回歸測試。
-- 新增 v1.2.0 各模組回歸測試（`V12-WFC-*`, `V12-GLO-*`, `V12-SCH-*`, `V12-REC-*`, `V12-SCP-*`, `V12-DRIFT-*`, `V12-HLT-*`, `V12-AIP-*`, `V12-SKL-*`, `V12-MIG-*`, `V12-PROF-*`, `V12-RO-*`, `V12-I18N-*`）。
-- 維護權威 Workflow Closure Matrix。
-- ≥5,000 篇筆記基準測試與 Vault 唯讀雜湊驗證。
+#### P1 Modules (Should Ship / Eligible for Human-Approved Deferral)
+- **K. Schema Versioning & Migration Planning [P1] (REQ-049)**: 具名架構版本比對與 Scope 唯讀遷移影響計畫。
+- **L. Governance Profile Import / Export [P1] (REQ-050)**: Governance Profile JSON 匯出與匯入（含架構校驗、變更預覽與 fail-closed 防護）。
 
 ---
 
@@ -302,46 +246,24 @@ Named Schema 支援跨版本對比（新增、刪除、型態變更、數值詞�
 
 ---
 
-### [v1.2.0 New Formal Requirements]
+### [v1.2.0 Formal Requirements]
 
-### REQ-040 — Workflow Closure Contract
-Every primary CTA must be represented in a maintained Workflow Closure Matrix defining Starting State, User Intent, Action, State Transfer, Processing, Visible Result, Terminal Outcome / Next Action, Failure Path, Automated Verification, and Human Verification. A CTA cannot PASS merely because a handler exists or an API returns HTTP 200.
+#### P0 Requirements (Must Ship)
+- `REQ-040` **Workflow Closure Contract**: Every primary CTA must be represented in a maintained Workflow Closure Matrix defining Starting State, User Intent, Action, State Transfer, Processing, Visible Result, Terminal Outcome / Next Action, Failure Path, Automated Verification, and Human Verification. A CTA cannot PASS merely because a handler exists or an API returns HTTP 200.
+- `REQ-041` **User-editable Property Glossary**: Users may manage personal display and advisory metadata for canonical Property keys (Traditional Chinese label, English label, description, usage guidance, examples, aliases, category). Precedence is strictly enforced: `System Built-in Glossary → User Override → Observed Vault Facts`. Canonical YAML Property keys must never be mutated or translated.
+- `REQ-042` **Named Schema Library**: Users can save adopted Schemas as reusable named governance objects (stable schema ID, display name, version, description, Property definitions, required/recommended flags, creation/update metadata) stored outside the selected Vault, with full CRUD support.
+- `REQ-043` **Schema → Existing Note Reconciliation**: Provide a dedicated reconciliation flow when applying a Named or Current Schema to an existing Note. The UI must explicitly present four distinct reconciliation states: `✓ Existing & Matches`, `＋ Missing from Note`, `⚠ Existing but Conflicts with Schema`, and `• Existing Note Property outside Schema (Preserved)`. The flow must generate a semantic diff, a validated frontmatter preview, and clipboard copy without writing to the Vault.
+- `REQ-044` **Scope → Expected Schema Assignment**: A Scope may be associated with an Expected/Desired Named Schema as user-defined governance metadata (no default assignments, strictly advisory).
+- `REQ-045` **Desired vs Actual Schema Drift**: When an Expected Schema is assigned to a Scope, Property Health must compare Desired vs Actual state, detecting missing expected properties, type mismatches, governed value drift, unmanaged properties, and missing required relationships in an explainable, read-only diagnostic view.
+- `REQ-046` **External AI Proposal → Schema Candidate Workflow**: Replace the raw JSON validation endpoint with a complete Proposal Review workspace. The UI compares proposed properties against Current Scope, Whole Vault, Property Glossary, and Named Schema Library, surfacing compatibility status, type conflicts, value vocabulary conflicts, and alias warnings. Users can choose to `[Accept as Named Schema]`, `[Edit Candidate]`, `[Reject Proposal]`, or `[Reconcile with Existing Note]`.
+- `REQ-047` **Obsidian Property Advisor Skill**: Provide an independent, decoupled AI companion skill (`obsidian-property-advisor`) with clear trigger guidelines, management purpose clarification rules, property design principles, and validated Proposal JSON outputs conforming strictly to the authoritative Proposal Contract. Core application workflows must not depend on this Skill.
+- `REQ-048` **Health Finding → Note Drilldown**: Health diagnostic findings for affected notes must provide one-click drilldown into Note Properties Workspace, carrying full finding context across navigation (`finding_id`, `property_key`, `finding_type`, `note_path`, `expected_schema_id`) and highlighting the relevant issue in the workspace.
+- `REQ-051` **App-local Governance Persistence**: All governance state must persist across sessions in application-local storage outside the selected Vault. Vault content, governance/app state, temporary session state, and export artifacts must remain strictly separated.
+- `REQ-052` **Backward Compatibility & Fail-Closed Upgrade (Safety Invariant)**: v1.2 must transparently read v1.1-compatible state and contracts. If safe migration or parsing of corrupted state is impossible, the application must fail closed, display an explanatory error, and offer recovery guidance without silently coercing or discarding data.
 
-### REQ-041 — User-editable Property Glossary
-Users may manage personal display and advisory metadata for canonical Property keys (Traditional Chinese label, English label, description, usage guidance, examples, aliases, category). Precedence is strictly enforced: `System Built-in Glossary → User Override → Observed Vault Facts`. Canonical YAML Property keys must never be mutated or translated.
-
-### REQ-042 — Named Schema Library
-Users can save adopted Schemas as reusable named governance objects (stable schema ID, display name, version, description, Property definitions, required/recommended flags, creation/update metadata) stored outside the selected Vault, with full CRUD support.
-
-### REQ-043 — Schema → Existing Note Reconciliation
-Provide a dedicated reconciliation flow when applying a Named or Current Schema to an existing Note. The UI must explicitly present four distinct reconciliation states: `✓ Existing & Matches`, `＋ Missing from Note`, `⚠ Existing but Conflicts with Schema`, and `• Existing Note Property outside Schema (Preserved)`. The flow must generate a semantic diff, a validated frontmatter preview, and clipboard copy without writing to the Vault.
-
-### REQ-044 — Scope → Expected Schema Assignment
-A Scope may be associated with an Expected/Desired Named Schema as user-defined governance metadata (no default assignments, strictly advisory).
-
-### REQ-045 — Desired vs Actual Schema Drift
-When an Expected Schema is assigned to a Scope, Property Health must compare Desired vs Actual state, detecting missing expected properties, type mismatches, governed value drift, unmanaged properties, and missing required relationships in an explainable, read-only diagnostic view.
-
-### REQ-046 — External AI Proposal → Schema Candidate Workflow
-Replace the raw JSON validation endpoint with a complete Proposal Review workspace. The UI compares proposed properties against Current Scope, Whole Vault, Property Glossary, and Named Schema Library, surfacing compatibility status, type conflicts, value vocabulary conflicts, and alias warnings. Users can choose to `[Accept as Named Schema]`, `[Edit Candidate]`, `[Reject Proposal]`, or `[Reconcile with Existing Note]`.
-
-### REQ-047 — Obsidian Property Advisor Skill
-Provide an independent, decoupled AI companion skill (`obsidian-property-advisor`) with clear trigger guidelines, management purpose clarification rules, property design principles, and validated Proposal JSON outputs conforming strictly to the authoritative Proposal Contract. Core application workflows must not depend on this Skill.
-
-### REQ-048 — Health Finding → Note Drilldown
-Health diagnostic findings for affected notes must provide one-click drilldown into Note Properties Workspace, carrying full finding context across navigation (`finding_id`, `property_key`, `finding_type`, `note_path`, `expected_schema_id`) and highlighting the relevant issue in the workspace.
-
-### REQ-049 — Schema Versioning & Migration Planning
-Named Schemas support explicit versioning. Schema comparison identifies added, removed, type-changed, value-changed, and requirement-changed properties. The Migration Planner evaluates selected Scope and produces a human-readable migration plan without automatically executing any writes to Vault notes.
-
-### REQ-050 — Governance Profile Import / Export
-Users can export and import complete governance state (User Glossary, Named Schemas, Scope assignments, Saved Checks, preferences) as a structured Governance Profile JSON. Import must support schema validation, change preview, and fail-closed handling of malformed profiles without silent overwrites.
-
-### REQ-051 — App-local Governance Persistence
-All governance state must persist across sessions in application-local storage outside the selected Vault. Vault content, governance/app state, temporary session state, and export artifacts must remain strictly separated.
-
-### REQ-052 — Backward Compatibility & Fail-Closed Upgrade
-v1.2 must transparently read v1.1-compatible state and contracts. If safe migration or parsing of corrupted state is impossible, the application must fail closed, display an explanatory error, and offer recovery guidance without silently coercing or discarding data.
+#### P1 Requirements (Should Ship / Eligible for Human-Approved Deferral)
+- `REQ-049` **Schema Versioning & Migration Planning [P1]**: Named Schemas support explicit versioning. Schema comparison identifies added, removed, type-changed, value-changed, and requirement-changed properties. The Migration Planner evaluates selected Scope and produces a human-readable migration plan without automatically executing any writes to Vault notes.
+- `REQ-050` **Governance Profile Import / Export [P1]**: Users can export and import complete governance state (User Glossary, Named Schemas, Scope assignments, Saved Checks, preferences) as a structured Governance Profile JSON. Import must support schema validation, change preview, and fail-closed handling of malformed profiles without silent overwrites.
 
 ---
 
@@ -381,33 +303,32 @@ v1.2 must transparently read v1.1-compatible state and contracts. If safe migrat
 
 v1.2.0 發布必須包含至少：
 
+### P0 Deliverables (Mandatory)
 1. 獨立本機應用程式原始碼（Python + 本機 Web UI）；
 2. 現代化 UI Shell（整合 Context Bar、Sidebar 分組、右側 Drawer、完整狀態處理）；
 3. 輕量雙語 i18n 模組（`locales/zh-Hant.json`, `locales/en.json`）；
 4. Light / Dark 主題支援；
 5. Scope 領域模型與引擎（Entire Vault, One Folder, Multi-Folder, Single Note, include_subfolders）；
 6. 使用者屬性詞彙庫管理模組（User Property Glossary CRUD & Persistence）；
-7. 具名架構庫管理模組（Named Schema Library CRUD, Versioning & Persistence）；
+7. 具名架構庫管理模組（Named Schema Library CRUD & Persistence）；
 8. 架構調和工作區（Schema → Existing Note Reconciliation Workspace）；
 9. 範圍預期架構與漂移分析引擎（Scope Expected Schema & Drift Diagnostics）；
 10. 外部 AI Proposal 審查工作區（Proposal Review, Compatibility Check, Accept/Edit/Reject）；
 11. 獨立 Companion Skill 規格與測試用例（`skills/obsidian-property-advisor/`）；
 12. 健檢問題一鍵鑽取至筆記工作區（Health Finding → Note Drilldown）；
-13. 架構版本比對與遷移規劃引擎（Schema Versioning & Migration Planner）；
-14. 治理設定檔匯入/匯出模組（Governance Profile Import/Export with Change Preview）；
-15. 本機外部持久化儲存層（App-local storage outside Vault）；
-16. 全套 176 項 v1.1.0 回歸測試通過；
-17. 全套 v1.2.0 新增回歸測試套件通過；
-18. 受治理之 Workflow Closure Matrix 驗證報告；
-19. ≥5,000 篇筆記基準測試數據；
-20. Vault 唯讀雜湊驗證與 Windows 10/11 本機測試證據；
-21. 更新後之使用者手冊與 README；
-22. 唯四根目錄治理權威檔案：
-    - `PROJECT.md`
-    - `ROADMAP.md`
-    - `HANDOFF.md`
-    - `AGENTS.md`
-    以及歷史封存檔 `docs/archive/ROADMAP_v1.0.0.md` 與 `docs/archive/ROADMAP_v1.1.0.md`（唯讀快照）。
+13. 本機外部持久化儲存層（App-local storage outside Vault）；
+14. 全套 176 項 v1.1.0 回歸測試通過；
+15. 全套 v1.2.0 P0 回歸測試套件通過；
+16. 受治理之 Workflow Closure Matrix 驗證報告；
+17. ≥5,000 篇筆記基準測試數據；
+18. Vault 唯讀雜湊驗證與 Windows 10/11 本機測試證據；
+19. 更新後之使用者手冊與 README；
+20. 唯四根目錄治理權威檔案（`PROJECT.md`, `ROADMAP.md`, `HANDOFF.md`, `AGENTS.md`）及架構規格書。
+
+### P1 Deliverables (Should Ship / Eligible for Human-Approved Deferral)
+21. 架構版本比對與遷移規劃引擎（Schema Versioning & Migration Planner [P1]）；
+22. 治理設定檔匯入/匯出模組（Governance Profile Import/Export [P1]）。
+*(註：P1 項目若未在 v1.2.0 實作，必須取得 Human Owner (Dr. J) 之明確核准並記錄於決策中，不得靜默遺漏。)*
 
 ---
 
@@ -480,26 +401,29 @@ v1.2.0 發布必須包含至少：
 **Decision:** 架構版本遷移規劃（Migration Planner）維持純分析與規劃產出，絕不提供一鍵批次修改 Vault 筆記之寫入操作。  
 **Status:** ACCEPTED
 
+### DEC-037 — P0 / P1 Scope Fidelity & Deferral Governance
+**Decision:** 嚴格區分 P0 (Must Ship) 與 P1 (Should Ship)。P1 項目（Schema Versioning, Migration Planning, Governance Profile I/O）若未在 v1.2.0 完成，必須經 Human Owner 明確核准延期，不得進行無意識的 Scope 擴大或靜默遺漏。  
+**Status:** ACCEPTED
+
 ---
 
 ## 9. Global Definition of Done
 
 The project (v1.2.0) is done when:
 
-- all in-scope v1.2.0 P0 requirements (REQ-040 ~ REQ-052) are implemented；
+- all in-scope v1.2.0 **P0 requirements** (REQ-040 ~ REQ-048, REQ-051, REQ-052) are fully implemented；
+- **P1 requirements** (REQ-049, REQ-050) are either fully implemented (PASS) OR formally approved for deferral by the Human Owner (Dr. J) with recorded governance decision；
 - all primary workflows achieve full closure without dead-end CTAs as verified in the Workflow Closure Matrix；
 - the selected Vault remains byte-for-byte read-only across all workflows；
 - User Property Glossary is editable, respects precedence, and preserves canonical key immutability；
-- Named Schema Library supports full CRUD, versioning, and persistence outside Vault；
+- Named Schema Library supports full CRUD and persistence outside Vault；
 - Schema → Existing Note Reconciliation cleanly presents matches, missing, conflicts, and outside-schema properties with valid Frontmatter preview & copy；
 - Scope → Expected Schema assignment correctly diagnoses Desired vs Actual schema drift in Property Health；
 - Health findings drill down cleanly into exact Note Workspace preserving diagnostic context；
 - External AI Proposal workflow provides human-readable review, Vault/Glossary comparisons, and Accept/Edit/Reject actions；
 - Obsidian Property Advisor Skill is fully specified and validated against fixtures without core App dependency；
-- Schema Migration Planner generates structured, read-only migration plans for Scope notes；
-- Governance Profile import/export works round-trip with schema validation and fail-closed safety；
 - all 176 retained v1.1.0 regression tests pass；
-- all new v1.2.0 regression tests (`V12-*`) pass；
+- all new v1.2.0 regression tests pass；
 - large-Vault (≥5,000 notes) performance benchmark is measured and recorded；
 - Windows 10 (Build 19045+) native launcher and UI acceptance freshly verified; Windows 11 (64-bit AMD64) status accurately recorded；
 - documentation (README, User Guide, Specs) reflects v1.2.0 capabilities；
