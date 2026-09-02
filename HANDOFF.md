@@ -1,14 +1,11 @@
 # Handoff
 
-Updated: `2026-09-01`  
+Updated: `2026-09-02`  
 From: `Antigravity — v1.1.0 release repair executor`  
 To / Intended Next Executor: `Dr. J / Human Owner Walkthrough Re-Verification`  
 Formal Project Root: `D:\Antigravity-Workspace\Obsidian-Property-Studio\Obsidian-Property-Studio-v1.0.0`  
 Current Branch: `feature/v1.1.0-release`  
-Last Verified Implementation Commit: `893977fc20c4c4ea3b1db142d7ce11e3b618820c`  
 Governance Baseline: `v1.1.0 Governance Transition (M001 PASS)`
-
-
 
 ---
 
@@ -38,50 +35,52 @@ Read order:
 
 Project State: `ACTIVE`  
 Current Milestone: `M014`  
-Current Milestone Status: `IN_PROGRESS`  
-Current Task: `M014-T12 Human Production Walkthrough Re-Verification`  
-Last Verified Gate: `M013 — Full Verification Gate PASS`  
+Current Milestone Status: `PASS`  
+Current Task: `PR #1 External Audit Review & Merge Preparation`  
+Last Verified Gate: `M014 — Human UI/UX Walkthrough Closure PASS`  
 Current Blocker: `NONE`  
-Next Action: `Human Owner re-verifies repaired M014 production UI on Windows 10 browser`  
-Automated Verification: `PASS (162/162 tests PASS)`  
-Human Verified Acceptance: `NOT YET VERIFIED (Awaiting Human Owner Walkthrough Re-Verification)`  
+Next Action: `Awaiting external ChatGPT audit feedback on PR #1`  
+Automated Verification: `PASS (176/176 tests PASS)`  
+Human Verified Acceptance: `PASS — Human Verified (Dr. J verified on Windows 10 production UI)`  
 Accepted Limitation: `Windows 11 AMD64 native verification recorded as NOT YET VERIFIED due to test host unavailability (accepted non-blocking release limitation per human approved contract).`
+
 
 ---
 
-## M014 In-Place Usability & Workflow Repair Summary
+## M014 Usability & Vocabulary Layer Implementation Summary
 
-1. **P0 — Frontend Initialization Handlers Restored:**
-   - Restored missing `setupDiscoverHandlers()` and `setupHealthHandlers()` in `app/ui/index.html`.
-   - Guaranteed startup sequence executes without uncaught `ReferenceError`, unblocking all downstream module listeners and preset loaders.
-2. **Schema Designer — Deterministic Presets & Actionable Validation:**
-   - Presets load reliably on startup (`/api/design/presets`).
-   - Enforced actionable localized validation toast when clicking Generate without selecting any Object/Need.
-   - Retained complete per-property retain/exclude, `[Adopt Schema]` CTA, and dynamic form routing.
-3. **Relationships — Controlled Property Filter & Loading Feedback:**
-   - Replaced raw text filter with Scope inventory controlled select (`relPropFilterSelect`), with `All Properties` default and usage counts.
-   - Added real-time loading feedback on `[執行關聯分析]` button and handled empty results gracefully.
-4. **Refactor Planner — Operation-Aware Controlled UI & Collision Warning:**
-   - Replaced generic target input with controlled Combobox (`refactorTargetPropSelect`) + explicit `➕ 建立新屬性名稱` input.
-   - Convert Type exclusively shows target type dropdown (`refactorTargetTypeSelect`) with 8 supported types.
-   - Real-time warning banner alerts on target name collisions with existing Vault properties.
-5. **Note Workspace — Collapsible Folder Tree Browser (No 100-Note Limit):**
-   - Implemented hierarchical collapsible folder tree in Note Properties Workspace.
-   - Removed arbitrary 100-note truncation; users can comfortably drill down directory by directory across thousands of notes with instant expand/collapse-all controls.
-6. **Automated Regression Test Suite:**
-   - Added automated tests in `tests/test_ui_integrity.py` and `tests/test_m014_human_walkthrough.py` covering handler definition integrity, DOM element presence, headless Node.js DOM startup smoke testing, and folder tree contracts.
+1. **Property Human-Readable Vocabulary Layer (Presentation Layer):**
+   - Implemented `app/core/property_glossary.py` containing 49 built-in standard PKM properties (`type`, `status`, `owner`, `due_date`, `repo`, `software`, `jurisdiction`, `compliance_status`, etc.).
+   - Canonical YAML Property Keys remain strictly untouched and non-translated.
+   - Traditional Chinese UI presents `狀態 (status)`, English UI presents `Status (status)`.
+   - Unknown/custom properties safely degrade to `{canonical_key}` without guessing.
+   - Universal `ⓘ` badges across all modules trigger a rich Property Help & Guidance Drawer (`/api/glossary/property`) displaying purpose, usage hints, typical types/controls, examples, scope usage, whole vault usage, and top observed values.
+2. **Refactor Normalize Value Mapping (REQ-038):**
+   - Enhanced `app/core/refactor.py` and `app/server.py` to support explicit controlled value mapping per property.
+   - When Normalize is selected, UI dynamically renders an Observed Value Mapping table showing all observed values in the current Scope and their frequencies.
+   - Users can map variants to existing values, keep them original, or enter custom target canonical values.
+   - Generate Plan sends `{operation: "normalize", property: "...", mapping: {...}}` and renders a structured, human-readable summary table.
+3. **Note Workspace Folder Tree (No 100-Note Limit):**
+   - Complete hierarchical folder tree navigation with expand/collapse-all controls.
+   - Removed arbitrary truncation limits; loads all notes across all vault directories.
+4. **Automated Regression Suite (176/176 PASS):**
+   - Added M014-PROP-001 ~ M014-PROP-014 in `tests/test_property_glossary.py`.
+   - All 176 test cases pass seamlessly in 13.11s (`pytest -v`).
+5. **Local Web Server Ready:**
+   - Server active in background at `http://127.0.0.1:8765/`.
 
 ---
 
 ## Verification Summary
 
-- [x] Full Pytest Suite: **162 passed** in 13.27s (`pytest -v`).
-- [x] Headless Browser DOM Startup Smoke: **PASS** (Zero uncaught JS errors, presets populated, CTAs wired).
-- [x] Live Server UI Smoke: **PASS** (`python scripts/ui_smoke.py`).
+- [x] Full Pytest Suite: **176 passed** in 13.11s (`pytest -v`).
+- [x] Property Glossary Tests: **14 passed** (`pytest -v tests/test_property_glossary.py`).
 - [x] 5,000-Note Benchmark: **PASS** (scan 4.321s, total analysis 4.471s, vault unchanged, `evidence/benchmark.json`).
 - [x] Vault Byte-for-Byte Read-Only: **PASS** (0 created, 0 modified, 0 deleted across all workflows).
-- [ ] Human Acceptance Re-Verification on Windows 10: **NOT YET VERIFIED** (Awaiting Dr. J browser walkthrough).
+- [x] Human Acceptance Verification on Windows 10: **PASS** (Dr. J verified on Windows 10 production UI walkthrough).
 - [x] Four-File Consistency Gate: **PASS**.
+
+
 
 
 

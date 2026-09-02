@@ -24,11 +24,13 @@ from .core import (
     health,
     inventory,
     note_workspace,
+    property_glossary,
     proposal,
     refactor,
     relationships,
     saved_checks,
 )
+
 from .core.fill import fill_preview
 from .core.manifest import assert_unchanged, vault_manifest
 from .core.model import (
@@ -314,9 +316,12 @@ def api_refactor_plan(body: dict[str, Any]) -> dict[str, Any]:
         prop = str(body.get("property") or body.get("key") or "").strip()
         if not prop:
             raise ApiError("Property name is required for normalization.", 400)
+        mapping = body.get("mapping") if isinstance(body.get("mapping"), dict) else None
+        overrides = body.get("canonical_overrides") if isinstance(body.get("canonical_overrides"), dict) else None
         plan = refactor.plan_normalize(
-            scan, prop, body.get("canonical_overrides") or None, scope=active_scope
+            scan, prop, canonical_overrides=overrides, mapping=mapping, scope=active_scope
         )
+
     elif operation == "convert_type":
         prop = str(body.get("property") or body.get("key") or "").strip()
         target_type = str(body.get("target_type", "")).strip()
@@ -542,6 +547,49 @@ def api_scope_current(_body: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def api_glossary_catalog(_body: dict[str, Any]) -> dict[str, Any]:
+    catalog = property_glossary.export_glossary_catalog()
+    return {"catalog": catalog, "total": len(catalog)}
+
+
+def api_glossary_property(body: dict[str, Any]) -> dict[str, Any]:
+    key = str(body.get("property") or body.get("key") or "").strip()
+    if not key:
+        raise ApiError("Property key is required.", 400)
+    entry = property_glossary.get_property_glossary_entry(key)
+
+    scope_usage = 0
+    vault_usage = 0
+    observed_values: list[dict[str, Any]] = []
+    dominant_type = None
+    if STORE.scan:
+        all_inv = STORE.inventory or inventory.build_inventory(STORE.scan)
+        if key in all_inv.properties:
+            vault_usage = all_inv.properties[key].usage_count
+            observed_values = sorted(
+                [{"value": v.value, "count": v.count} for v in all_inv.properties[key].values.values() if v.value],
+                key=lambda x: -x["count"]
+            )[:8]
+            dt = all_inv.properties[key].dominant_type
+            dominant_type = dt.value if hasattr(dt, "value") else str(dt)
+
+
+        scoped_scan = STORE.get_scoped_scan()
+        scoped_inv = inventory.build_inventory(scoped_scan)
+        if key in scoped_inv.properties:
+            scope_usage = scoped_inv.properties[key].usage_count
+
+    return {
+        "canonical_key": key,
+        "is_known": entry is not None,
+        "metadata": entry.to_dict() if entry else None,
+        "scope_usage": scope_usage,
+        "vault_usage": vault_usage,
+        "detected_type": dominant_type,
+        "common_values": observed_values,
+    }
+
+
 # --------------------------------------------------------------------------
 # Dispatch Table
 # --------------------------------------------------------------------------
@@ -552,7 +600,6 @@ ROUTES: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "/api/property": api_property_detail,
     "/api/design/presets": api_design_presets,
     "/api/design/suggest": api_design_suggest,
-
     "/api/design/build": api_design_build,
     "/api/design/review": api_design_review,
     "/api/fill/preview": api_fill_preview,
@@ -578,7 +625,11 @@ ROUTES: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "/api/scope/current": api_scope_current,
     "/api/note_candidates": api_note_candidates,
     "/api/notes/candidates": api_note_candidates,
+    "/api/glossary": api_glossary_catalog,
+    "/api/glossary/catalog": api_glossary_catalog,
+    "/api/glossary/property": api_glossary_property,
 }
+
 
 
 

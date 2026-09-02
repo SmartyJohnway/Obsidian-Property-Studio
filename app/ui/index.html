@@ -493,7 +493,39 @@
     background: var(--teal-soft);
     color: var(--teal);
   }
+
+  /* Property Display & Help Tooltip / Drawer Button */
+  .prop-help-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    font-size: 11px;
+    line-height: 1;
+    font-weight: 700;
+    color: var(--muted);
+    background: var(--panel3);
+    border: 1px solid var(--line);
+    cursor: pointer;
+    margin-left: 6px;
+    padding: 0;
+    vertical-align: middle;
+    transition: all 0.15s ease;
+  }
+  .prop-help-btn:hover {
+    color: var(--brand);
+    border-color: var(--brand);
+    background: var(--brand-soft);
+  }
+  .prop-label-wrapper {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+  }
 </style>
+
 
 </head>
 <body>
@@ -999,12 +1031,18 @@
             </div>
           </div>
 
+          <!-- Normalize Observed Value Mapping Section (REQ-038) -->
+          <div id="refactorNormalizeSection" style="display:none; margin-bottom:14px; border:1px solid var(--line); border-radius:var(--radius-sm); padding:12px; background:var(--panel2)">
+            <label class="form-label" style="margin-bottom:8px" data-i18n="refactor.normalize_mapping_title">數值對照與標準化設定 (Value Mapping)</label>
+            <div id="refactorNormalizeTableContainer"></div>
+          </div>
 
           <!-- Dynamic Target Conflict Warning Banner -->
           <div id="refactorConflictWarnBanner" style="display:none; margin-bottom:14px; padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--amber); background:var(--amber-soft); color:var(--text); font-size:13px"></div>
 
           <button class="primary" id="runRefactorPlanBtn" data-i18n="refactor.plan_btn">產生重構計畫</button>
         </div>
+
 
         <div id="refactorPlanResultCard" class="card" style="display:none">
           <h3 style="margin-top:0" data-i18n="refactor.human_summary_title">重構影響摘要</h3>
@@ -1136,15 +1174,178 @@ function closeDrawer() {
 }
 
 /* ============================================================
+   Property Display Metadata & Glossary Layer (Shared UI Source)
+   ============================================================ */
+let GLOSSARY_CACHE = {};
+
+async function loadGlossaryCatalog() {
+  try {
+    const res = await api("/api/glossary");
+    GLOSSARY_CACHE = res.catalog || {};
+  } catch (e) {
+    console.warn("Failed to load glossary catalog:", e);
+  }
+}
+
+function formatPropertyLabel(canonicalKey) {
+  if (!canonicalKey) return "";
+  const k = canonicalKey.trim();
+  const entry = GLOSSARY_CACHE[k.toLowerCase()];
+  if (!entry) return k;
+  const isZh = I18N.currentLocale === "zh-Hant";
+  const label = isZh ? entry.label_zh : entry.label_en;
+  if (!label || label.trim() === k) {
+    return k;
+  }
+  return `${label} (${k})`;
+}
+
+
+function renderPropertyBadge(canonicalKey) {
+  if (!canonicalKey) return "";
+  const k = canonicalKey.trim();
+  const entry = GLOSSARY_CACHE[k.toLowerCase()];
+  const isZh = I18N.currentLocale === "zh-Hant";
+  const tooltip = entry ? (isZh ? entry.short_description_zh : entry.short_description_en) : (isZh ? "自訂屬性 · 點擊查看已觀察事實" : "Custom Property · Click for facts");
+  const display = formatPropertyLabel(k);
+  return `
+    <span class="prop-label-wrapper">
+      <span>${esc(display)}</span>
+      <button type="button" class="prop-help-btn" data-prop="${esc(k)}" title="${esc(tooltip)}">ⓘ</button>
+    </span>
+  `;
+}
+
+async function openPropertyHelpDrawer(canonicalKey) {
+  if (!canonicalKey) return;
+  const k = canonicalKey.trim();
+  openDrawer(`${I18N.t("property.help_title")} — ${k}`, `<div style="padding:20px; text-align:center; color:var(--muted)">Loading...</div>`);
+
+  try {
+    const res = await api("/api/glossary/property", { property: k });
+    const isZh = I18N.currentLocale === "zh-Hant";
+    const meta = res.metadata;
+    const isKnown = res.is_known && meta;
+
+    let html = `
+      <div style="display:flex; flex-direction:column; gap:14px">
+        <div class="card" style="background:var(--panel2)">
+          <div style="font-size:18px; font-weight:700; color:var(--text)">
+            ${esc(formatPropertyLabel(k))}
+          </div>
+          <div style="font-size:12px; color:var(--muted); font-family:var(--mono); margin-top:3px">
+            ${esc(I18N.t("property.canonical_key"))}: <strong>${esc(k)}</strong>
+          </div>
+        </div>
+    `;
+
+    if (isKnown) {
+      html += `
+        <div class="card">
+          <div style="font-size:12px; font-weight:700; color:var(--teal); text-transform:uppercase; margin-bottom:4px">
+            ${esc(I18N.t("property.purpose"))}
+          </div>
+          <div style="font-size:13.5px; line-height:1.5; color:var(--text)">
+            ${esc(isZh ? meta.long_description_zh : meta.long_description_en)}
+          </div>
+
+          <div style="font-size:12px; font-weight:700; color:var(--teal); text-transform:uppercase; margin-top:12px; margin-bottom:4px">
+            ${esc(I18N.t("property.usage_hint"))}
+          </div>
+          <div style="font-size:13px; line-height:1.5; color:var(--muted)">
+            ${esc(isZh ? meta.usage_hint_zh : meta.usage_hint_en)}
+          </div>
+        </div>
+
+        <div class="grid cols2" style="gap:10px">
+          <div class="card" style="padding:10px">
+            <div style="font-size:11.5px; color:var(--muted)">${esc(I18N.t("property.storage_type"))}</div>
+            <div style="font-weight:600; font-size:13px; margin-top:2px">${esc(meta.typical_type)}</div>
+          </div>
+          <div class="card" style="padding:10px">
+            <div style="font-size:11.5px; color:var(--muted)">${esc(I18N.t("property.ui_control"))}</div>
+            <div style="font-weight:600; font-size:13px; margin-top:2px">${esc(meta.typical_control)}</div>
+          </div>
+        </div>
+      `;
+      if (meta.examples && meta.examples.length) {
+        html += `
+          <div class="card" style="padding:12px">
+            <div style="font-size:12px; font-weight:700; color:var(--muted); margin-bottom:6px">${esc(I18N.t("property.examples"))}</div>
+            <div style="display:flex; flex-wrap:wrap; gap:6px">
+              ${meta.examples.map(ex => `<code style="font-size:12px; padding:2px 6px; background:var(--panel3); border-radius:4px">${esc(ex)}</code>`).join("")}
+            </div>
+          </div>
+        `;
+      }
+    } else {
+      html += `
+        <div class="card" style="border-left:3px solid var(--amber)">
+          <div style="font-size:13px; font-weight:600; color:var(--amber); margin-bottom:4px">${esc(I18N.t("property.custom_notice"))}</div>
+          <div style="font-size:12.5px; color:var(--muted)">
+            ${isZh ? "此屬性為自訂欄位。工作室已自知識庫中盤點出以下已觀察之客觀事實。" : "This is a custom property. Observed facts from your vault are shown below."}
+          </div>
+        </div>
+      `;
+    }
+
+    html += `
+      <div class="grid cols2" style="gap:10px">
+        <div class="stat">
+          <div class="n" style="font-size:20px">${res.scope_usage || 0}</div>
+          <div class="l">${esc(I18N.t("property.scope_usage"))}</div>
+        </div>
+        <div class="stat">
+          <div class="n" style="font-size:20px">${res.vault_usage || 0}</div>
+          <div class="l">${esc(I18N.t("property.vault_usage"))}</div>
+        </div>
+      </div>
+    `;
+
+    if (res.common_values && res.common_values.length) {
+      html += `
+        <div class="card" style="padding:12px">
+          <div style="font-size:12px; font-weight:700; color:var(--muted); margin-bottom:6px">${esc(I18N.t("property.observed_values"))}</div>
+          <table style="font-size:12px">
+            <thead><tr><th>${esc(I18N.t("discover.drawer_val"))}</th><th style="width:70px">${esc(I18N.t("discover.drawer_count"))}</th></tr></thead>
+            <tbody>
+              ${res.common_values.map(cv => `<tr><td><code>${esc(cv.value)}</code></td><td>${cv.count}</td></tr>`).join("")}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    html += `</div>`;
+    $("drawerBody").innerHTML = html;
+  } catch (e) {
+    $("drawerBody").innerHTML = `<div style="padding:20px; color:var(--red)">${esc(e.message)}</div>`;
+  }
+}
+
+// Global delegated click listener for property help badges
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest(".prop-help-btn");
+  if (btn) {
+    e.preventDefault();
+    e.stopPropagation();
+    const key = btn.getAttribute("data-prop");
+    if (key) openPropertyHelpDrawer(key);
+  }
+});
+
+/* ============================================================
    Initialization & Navigation
    ============================================================ */
 async function init() {
   await I18N.init();
+  await loadGlossaryCatalog();
 
   // Navigation handlers
   document.querySelectorAll("nav.sidebar-nav button.nav-btn").forEach(btn => {
     btn.onclick = () => {
       const tab = btn.getAttribute("data-tab");
+
       if (btn.hasAttribute("data-needs-scan") && !S.scanned) {
         return toast(I18N.t("overview.not_scanned_desc"), true);
       }
@@ -1237,7 +1438,18 @@ function renderAllDynamicViews() {
     populateRefactorSourceOptions();
     populateRefactorTargetOptions();
   }
+  if (S.currentNote && S.currentNote.can_edit && S.currentNote.original_properties) {
+    const currentValues = {};
+    document.querySelectorAll(".ws-prop-row").forEach(row => {
+      const k = row.querySelector(".ws-prop-key").value.trim();
+      const v = row.querySelector(".ws-prop-val").value;
+      if (k) currentValues[k] = v;
+    });
+    renderWorkspaceFields(Object.keys(currentValues).length ? currentValues : S.currentNote.original_properties);
+    updateWorkspacePreview();
+  }
 }
+
 
 
 
@@ -1672,10 +1884,13 @@ async function inspectNoteInWorkspace(notePath) {
 function renderWorkspaceFields(propsMap) {
   const container = $("wsPropFields");
   container.innerHTML = Object.entries(propsMap).map(([k, v]) => `
-    <div class="ws-prop-row" data-key="${esc(k)}" style="display:grid; grid-template-columns:140px 1fr 36px; gap:8px; align-items:center; margin-bottom:8px">
-      <input type="text" class="ws-prop-key" value="${esc(k)}" readonly style="background:var(--panel2)" />
-      <input type="text" class="ws-prop-val" value="${esc(Array.isArray(v) ? v.join(", ") : (v == null ? "" : v))}" />
-      <button class="ghost ws-prop-del" title="${esc(I18N.t("workspace.del_prop_title"))}" style="color:var(--red); padding:4px">✕</button>
+    <div class="ws-prop-row" data-key="${esc(k)}" style="display:grid; grid-template-columns:220px 1fr 36px; gap:8px; align-items:center; margin-bottom:8px; padding:6px 8px; background:var(--panel2); border-radius:var(--radius-sm)">
+      <div style="display:flex; align-items:center; overflow:hidden">
+        <input type="hidden" class="ws-prop-key" value="${esc(k)}" />
+        ${renderPropertyBadge(k)}
+      </div>
+      <input type="text" class="ws-prop-val form-control" value="${esc(Array.isArray(v) ? v.join(", ") : (v == null ? "" : v))}" placeholder="${esc(I18N.t("workspace.val_placeholder"))}" />
+      <button class="ghost ws-prop-del" title="${esc(I18N.t("workspace.del_prop_title"))}" style="color:var(--red); padding:4px; font-weight:bold">✕</button>
     </div>
   `).join("");
 
@@ -1692,16 +1907,33 @@ function renderWorkspaceFields(propsMap) {
   $("wsAddPropBtn").onclick = () => {
     const row = document.createElement("div");
     row.className = "ws-prop-row";
-    row.style.cssText = "display:grid; grid-template-columns:140px 1fr 36px; gap:8px; align-items:center; margin-bottom:8px";
+    row.style.cssText = "display:grid; grid-template-columns:220px 1fr 36px; gap:8px; align-items:center; margin-bottom:8px; padding:6px 8px; background:var(--panel2); border-radius:var(--radius-sm)";
     row.innerHTML = `
-      <input type="text" class="ws-prop-key" placeholder="${esc(I18N.t("workspace.key_placeholder"))}" />
-      <input type="text" class="ws-prop-val" placeholder="${esc(I18N.t("workspace.val_placeholder"))}" />
-      <button class="ghost ws-prop-del" title="${esc(I18N.t("workspace.del_prop_title"))}" style="color:var(--red); padding:4px">✕</button>
+      <div class="ws-custom-key-wrapper" style="display:flex; align-items:center; gap:4px">
+        <input type="text" class="ws-prop-key form-control" style="font-size:12.5px; width:100%" placeholder="${esc(I18N.t("workspace.key_placeholder"))}" />
+        <span class="ws-dynamic-badge"></span>
+      </div>
+      <input type="text" class="ws-prop-val form-control" placeholder="${esc(I18N.t("workspace.val_placeholder"))}" />
+      <button class="ghost ws-prop-del" title="${esc(I18N.t("workspace.del_prop_title"))}" style="color:var(--red); padding:4px; font-weight:bold">✕</button>
     `;
     container.appendChild(row);
-    row.querySelector(".ws-prop-key").oninput = updateWorkspacePreview;
-    row.querySelector(".ws-prop-val").oninput = updateWorkspacePreview;
-    row.querySelector(".ws-prop-del").onclick = () => { row.remove(); updateWorkspacePreview(); };
+    const keyInput = row.querySelector(".ws-prop-key");
+    const valInput = row.querySelector(".ws-prop-val");
+    const badgeSpan = row.querySelector(".ws-dynamic-badge");
+    const delBtn = row.querySelector(".ws-prop-del");
+
+    keyInput.oninput = () => {
+      const val = keyInput.value.trim();
+      if (val && GLOSSARY_CACHE[val.toLowerCase()]) {
+        badgeSpan.innerHTML = `<button type="button" class="prop-help-btn" data-prop="${esc(val)}" title="${esc(formatPropertyLabel(val))}">ⓘ</button>`;
+      } else {
+        badgeSpan.innerHTML = "";
+      }
+      updateWorkspacePreview();
+    };
+    valInput.oninput = updateWorkspacePreview;
+    delBtn.onclick = () => { row.remove(); updateWorkspacePreview(); };
+    keyInput.focus();
   };
 }
 
@@ -1734,13 +1966,14 @@ async function updateWorkspacePreview() {
       <div class="diff-box">
         ${res.diffs.map(d => `
           <div class="diff-row ${esc(d.change_type)}">
-            <div><code>${esc(d.key)}</code></div>
+            <div>${renderPropertyBadge(d.key)}</div>
             <div><span class="pill ${d.change_type === 'added' ? 'ok' : d.change_type === 'deleted' ? 'bad' : d.change_type === 'modified' ? 'warn' : ''}">${esc(d.change_type)}</span></div>
             <div class="muted" style="font-size:12px">${d.change_type === 'modified' ? esc(d.old_value) + ' → ' + esc(d.new_value) : esc(d.new_value || d.old_value || '')}</div>
           </div>
         `).join("")}
       </div>
     `;
+
 
     $("wsYamlPreview").textContent = res.frontmatter_preview || "";
 
@@ -1778,7 +2011,7 @@ async function loadDiscovery() {
         <tbody>
           ${props.map(p => `
             <tr>
-              <td><code>${esc(p.key)}</code></td>
+              <td>${renderPropertyBadge(p.key)}</td>
               <td><strong>${p.usage_count}</strong> <span class="muted">/ ${res.notes_in_scope}</span></td>
               <td>${Object.entries(p.observed_types).map(([t, c]) => `<span class="pill">${esc(t)}: ${c}</span>`).join(" ")}</td>
               <td>${p.distinct_value_count}</td>
@@ -1912,7 +2145,7 @@ function setupDesignHandlers() {
             ${res.reuse_reviews.map(r => `
               <tr>
                 <td style="text-align:center"><input type="checkbox" class="design-retain-cb" checked data-prop="${esc(r.proposed_name)}" /></td>
-                <td><code>${esc(r.proposed_name)}</code></td>
+                <td>${renderPropertyBadge(r.proposed_name)}</td>
                 <td>${esc(r.schema_storage_type || '')}</td>
                 <td><span class="pill ${r.in_scope ? 'ok' : r.in_vault_only ? 'warn' : ''}">${esc(I18N.t(r.status_key || `schema.status_${r.status}`))}</span></td>
                 <td class="muted" style="font-size:12px">${esc(I18N.t(r.message_key, { name: r.proposed_name }) || r.message)}</td>
@@ -2021,14 +2254,15 @@ function renderFillForm() {
 
     return `
       <div style="margin-bottom:12px">
-        <label class="form-label" style="display:flex; justify-content:space-between">
-          <span><strong>${esc(p.name)}</strong> ${p.required ? '<span style="color:var(--red)">*</span>' : ''}</span>
+        <label class="form-label" style="display:flex; justify-content:space-between; align-items:center">
+          <span>${renderPropertyBadge(p.name)} ${p.required ? '<span style="color:var(--red)">*</span>' : ''}</span>
           <span class="muted" style="font-size:11.5px">${esc(p.storage_type)}</span>
         </label>
         ${controlHtml}
       </div>
     `;
   }).join("");
+
 
   document.querySelectorAll(".fill-prop-input").forEach(input => {
     input.oninput = updateFillPreview;
@@ -2092,7 +2326,7 @@ function populateRelPropFilterOptions() {
   sel.innerHTML = `
     <option value="">${esc(I18N.t("relations.all_properties"))}</option>
     ${props.map(p => `
-      <option value="${esc(p.key)}">${esc(p.key)} (${p.usage_count})</option>
+      <option value="${esc(p.key)}">${esc(formatPropertyLabel(p.key))} — ${p.usage_count} ${esc(I18N.t("property.notes_used", { count: p.usage_count }))}</option>
     `).join("")}
   `;
   if (curVal && Array.from(sel.options).some(o => o.value === curVal)) {
@@ -2161,14 +2395,14 @@ function setupRelationsHandlers() {
               <tr>
                 <td><span class="pill ${item.classification === 'VALID' ? 'valid' : item.classification === 'BROKEN' ? 'broken' : item.classification === 'AMBIGUOUS' ? 'ambiguous' : 'outside'}">${esc(item.classification)}</span></td>
                 <td><code>${esc(item.note || item.source_note)}</code></td>
-                <td><code>${esc(item.property || '[[Wikilink]]')}</code></td>
+                <td>${item.property ? renderPropertyBadge(item.property) : '<code>[[Wikilink]]</code>'}</td>
                 <td><code>${esc(item.value || item.target_raw)}</code></td>
                 <td class="muted" style="font-size:12px">${esc(item.explanation)}</td>
               </tr>
             `).join("")}
           </tbody>
         </table>
-      ` : `<div class="muted" style="padding:16px; text-align:center">此範圍內無相符的關聯項目。</div>`;
+      ` : `<div class="muted" style="padding:16px; text-align:center">${esc(I18N.t("relations.empty"))}</div>`;
       toast(I18N.t("toast.rel_analysis_done"));
     } catch (e) {
       toast(e.message, true);
@@ -2210,65 +2444,108 @@ function getSelectedRelScope(entireCbId, folderCbClass) {
   if (isEntire) {
     return { mode: "entire_vault" };
   }
-  const selectedFolders = Array.from(document.querySelectorAll(`${folderCbClass}:checked`)).map(cb => cb.value);
-  if (!selectedFolders.length) {
-    throw new Error(I18N.t("scope.select_folder_warn"));
-  }
-  return { mode: "folders", folders: selectedFolders, include_subfolders: true };
+  const selected = Array.from(document.querySelectorAll(`${folderCbClass}:checked`)).map(cb => cb.value);
+  return {
+    mode: "folders",
+    folders: selected,
+    include_subfolders: true
+  };
 }
 
-const SAVED_CHECKS_STORAGE_KEY = "ops_saved_checks_v1";
+const SAVED_CHECKS_STORAGE_KEY = "ops_saved_relationship_checks_v110";
 
 async function loadSavedChecks() {
   try {
-    let localChecks = [];
-    try {
-      const raw = localStorage.getItem(SAVED_CHECKS_STORAGE_KEY);
-      if (raw) localChecks = JSON.parse(raw);
-    } catch (_) {}
-
     const res = await api("/api/relationships/saved/list", {});
     let checks = res.checks || [];
 
-    if (checks.length === 0 && localChecks.length > 0) {
-      for (const chk of localChecks) {
-        try { await api("/api/relationships/saved/save", { check: chk }); } catch (_) {}
-      }
-      const reloaded = await api("/api/relationships/saved/list", {});
-      checks = reloaded.checks || [];
+    if (checks.length === 0) {
+      try {
+        const raw = localStorage.getItem(SAVED_CHECKS_STORAGE_KEY);
+        if (raw) {
+          const arr = JSON.parse(raw);
+          if (Array.isArray(arr) && arr.length > 0) {
+            for (const c of arr) {
+              await api("/api/relationships/saved/save", { check: c });
+            }
+            const res2 = await api("/api/relationships/saved/list", {});
+            checks = res2.checks || [];
+          }
+        }
+      } catch (_) {}
+    } else {
+      try {
+        localStorage.setItem(SAVED_CHECKS_STORAGE_KEY, JSON.stringify(checks));
+      } catch (_) {}
     }
 
-    try { localStorage.setItem(SAVED_CHECKS_STORAGE_KEY, JSON.stringify(checks)); } catch (_) {}
-
+    S.savedChecks = checks;
     const listEl = $("savedChecksList");
+    if (!listEl) return;
+
     if (!checks.length) {
-      listEl.innerHTML = `<div class="muted">${I18N.t("relations.no_saved_checks")}</div>`;
+      listEl.innerHTML = `<div class="muted" style="padding:8px 0">${I18N.t("relations.no_saved_checks")}</div>`;
       return;
     }
+
     listEl.innerHTML = checks.map(c => `
-      <div class="card" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
+      <div class="card" style="margin-bottom:8px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; background:var(--panel2)">
         <div>
-          <strong>${esc(c.name)}</strong>
-          <span class="pill" style="margin-left:8px">${esc(c.link_type)}</span>
-          <div class="muted" style="font-size:12px; margin-top:2px">${esc(c.notes || I18N.t("relations.no_notes"))}</div>
+          <div style="font-weight:600; font-size:13.5px">${esc(c.name)}</div>
+          <div class="muted" style="font-size:12px">${esc(c.notes || I18N.t("relations.no_notes"))} · <code>${esc(c.link_type)}</code> · <code>${esc(c.property_name || I18N.t("relations.all_properties"))}</code></div>
         </div>
-        <div style="display:flex; gap:8px">
-          <button class="secondary ws-run-chk" data-id="${esc(c.id)}" style="padding:4px 8px">${I18N.t("relations.run_btn")}</button>
-          <button class="ghost ws-del-chk" data-id="${esc(c.id)}" style="color:var(--red); padding:4px 8px">✕</button>
+        <div style="display:flex; gap:6px">
+          <button class="primary rel-run-check-btn" data-id="${esc(c.id)}" style="padding:4px 10px; font-size:12px">${esc(I18N.t("relations.run_btn"))}</button>
+          <button class="ghost rel-del-check-btn" data-id="${esc(c.id)}" style="padding:4px 8px; font-size:12px; color:var(--red)">✕</button>
         </div>
       </div>
     `).join("");
 
-    document.querySelectorAll(".ws-run-chk").forEach(btn => {
+    document.querySelectorAll(".rel-run-check-btn").forEach(btn => {
       btn.onclick = async () => {
         const id = btn.getAttribute("data-id");
-        const execRes = await api("/api/relationships/saved/execute", { id: id });
-        toast(I18N.t("toast.check_executed", { name: execRes.check_name }));
-        setTab("relations");
+        const chk = S.savedChecks.find(x => x.id === id);
+        if (!chk) return;
+        try {
+          const res = await api("/api/relationships/saved/execute", { id: id });
+          const summary = res.summary || {};
+          $("relStatValid").textContent = summary.valid_count || 0;
+          $("relStatBroken").textContent = summary.broken_count || 0;
+          $("relStatAmbig").textContent = summary.ambiguous_count || 0;
+          $("relStatOutside").textContent = summary.outside_target_count || 0;
+          $("relResultsCard").style.display = "block";
+
+          const items = res.findings || res.items || [];
+          $("relItemsList").innerHTML = items.length ? `
+            <table>
+              <thead><tr>
+                <th>${esc(I18N.t("relations.col_classification"))}</th>
+                <th>${esc(I18N.t("relations.col_source_note"))}</th>
+                <th>${esc(I18N.t("relations.col_link_prop"))}</th>
+                <th>${esc(I18N.t("relations.col_target"))}</th>
+                <th>${esc(I18N.t("relations.col_details"))}</th>
+              </tr></thead>
+              <tbody>
+                ${items.map(item => `
+                  <tr>
+                    <td><span class="pill ${item.classification === 'VALID' ? 'valid' : item.classification === 'BROKEN' ? 'broken' : item.classification === 'AMBIGUOUS' ? 'ambiguous' : 'outside'}">${esc(item.classification)}</span></td>
+                    <td><code>${esc(item.note || item.source_note)}</code></td>
+                    <td>${item.property ? renderPropertyBadge(item.property) : '<code>[[Wikilink]]</code>'}</td>
+                    <td><code>${esc(item.value || item.target_raw)}</code></td>
+                    <td class="muted" style="font-size:12px">${esc(item.explanation)}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          ` : `<div class="muted" style="padding:16px; text-align:center">${esc(I18N.t("relations.empty"))}</div>`;
+          toast(I18N.t("toast.check_executed", { name: chk.name }));
+        } catch (e) {
+          toast(e.message, true);
+        }
       };
     });
 
-    document.querySelectorAll(".ws-del-chk").forEach(btn => {
+    document.querySelectorAll(".rel-del-check-btn").forEach(btn => {
       btn.onclick = async () => {
         const id = btn.getAttribute("data-id");
         if (!confirm(I18N.t("relations.confirm_delete"))) return;
@@ -2309,7 +2586,6 @@ async function loadHealth() {
     $("healthFindingsList").innerHTML = res.findings && res.findings.length ? res.findings.map(f => `
       <div class="card" style="margin-bottom:10px; border-left:4px solid ${f.severity === 'high' ? 'var(--red)' : f.severity === 'medium' ? 'var(--amber)' : 'var(--teal)'}">
         <strong>[${esc(f.severity.toUpperCase())}] ${esc(f.title)}</strong>
-
         <p class="muted" style="margin:4px 0">${esc(f.explanation)}</p>
         <div class="hint">${I18N.t("health.affected_notes_label")} (${f.affected_note_count})：${esc(f.affected_notes.slice(0, 5).join(", "))}</div>
       </div>
@@ -2344,7 +2620,7 @@ function populateRefactorSourceOptions() {
   if (srcSelect) {
     const curVal = srcSelect.value;
     srcSelect.innerHTML = props.length ? props.map(p => `
-      <option value="${esc(p.key)}">${esc(p.key)} (${p.usage_count} 篇筆記)</option>
+      <option value="${esc(p.key)}">${esc(formatPropertyLabel(p.key))} — ${p.usage_count} ${esc(I18N.t("property.notes_used", { count: p.usage_count }))}</option>
     `).join("") : `<option value="">-- 無可用屬性 --</option>`;
     if (curVal && Array.from(srcSelect.options).some(o => o.value === curVal)) {
       srcSelect.value = curVal;
@@ -2355,9 +2631,13 @@ function populateRefactorSourceOptions() {
     mergeList.innerHTML = props.length ? props.map(p => `
       <label class="folder-check-item">
         <input type="checkbox" class="refactor-merge-cb" value="${esc(p.key)}" />
-        <span><code>${esc(p.key)}</code> <span class="muted">(${p.usage_count})</span></span>
+        <span>${renderPropertyBadge(p.key)} <span class="muted">(${p.usage_count})</span></span>
       </label>
     `).join("") : `<div class="muted">無可用屬性</div>`;
+  }
+
+  if ($("refactorOpSelect").value === "normalize") {
+    populateNormalizeTable(srcSelect.value);
   }
 }
 
@@ -2370,12 +2650,83 @@ function populateRefactorTargetOptions() {
     <option value="">${esc(I18N.t("refactor.choose_or_new"))}</option>
     <option value="__new__">${esc(I18N.t("refactor.create_new_name"))}</option>
     ${props.map(p => `
-      <option value="${esc(p.key)}">${esc(p.key)} (${p.usage_count} 篇筆記)</option>
+      <option value="${esc(p.key)}">${esc(formatPropertyLabel(p.key))} — ${p.usage_count} ${esc(I18N.t("property.notes_used", { count: p.usage_count }))}</option>
     `).join("")}
   `;
   if (curVal && Array.from(tgtSelect.options).some(o => o.value === curVal)) {
     tgtSelect.value = curVal;
   }
+}
+
+async function populateNormalizeTable(selectedPropKey) {
+  const container = $("refactorNormalizeTableContainer");
+  if (!container) return;
+
+  if (!selectedPropKey || !S.inventory) {
+    container.innerHTML = `<div class="muted">${I18N.t("refactor.no_observed_values")}</div>`;
+    return;
+  }
+
+  const propEntry = (S.inventory.properties || []).find(p => p.key === selectedPropKey);
+  const valuesList = propEntry && propEntry.values ? Object.values(propEntry.values).filter(v => v.value && v.value.trim()) : [];
+
+  if (!valuesList.length) {
+    container.innerHTML = `<div class="muted">${I18N.t("refactor.no_observed_values")}</div>`;
+    return;
+  }
+
+  // Sort by count desc
+  valuesList.sort((a, b) => b.count - a.count);
+
+  const rowsHtml = valuesList.map(v => {
+    const others = valuesList.filter(o => o.value !== v.value);
+    const targetOptions = others.map(ov => `<option value="${esc(ov.value)}">${esc(ov.value)} (${ov.count})</option>`).join("");
+
+    return `
+      <tr class="refactor-norm-row" data-orig="${esc(v.value)}">
+        <td>
+          <code>${esc(v.value)}</code>
+          <span class="muted" style="margin-left:6px">(${v.count} ${esc(I18N.t("property.notes_used", { count: v.count }))})</span>
+        </td>
+        <td>
+          <div style="display:flex; gap:6px; align-items:center">
+            <select class="refactor-norm-target-select form-control" style="font-size:12px; padding:4px 8px">
+              <option value="${esc(v.value)}">${esc(I18N.t("refactor.keep_original"))} (${esc(v.value)})</option>
+              ${targetOptions}
+              <option value="__custom__">${esc(I18N.t("refactor.custom_target_val"))}</option>
+            </select>
+            <input type="text" class="refactor-norm-custom-input" style="display:none; font-size:12px; width:130px; padding:4px 6px" placeholder="${esc(I18N.t("refactor.custom_target_val"))}" />
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join("");
+
+  container.innerHTML = `
+    <table style="font-size:12.5px; margin:0">
+      <thead><tr>
+        <th>${esc(I18N.t("refactor.observed_val_col"))}</th>
+        <th style="min-width:240px">${esc(I18N.t("refactor.target_val_col"))}</th>
+      </tr></thead>
+      <tbody>
+        ${rowsHtml}
+      </tbody>
+    </table>
+  `;
+
+
+  container.querySelectorAll(".refactor-norm-target-select").forEach(sel => {
+    sel.onchange = (e) => {
+      const row = e.target.closest(".refactor-norm-row");
+      const customInput = row.querySelector(".refactor-norm-custom-input");
+      if (e.target.value === "__custom__") {
+        customInput.style.display = "block";
+        customInput.focus();
+      } else {
+        customInput.style.display = "none";
+      }
+    };
+  });
 }
 
 function setupRefactorHandlers() {
@@ -2401,6 +2752,7 @@ function setupRefactorHandlers() {
     const tgtSelect = $("refactorTargetPropSelect");
     const tgtNewNameInput = $("refactorTargetNewNameInput");
     const tgtTypeSelect = $("refactorTargetTypeSelect");
+    const normSection = $("refactorNormalizeSection");
     const warnEl = $("refactorConflictWarnBanner");
 
     warnEl.style.display = "none";
@@ -2410,6 +2762,7 @@ function setupRefactorHandlers() {
       $("refactorParam2Wrapper").style.display = "block";
       srcSelect.style.display = "block";
       mergeList.style.display = "none";
+      normSection.style.display = "none";
       tgtSelect.style.display = "block";
       tgtNewNameInput.style.display = (tgtSelect.value === "__new__" ? "block" : "none");
       tgtTypeSelect.style.display = "none";
@@ -2420,6 +2773,7 @@ function setupRefactorHandlers() {
       $("refactorParam2Wrapper").style.display = "block";
       srcSelect.style.display = "none";
       mergeList.style.display = "block";
+      normSection.style.display = "none";
       tgtSelect.style.display = "block";
       tgtNewNameInput.style.display = (tgtSelect.value === "__new__" ? "block" : "none");
       tgtTypeSelect.style.display = "none";
@@ -2430,12 +2784,15 @@ function setupRefactorHandlers() {
       $("refactorParam2Wrapper").style.display = "none";
       srcSelect.style.display = "block";
       mergeList.style.display = "none";
+      normSection.style.display = "block";
       $("refactorParam1Label").textContent = I18N.t("refactor.source_label");
+      populateNormalizeTable(srcSelect.value);
     } else if (op === "convert_type") {
       $("refactorParam1Wrapper").style.display = "block";
       $("refactorParam2Wrapper").style.display = "block";
       srcSelect.style.display = "block";
       mergeList.style.display = "none";
+      normSection.style.display = "none";
       tgtSelect.style.display = "none";
       tgtNewNameInput.style.display = "none";
       tgtTypeSelect.style.display = "block";
@@ -2445,6 +2802,12 @@ function setupRefactorHandlers() {
   };
 
   $("refactorOpSelect").onchange = updateRefactorLabels;
+
+  $("refactorSourceSelect").onchange = (e) => {
+    if ($("refactorOpSelect").value === "normalize") {
+      populateNormalizeTable(e.target.value);
+    }
+  };
 
   $("refactorTargetPropSelect").onchange = (e) => {
     const val = e.target.value;
@@ -2486,6 +2849,18 @@ function setupRefactorHandlers() {
         const src = $("refactorSourceSelect").value;
         if (!src) return toast(I18N.t("refactor.source_label"), true);
         payload.property = src;
+
+        const mapping = {};
+        document.querySelectorAll(".refactor-norm-row").forEach(row => {
+          const orig = row.getAttribute("data-orig");
+          const sel = row.querySelector(".refactor-norm-target-select");
+          const customInput = row.querySelector(".refactor-norm-custom-input");
+          const targetVal = (sel && sel.value === "__custom__") ? (customInput ? customInput.value.trim() : "") : (sel ? sel.value.trim() : "");
+          if (targetVal && targetVal !== orig) {
+            mapping[orig] = targetVal;
+          }
+        });
+        payload.mapping = mapping;
       } else if (op === "convert_type") {
         const src = $("refactorSourceSelect").value;
         const tgtType = $("refactorTargetTypeSelect").value;
@@ -2497,15 +2872,43 @@ function setupRefactorHandlers() {
       const res = await api("/api/refactor/plan", payload);
 
       // Render Human-Readable Summary
+      const summary = res.summary || {};
       const affectedNotes = res.in_scope_notes_to_change || res.affected_notes || [];
       const conflicts = res.conflicts || [];
       const excluded = res.excluded || [];
+      const changes = res.changes || [];
+      const untouched = res.untouched_values || [];
+
+      let detailsHtml = "";
+      if (op === "normalize" && changes.length > 0) {
+        detailsHtml = `
+          <div class="card" style="background:var(--panel2); margin-bottom:12px">
+            <h4 style="margin-top:0">${esc(I18N.t("refactor.normalize_mapping_title"))} (${changes.length})</h4>
+            <div style="font-size:12.5px; color:var(--muted); margin-bottom:8px">
+              ${esc(I18N.t("refactor.normalize_summary", { groups: changes.length, notes: summary.notes_to_change || 0, untouched: untouched.length }))}
+            </div>
+            <table style="font-size:12.5px">
+              <thead><tr><th>原值 (Variants)</th><th style="width:30px; text-align:center">→</th><th>目標標準值</th><th style="width:80px; text-align:right">影響篇數</th></tr></thead>
+              <tbody>
+                ${changes.map(ch => `
+                  <tr>
+                    <td>${ch.variants.map(v => `<code>${esc(v.value)}</code> <span class="muted">(${v.count})</span>`).join(", ")}</td>
+                    <td style="color:var(--teal); font-weight:bold; text-align:center">→</td>
+                    <td><strong style="color:var(--teal)"><code>${esc(ch.canonical_value)}</code></strong></td>
+                    <td style="text-align:right; font-weight:600">${ch.notes_to_change_count}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
 
       $("refactorHumanSummary").innerHTML = `
         <div class="grid cols3" style="margin-bottom:14px">
-          <div class="stat ok"><div class="n">${affectedNotes.length}</div><div class="l">${I18N.t("refactor.in_scope_notes")}</div></div>
-          <div class="stat"><div class="n">${res.out_of_scope_notes_count || 0}</div><div class="l">${I18N.t("refactor.out_of_scope_notes")}</div></div>
-          <div class="stat ${conflicts.length ? 'alert' : ''}"><div class="n">${conflicts.length + excluded.length}</div><div class="l">${I18N.t("refactor.conflicts_count")}</div></div>
+          <div class="stat ok"><div class="n">${summary.notes_to_change != null ? summary.notes_to_change : (Array.isArray(affectedNotes) ? affectedNotes.length : affectedNotes)}</div><div class="l">${I18N.t("refactor.in_scope_notes")}</div></div>
+          <div class="stat"><div class="n">${summary.out_of_scope_notes_to_change || res.out_of_scope_notes_count || 0}</div><div class="l">${I18N.t("refactor.out_of_scope_notes")}</div></div>
+          <div class="stat ${(conflicts.length + excluded.length) ? 'alert' : ''}"><div class="n">${conflicts.length + excluded.length}</div><div class="l">${I18N.t("refactor.conflicts_count")}</div></div>
         </div>
 
         ${res.target_already_exists ? `
@@ -2514,10 +2917,12 @@ function setupRefactorHandlers() {
           </div>
         ` : ''}
 
+        ${detailsHtml}
+
         <div class="card" style="background:var(--panel2)">
-          <h4 style="margin-top:0">${I18N.t("refactor.affected_notes_view")} (${affectedNotes.length})</h4>
+          <h4 style="margin-top:0">${I18N.t("refactor.affected_notes_view")} (${Array.isArray(affectedNotes) ? affectedNotes.length : (summary.notes_to_change || 0)})</h4>
           <ul style="max-height:160px; overflow-y:auto; padding-left:20px; font-size:12.5px; margin:0">
-            ${affectedNotes.slice(0, 100).map(n => `<li><code>${esc(n.note || n)}</code></li>`).join("")}
+            ${(Array.isArray(affectedNotes) ? affectedNotes : []).slice(0, 100).map(n => `<li><code>${esc(n.note || n)}</code></li>`).join("")}
           </ul>
         </div>
       `;
@@ -2531,6 +2936,7 @@ function setupRefactorHandlers() {
 
   updateRefactorLabels();
 }
+
 
 function setupProposalHandlers() {
   $("validateProposalBtn").onclick = async () => {

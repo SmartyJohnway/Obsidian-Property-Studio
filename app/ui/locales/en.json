@@ -254,6 +254,28 @@
   "toast.schema_adopted": "✓ Schema '{name}' adopted successfully",
   "toast.rel_analysis_done": "Relationship analysis complete!",
   "toast.check_executed": "Executed check: {name}",
-  "toast.export_done": "Report exported to: {path}"
+  "toast.export_done": "Report exported to: {path}",
+  "property.help_title": "Property Guidance & Details",
+  "property.canonical_key": "Canonical YAML Key",
+  "property.display_label": "Display Label",
+  "property.purpose": "Purpose & Description",
+  "property.usage_hint": "Recommended Usage Context",
+  "property.storage_type": "Typical Storage Type",
+  "property.ui_control": "Recommended UI Control",
+  "property.examples": "Example Values",
+  "property.scope_usage": "Scope Usage Count",
+  "property.vault_usage": "Whole Vault Usage Count",
+  "property.observed_values": "Observed Values in Vault",
+  "property.custom_notice": "Custom Property · Observed Vault Facts",
+  "property.notes_used": "{count} notes",
+  "refactor.normalize_mapping_title": "Observed Value Mapping",
+  "refactor.observed_val_col": "Observed Value (Usage)",
+  "refactor.target_val_col": "Target Canonical Value",
+  "refactor.keep_original": "-- Keep Original --",
+  "refactor.custom_target_val": "➕ Enter custom value...",
+  "refactor.no_observed_values": "No observed values recorded for this property in current scope.",
+  "refactor.normalize_summary": "Will normalize {groups} value group(s) affecting {notes} note(s); leaving {untouched} unchanged.",
+  "relations.empty": "No relationship links found matching this criteria in scope."
 }
+
 

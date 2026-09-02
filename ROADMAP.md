@@ -13,15 +13,17 @@
 
 Project State: `ACTIVE`  
 Current Milestone: `M014`  
-Current Milestone Status: `IN_PROGRESS`  
-Current Task: `M014-T02 Human UI/UX Production Walkthrough Re-Verification`  
-Last Verified Gate: `M013 — Full Verification Gate PASS`  
+Current Milestone Status: `PASS`  
+Current Task: `PR #1 External Audit Review & Merge Preparation`  
+Last Verified Gate: `M014 — Human UI/UX Walkthrough Closure PASS`  
 Current Blocker: `NONE`  
-Next Action: `Human Owner re-verifies repaired M014 production UI on Windows 10 browser`  
-Automated Verification: `PASS (162/162 tests PASS)`  
-Human Verified Acceptance: `NOT YET VERIFIED (Awaiting Human Owner Walkthrough Re-Verification)`  
+Next Action: `Awaiting external ChatGPT audit feedback on PR #1`  
+Automated Verification: `PASS (176/176 tests PASS)`  
+Human Verified Acceptance: `PASS — Human Verified (Dr. J verified on Windows 10 production UI)`  
 Accepted Limitation: `Windows 11 AMD64 native verification recorded as NOT YET VERIFIED due to test host unavailability (accepted non-blocking release limitation per human approved contract).`  
-Last Updated: `2026-09-01`
+Last Updated: `2026-09-02`
+
+
 
 
 
@@ -461,16 +463,21 @@ Resolve usability, discoverability, and workflow gaps identified during the Huma
 - [x] `M014-AC04` New Frontmatter displays empty-state guidance when unconfigured and renders dynamic controls when configured.
 - [x] `M014-AC05` Refactor Planner uses controlled dropdowns/multi-selects, target collision warning, and displays human-readable summary by default.
 - [x] `M014-AC06` 100% of new UI strings are localized in `zh-Hant.json` and `en.json`.
-- [x] `M014-AC07` All automated tests pass (140 existing + 22 M014 & integrity regression contracts = 162/162 tests PASS).
+- [x] `M014-AC07` All automated tests pass (140 existing + 22 M014 walkthrough & integrity + 14 property glossary regression contracts = 176/176 tests PASS).
 - [x] `M014-AC08` Vault remains byte-for-byte read-only across all new workflows.
-- [ ] `M014-AC09` Human Owner re-verifies repaired UI in real Windows 10 browser without uncaught errors or workflow dead-ends.
+- [x] `M014-AC09` Human Owner re-verifies repaired UI in real Windows 10 browser without uncaught errors or workflow dead-ends.
 
 ### Result
-`IN_PROGRESS`
-- Automated Verification: `PASS` (162/162 automated unit & integration tests pass, `pytest -v`, 13.27s).
+`PASS`
+- Automated Verification: `PASS` (176/176 automated unit & integration tests pass, `pytest -v`, 13.11s).
 - Headless Browser DOM Startup Smoke: `PASS` (Zero uncaught JS errors, presets populated, CTAs wired).
+- Property Human-Readable Vocabulary Layer: `PASS` (49 built-in entries, Presentation Layer format, safe fallback, help drawer).
+- Refactor Normalize Mapping (REQ-038): `PASS` (Scope observed values table, target selection/custom input, structured summary).
+- Note Workspace Properties & Diff: `PASS` (Property badges, ⓘ guidance drawer, dynamic custom key detection, localized).
 - 5,000-note benchmark verified: scan 4.321s, total analysis 4.471s, vault unchanged (`evidence/benchmark.json`).
-- Human Verification: `NOT YET VERIFIED` (Awaiting Human Owner re-verification).
+- Human Verification: `PASS` (Dr. J verified on Windows 10 production UI walkthrough).
+
+
 
 
 

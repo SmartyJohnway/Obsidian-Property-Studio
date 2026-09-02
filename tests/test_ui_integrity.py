@@ -77,6 +77,9 @@ def test_untrusted_vault_content_is_escaped(script):
     assert not suspicious, f"unescaped vault content in UI: {suspicious[:5]}"
 
 
+
+
+
 def test_ui_states_the_safety_contract(html):
     for phrase in ("read-only", "never changes it", "no vault"):
         assert phrase.lower() in html.lower()

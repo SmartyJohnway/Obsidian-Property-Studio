@@ -256,62 +256,107 @@ def plan_normalize(
     scan: VaultScan,
     key: str,
     canonical_overrides: dict[str, str] | None = None,
+    mapping: dict[str, str] | None = None,
     scope: ScopeSpec | None = None,
 ) -> dict[str, Any]:
     active_scan, is_scoped = _resolve_scoped_scan(scan, scope)
     inv: Inventory = build_inventory(active_scan)
+    all_inv: Inventory = build_inventory(scan)
     entry = inv.get(key)
+    all_entry = all_inv.get(key)
+    all_usage = all_entry.usage_count if all_entry else 0
+    in_scope_usage = entry.usage_count if entry else 0
+
     overrides = canonical_overrides or {}
-    groups: dict[str, list[Any]] = {}
-    if entry:
-        for stat in entry.values.values():
-            if not stat.value.strip():
-                continue
-            groups.setdefault(normalize_value(stat.value), []).append(stat)
+    explicit_mapping = mapping or {}
 
     changes: list[dict[str, Any]] = []
     untouched: list[dict[str, Any]] = []
-    for norm, stats in sorted(groups.items()):
-        stats.sort(key=lambda s: (-s.count, s.value))
-        canonical = overrides.get(norm, stats[0].value)
-        if len(stats) < 2:
-            untouched.append(
-                {
-                    "value": stats[0].value,
-                    "count": stats[0].count,
-                    "reason": (
-                        "only one spelling of this value exists; a different value is "
-                        "not assumed to mean the same thing"
-                    ),
-                }
-            )
-            continue
-        variant_notes = sorted(
-            {p for s in stats for p in s.notes if s.value != canonical}
-        )
-        changes.append(
-            {
-                "canonical_value": canonical,
+
+    if explicit_mapping and entry:
+        # User provided explicit controlled mapping per observed value
+        # e.g. {"In Progress": "active", "ongoing": "active", "active": "active"}
+        target_groups: dict[str, list[Any]] = {}
+        for stat in entry.values.values():
+            if not stat.value.strip():
+                continue
+            orig_val = stat.value
+            target_val = explicit_mapping.get(orig_val, orig_val)
+            if target_val != orig_val:
+                target_groups.setdefault(target_val, []).append(stat)
+            else:
+                untouched.append({
+                    "value": orig_val,
+                    "count": stat.count,
+                    "reason": "mapped to self (kept as-is)",
+                })
+
+        for target_val, stats in sorted(target_groups.items()):
+            variant_notes = sorted({p for s in stats for p in s.notes})
+            changes.append({
+                "canonical_value": target_val,
                 "variants": [
                     {"value": s.value, "count": s.count, "notes": sorted(s.notes)}
                     for s in stats
                 ],
-                "match_basis": "case/whitespace only",
+                "match_basis": "user controlled mapping",
                 "notes_to_change": variant_notes,
                 "notes_to_change_count": len(variant_notes),
-            }
-        )
+            })
+    else:
+        # Automatic grouping based on normalize_value (case/whitespace)
+        groups: dict[str, list[Any]] = {}
+        if entry:
+            for stat in entry.values.values():
+                if not stat.value.strip():
+                    continue
+                groups.setdefault(normalize_value(stat.value), []).append(stat)
+
+        for norm, stats in sorted(groups.items()):
+            stats.sort(key=lambda s: (-s.count, s.value))
+            canonical = overrides.get(norm, stats[0].value)
+            if len(stats) < 2 and canonical == stats[0].value:
+                untouched.append(
+                    {
+                        "value": stats[0].value,
+                        "count": stats[0].count,
+                        "reason": (
+                            "only one spelling of this value exists; a different value is "
+                            "not assumed to mean the same thing"
+                        ),
+                    }
+                )
+                continue
+            variant_notes = sorted(
+                {p for s in stats for p in s.notes if s.value != canonical}
+            )
+            changes.append(
+                {
+                    "canonical_value": canonical,
+                    "variants": [
+                        {"value": s.value, "count": s.count, "notes": sorted(s.notes)}
+                        for s in stats
+                    ],
+                    "match_basis": "case/whitespace only",
+                    "notes_to_change": variant_notes,
+                    "notes_to_change_count": len(variant_notes),
+                }
+            )
 
     excluded = _excluded_ambiguous(active_scan, (key,))
+    notes_to_change_count = sum(c["notes_to_change_count"] for c in changes)
+
     return _base_plan(
         "normalize_values",
         property=key,
         scope=scope.to_dict() if scope else {"mode": "entire_vault"},
         summary={
-            "usage_count": entry.usage_count if entry else 0,
+            "usage_count": in_scope_usage,
+            "in_scope_notes_to_change": notes_to_change_count,
+            "out_of_scope_notes_to_change": max(0, all_usage - in_scope_usage),
             "distinct_values": entry.distinct_value_count if entry else 0,
             "groups_to_normalize": len(changes),
-            "notes_to_change": sum(c["notes_to_change_count"] for c in changes),
+            "notes_to_change": notes_to_change_count,
             "values_left_untouched": len(untouched),
             "excluded_ambiguous": len(excluded),
         },
@@ -321,6 +366,7 @@ def plan_normalize(
         unreadable_notes=_parse_failures(active_scan),
         warnings=[],
     )
+
 
 
 # --------------------------------------------------------------------------

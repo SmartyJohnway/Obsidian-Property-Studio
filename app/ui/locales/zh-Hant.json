@@ -253,6 +253,28 @@
   "toast.schema_adopted": "✓ 屬性架構「{name}」已採用",
   "toast.rel_analysis_done": "關聯分析完成！",
   "toast.check_executed": "已執行檢查：{name}",
-  "toast.export_done": "報告已匯出至：{path}"
+  "toast.export_done": "報告已匯出至：{path}",
+  "property.help_title": "屬性語意與用法說明",
+  "property.canonical_key": "Canonical YAML 鍵名",
+  "property.display_label": "顯示名稱",
+  "property.purpose": "用途說明",
+  "property.usage_hint": "建議用途與適用時機",
+  "property.storage_type": "典型儲存型態",
+  "property.ui_control": "推薦輸入元件",
+  "property.examples": "常見範例值",
+  "property.scope_usage": "當前範圍使用篇數",
+  "property.vault_usage": "全庫總使用篇數",
+  "property.observed_values": "庫存觀察數值 (Top Values)",
+  "property.custom_notice": "自訂屬性 · 知識庫已觀察事實",
+  "property.notes_used": "{count} 篇筆記",
+  "refactor.normalize_mapping_title": "數值對照與標準化設定 (Value Mapping)",
+  "refactor.observed_val_col": "庫存觀察值 (出現篇數)",
+  "refactor.target_val_col": "標準化目標值",
+  "refactor.keep_original": "-- 保留原值 (Keep Original) --",
+  "refactor.custom_target_val": "➕ 輸入自訂目標值...",
+  "refactor.no_observed_values": "此屬性在當前範圍內尚無任何已記錄的數值。",
+  "refactor.normalize_summary": "預計標準化 {groups} 組數值，影響 {notes} 篇筆記；保留 {untouched} 組原值。",
+  "relations.empty": "此範圍內無相符的關聯項目。"
 }
+
 
