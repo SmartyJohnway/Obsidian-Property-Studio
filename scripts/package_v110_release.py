@@ -51,8 +51,13 @@ def check_git_clean_precondition() -> None:
 
 
 def get_tracked_files() -> list[str]:
-    out = subprocess.check_output(["git", "ls-files"], cwd=PROJECT_ROOT, text=True)
-    return [line.strip() for line in out.splitlines() if line.strip()]
+    raw = subprocess.check_output(
+        ["git", "-c", "core.quotepath=false", "ls-files", "-z"],
+        cwd=PROJECT_ROOT,
+    )
+    entries = raw.decode("utf-8", errors="surrogateescape").split("\0")
+    return [e.strip() for e in entries if e.strip()]
+
 
 
 def build_source_zip(zip_path: str) -> list[str]:
