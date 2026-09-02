@@ -1,0 +1,54 @@
+{
+  "contract": "V110_GITHUB_RELEASE_PUBLICATION_EVIDENCE",
+  "version": "1.1.0",
+  "tag": "v1.1.0",
+  "release_commit": "cca408c0456e1fe94e8224bd6550cf30c7274926",
+  "release_url": "https://github.com/SmartyJohnway/Obsidian-Property-Studio/releases/tag/v1.1.0",
+  "published_at": "2026-09-02T09:59:16Z",
+  "formal_verdict": "PROPERTY_STUDIO_V1_1_0_RELEASE_PASS_WITH_LIMITATIONS",
+  "tag_identity": "PASS",
+  "release_publication": "PASS",
+  "artifacts": {
+    "source_zip": {
+      "filename": "Obsidian-Property-Studio-v1.1.0-source.zip",
+      "size_bytes": 318338,
+      "sha256": "0e48539ff142402acb6fdac5631537d39bead7bdebd38b0d5f2597a8f54fb1b7",
+      "github_digest_verified": "sha256:0e48539ff142402acb6fdac5631537d39bead7bdebd38b0d5f2597a8f54fb1b7",
+      "github_size_verified": 318338
+    },
+    "git_bundle": {
+      "filename": "Obsidian-Property-Studio-v1.1.0.bundle",
+      "size_bytes": 475790,
+      "sha256": "1392bceab25ad9af11443f70709553df5a07623f6f96eecd324ec8e2f5fb0af2",
+      "github_digest_verified": "sha256:1392bceab25ad9af11443f70709553df5a07623f6f96eecd324ec8e2f5fb0af2",
+      "github_size_verified": 475790
+    },
+    "manifest": {
+      "filename": "RELEASE_MANIFEST.json",
+      "size_bytes": 1422,
+      "sha256": "08e91ae46e629dd86b006b1b5a5aad721864ae120045e0e28d797fbcb491de2a",
+      "github_digest_verified": "sha256:08e91ae46e629dd86b006b1b5a5aad721864ae120045e0e28d797fbcb491de2a",
+      "github_size_verified": 1422
+    }
+  },
+  "automated_tests": {
+    "total_tests": 176,
+    "passed_tests": 176,
+    "failed_tests": 0,
+    "status": "PASS"
+  },
+  "benchmark": {
+    "notes": 5040,
+    "scan_seconds": 4.272,
+    "total_analysis_seconds": 4.413,
+    "vault_unchanged": true
+  },
+  "human_acceptance": {
+    "status": "PASS",
+    "platform": "Windows 10 Build 19045+",
+    "verified_by": "Human Owner (Dr. J)"
+  },
+  "accepted_limitations": {
+    "windows_11_amd64_native": "NOT YET VERIFIED"
+  }
+}

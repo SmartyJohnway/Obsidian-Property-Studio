@@ -514,3 +514,22 @@ Vault
 
 No evidence, no PASS.  
 No contradictory evidence, no PASS.
+
+---
+
+# Post-Merge Release Publication Closure
+
+- Target Version: `v1.1.0`
+- Release Publication Status: `PUBLISHED`
+- Annotated Git Tag: `v1.1.0`
+- Release Commit HEAD: `cca408c0456e1fe94e8224bd6550cf30c7274926`
+- GitHub Release URL: `https://github.com/SmartyJohnway/Obsidian-Property-Studio/releases/tag/v1.1.0`
+- Source ZIP: `Obsidian-Property-Studio-v1.1.0-source.zip` (`318,338` bytes, SHA-256: `0e48539ff142402acb6fdac5631537d39bead7bdebd38b0d5f2597a8f54fb1b7`, verified)
+- Git Bundle: `Obsidian-Property-Studio-v1.1.0.bundle` (`475,790` bytes, SHA-256: `1392bceab25ad9af11443f70709553df5a07623f6f96eecd324ec8e2f5fb0af2`, verified)
+- Release Manifest: `RELEASE_MANIFEST.json` (`1,422` bytes, SHA-256: `08e91ae46e629dd86b006b1b5a5aad721864ae120045e0e28d797fbcb491de2a`, verified)
+- Automated Test Suite: `176/176 PASS` (14.06s)
+- 5,040-Note Benchmark: `scan: 4.272s`, `total_analysis: 4.413s`, `vault_unchanged: true`
+- Windows 10 Human Acceptance: `PASS — Human Verified`
+- Accepted Release Limitation: Windows 11 AMD64 recorded as `NOT YET VERIFIED` (non-blocking)
+- Post-Release Governance Evidence: `evidence/release/v1.1.0_github_release_publication.json`
+
