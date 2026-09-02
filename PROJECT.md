@@ -253,6 +253,8 @@ UI 支援繁體中文（zh-Hant）與 English 即時無縫切換，偏好記錄�
 14. 雲端同步、多使用者協作或 SaaS。
 15. 核心 App 內嵌必要 AI / LLM / API key。
 16. 強制預設的關聯規則或知識本體（Enforced Ontology）。
+17. 使用者自訂屬性詞彙編輯器（User-editable Property Glossary，正式延期至 v1.1.1）。
+
 17. 自動將使用者資料夾進行分類或自動重組 Vault 結構。
 18. Graph database 或向量嵌入 / RAG。
 
@@ -331,14 +333,18 @@ Refactor Planner 與 Property Health 必須嚴格根據當前選定的 Scope 進
 ### REQ-035 — Universal Module States & Drawer Drill-Down
 主要模組皆需定義明確的 Initial, Loading, Ready, Empty, Blocked, Error 狀態。Discover 與 Health 提供右側 Drawer 抽屜供深入檢視，並提供開啟至 Note Properties Workspace 的快捷操作。
 
-### REQ-036 — Note Properties Searchable Combobox & Browse Dropdown
-Note Properties Workspace 必須同時支援精確搜尋（Search）與層級瀏覽（Browse Dropdown）。下拉選單優先呈現 Current Scope 內筆記與資料夾路徑，並支援切換至全庫檢視；同名筆記必須呈現完整相對路徑以消歧義，絕不自動猜測同名 Note。
+### REQ-036 — Note Properties Search & Hierarchical Folder Tree
+Note Properties Workspace 必須同時支援即時路徑搜尋（Search）與全知識庫層級資料夾樹狀目錄瀏覽（Hierarchical Folder Tree with Expand/Collapse-All），移除人為筆記筆數上限限制。呈現筆記時標示 Scope 關聯性與資料夾路徑；同名筆記必須呈現完整相對路徑以消歧義，絕不自動猜測同名 Note。
 
 ### REQ-037 — Structured Multi-Select Schema Inputs & Adopt Next Actions
 Schema Designer 必須提供結構化的「管理對象（Management Objects）」與「管理需求（Management Needs）」確定性預設複選清單，自由文字降為選填輔助；產生的建議屬性清單支援個別勾選/剔除，並提供明確的「採用此屬性架構 (Adopt Schema)」CTA。採用後建立 Current Schema，並導引至「套用到既有筆記」或「建立新筆記 Frontmatter」；Blank Note 模式在未選擇 Schema 時提供清晰的 Empty State 與前往設計器導引，採用後動態渲染可用表單控制項。所有建議標籤與原因透過 i18n 完全在地化。
 
 ### REQ-038 — Controlled Vocabulary Refactor Planner & Human-Readable Primary View
-Refactor Planner 的操作輸入（來源屬性、目標型態、屬性值正規化對照）必須最大程度使用 Scope 既有屬性/值之下拉選單或多選方塊，避免要求手動輸入已知資料；Rename 目標衝突需即時警告；空目標嚴格 fail-closed。計畫產出以直觀的統計摘要、Scope 範圍與受影響筆記清單為第一主視圖，原始 JSON 計畫作為進階/證據視圖折疊提供。維持 Planning-only，絕不執行寫入。
+Refactor Planner 的操作輸入（來源屬性、目標型態、屬性值正規化受控對照）必須最大程度使用 Scope 既有屬性/值之下拉選單、多選方塊或受控對照表，避免要求手動輸入已知資料；Rename 目標衝突需即時警告；空目標嚴格 fail-closed。計畫產出以直觀的統計摘要、Scope 範圍與受影響筆記清單為第一主視圖，原始 JSON 計畫作為進階/證據視圖折疊提供。維持 Planning-only，絕不執行寫入。
+
+### REQ-039 — Human-Readable Property Vocabulary Layer
+v1.1.0 必須提供純展示層（Presentation Layer）的雙語屬性標籤、用途說明、典型儲存型態/輸入元件與範例值，並在全站各模組提供情境式 Help Drawer 引導，同時維持 Canonical YAML Property Keys 原始不可變與不翻譯。對於未預先定義的未知/自訂屬性，系統絕不得臆測語意，僅呈現知識庫中觀察到的客觀數據事實。
+
 
 
 ---

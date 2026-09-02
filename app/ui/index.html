@@ -1206,7 +1206,7 @@ function renderPropertyBadge(canonicalKey) {
   const k = canonicalKey.trim();
   const entry = GLOSSARY_CACHE[k.toLowerCase()];
   const isZh = I18N.currentLocale === "zh-Hant";
-  const tooltip = entry ? (isZh ? entry.short_description_zh : entry.short_description_en) : (isZh ? "自訂屬性 · 點擊查看已觀察事實" : "Custom Property · Click for facts");
+  const tooltip = entry ? (isZh ? entry.short_description_zh : entry.short_description_en) : I18N.t("property.custom_tooltip");
   const display = formatPropertyLabel(k);
   return `
     <span class="prop-label-wrapper">
@@ -1283,11 +1283,12 @@ async function openPropertyHelpDrawer(canonicalKey) {
         <div class="card" style="border-left:3px solid var(--amber)">
           <div style="font-size:13px; font-weight:600; color:var(--amber); margin-bottom:4px">${esc(I18N.t("property.custom_notice"))}</div>
           <div style="font-size:12.5px; color:var(--muted)">
-            ${isZh ? "此屬性為自訂欄位。工作室已自知識庫中盤點出以下已觀察之客觀事實。" : "This is a custom property. Observed facts from your vault are shown below."}
+            ${esc(I18N.t("property.custom_explanation"))}
           </div>
         </div>
       `;
     }
+
 
     html += `
       <div class="grid cols2" style="gap:10px">
@@ -1924,13 +1925,15 @@ function renderWorkspaceFields(propsMap) {
 
     keyInput.oninput = () => {
       const val = keyInput.value.trim();
-      if (val && GLOSSARY_CACHE[val.toLowerCase()]) {
-        badgeSpan.innerHTML = `<button type="button" class="prop-help-btn" data-prop="${esc(val)}" title="${esc(formatPropertyLabel(val))}">ⓘ</button>`;
+      if (val) {
+        const tooltip = GLOSSARY_CACHE[val.toLowerCase()] ? formatPropertyLabel(val) : I18N.t("property.custom_tooltip");
+        badgeSpan.innerHTML = `<button type="button" class="prop-help-btn" data-prop="${esc(val)}" title="${esc(tooltip)}">ⓘ</button>`;
       } else {
         badgeSpan.innerHTML = "";
       }
       updateWorkspacePreview();
     };
+
     valInput.oninput = updateWorkspacePreview;
     delBtn.onclick = () => { row.remove(); updateWorkspacePreview(); };
     keyInput.focus();
@@ -2583,13 +2586,22 @@ async function loadHealth() {
       </div>
     `;
 
-    $("healthFindingsList").innerHTML = res.findings && res.findings.length ? res.findings.map(f => `
-      <div class="card" style="margin-bottom:10px; border-left:4px solid ${f.severity === 'high' ? 'var(--red)' : f.severity === 'medium' ? 'var(--amber)' : 'var(--teal)'}">
-        <strong>[${esc(f.severity.toUpperCase())}] ${esc(f.title)}</strong>
-        <p class="muted" style="margin:4px 0">${esc(f.explanation)}</p>
-        <div class="hint">${I18N.t("health.affected_notes_label")} (${f.affected_note_count})：${esc(f.affected_notes.slice(0, 5).join(", "))}</div>
-      </div>
-    `).join("") : `<div class="muted">${I18N.t("health.excellent_state")}</div>`;
+    $("healthFindingsList").innerHTML = res.findings && res.findings.length ? res.findings.map(f => {
+      const propBadges = f.property_keys && f.property_keys.length ? `
+        <div style="margin:6px 0; display:flex; align-items:center; gap:6px; flex-wrap:wrap">
+          <span class="muted" style="font-size:12px">${esc(I18N.t("health.related_properties"))}:</span>
+          ${f.property_keys.map(pk => renderPropertyBadge(pk)).join(" ")}
+        </div>
+      ` : "";
+      return `
+        <div class="card" style="margin-bottom:10px; border-left:4px solid ${f.severity === 'high' ? 'var(--red)' : f.severity === 'medium' ? 'var(--amber)' : 'var(--teal)'}">
+          <strong>[${esc(f.severity.toUpperCase())}] ${esc(f.title)}</strong>
+          <p class="muted" style="margin:4px 0">${esc(f.explanation)}</p>
+          ${propBadges}
+          <div class="hint">${I18N.t("health.affected_notes_label")} (${f.affected_note_count})：${esc(f.affected_notes.slice(0, 5).join(", "))}</div>
+        </div>
+      `;
+    }).join("") : `<div class="muted">${I18N.t("health.excellent_state")}</div>`;
   } catch (e) {
     console.error(e);
   }
@@ -2621,7 +2633,7 @@ function populateRefactorSourceOptions() {
     const curVal = srcSelect.value;
     srcSelect.innerHTML = props.length ? props.map(p => `
       <option value="${esc(p.key)}">${esc(formatPropertyLabel(p.key))} — ${p.usage_count} ${esc(I18N.t("property.notes_used", { count: p.usage_count }))}</option>
-    `).join("") : `<option value="">-- 無可用屬性 --</option>`;
+    `).join("") : `<option value="">${esc(I18N.t("refactor.no_available_properties_option"))}</option>`;
     if (curVal && Array.from(srcSelect.options).some(o => o.value === curVal)) {
       srcSelect.value = curVal;
     }
@@ -2633,8 +2645,9 @@ function populateRefactorSourceOptions() {
         <input type="checkbox" class="refactor-merge-cb" value="${esc(p.key)}" />
         <span>${renderPropertyBadge(p.key)} <span class="muted">(${p.usage_count})</span></span>
       </label>
-    `).join("") : `<div class="muted">無可用屬性</div>`;
+    `).join("") : `<div class="muted">${esc(I18N.t("refactor.no_available_properties"))}</div>`;
   }
+
 
   if ($("refactorOpSelect").value === "normalize") {
     populateNormalizeTable(srcSelect.value);

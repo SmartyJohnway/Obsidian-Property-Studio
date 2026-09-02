@@ -427,7 +427,7 @@ Systematically address and verify all 12 repair contracts (R01~R12) from the PR 
 
 # M014 — Human UI/UX Walkthrough Closure
 
-Status: `IN_PROGRESS`
+Status: `PASS`
 
 ### Objective
 Resolve usability, discoverability, and workflow gaps identified during the Human Owner walkthrough on Windows 10 production UI: Searchable Combobox + Browse Dropdown in Note Workspace; structured multi-select management objects and needs in Schema Design with clear Adopt CTA and routing; i18n localization of schema review statuses; dynamic empty-state and form generation for New Frontmatter / Blank Note; controlled vocabulary dropdowns/multi-selects and human-readable primary summary view in Refactor Planner; and final release evidence closure.
@@ -441,6 +441,9 @@ Resolve usability, discoverability, and workflow gaps identified during the Huma
 - Light theme: `PASS — Human Verified`
 - Dark ↔ Light switching: `PASS — Human Verified`
 - Vault scan / Scope UI basic operation: `PASS — Human Verified`
+- Note Properties Workspace & Folder Tree: `PASS — Human Verified`
+- Property Vocabulary Layer & Help Drawer: `PASS — Human Verified`
+- Refactor Normalize Observed Value Mapping: `PASS — Human Verified`
 
 ### Tasks
 - [x] `M014-T01` [Note Workspace] Implement Searchable Combobox + Browse Dropdown with Scope preference, folder hierarchy, whole-Vault toggle, and duplicate-basename path disambiguation.
@@ -454,7 +457,7 @@ Resolve usability, discoverability, and workflow gaps identified during the Huma
 - [x] `M014-T09` [Automated Tests] Author `tests/test_m014_human_walkthrough.py` covering regression contracts M014-001 ~ M014-015.
 - [x] `M014-T10` [Final Evidence Closure] Execute final authoritative benchmark, synchronize all evidence documents, perform clean commit workflow, and generate external release packaging.
 - [x] `M014-T11` [Walkthrough Failure In-Place Repair] Restore missing frontend handlers (`setupDiscoverHandlers`, `setupHealthHandlers`), enforce actionable selection validation on Schema Designer, convert Relationships property filter to controlled dropdown with loading state, replace Refactor generic target with controlled combobox and new-name input, and add headless browser startup regression tests.
-- [ ] `M014-T12` [Human Production Walkthrough Re-Verification] Human Owner re-verifies repaired workflows in Windows 10 production browser.
+- [x] `M014-T12` [Human Production Walkthrough Re-Verification] Human Owner re-verifies repaired workflows in Windows 10 production browser.
 
 ### Acceptance Criteria
 - [x] `M014-AC01` Note Workspace supports both Search and Browse Dropdown with clear path disambiguation for duplicate basenames.
@@ -469,13 +472,14 @@ Resolve usability, discoverability, and workflow gaps identified during the Huma
 
 ### Result
 `PASS`
-- Automated Verification: `PASS` (176/176 automated unit & integration tests pass, `pytest -v`, 13.11s).
+- Automated Verification: `PASS` (176/176 automated unit & integration tests pass, `pytest -v`, 13.55s).
 - Headless Browser DOM Startup Smoke: `PASS` (Zero uncaught JS errors, presets populated, CTAs wired).
 - Property Human-Readable Vocabulary Layer: `PASS` (49 built-in entries, Presentation Layer format, safe fallback, help drawer).
 - Refactor Normalize Mapping (REQ-038): `PASS` (Scope observed values table, target selection/custom input, structured summary).
 - Note Workspace Properties & Diff: `PASS` (Property badges, ⓘ guidance drawer, dynamic custom key detection, localized).
-- 5,000-note benchmark verified: scan 4.321s, total analysis 4.471s, vault unchanged (`evidence/benchmark.json`).
+- 5,000-note benchmark verified: scan 4.272s, total analysis 4.413s, vault unchanged (`evidence/benchmark.json`).
 - Human Verification: `PASS` (Dr. J verified on Windows 10 production UI walkthrough).
+
 
 
 

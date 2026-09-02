@@ -265,7 +265,10 @@
   "property.scope_usage": "當前範圍使用篇數",
   "property.vault_usage": "全庫總使用篇數",
   "property.observed_values": "庫存觀察數值 (Top Values)",
+  "health.related_properties": "涉及屬性",
   "property.custom_notice": "自訂屬性 · 知識庫已觀察事實",
+  "property.custom_tooltip": "自訂屬性 · 點擊查看已觀察事實",
+  "property.custom_explanation": "此屬性為自訂欄位。工作室已自知識庫中盤點出以下已觀察之客觀事實。",
   "property.notes_used": "{count} 篇筆記",
   "refactor.normalize_mapping_title": "數值對照與標準化設定 (Value Mapping)",
   "refactor.observed_val_col": "庫存觀察值 (出現篇數)",
@@ -274,6 +277,8 @@
   "refactor.custom_target_val": "➕ 輸入自訂目標值...",
   "refactor.no_observed_values": "此屬性在當前範圍內尚無任何已記錄的數值。",
   "refactor.normalize_summary": "預計標準化 {groups} 組數值，影響 {notes} 篇筆記；保留 {untouched} 組原值。",
+  "refactor.no_available_properties": "無可用屬性",
+  "refactor.no_available_properties_option": "-- 無可用屬性 --",
   "relations.empty": "此範圍內無相符的關聯項目。"
 }
 

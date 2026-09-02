@@ -266,7 +266,10 @@
   "property.scope_usage": "Scope Usage Count",
   "property.vault_usage": "Whole Vault Usage Count",
   "property.observed_values": "Observed Values in Vault",
+  "health.related_properties": "Related Properties",
   "property.custom_notice": "Custom Property · Observed Vault Facts",
+  "property.custom_tooltip": "Custom Property · Click for facts",
+  "property.custom_explanation": "This is a custom property. Observed facts from your vault are shown below.",
   "property.notes_used": "{count} notes",
   "refactor.normalize_mapping_title": "Observed Value Mapping",
   "refactor.observed_val_col": "Observed Value (Usage)",
@@ -275,6 +278,8 @@
   "refactor.custom_target_val": "➕ Enter custom value...",
   "refactor.no_observed_values": "No observed values recorded for this property in current scope.",
   "refactor.normalize_summary": "Will normalize {groups} value group(s) affecting {notes} note(s); leaving {untouched} unchanged.",
+  "refactor.no_available_properties": "No available properties",
+  "refactor.no_available_properties_option": "-- No available properties --",
   "relations.empty": "No relationship links found matching this criteria in scope."
 }
 
