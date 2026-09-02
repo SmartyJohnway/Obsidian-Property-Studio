@@ -254,9 +254,9 @@ UI 支援繁體中文（zh-Hant）與 English 即時無縫切換，偏好記錄�
 15. 核心 App 內嵌必要 AI / LLM / API key。
 16. 強制預設的關聯規則或知識本體（Enforced Ontology）。
 17. 使用者自訂屬性詞彙編輯器（User-editable Property Glossary，正式延期至 v1.1.1）。
+18. 自動將使用者資料夾進行分類或自動重組 Vault 結構。
+19. Graph database 或向量嵌入 / RAG。
 
-17. 自動將使用者資料夾進行分類或自動重組 Vault 結構。
-18. Graph database 或向量嵌入 / RAG。
 
 ---
 

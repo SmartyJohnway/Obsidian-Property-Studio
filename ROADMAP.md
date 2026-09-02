@@ -430,7 +430,7 @@ Systematically address and verify all 12 repair contracts (R01~R12) from the PR 
 Status: `PASS`
 
 ### Objective
-Resolve usability, discoverability, and workflow gaps identified during the Human Owner walkthrough on Windows 10 production UI: Searchable Combobox + Browse Dropdown in Note Workspace; structured multi-select management objects and needs in Schema Design with clear Adopt CTA and routing; i18n localization of schema review statuses; dynamic empty-state and form generation for New Frontmatter / Blank Note; controlled vocabulary dropdowns/multi-selects and human-readable primary summary view in Refactor Planner; and final release evidence closure.
+Resolve usability, discoverability, and workflow gaps identified during the Human Owner walkthrough on Windows 10 production UI: Search + Hierarchical Folder Tree in Note Workspace; structured multi-select management objects and needs in Schema Design with clear Adopt CTA and routing; i18n localization of schema review statuses; dynamic empty-state and form generation for New Frontmatter / Blank Note; controlled vocabulary dropdowns/multi-selects and human-readable primary summary view in Refactor Planner; and final release evidence closure.
 
 ### Human Verified Acceptance
 - Windows 10 actual browser/UI rendering: `PASS — Human Verified`
@@ -446,7 +446,7 @@ Resolve usability, discoverability, and workflow gaps identified during the Huma
 - Refactor Normalize Observed Value Mapping: `PASS — Human Verified`
 
 ### Tasks
-- [x] `M014-T01` [Note Workspace] Implement Searchable Combobox + Browse Dropdown with Scope preference, folder hierarchy, whole-Vault toggle, and duplicate-basename path disambiguation.
+- [x] `M014-T01` [Note Workspace] Implement Search + Hierarchical Folder Tree with Scope preference, folder hierarchy, whole-Vault navigation, and duplicate-basename path disambiguation.
 - [x] `M014-T02` [Schema Design] Replace vague free-text primary input with deterministic multi-select presets for Management Objects and Management Needs; relegate free-text to optional secondary context.
 - [x] `M014-T03` [Schema Design] Enable per-property retain/exclude checkboxes and implement `[Adopt Schema]` CTA establishing `Current Schema` in session state.
 - [x] `M014-T04` [Schema Design] Provide explicit Next Actions after adoption (`[Apply to Existing Note]` and `[Create New Frontmatter]`).
@@ -460,7 +460,8 @@ Resolve usability, discoverability, and workflow gaps identified during the Huma
 - [x] `M014-T12` [Human Production Walkthrough Re-Verification] Human Owner re-verifies repaired workflows in Windows 10 production browser.
 
 ### Acceptance Criteria
-- [x] `M014-AC01` Note Workspace supports both Search and Browse Dropdown with clear path disambiguation for duplicate basenames.
+- [x] `M014-AC01` Note Workspace supports both Search and Hierarchical Folder Tree with clear path disambiguation for duplicate basenames.
+
 - [x] `M014-AC02` Schema Design generates suggestions from deterministic multi-select inputs with optional free-text and actionable validation.
 - [x] `M014-AC03` `[Adopt Schema]` persists session schema and routes cleanly to Existing Note or New Frontmatter.
 - [x] `M014-AC04` New Frontmatter displays empty-state guidance when unconfigured and renders dynamic controls when configured.

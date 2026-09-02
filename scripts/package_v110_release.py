@@ -50,19 +50,18 @@ def check_git_clean_precondition() -> None:
             )
 
 
-def build_source_zip(zip_path: str) -> None:
-    exclude_dirs = {".git", "__pycache__", ".pytest_cache", "dist", ".idea", ".vscode"}
-    exclude_exts = {".pyc", ".pyo"}
+def get_tracked_files() -> list[str]:
+    out = subprocess.check_output(["git", "ls-files"], cwd=PROJECT_ROOT, text=True)
+    return [line.strip() for line in out.splitlines() if line.strip()]
 
+
+def build_source_zip(zip_path: str) -> list[str]:
+    tracked = get_tracked_files()
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
-        for root, dirs, files in os.walk(PROJECT_ROOT):
-            dirs[:] = [d for d in dirs if d not in exclude_dirs]
-            for file in files:
-                if any(file.endswith(ext) for ext in exclude_exts):
-                    continue
-                full_path = os.path.join(root, file)
-                rel_path = os.path.relpath(full_path, PROJECT_ROOT)
-                zf.write(full_path, arcname=f"Obsidian-Property-Studio-{VERSION}/{rel_path}")
+        for rel_path in sorted(tracked):
+            full_path = os.path.join(PROJECT_ROOT, rel_path)
+            zf.write(full_path, arcname=f"Obsidian-Property-Studio-{VERSION}/{rel_path}")
+    return tracked
 
 
 def build_git_bundle(bundle_path: str) -> None:
@@ -74,12 +73,23 @@ def build_git_bundle(bundle_path: str) -> None:
     )
 
 
-def verify_source_zip(zip_path: str) -> dict[str, Any]:
+def verify_source_zip(zip_path: str, expected_tracked_files: list[str]) -> dict[str, Any]:
     with tempfile.TemporaryDirectory() as tmp_dir:
         with zipfile.ZipFile(zip_path, "r") as zf:
             zf.extractall(tmp_dir)
         extract_root = os.path.join(tmp_dir, f"Obsidian-Property-Studio-{VERSION}")
         assert os.path.exists(os.path.join(extract_root, "app", "server.py")), "Source ZIP extract missing server.py"
+
+        # Check extracted file set matches tracked files exactly
+        extracted_files = []
+        for root, _, files in os.walk(extract_root):
+            for file in files:
+                rel = os.path.relpath(os.path.join(root, file), extract_root).replace("\\", "/")
+                extracted_files.append(rel)
+
+        expected_set = set(f.replace("\\", "/") for f in expected_tracked_files)
+        extracted_set = set(extracted_files)
+        file_set_match = (expected_set == extracted_set)
 
         # Run pytest inside extracted directory
         res = subprocess.run(
@@ -90,12 +100,13 @@ def verify_source_zip(zip_path: str) -> dict[str, Any]:
         )
         return {
             "extract_ok": True,
+            "file_set_matches_git_head": file_set_match,
             "pytest_returncode": res.returncode,
             "pytest_passed": res.returncode == 0,
         }
 
 
-def verify_git_bundle(bundle_path: str) -> dict[str, Any]:
+def verify_git_bundle(bundle_path: str, expected_head: str) -> dict[str, Any]:
     # 1. git bundle verify
     verify_res = subprocess.run(
         ["git", "bundle", "verify", bundle_path],
@@ -105,7 +116,7 @@ def verify_git_bundle(bundle_path: str) -> dict[str, Any]:
     )
     bundle_verify_ok = verify_res.returncode == 0
 
-    # 2. Fresh clone + git fsck + cloned pytest
+    # 2. Fresh clone + git fsck + cloned pytest + HEAD identity check
     with tempfile.TemporaryDirectory() as tmp_dir:
         clone_dir = os.path.join(tmp_dir, "cloned_repo")
         clone_res = subprocess.run(
@@ -113,6 +124,11 @@ def verify_git_bundle(bundle_path: str) -> dict[str, Any]:
             capture_output=True,
             text=True,
         )
+        clone_head = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=clone_dir, text=True
+        ).strip()
+        head_matches = (clone_head == expected_head)
+
         fsck_res = subprocess.run(
             ["git", "fsck", "--full"],
             cwd=clone_dir,
@@ -130,9 +146,11 @@ def verify_git_bundle(bundle_path: str) -> dict[str, Any]:
         return {
             "bundle_verify_ok": bundle_verify_ok,
             "clone_ok": clone_res.returncode == 0,
+            "bundle_clone_head_matches": head_matches,
             "fsck_full_ok": fsck_res.returncode == 0,
             "clone_pytest_passed": clone_pytest_res.returncode == 0,
         }
+
 
 
 def read_benchmark_evidence() -> dict[str, Any]:
@@ -159,29 +177,33 @@ def main() -> None:
     bundle_path = os.path.join(DIST_DIR, f"Obsidian-Property-Studio-v{VERSION}.bundle")
     manifest_path = os.path.join(DIST_DIR, "RELEASE_MANIFEST.json")
 
-    # 1. Build Source Zip
-    build_source_zip(zip_path)
+    # 1. Build Source Zip from git tracked files
+    tracked_files = build_source_zip(zip_path)
 
     # 2. Build Git Bundle (--all)
     build_git_bundle(bundle_path)
 
-    # 3. Verify Source Zip (Extraction + Sandbox Pytest)
-    zip_verif = verify_source_zip(zip_path)
-    if not zip_verif["pytest_passed"]:
-        raise RuntimeError("Source ZIP extracted pytest failed.")
-
-    # 4. Verify Git Bundle (Verify + Clone + FSCK + Cloned Sandbox Pytest)
-    bundle_verif = verify_git_bundle(bundle_path)
-    if not bundle_verif["clone_pytest_passed"]:
-        raise RuntimeError("Git Bundle cloned repository pytest failed.")
-
-    # 5. Collect authentic benchmark evidence
-    bench_metrics = read_benchmark_evidence()
-
-    # 6. Get Git Head
+    # 3. Get Git Head
     git_head = subprocess.check_output(
         ["git", "rev-parse", "HEAD"], cwd=PROJECT_ROOT, text=True
     ).strip()
+
+    # 4. Verify Source Zip (Extraction + Tracked File-Set Match + Sandbox Pytest)
+    zip_verif = verify_source_zip(zip_path, tracked_files)
+    if not zip_verif["file_set_matches_git_head"]:
+        raise RuntimeError("Source ZIP file set does not match git tracked files.")
+    if not zip_verif["pytest_passed"]:
+        raise RuntimeError("Source ZIP extracted pytest failed.")
+
+    # 5. Verify Git Bundle (Verify + Clone + FSCK + Cloned Sandbox Pytest + HEAD Identity)
+    bundle_verif = verify_git_bundle(bundle_path, git_head)
+    if not bundle_verif["bundle_clone_head_matches"]:
+        raise RuntimeError("Git Bundle cloned HEAD does not match release git HEAD.")
+    if not bundle_verif["clone_pytest_passed"]:
+        raise RuntimeError("Git Bundle cloned repository pytest failed.")
+
+    # 6. Collect authentic benchmark evidence
+    bench_metrics = read_benchmark_evidence()
 
     # 7. Generate Manifest with authentic values
     manifest = {
@@ -197,13 +219,16 @@ def main() -> None:
         "git_commit_head": git_head,
         "packaging_verification": {
             "source_zip_extract_ok": zip_verif["extract_ok"],
+            "source_zip_file_set_matches_git_head": zip_verif["file_set_matches_git_head"],
             "source_zip_pytest_passed": zip_verif["pytest_passed"],
             "bundle_verify_ok": bundle_verif["bundle_verify_ok"],
             "bundle_clone_ok": bundle_verif["clone_ok"],
+            "bundle_clone_head_matches": bundle_verif["bundle_clone_head_matches"],
             "bundle_fsck_full_ok": bundle_verif["fsck_full_ok"],
             "bundle_clone_pytest_passed": bundle_verif["clone_pytest_passed"],
             "test_suite_passed": True,
         },
+
         "benchmark": bench_metrics,
         "artifacts": {
             "source_zip": {
