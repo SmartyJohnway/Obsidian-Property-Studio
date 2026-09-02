@@ -13,7 +13,7 @@ Active Milestone: `M015`
 Active Milestone Status: `PASS`  
 Current Task: `NONE`  
 Last Verified Gate: `M015 — v1.2 Governance Transition & Architecture Freeze PASS`  
-Last Verified Governance Commit: `37c33c57b0ffcc124f47d9faada3a5c6a537fdbd`  
+Last Verified Governance Commit: `644ca6b9bba3a6b702abf1bf3591b444d74b28ff`  
 GitHub Release: `https://github.com/SmartyJohnway/Obsidian-Property-Studio/releases/tag/v1.1.0`  
 GitHub PR: `PR #2 (Draft, feat(v1.2): Personal Property Governance System)`  
 Authoritative Specification: `docs/specs/Obsidian_Property_Studio_v1.2.0_Spec.md`  
@@ -31,8 +31,8 @@ Archived Roadmap SHA-256: `d68f8ac57411896dd1b2b10b0716629f2d12c46b1e0bb6a2a1368
    - Features: `%APPDATA%/ObsidianPropertyStudio/` base path, explicit v1.1 → v1.2 `localStorage` migration strategy (idempotent, validate before persist, preserve legacy state, fail closed), Optimistic Concurrency Control (`revision` / `etag` stale-write rejection), collision-safe auto-backup (`backup_{entity}_{iso}_{uuid}.json`), runtime path containment assert outside Vault.
 2. **Comprehensive Workflow Closure Matrix:**
    - Path: `docs/specs/v1.2.0_Workflow_Closure_Matrix.md`
-   - SHA-256: `7a064b841dd74c941e595e4345246e391d4beefe62422708f6a2b939a1a5be0b`
-   - Features: Mandatory 13-column governed matrix covering 59 primary CTAs (all v1.1 baseline CTAs from Spec Section 10 + all new v1.2 CTAs), audited PASS rows against v1.1 production behavior (Discover/Health Export via `/api/export` to `output_dir` + toast, unknown property help fallback to observed facts), per-CTA explicit `Failure Path` columns, status breakdown: 41 PASS (v1.1 verified), 7 HOLD (known v1.1 dead-ends to close in v1.2), 11 PLANNED (new v1.2 workflows).
+   - SHA-256: `380f243e7b480768700611f79aaba0bfc6e60a005e1b4afc590c969968441dc9`
+   - Features: Mandatory 13-column governed matrix covering 59 primary CTAs (all v1.1 baseline CTAs from Spec Section 10 + all new v1.2 CTAs), 100% audited PASS rows against v1.1 production behavior (Export via `/api/export` to `output_dir` + toast, unknown property help fallback to observed facts, in-memory `SavedChecksStore` + mirrored `localStorage`, Refactor planning-only terminal outcomes, session `S.currentSchema` state transfer), per-CTA explicit `Failure Path` columns, status breakdown: 41 PASS (v1.1 verified), 7 HOLD (known v1.1 dead-ends to close in v1.2), 11 PLANNED (new v1.2 workflows).
 3. **Proposal Contract Compatibility & AI Advisory Boundary:**
    - Path: `docs/specs/v1.2.0_Proposal_Contract_Compatibility.md`
    - SHA-256: `fc9cc011cf43dc2000f37bd5e700f4a743a708255d69eb05b958e2c36881c43a`
@@ -89,7 +89,7 @@ Accepted Limitation: `Windows 11 AMD64 native verification recorded as NOT YET V
    - Compatibility semantics frozen (1.0 valid, 1.1 valid with metadata, unknown versions fail closed).
 2. **Comprehensive Workflow Closure Matrix:**
    - Complete 13-column matrix covering all 59 primary CTAs (including all v1.1 CTAs from Spec Section 10).
-   - Audited all PASS rows against actual v1.1 production behavior (Export via `/api/export` to `output_dir` + toast, unknown property help fallback to observed facts).
+   - Audited all PASS rows against actual v1.1 production behavior (Export via `/api/export` to `output_dir` + toast, unknown property help fallback to observed facts, in-memory `SavedChecksStore` + mirrored `localStorage`, Refactor planning-only terminal outcomes, session `S.currentSchema` state transfer).
    - Per-CTA specific `Failure Path` explicitly documented.
 3. **App-Local Storage Migration & Concurrency:**
    - Explicit v1.1 `localStorage` → v1.2 app-local migration strategy (idempotent, validate before persist, preserve legacy until verified).
@@ -104,5 +104,5 @@ Accepted Limitation: `Windows 11 AMD64 native verification recorded as NOT YET V
 
 ## Immediate Next Actions
 
-1. Human Owner (Dr. J) external review of M015 Architecture Freeze final micro-repair.
+1. Human Owner (Dr. J) external review of M015 Architecture Freeze final evidence matrix truth repair.
 2. Upon approval, proceed to M016 (Workflow Closure Foundation & State Transfer).
