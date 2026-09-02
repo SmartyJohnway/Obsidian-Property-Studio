@@ -38,7 +38,7 @@ This ROADMAP is the sole active authoritative execution plan for `Obsidian Prope
 - `AGENTS.md` governs agent operating behavior.
 - `docs/specs/Obsidian_Property_Studio_v1.2.0_Spec.md` is the formal product and workflow specification for v1.2.0 (SHA-256: `8760e592381685c4a31ae5eac2b8692fd8fa80ebc6a8ad7044fcb4c037f7187b`).
 - `docs/specs/v1.2.0_App_Local_Governance_Storage.md` is the approved architecture specification for app-local persistence outside Vault (SHA-256: `d0acd3a28a3597d3aacff1119fa78628df1c450c50c9f75060fb36cbb9e5b573`).
-- `docs/specs/v1.2.0_Workflow_Closure_Matrix.md` is the approved architecture specification for CTA closure and verification (SHA-256: `7a064b841dd74c941e595e4345246e391d4beefe62422708f6a2b939a1a5be0b`).
+- `docs/specs/v1.2.0_Workflow_Closure_Matrix.md` is the approved architecture specification for CTA closure and verification (SHA-256: `380f243e7b480768700611f79aaba0bfc6e60a005e1b4afc590c969968441dc9`).
 - `docs/specs/v1.2.0_Proposal_Contract_Compatibility.md` is the approved architecture specification for AI proposal contracts and skill interoperability (SHA-256: `fc9cc011cf43dc2000f37bd5e700f4a743a708255d69eb05b958e2c36881c43a`).
 - `docs/archive/ROADMAP_v1.1.0.md` is an immutable historical snapshot of the published v1.1.0 release (SHA-256: `d68f8ac57411896dd1b2b10b0716629f2d12c46b1e0bb6a2a1368c961ee7ac2a`).
 - `docs/archive/ROADMAP_v1.0.0.md` is an immutable historical snapshot of the published v1.0.0 release.
