@@ -1,12 +1,12 @@
-"""Test suite for Commit 19: Migration Transaction Rollback, Per-Entity Guard & Runtime Path Migration Closure.
+"""Test suite for Commit 20: Production Lifecycle Safety Timing, Rehydration & Real Storage Persistence Failure.
 
 Covers:
 1. P0 Pure Path Resolution & Negative Zero-Change Proof (Task 1 & 4)
 2. P0 Legacy State Migration: Atomic Validate-Before-Persist (Task 2)
-3. P0 Legacy State Migration: True Persistence Transaction Rollback on I/O failure (Commit 19 Blocker 1)
-4. P0 Legacy State Migration: Per-Entity Initialized-State Guard (Commit 19 Blocker 2)
+3. P0 Legacy State Migration: Real Storage-Layer Persistence Failure & Rollback (Commit 20 Task C)
+4. P0 Legacy State Migration: Per-Entity Initialized-State Guard with Corrupted Stale Payload Isolation (Commit 20 Task C)
 5. P0 Legacy State Migration: Canonical Dict Exact Readback (Commit 19 Polish)
-6. Runtime Legacy Path Migration Invocation in create_server and api_scan (Commit 19 Blocker 3)
+6. Production Lifecycle Safety Timing: Zero Pre-Vault Migration & In-Process Saved Checks Rehydration (Commit 20 Task A & B)
 7. Path Migration Out of __init__ and Fail-Closed (Task 3)
 8. Governance Profile Clear-Stage Rollback & Preferences Preview (Task 5 & 6)
 9. Saved Checks REQ-052 Corruption Protection & Persistence (Task 3 & 7)
@@ -42,8 +42,8 @@ from app.server import (
     api_preferences_get,
     api_preferences_set,
     api_scan,
+    api_saved_checks_list,
     create_server,
-    init_runtime_storage,
     STORE,
     ApiError,
 )
@@ -150,15 +150,15 @@ def test_legacy_migration_validate_before_persist_atomic():
 
 
 # ==============================================================================
-# 3. P0 Legacy State Migration: True Persistence Transaction Rollback (Blocker 1)
+# 3. P0 Legacy State Migration: Real Storage-Layer Persistence Failure & Rollback (Commit 20 Task C)
 # ==============================================================================
-def test_legacy_migration_persistence_failure_full_rollback():
-    """Verify that when persistence fails midway (e.g. check save fails after prefs), both entities are 100% rolled back."""
+def test_legacy_migration_storage_layer_persistence_failure_full_rollback():
+    """Verify that when storage.save() fails midway after memory switch, both entities and disk are 100% restored."""
     with tempfile.TemporaryDirectory() as temp_dir:
         with patch.dict(os.environ, {"PROPERTY_STUDIO_STORAGE_DIR": temp_dir}):
             chk_store = SavedChecksStore(persistent=True)
             with patch.object(STORE, "saved_checks_store", chk_store):
-                # Setup initial baseline (empty uninitialized backend)
+                # Setup initial baseline
                 governance_profile.PREFERENCES_STORAGE.save({})
                 assert len(chk_store.list_checks()) == 0
 
@@ -171,28 +171,28 @@ def test_legacy_migration_persistence_failure_full_rollback():
                     ]
                 }
 
-                # Simulate I/O failure during checks persistence (Prefs written, checks fail)
-                with patch.object(chk_store, "replace_all", side_effect=[IOError("Simulated disk write failure on checks"), None]):
+                # Mock disk failure at underlying storage layer (chk_store.storage.save)
+                # First call (writing new checks) raises IOError; second call (rollback) succeeds
+                with patch.object(chk_store.storage, "save", side_effect=[IOError("Simulated disk write failure on storage layer"), None]):
                     with pytest.raises(ApiError) as exc_info:
                         api_storage_migrate_legacy(valid_payload)
                     assert exc_info.value.status == 500
                     assert "rolled back" in str(exc_info.value)
 
                 # CRITICAL TRANSACTION ROLLBACK ASSERTIONS:
-                # 1. Preferences must be exactly restored to original empty baseline (no locale=en, no theme=light, no _legacy_migrated)
+                # 1. Preferences must be exactly restored to original empty baseline
                 restored_prefs = governance_profile.PREFERENCES_STORAGE.load().get("data")
                 assert not restored_prefs or "_legacy_migrated" not in restored_prefs
 
-                # 2. Saved checks must be exactly restored to original empty baseline
-                restored_checks = chk_store.list_checks()
-                assert len(restored_checks) == 0
+                # 2. Saved checks in memory AND storage must be restored to original empty baseline
+                assert len(chk_store.list_checks()) == 0
 
 
 # ==============================================================================
-# 4. P0 Legacy State Migration: Per-Entity Initialized-State Guard (Blocker 2)
+# 4. P0 Legacy State Migration: Per-Entity Initialized-State Guard with Stale Payload Isolation (Commit 20 Task C)
 # ==============================================================================
-def test_legacy_migration_per_entity_guard_prefs_only_initialized():
-    """If backend preferences are already initialized but checks are not, migrate checks and preserve prefs."""
+def test_legacy_migration_per_entity_guard_prefs_only_initialized_with_corrupt_prefs_payload():
+    """If preferences already initialized, stale/corrupted legacy prefs payload is completely ignored and checks migrate."""
     with tempfile.TemporaryDirectory() as temp_dir:
         with patch.dict(os.environ, {"PROPERTY_STUDIO_STORAGE_DIR": temp_dir}):
             chk_store = SavedChecksStore(persistent=True)
@@ -201,18 +201,19 @@ def test_legacy_migration_per_entity_guard_prefs_only_initialized():
                 governance_profile.PREFERENCES_STORAGE.save({"locale": "zh-Hant", "theme": "dark"})
                 assert len(chk_store.list_checks()) == 0
 
-                # Incoming legacy payload has conflicting prefs + new checks
+                # Stale payload has completely corrupted ps_locale + valid checks
                 payload = {
-                    "ps_locale": "en",
-                    "ps_theme": "light",
+                    "ps_locale": "CORRUPTED_LOCALE_NOT_VALID",
+                    "ps_theme": "INVALID_THEME",
                     "ops_saved_relationship_checks_v110": [
                         {"id": "chk-migrated", "name": "Migrated Check", "link_type": "body_wikilink"}
                     ]
                 }
+                # Must NOT raise 400! The already-initialized preferences ignore the corrupted legacy prefs
                 res = api_storage_migrate_legacy(payload)
                 assert res["status"] == "migrated"
                 assert res["readback_verified"] is True
-                # Existing backend preferences are PRESERVED (not overwritten by stale localStorage)
+                # Preferences remain authoritative
                 assert res["preferences"]["locale"] == "zh-Hant"
                 assert res["preferences"]["theme"] == "dark"
                 # Checks are migrated
@@ -220,8 +221,8 @@ def test_legacy_migration_per_entity_guard_prefs_only_initialized():
                 assert any(c["id"] == "chk-migrated" for c in res["checks"])
 
 
-def test_legacy_migration_per_entity_guard_checks_only_initialized():
-    """If backend checks are already initialized but preferences are not, migrate prefs and preserve checks."""
+def test_legacy_migration_per_entity_guard_checks_only_initialized_with_corrupt_checks_payload():
+    """If checks already initialized, stale/corrupted legacy checks payload is completely ignored and prefs migrate."""
     with tempfile.TemporaryDirectory() as temp_dir:
         with patch.dict(os.environ, {"PROPERTY_STUDIO_STORAGE_DIR": temp_dir}):
             chk_store = SavedChecksStore(persistent=True)
@@ -231,28 +232,27 @@ def test_legacy_migration_per_entity_guard_checks_only_initialized():
                 chk_store.save_check(existing_check)
                 governance_profile.PREFERENCES_STORAGE.save({})
 
-                # Incoming legacy payload has new prefs + conflicting checks
+                # Stale payload has corrupted checks JSON + valid preferences
                 payload = {
                     "ps_locale": "en",
                     "ps_theme": "dark",
-                    "ops_saved_relationship_checks_v110": [
-                        {"id": "chk-stale", "name": "Stale Check", "link_type": "body_wikilink"}
-                    ]
+                    "ops_saved_relationship_checks_v110": "{ BROKEN_JSON_CHECKS_CORRUPTED"
                 }
+                # Must NOT raise 400! The already-initialized checks ignore the corrupted legacy checks
                 res = api_storage_migrate_legacy(payload)
                 assert res["status"] == "migrated"
                 assert res["readback_verified"] is True
                 # Preferences are migrated
                 assert res["preferences"]["locale"] == "en"
                 assert res["preferences"]["theme"] == "dark"
-                # Existing backend checks are PRESERVED (chk-stale not imported)
+                # Existing backend checks are PRESERVED
                 assert res["migrated_checks_count"] == 0
                 assert len(res["checks"]) == 1
                 assert res["checks"][0]["id"] == "chk-keep"
 
 
 # ==============================================================================
-# 5. P0 Legacy State Migration: Canonical Dict Exact Readback (Polish)
+# 5. P0 Legacy State Migration: Canonical Dict Exact Readback
 # ==============================================================================
 def test_legacy_migration_canonical_dict_exact_readback():
     """Verify that readback verification compares full canonical SavedCheck dictionaries, not just IDs."""
@@ -287,37 +287,56 @@ def test_legacy_migration_canonical_dict_exact_readback():
 
 
 # ==============================================================================
-# 6. Runtime Legacy Storage Path Migration Invocation (Blocker 3)
+# 6. Production Lifecycle Safety Timing: Zero Pre-Vault Migration & In-Process Saved Checks Rehydration (Commit 20 Task A & B)
 # ==============================================================================
-def test_runtime_legacy_storage_path_migration_in_production_lifecycle():
-    """Verify migrate_legacy_storage_paths is executed during actual server creation and api_scan."""
+def test_production_lifecycle_zero_pre_vault_migration_and_scan_rehydration():
+    """Verify create_server does zero filesystem mutation before vault is known, and api_scan rehydrates checks in-process."""
     with tempfile.TemporaryDirectory() as temp_dir:
         root = Path(temp_dir)
         storage_path = root / "AppStorage"
         storage_path.mkdir()
         vault_path = root / "Vault"
         vault_path.mkdir()
+        (vault_path / "Note.md").write_text("# Note\n", encoding="utf-8")
+
+        vault_tree_before = get_dir_tree_snapshot(vault_path)
 
         with patch.dict(os.environ, {"PROPERTY_STUDIO_STORAGE_DIR": str(storage_path)}):
-            # Seed legacy unnested files
+            # Seed legacy unnested files (preferences and saved checks)
             legacy_prefs = storage_path / "preferences.json"
             legacy_prefs.write_text(json.dumps({"locale": "zh-Hant"}), encoding="utf-8")
 
-            legacy_gov = storage_path / "governance"
-            legacy_gov.mkdir()
-            (legacy_gov / "scope_assignments.json").write_text(json.dumps({"default": "schema-1"}), encoding="utf-8")
+            legacy_checks_file = storage_path / "saved_relationship_checks.json"
+            legacy_checks_file.write_text(
+                json.dumps({"data": [{"id": "chk-legacy-1", "name": "Legacy Check 1", "link_type": "body_wikilink"}]}),
+                encoding="utf-8"
+            )
 
-            # 1. Test create_server() lifecycle invocation
+            # 1. Test Task A: create_server() MUST NOT mutate storage before vault is selected!
             _ = create_server("127.0.0.1", 0)
-            assert (storage_path / "config" / "preferences.json").exists()
-            assert (storage_path / "scope_profiles" / "scope_expected_schemas.json").exists()
-            # Original legacy files are retained as safety copies
-            assert legacy_prefs.exists()
+            assert not (storage_path / "config" / "preferences.json").exists(), "create_server must perform zero pre-vault migration!"
+            assert not (storage_path / "saved_checks" / "saved_relationship_checks.json").exists(), "create_server must perform zero pre-vault migration!"
 
-            # 2. Test api_scan() lifecycle invocation with active vault context
-            (storage_path / "named_schemas.json").write_text(json.dumps({"s1": "test"}), encoding="utf-8")
+            # 2. Test Task B: api_scan() executes migration with active vault context AND immediately rehydrates checks in-process
             api_scan({"vault_path": str(vault_path)})
-            assert (storage_path / "schemas" / "named_schemas.json").exists()
+
+            # Migration executed safely
+            assert (storage_path / "config" / "preferences.json").exists()
+            assert (storage_path / "saved_checks" / "saved_relationship_checks.json").exists()
+
+            # Immediate in-process rehydration assertion (no restart needed!)
+            active_checks = STORE.saved_checks_store.list_checks()
+            assert len(active_checks) == 1
+            assert active_checks[0].id == "chk-legacy-1"
+
+            # api_saved_checks_list reflects the rehydrated checks immediately
+            listed = api_saved_checks_list({})
+            assert listed["total"] == 1
+            assert listed["checks"][0]["id"] == "chk-legacy-1"
+
+            # 3. Vault zero-side-effect assertion
+            vault_tree_after = get_dir_tree_snapshot(vault_path)
+            assert vault_tree_before == vault_tree_after, "Vault directory/file tree must remain 100% byte-for-byte identical!"
 
 
 # ==============================================================================

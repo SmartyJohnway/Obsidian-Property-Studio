@@ -147,6 +147,7 @@ def api_scan(body: dict[str, Any]) -> dict[str, Any]:
     try:
         set_active_vault_path(path)
         migrate_legacy_storage_paths()
+        STORE.saved_checks_store.reload()
     except VaultIsolationError as exc:
         raise ApiError(f"Vault isolation violation: {exc}", 400) from exc
 
@@ -940,47 +941,49 @@ def api_storage_migrate_legacy(body: dict[str, Any]) -> dict[str, Any]:
             "readback_verified": True,
         }
 
-    # Phase 1: Validate ALL legacy input before writing anything (Atomic Validate-Before-Persist)
-    locale = body.get("ps_locale") or body.get("property_studio_locale")
-    theme = body.get("ps_theme") or body.get("property_studio_theme")
-
+    # Phase 1: Validate legacy input for UNINITIALIZED entities only
+    # (Per-Entity Validation Isolation: already-initialized entities ignore stale legacy payload)
     new_locale = current_prefs_data.get("locale", "zh-Hant")
     new_theme = current_prefs_data.get("theme", "system")
 
-    if locale is not None:
-        if not isinstance(locale, str) or locale not in ("zh-Hant", "en"):
-            raise ApiError(f"Invalid legacy locale '{locale}'. Must be 'zh-Hant' or 'en'.", 400)
-        new_locale = locale
+    if not prefs_initialized:
+        locale = body.get("ps_locale") or body.get("property_studio_locale")
+        theme = body.get("ps_theme") or body.get("property_studio_theme")
+        if locale is not None:
+            if not isinstance(locale, str) or locale not in ("zh-Hant", "en"):
+                raise ApiError(f"Invalid legacy locale '{locale}'. Must be 'zh-Hant' or 'en'.", 400)
+            new_locale = locale
 
-    if theme is not None:
-        if not isinstance(theme, str) or theme not in ("light", "dark", "system"):
-            raise ApiError(f"Invalid legacy theme '{theme}'. Must be 'light', 'dark', or 'system'.", 400)
-        new_theme = theme
-
-    raw_checks = body.get("ops_saved_relationship_checks_v110")
-    if raw_checks is None:
-        raw_checks = body.get("property_studio_saved_checks")
+        if theme is not None:
+            if not isinstance(theme, str) or theme not in ("light", "dark", "system"):
+                raise ApiError(f"Invalid legacy theme '{theme}'. Must be 'light', 'dark', or 'system'.", 400)
+            new_theme = theme
 
     valid_check_objects: list[saved_checks.SavedCheck] = []
-    if raw_checks is not None:
-        if isinstance(raw_checks, str):
-            try:
-                raw_checks = json.loads(raw_checks)
-            except Exception as exc:
-                raise ApiError(f"Malformed legacy saved checks JSON: {exc}", 400) from exc
+    if not checks_initialized:
+        raw_checks = body.get("ops_saved_relationship_checks_v110")
+        if raw_checks is None:
+            raw_checks = body.get("property_studio_saved_checks")
 
-        if isinstance(raw_checks, dict):
-            raw_checks = raw_checks.get("checks", [])
+        if raw_checks is not None:
+            if isinstance(raw_checks, str):
+                try:
+                    raw_checks = json.loads(raw_checks)
+                except Exception as exc:
+                    raise ApiError(f"Malformed legacy saved checks JSON: {exc}", 400) from exc
 
-        if not isinstance(raw_checks, list):
-            raise ApiError("Malformed legacy saved checks: payload must be a list.", 400)
+            if isinstance(raw_checks, dict):
+                raw_checks = raw_checks.get("checks", [])
 
-        for index, item in enumerate(raw_checks):
-            try:
-                chk = saved_checks.SavedCheck.from_dict(item)
-                valid_check_objects.append(chk)
-            except Exception as exc:
-                raise ApiError(f"Malformed legacy check at index {index}: {exc}", 400) from exc
+            if not isinstance(raw_checks, list):
+                raise ApiError("Malformed legacy saved checks: payload must be a list.", 400)
+
+            for index, item in enumerate(raw_checks):
+                try:
+                    chk = saved_checks.SavedCheck.from_dict(item)
+                    valid_check_objects.append(chk)
+                except Exception as exc:
+                    raise ApiError(f"Malformed legacy check at index {index}: {exc}", 400) from exc
 
     # Phase 2: Transactional Persistence with Rollback Protection (Blocker 1)
     old_prefs_snapshot = dict(current_prefs_data)
@@ -1217,7 +1220,6 @@ def init_runtime_storage() -> None:
 
 
 def create_server(host: str = "127.0.0.1", port: int = 8765) -> ThreadingHTTPServer:
-    init_runtime_storage()
     return ThreadingHTTPServer((host, port), Handler)
 
 

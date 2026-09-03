@@ -168,6 +168,11 @@ class SavedChecksStore:
         self._checks = {c.id: c for c in checks}
         self._sync_to_storage()
 
+    def reload(self) -> None:
+        """Reload saved checks from underlying storage into memory (rehydration)."""
+        self._checks.clear()
+        self._load_from_storage()
+
     def to_json(self) -> str:
         data = {
             "format_version": SAVED_CHECKS_FORMAT_VERSION,

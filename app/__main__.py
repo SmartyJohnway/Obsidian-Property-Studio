@@ -6,11 +6,10 @@ import argparse
 import threading
 import webbrowser
 
-from .server import APP_VERSION, init_runtime_storage, serve
+from .server import APP_VERSION, serve
 
 
 def main() -> None:
-    init_runtime_storage()
     parser = argparse.ArgumentParser(
         prog="python -m app",
         description="Obsidian Property Studio — local, read-only property governance.",
