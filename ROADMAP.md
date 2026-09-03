@@ -21,7 +21,7 @@ Last Verified Gate: `M021 — Schema Versioning, Migration Planning & Governance
 Current Blocker: `NONE`  
 Next Action: `Submit v1.2.0 Release Candidate to Human Owner (Dr. J) for final Windows 10 production UI walkthrough acceptance (M022-T04 / M022-AC04).`  
 Implementation: `COMPLETE`  
-Automated Verification: `PASS (200/200 tests pass, 5,000-note benchmark 4.5s total analysis, Vault 100% byte-for-byte read-only)`  
+Automated Verification: `PASS (208/208 tests pass, 5,000-note benchmark 4.5s total analysis, Vault 100% byte-for-byte read-only, 8 workflow closure gaps resolved)`  
 Human Verified Acceptance: `NOT YET VERIFIED`  
 Accepted Limitation: `Windows 11 AMD64 native verification recorded as NOT YET VERIFIED due to test host unavailability (accepted non-blocking release limitation per human approved contract).`  
 Last Updated: `2026-09-03`
@@ -304,7 +304,7 @@ Status: `IN_PROGRESS`
 Execute complete Workflow Closure Matrix validation, run full regression suite and 5,000-note benchmark, verify Vault byte-for-byte read-only integrity, conduct human walkthrough on Windows 10 production UI, verify P0 completion and P1 implementation, and package v1.2.0 release artifacts.
 
 ### Tasks
-- [x] `M022-T01` Execute complete Workflow Closure Matrix automated test suite (200/200 tests PASS).
+- [x] `M022-T01` Execute complete Workflow Closure Matrix automated test suite (208/208 tests PASS, includes `tests/test_v12_ui_workflow.py` validating 8 workflow closure gaps).
 - [x] `M022-T02` Run 5,000-note performance benchmark and record in `evidence/benchmark.json` (4.5s total analysis).
 - [x] `M022-T03` Verify Vault byte-for-byte read-only integrity across all v1.2 workflows (`evidence/integration/m022_v120_vault_readonly.json`).
 - [ ] `M022-T04` Conduct Windows 10 production UI walkthrough acceptance with Human Owner (Dr. J).
@@ -313,7 +313,7 @@ Execute complete Workflow Closure Matrix validation, run full regression suite a
 - [x] `M022-T07` Generate release packaging and record formal release verdict (`scripts/package_v120_release.py`).
 
 ### Acceptance Criteria
-- [x] `M022-AC01` All automated regression and closure tests PASS (200/200).
+- [x] `M022-AC01` All automated regression and closure tests PASS (208/208).
 - [x] `M022-AC02` 5,000-note benchmark recorded.
 - [x] `M022-AC03` Vault remains byte-for-byte untouched.
 - [ ] `M022-AC04` Human Owner walkthrough PASS (Reserved for Human Owner Dr. J).

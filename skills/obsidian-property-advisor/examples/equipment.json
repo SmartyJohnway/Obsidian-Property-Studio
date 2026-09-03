@@ -1,0 +1,56 @@
+{
+  "proposal_version": "1.1",
+  "schema_name": "equipment_spec",
+  "description": "Schema for managing physical and lab equipment specifications",
+  "target_scope": "Equipment",
+  "rationale": "Tracks hardware model, serial, vendor, location, and maintenance lifecycle.",
+  "properties": [
+    {
+      "name": "model",
+      "storage_type": "text",
+      "ui_control": "plain",
+      "required": true,
+      "reason": "Equipment manufacturer model designation."
+    },
+    {
+      "name": "vendor",
+      "storage_type": "text",
+      "ui_control": "plain",
+      "required": false,
+      "reason": "Supplier or vendor entity name."
+    },
+    {
+      "name": "status",
+      "storage_type": "text",
+      "ui_control": "single_choice",
+      "allowed_values": [
+        "operational",
+        "maintenance",
+        "decommissioned"
+      ],
+      "required": true,
+      "reason": "Current operational state of the asset."
+    },
+    {
+      "name": "location",
+      "storage_type": "text",
+      "ui_control": "plain",
+      "required": false,
+      "reason": "Physical site or room location."
+    },
+    {
+      "name": "purchase_date",
+      "storage_type": "date",
+      "ui_control": "plain",
+      "required": false,
+      "reason": "Acquisition date for warranty tracking."
+    },
+    {
+      "name": "maintenance_cycle_days",
+      "storage_type": "number",
+      "ui_control": "plain",
+      "required": false,
+      "reason": "Recurrence interval for routine inspection in days."
+    }
+  ]
+}

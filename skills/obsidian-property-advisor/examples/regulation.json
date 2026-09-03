@@ -1,0 +1,55 @@
+{
+  "proposal_version": "1.1",
+  "schema_name": "compliance_regulation",
+  "description": "Schema for tracking legal, compliance, and industry standards",
+  "target_scope": "Regulations",
+  "rationale": "Tracks jurisdiction, compliance status, effective dates, and audit cycles.",
+  "properties": [
+    {
+      "name": "jurisdiction",
+      "storage_type": "text",
+      "ui_control": "plain",
+      "required": true,
+      "reason": "Governing geographic or administrative jurisdiction."
+    },
+    {
+      "name": "effective_date",
+      "storage_type": "date",
+      "ui_control": "plain",
+      "required": true,
+      "reason": "Date from which the regulation applies."
+    },
+    {
+      "name": "compliance_status",
+      "storage_type": "text",
+      "ui_control": "single_choice",
+      "allowed_values": [
+        "compliant",
+        "under_review",
+        "action_required",
+        "exempt"
+      ],
+      "required": true,
+      "reason": "Internal adherence status."
+    },
+    {
+      "name": "review_frequency",
+      "storage_type": "text",
+      "ui_control": "single_choice",
+      "allowed_values": [
+        "annual",
+        "biannual",
+        "quarterly"
+      ],
+      "required": false,
+      "reason": "Scheduled compliance review recurrence."
+    },
+    {
+      "name": "affected_systems",
+      "storage_type": "list",
+      "ui_control": "plain",
+      "required": false,
+      "reason": "List of internal products or systems bound by regulation."
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "proposal_version": "1.1",
+  "schema_name": "project_tracking",
+  "description": "Schema for managing project notes, milestones, and deliverables",
+  "target_scope": "Projects",
+  "rationale": "Enables systematic filtering, status tracking, and owner accountability across vault projects.",
+  "properties": [
+    {
+      "name": "status",
+      "storage_type": "text",
+      "ui_control": "single_choice",
+      "allowed_values": [
+        "planning",
+        "active",
+        "on_hold",
+        "completed",
+        "archived"
+      ],
+      "required": true,
+      "reason": "Lifecycle stage of the project for dashboard filtering."
+    },
+    {
+      "name": "priority",
+      "storage_type": "text",
+      "ui_control": "single_choice",
+      "allowed_values": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "required": false,
+      "reason": "Project prioritization."
+    },
+    {
+      "name": "owner",
+      "storage_type": "text",
+      "ui_control": "plain",
+      "required": true,
+      "reason": "Primary person responsible for project delivery."
+    },
+    {
+      "name": "start_date",
+      "storage_type": "date",
+      "ui_control": "plain",
+      "required": false,
+      "reason": "Project initiation date."
+    },
+    {
+      "name": "due_date",
+      "storage_type": "date",
+      "ui_control": "plain",
+      "required": false,
+      "reason": "Target completion deadline."
+    },
+    {
+      "name": "tags",
+      "storage_type": "tags",
+      "ui_control": "plain",
+      "required": false,
+      "reason": "Categorical tags for cross-cutting topic discovery."
+    }
+  ]
+}

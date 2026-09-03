@@ -59,13 +59,13 @@ All autonomous implementation and verification milestones from M016 through M021
   - 4 dedicated unit tests (`tests/test_v12_migration.py`, `tests/test_v12_governance_profile.py`) PASS.
 
 - **M022: Release Acceptance & Packaging — IN_PROGRESS**
-  - `M022-T01`: Full test suite executed — **200/200 tests PASS** in 14.2s.
+  - `M022-T01`: Full test suite executed — **208/208 tests PASS** in 14.5s (including `tests/test_v12_ui_workflow.py` resolving all 8 workflow closure gaps: dynamic version badge, schema card action buttons, item-level 4-state reconciliation with in-editor fill, proposal file input + four-way comparison + candidate edit + rejection, scope schema assignment UI, complete companion skill package with fixtures, and health drift drilldown with schema_id).
   - `M022-T02`: 5,000-note benchmark freshly executed — **4.525s total analysis** across 5,040 notes, zero errors, recorded in `evidence/benchmark.json` and `evidence/integration/m022_v120_benchmark.json`.
   - `M022-T03`: Vault byte-for-byte read-only integrity re-verified — **0 files created, 0 files modified, 0 files deleted**, recorded in `evidence/integration/m022_v120_vault_readonly.json`.
   - `M022-T04`: Windows 10 production UI walkthrough acceptance — **`NOT YET VERIFIED`** (reserved for Human Owner Dr. J per governance instructions).
   - `M022-T05`: P0 requirements complete, P1 scope fully implemented.
   - `M022-T06`: Four-file consistency gate verified.
-  - `M022-T07`: Packaging script `scripts/package_v120_release.py` authored and ready.
+  - `M022-T07`: Packaging script `scripts/package_v120_release.py` authored, verified, and ready.
 
 ---
 
