@@ -21,7 +21,7 @@ from .model import (
 )
 
 PROPOSAL_CONTRACT_VERSION = "1.0"
-SUPPORTED_PROPOSAL_VERSIONS = ("1.0",)
+SUPPORTED_PROPOSAL_VERSIONS = ("1.0", "1.1")
 
 KNOWN_TOP_LEVEL = {
     "proposal_version",
@@ -31,6 +31,11 @@ KNOWN_TOP_LEVEL = {
     "generated_by",
     "provenance",
     "notes",
+    # Proposal Contract 1.1 additions (optional)
+    "target_note",
+    "target_scope",
+    "rationale",
+    "proposed_migration",
 }
 KNOWN_PROPERTY_FIELDS = {
     "name",
@@ -210,6 +215,10 @@ def validate_proposal(data: dict[str, Any]) -> dict[str, Any]:
         "contract_version": PROPOSAL_CONTRACT_VERSION,
         "schema": schema.to_dict() if not errors else None,
         "_schema_obj": schema if not errors else None,
+        "target_note": data.get("target_note"),
+        "target_scope": data.get("target_scope"),
+        "rationale": data.get("rationale"),
+        "proposed_migration": data.get("proposed_migration"),
         "provenance": {
             "generated_by": data.get("generated_by"),
             "provenance": data.get("provenance"),

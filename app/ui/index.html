@@ -537,7 +537,7 @@
       <div class="brand-logo">🗂️</div>
       <div>
         <div class="brand-title" data-i18n="app.title">Obsidian 屬性工作室</div>
-        <div class="brand-sub" data-i18n="app.subtitle">Obsidian PKM v1.1.0</div>
+        <div class="brand-sub" data-i18n="app.subtitle">Obsidian PKM v1.2.0</div>
       </div>
     </div>
 
@@ -565,10 +565,16 @@
       <button class="nav-btn" data-tab="fill">
         <span class="icon">📄</span> <span data-i18n="nav.fill">空白筆記填寫</span>
       </button>
+      <button class="nav-btn" data-tab="schemas">
+        <span class="icon">📚</span> <span data-i18n="nav.schemas">具名架構庫</span>
+      </button>
 
       <div class="nav-group-title" data-i18n="nav.group.govern">治理與分析</div>
       <button class="nav-btn" data-tab="discover" data-needs-scan>
         <span class="icon">🔍</span> <span data-i18n="nav.discover">屬性現況盤點</span>
+      </button>
+      <button class="nav-btn" data-tab="glossary">
+        <span class="icon">📖</span> <span data-i18n="nav.glossary">個人詞彙庫</span>
       </button>
       <button class="nav-btn" data-tab="relations" data-needs-scan>
         <span class="icon">🔗</span> <span data-i18n="nav.relations">關聯分析</span>
@@ -806,6 +812,38 @@
         </div>
       </section>
 
+      <!-- ============================ GLOSSARY ============================ -->
+      <section id="tab-glossary" class="view-section">
+        <div class="page-header" style="display:flex; justify-content:space-between; align-items:flex-start">
+          <div>
+            <h2 data-i18n="glossary.title">個人詞彙庫 (Personal Glossary)</h2>
+            <p class="lead" data-i18n="glossary.lead">自訂與擴充屬性標籤、使用指引與說明。系統優先採用使用者自訂指引，底層 YAML 鍵名保持不可變。</p>
+          </div>
+          <div style="display:flex; gap:10px">
+            <input type="text" id="glossarySearchInput" data-i18n-placeholder="glossary.search_placeholder" placeholder="搜尋詞彙庫屬性鍵名或標籤..." style="width:280px">
+          </div>
+        </div>
+
+        <div class="card" style="padding:0; overflow:hidden">
+          <div style="max-height:600px; overflow-y:auto">
+            <table class="data-table" style="margin:0">
+              <thead>
+                <tr>
+                  <th data-i18n="glossary.table_key">標準鍵名 (Key)</th>
+                  <th data-i18n="glossary.table_label">顯示標籤</th>
+                  <th data-i18n="glossary.table_source">定義來源</th>
+                  <th data-i18n="glossary.table_guidance">使用指引</th>
+                  <th style="width:110px" data-i18n="glossary.table_actions">操作</th>
+                </tr>
+              </thead>
+              <tbody id="glossaryTableBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       <!-- ============================ DESIGN ============================ -->
       <section id="tab-design" class="view-section">
         <div class="page-header">
@@ -846,7 +884,7 @@
         <!-- Next Actions Card upon adoption -->
         <div id="designNextActionsCard" class="card" style="display:none; border-left:4px solid var(--teal); background:var(--teal-soft)">
           <h3 style="margin-top:0" data-i18n="design.next_actions_title">架構已採用！接下來要做什麼？</h3>
-          <div class="grid cols2" style="margin-top:12px">
+          <div class="grid cols3" style="margin-top:12px">
             <div class="action-card" id="designGoToWorkspace">
               <div class="act-title" data-i18n="design.next_apply_existing">套用到既有筆記 (Apply to Existing Note)</div>
               <div class="act-desc" data-i18n="design.next_apply_existing_desc">選擇一篇現有 Note，讀入目前 Properties 後調整與補齊</div>
@@ -854,6 +892,10 @@
             <div class="action-card" id="designGoToFill">
               <div class="act-title" data-i18n="design.next_create_blank">建立新筆記 Frontmatter (New Frontmatter)</div>
               <div class="act-desc" data-i18n="design.next_create_blank_desc">填入屬性值並即時產生可複製的合法 YAML Frontmatter</div>
+            </div>
+            <div class="action-card" id="designSaveToNamedSchemas">
+              <div class="act-title" data-i18n="design.next_save_named">儲存至具名架構庫 (Save as Named Schema)</div>
+              <div class="act-desc" data-i18n="design.next_save_named_desc">儲存此架構至個人具名架構庫中，供未來重複引用</div>
             </div>
           </div>
         </div>
@@ -900,6 +942,24 @@
         </div>
       </section>
 
+      <!-- ============================ NAMED SCHEMAS ============================ -->
+      <section id="tab-schemas" class="view-section">
+        <div class="page-header" style="display:flex; justify-content:space-between; align-items:flex-start">
+          <div>
+            <h2 data-i18n="schemas.title">具名架構庫 (Named Schema Library)</h2>
+            <p class="lead" data-i18n="schemas.lead">儲存、版本化與重用筆記屬性架構規範。可套用於分析範圍治理或單篇筆記核對。</p>
+          </div>
+          <div style="display:flex; gap:8px">
+            <button class="secondary" id="govProfileExportBtn">匯出治理設定檔 (Export Profile)</button>
+            <button class="secondary" id="govProfileImportBtn">匯入治理設定檔 (Import Profile)</button>
+            <button class="primary" id="schemaCreateNewBtn" data-i18n="schemas.btn_create">+ 建立新架構</button>
+          </div>
+        </div>
+
+        <div id="schemasListContainer" class="grid cols3" style="margin-top:16px">
+          <!-- Populated dynamically -->
+        </div>
+      </section>
 
       <!-- ============================ RELATIONSHIPS ============================ -->
       <section id="tab-relations" class="view-section">
@@ -971,6 +1031,23 @@
         <div class="page-header">
           <h2 data-i18n="health.title">屬性健康度診斷</h2>
           <p class="lead" data-i18n="health.lead">針對當前範圍內的屬性品質進行透明、可解釋的評分與診斷，找出拼寫分歧、型態混亂與孤立屬性。</p>
+        </div>
+
+        <!-- Schema Drift Section (M019) -->
+        <div id="healthDriftCard" class="card" style="display:none; border-left:4px solid var(--brand); margin-bottom:16px">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
+            <div>
+              <h3 style="margin:0">架構漂移診斷 (Desired vs Actual Schema Drift)</h3>
+              <p class="muted" style="font-size:12.5px; margin:4px 0 0 0">比對當前範圍與預期架構 <strong id="healthDriftSchemaName">—</strong></p>
+            </div>
+            <span class="pill ok" id="healthDriftComplianceBadge">100% 符合</span>
+          </div>
+          <div class="grid cols4" style="margin-bottom:12px">
+            <div class="stat ok"><div class="n" id="healthDriftCompliant">0</div><div class="l">完全符合筆記</div></div>
+            <div class="stat alert"><div class="n" id="healthDriftMissing">0</div><div class="l">必填缺漏事項</div></div>
+            <div class="stat warn"><div class="n" id="healthDriftTypeMismatch">0</div><div class="l">型態衝突事項</div></div>
+            <div class="stat"><div class="n" id="healthDriftUnexpected">0</div><div class="l">架構外自訂屬性</div></div>
+          </div>
         </div>
 
         <div class="card">
@@ -1098,6 +1175,7 @@
 <div class="toast" id="globalToast"></div>
 
 <script src="i18n.js"></script>
+<script src="state_transfer.js"></script>
 <script>
 /* ============================================================
    Application Runtime State & API Layer
@@ -1157,6 +1235,10 @@ function setTab(tabId) {
     populateRefactorSourceOptions();
   } else if (tabId === "fill") {
     renderFillForm();
+  } else if (tabId === "schemas") {
+    loadSchemasList();
+  } else if (tabId === "glossary") {
+    loadGlossaryList();
   }
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -1335,6 +1417,329 @@ document.addEventListener("click", (e) => {
   }
 });
 
+
+/* ============================================================
+   Named Schemas Module (M017)
+   ============================================================ */
+async function loadSchemasList() {
+  const container = $("schemasListContainer");
+  if (!container) return;
+  try {
+    const res = await api("/api/schemas/list");
+    const schemas = res.schemas || [];
+    if (schemas.length === 0) {
+      container.innerHTML = `
+        <div class="card" style="grid-column: 1 / -1; text-align:center; padding:32px 20px">
+          <div style="font-size:32px; margin-bottom:8px">📚</div>
+          <p class="muted">目前具名架構庫中尚無儲存的架構。您可以在「屬性架構設計」中建立並儲存，或點擊上方按鈕建立。</p>
+        </div>
+      `;
+      return;
+    }
+    container.innerHTML = schemas.map(s => `
+      <div class="card" style="display:flex; flex-direction:column; justify-content:space-between">
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:flex-start">
+            <h3 style="margin:0; font-size:16px">${esc(s.name)}</h3>
+            <span class="pill ok">v${esc(s.version || '1.0')}</span>
+          </div>
+          <p class="muted" style="font-size:12.5px; margin:8px 0 12px 0">${esc(s.description || '無詳細說明')}</p>
+          <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:12px">
+            ${(s.properties || []).map(p => `<span class="pill" style="font-size:11px">${esc(p.name)}</span>`).join("")}
+          </div>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--line); padding-top:10px; margin-top:8px">
+          <span class="muted" style="font-size:11.5px">${(s.properties || []).length} ${esc(I18N.t("schemas.card_properties"))}</span>
+          <div style="display:flex; gap:6px">
+            <button class="secondary" style="font-size:12px; padding:4px 8px" onclick="deleteNamedSchema('${esc(s.id)}')">${esc(I18N.t("schemas.btn_delete"))}</button>
+            <button class="primary" style="font-size:12px; padding:4px 8px" onclick="applyNamedSchemaToWorkspace('${esc(s.id)}')">${esc(I18N.t("schemas.btn_apply"))}</button>
+          </div>
+        </div>
+      </div>
+    `).join("");
+  } catch (e) {
+    container.innerHTML = `<div class="card" style="grid-column: 1 / -1; color:var(--red)">載入失敗: ${esc(e.message)}</div>`;
+  }
+}
+
+window.deleteNamedSchema = async function(id) {
+  if (!confirm("確定要刪除此架構嗎？")) return;
+  try {
+    await api("/api/schemas/delete", { id });
+    toast("架構已成功刪除");
+    await loadSchemasList();
+  } catch (e) {
+    toast(e.message, true);
+  }
+};
+
+window.applyNamedSchemaToWorkspace = async function(id) {
+  try {
+    const res = await api("/api/schemas/get", { id });
+    if (res.schema) {
+      S.currentSchema = res.schema;
+      if (typeof StateTransfer !== 'undefined') {
+        StateTransfer.setPending("workspace", { schema_id: res.schema.id, schema: res.schema }, "reconcile");
+      }
+      setTab("workspace");
+    }
+  } catch (e) {
+    toast(e.message, true);
+  }
+};
+
+
+window.openSchemaMigrationModal = async function(sourceId) {
+  try {
+    const res = await api("/api/schemas/list");
+    const all = res.schemas || [];
+    const src = all.find(s => s.id === sourceId);
+    if (!src) return;
+
+    const others = all.filter(s => s.id !== sourceId);
+    const html = `
+      <div>
+        <p class="muted" style="margin-top:0">比對來源架構 <strong>${esc(src.name)}</strong> (v${esc(src.version)}) 與目標架構之差異，並產出安全遷移規劃。</p>
+        <div style="margin-bottom:14px">
+          <label class="form-label">選擇目標架構：</label>
+          <select id="migrationTargetSelect" class="form-control" style="width:100%">
+            ${others.map(o => `<option value="${esc(o.id)}">${esc(o.name)} (v${esc(o.version)})</option>`).join("")}
+          </select>
+        </div>
+        <button class="primary" id="calcMigrationBtn" style="margin-bottom:14px">計算遷移差異與變更層級</button>
+        <div id="migrationPlanResult"></div>
+      </div>
+    `;
+    openDrawer("架構版本遷移規劃 (Migration Planner)", html);
+
+    const calcBtn = document.getElementById("calcMigrationBtn");
+    if (calcBtn) {
+      calcBtn.onclick = async () => {
+        const tgtSelect = document.getElementById("migrationTargetSelect");
+        const tgtId = tgtSelect ? tgtSelect.value : "";
+        if (!tgtId) return;
+        try {
+          const plan = await api("/api/schemas/migration/plan", {
+            source_schema_id: sourceId,
+            target_schema_id: tgtId,
+          });
+          const resBox = document.getElementById("migrationPlanResult");
+          if (resBox) {
+            resBox.innerHTML = `
+              <div class="card" style="border-left:4px solid ${plan.is_breaking ? 'var(--red)' : 'var(--teal)'}; background:var(--panel2); margin-top:10px">
+                <div style="display:flex; justify-content:space-between; align-items:center">
+                  <strong>建議版本變更：<span class="pill ${plan.is_breaking ? 'alert' : 'ok'}">${esc(plan.suggested_bump.toUpperCase())}</span></strong>
+                  <span class="pill ${plan.is_breaking ? 'alert' : 'ok'}">${plan.is_breaking ? '包含破壞性變更 (Breaking)' : '平滑相容變更 (Non-breaking)'}</span>
+                </div>
+                <div style="margin-top:10px; font-size:12.5px">
+                  <strong>詳細變更清單：</strong>
+                  <ul style="margin:6px 0; padding-left:20px">
+                    ${plan.changes.map(c => `<li><span class="pill ${c.is_breaking ? 'alert' : ''}">${esc(c.change_type)}</span> ${esc(c.description)}</li>`).join("")}
+                  </ul>
+                  ${plan.migration_steps.length ? `
+                    <strong style="display:block; margin-top:10px">建議遷移步驟：</strong>
+                    <ol style="margin:6px 0; padding-left:20px">
+                      ${plan.migration_steps.map(s => `<li>${esc(s)}</li>`).join("")}
+                    </ol>
+                  ` : ''}
+                </div>
+              </div>
+            `;
+          }
+        } catch (err) {
+          toast(err.message, true);
+        }
+      };
+    }
+  } catch (e) {
+    toast(e.message, true);
+  }
+};
+
+function setupSchemasHandlers() {
+  if ($("schemaCreateNewBtn")) {
+    $("schemaCreateNewBtn").onclick = () => setTab("design");
+  }
+
+  if ($("govProfileExportBtn")) {
+    $("govProfileExportBtn").onclick = async () => {
+      try {
+        const profile = await api("/api/governance/profile/export");
+        const jsonStr = JSON.stringify(profile, null, 2);
+        navigator.clipboard.writeText(jsonStr).then(() => {
+          toast("治理設定檔已複製至剪貼簿 (含 SHA-256 驗證碼)");
+        });
+      } catch (err) {
+        toast(err.message, true);
+      }
+    };
+  }
+
+  if ($("govProfileImportBtn")) {
+    $("govProfileImportBtn").onclick = () => {
+      const html = `
+        <div>
+          <p class="muted" style="margin-top:0">貼上先前匯出的治理設定檔 JSON（包含 Named Schemas, Scope Assignments, Personal Glossary）。</p>
+          <textarea id="importProfileText" rows="10" style="width:100%; font-family:monospace; font-size:12px" placeholder='{"profile_metadata": {...}, "data": {...}}'></textarea>
+          <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:14px">
+            <button class="secondary" onclick="closeDrawer()">取消</button>
+            <button class="primary" id="submitImportProfileBtn">驗證並匯入</button>
+          </div>
+        </div>
+      `;
+      openDrawer("匯入治理設定檔 (Import Governance Profile)", html);
+
+      const submitBtn = document.getElementById("submitImportProfileBtn");
+      if (submitBtn) {
+        submitBtn.onclick = async () => {
+          const area = document.getElementById("importProfileText");
+          const raw = area ? area.value.trim() : "";
+          if (!raw) return toast("請貼上設定檔 JSON", true);
+          try {
+            const parsed = JSON.parse(raw);
+            const res = await api("/api/governance/profile/import", { profile: parsed });
+            toast(`成功匯入：${res.imported.schemas} 個架構，${res.imported.scope_assignments} 個範圍指派，${res.imported.glossary_overrides} 個詞彙`);
+            closeDrawer();
+            await loadSchemasList();
+          } catch (e) {
+            toast(e.message, true);
+          }
+        };
+      }
+    };
+  }
+}
+
+/* ============================================================
+   Personal Glossary Module (M017)
+   ============================================================ */
+async function loadGlossaryList() {
+  const tbody = $("glossaryTableBody");
+  if (!tbody) return;
+  try {
+    const catalogRes = await api("/api/glossary/catalog");
+    const userRes = await api("/api/glossary/user/list");
+    const catalog = catalogRes.catalog || [];
+    const overrides = userRes.overrides || {};
+
+    const q = ($("glossarySearchInput") ? $("glossarySearchInput").value : "").toLowerCase().trim();
+
+    const merged = catalog.map(entry => {
+      const ov = overrides[entry.canonical_key];
+      return {
+        key: entry.canonical_key,
+        label: (ov && ov.label_zh) ? ov.label_zh : entry.label_zh,
+        label_en: (ov && ov.label_en) ? ov.label_en : entry.label_en,
+        source: ov ? "user_override" : "builtin",
+        guidance: (ov && ov.guidance) ? ov.guidance : (entry.short_description_zh || entry.long_description_zh || ""),
+        isOverride: !!ov,
+      };
+    });
+
+    const filtered = merged.filter(item => {
+      if (!q) return true;
+      return item.key.toLowerCase().includes(q) || item.label.toLowerCase().includes(q) || item.guidance.toLowerCase().includes(q);
+    });
+
+    tbody.innerHTML = filtered.map(item => `
+      <tr>
+        <td><code>${esc(item.key)}</code></td>
+        <td><strong>${esc(item.label)}</strong> <span class="muted" style="font-size:11px">(${esc(item.label_en)})</span></td>
+        <td><span class="pill ${item.isOverride ? 'warn' : 'ok'}">${item.isOverride ? '自訂優先 (Override)' : '系統內建 (Built-in)'}</span></td>
+        <td style="font-size:12.5px">${esc(item.guidance)}</td>
+        <td>
+          <button class="secondary" style="font-size:11.5px; padding:3px 7px" onclick="openEditGlossaryModal('${esc(item.key)}')">編輯指引</button>
+        </td>
+      </tr>
+    `).join("");
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="5" style="color:var(--red)">載入失敗: ${esc(e.message)}</td></tr>`;
+  }
+}
+
+window.openEditGlossaryModal = async function(key) {
+  try {
+    const detail = await api("/api/glossary/property", { property: key });
+    const meta = detail.metadata || {};
+    const html = `
+      <div style="display:flex; flex-direction:column; gap:12px">
+        <div>
+          <label style="font-size:12px; color:var(--muted)">標準鍵名 (不可變):</label>
+          <div><code>${esc(key)}</code></div>
+        </div>
+        <div>
+          <label style="font-size:12px; color:var(--muted)">顯示標籤 (繁中):</label>
+          <input type="text" id="editGlossaryLabelZh" value="${esc(meta.label_zh || key)}" style="width:100%; margin-top:4px" />
+        </div>
+        <div>
+          <label style="font-size:12px; color:var(--muted)">使用指引與規範說明:</label>
+          <textarea id="editGlossaryGuidance" style="width:100%; height:80px; margin-top:4px">${esc(meta.guidance_zh || meta.short_description_zh || meta.description_zh || "")}</textarea>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-top:14px">
+          ${detail.is_known && meta.source === 'user_override' ? `<button class="secondary" onclick="deleteGlossaryOverride('${esc(key)}')">還原預設</button>` : '<div></div>'}
+          <div style="display:flex; gap:8px">
+            <button class="secondary" onclick="closeDrawer()">取消</button>
+            <button class="primary" onclick="saveGlossaryOverride('${esc(key)}')">儲存定義</button>
+          </div>
+        </div>
+      </div>
+    `;
+    openDrawer("編輯詞彙庫定義 — " + key, html);
+  } catch (e) {
+    toast(e.message, true);
+  }
+};
+
+window.saveGlossaryOverride = async function(key) {
+  const elLabel = document.getElementById("editGlossaryLabelZh");
+  const elGuidance = document.getElementById("editGlossaryGuidance");
+  const label_zh = elLabel ? elLabel.value.trim() : "";
+  const guidance = elGuidance ? elGuidance.value.trim() : "";
+  try {
+    await api("/api/glossary/user/save", {
+      canonical_key: key,
+      label_zh: label_zh,
+      guidance: guidance
+    });
+    toast(I18N.t("toast.override_saved", { key }));
+    closeDrawer();
+    await loadGlossaryList();
+  } catch (e) {
+    toast(e.message, true);
+  }
+};
+
+window.deleteGlossaryOverride = async function(key) {
+  try {
+    await api("/api/glossary/user/delete", { canonical_key: key });
+    toast(I18N.t("toast.override_deleted", { key }));
+    closeDrawer();
+    await loadGlossaryList();
+  } catch (e) {
+    toast(e.message, true);
+  }
+};
+
+function setupGlossaryHandlers() {
+  if ($("glossarySearchInput")) {
+    $("glossarySearchInput").oninput = () => loadGlossaryList();
+  }
+}
+
+
+window.drilldownToNoteWorkspace = function(notePath, findingId, propKey, findingType) {
+  if (typeof StateTransfer !== 'undefined') {
+    StateTransfer.setPending("workspace", {
+      note_path: notePath,
+      finding_id: findingId,
+      property_key: propKey,
+      finding_type: findingType
+    }, "inspect_finding");
+  }
+  setTab("workspace");
+  inspectNoteInWorkspace(notePath);
+};
+
 /* ============================================================
    Initialization & Navigation
    ============================================================ */
@@ -1399,6 +1804,8 @@ async function init() {
   setupRelationsHandlers();
   setupHealthHandlers();
   setupRefactorHandlers();
+  setupSchemasHandlers();
+  setupGlossaryHandlers();
   setupProposalHandlers();
 
   await loadDesignPresets();
@@ -1533,6 +1940,25 @@ async function loadScopeFolders() {
     }
 
     renderRelationsFolderLists();
+    // M019 Drift Analysis
+    try {
+      const scopeKey = S.scope.mode === 'entire_vault' ? 'entire_vault' : ((S.scope.folders || []).join(",") || 'default');
+      const asgnRes = await api("/api/scope/schema/current", { scope_key: scopeKey });
+      if (asgnRes && asgnRes.assignment) {
+        const driftRes = await api("/api/drift/analyze", { scope_key: scopeKey, schema_id: asgnRes.assignment.schema_id });
+        if ($("healthDriftSchemaName")) $("healthDriftSchemaName").textContent = driftRes.schema_name;
+        if ($("healthDriftComplianceBadge")) $("healthDriftComplianceBadge").textContent = `${driftRes.compliance_rate}% 符合`;
+        if ($("healthDriftCompliant")) $("healthDriftCompliant").textContent = driftRes.compliant_notes;
+        if ($("healthDriftMissing")) $("healthDriftMissing").textContent = (driftRes.by_category && driftRes.by_category.missing_required) || 0;
+        if ($("healthDriftTypeMismatch")) $("healthDriftTypeMismatch").textContent = ((driftRes.by_category && driftRes.by_category.type_mismatch) || 0) + ((driftRes.by_category && driftRes.by_category.value_drift) || 0);
+        if ($("healthDriftUnexpected")) $("healthDriftUnexpected").textContent = (driftRes.by_category && driftRes.by_category.unexpected_property) || 0;
+        if ($("healthDriftCard")) $("healthDriftCard").style.display = "block";
+      } else {
+        if ($("healthDriftCard")) $("healthDriftCard").style.display = "none";
+      }
+    } catch (driftErr) {
+      if ($("healthDriftCard")) $("healthDriftCard").style.display = "none";
+    }
   } catch (e) {
     console.error(e);
   }
@@ -1868,12 +2294,53 @@ async function inspectNoteInWorkspace(notePath) {
       return;
     }
 
-    banner.innerHTML = `
+    let bannerHtml = `
       <div class="card" style="border-color:var(--teal); background:var(--teal-soft); color:var(--teal); margin-bottom:14px">
         <strong>${I18N.t("workspace.note_loaded")}</strong> <code>${esc(res.note_path)}</code> (${Object.keys(res.original_properties).length} ${I18N.t("workspace.existing_props_count")})
       </div>
     `;
 
+    const pending = (typeof StateTransfer !== 'undefined' && StateTransfer.hasPending("workspace")) 
+      ? StateTransfer.consumePending("workspace") 
+      : null;
+
+    if (pending && pending.intent === "inspect_finding") {
+      bannerHtml += `
+        <div class="card" style="border-color:var(--amber); background:var(--amber-soft); color:var(--text); margin-bottom:14px">
+          <strong>🔍 診斷事項聚焦：</strong> 發現項目 <code>${esc(pending.finding_id || pending.finding_type || '')}</code>（針對屬性 <code>${esc(pending.property_key || '')}</code>）。請在下方檢視或調整。
+        </div>
+      `;
+      setTimeout(() => {
+        const row = document.querySelector(`.ws-prop-row[data-key="${pending.property_key}"]`);
+        if (row) {
+          row.style.outline = "2px solid var(--amber)";
+          row.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 150);
+    } else if (pending && pending.intent === "reconcile") {
+      try {
+        const recRes = await api("/api/reconcile/inspect", {
+          note_path: notePath,
+          schema_id: pending.schema_id,
+          schema_properties: pending.schema ? pending.schema.properties : (S.currentSchema ? S.currentSchema.properties : [])
+        });
+        bannerHtml += `
+          <div class="card" style="border-color:var(--brand); background:var(--brand-soft); margin-bottom:14px">
+            <strong>⚖️ 屬性架構核對 (Reconciliation)：</strong> 與架構「<strong>${esc(recRes.schema_name)}</strong>」比對結果：
+            <div style="display:flex; gap:10px; margin-top:8px; font-size:12.5px; flex-wrap:wrap">
+              <span class="pill ok">符合 (Matches): ${recRes.summary.matches}</span>
+              <span class="pill warn">缺漏 (Missing): ${recRes.summary.missing}</span>
+              <span class="pill alert">衝突 (Conflict): ${recRes.summary.conflict}</span>
+              <span class="pill">保留非架構屬性 (Preserved): ${recRes.summary.outside_schema}</span>
+            </div>
+          </div>
+        `;
+      } catch (err) {
+        console.error("Reconciliation inspection error:", err);
+      }
+    }
+
+    banner.innerHTML = bannerHtml;
     renderWorkspaceFields(res.original_properties);
     $("wsEditorArea").style.display = "block";
     updateWorkspacePreview();
@@ -2186,6 +2653,18 @@ function setupDesignHandlers() {
 
   $("designGoToWorkspace").onclick = () => setTab("workspace");
   $("designGoToFill").onclick = () => setTab("fill");
+  if ($("designSaveToNamedSchemas")) {
+    $("designSaveToNamedSchemas").onclick = async () => {
+      if (!S.currentSchema) return;
+      try {
+        await api("/api/schemas/create", { schema: S.currentSchema });
+        toast(I18N.t("toast.schema_saved", { name: S.currentSchema.name }));
+        setTab("schemas");
+      } catch (e) {
+        toast(e.message, true);
+      }
+    };
+  }
 }
 
 /* ============================================================
@@ -2598,7 +3077,15 @@ async function loadHealth() {
           <strong>[${esc(f.severity.toUpperCase())}] ${esc(f.title)}</strong>
           <p class="muted" style="margin:4px 0">${esc(f.explanation)}</p>
           ${propBadges}
-          <div class="hint">${I18N.t("health.affected_notes_label")} (${f.affected_note_count})：${esc(f.affected_notes.slice(0, 5).join(", "))}</div>
+          <div class="hint" style="margin-top:6px">${I18N.t("health.affected_notes_label")} (${f.affected_note_count})：
+            <div style="margin-top:4px; display:flex; flex-wrap:wrap; gap:4px">
+              ${(f.affected_notes || []).slice(0, 5).map(np => `
+                <button class="secondary" style="font-size:11px; padding:2px 7px" onclick="drilldownToNoteWorkspace('${esc(np)}', '${esc(f.id || '')}', '${esc((f.property_keys && f.property_keys[0]) || '')}', '${esc(f.type || '')}')">
+                  📄 ${esc(np)} ↗
+                </button>
+              `).join("")}
+            </div>
+          </div>
         </div>
       `;
     }).join("") : `<div class="muted">${I18N.t("health.excellent_state")}</div>`;
@@ -2952,13 +3439,109 @@ function setupRefactorHandlers() {
 
 
 function setupProposalHandlers() {
+  let lastImportedProposal = null;
+
   $("validateProposalBtn").onclick = async () => {
     const text = $("proposalTextInput").value.trim();
     if (!text) return toast(I18N.t("proposal.paste_warn"), true);
     try {
       const res = await api("/api/proposal/import", { text: text });
-      $("proposalResultOutput").innerHTML = `<pre>${esc(JSON.stringify(res, null, 2))}</pre>`;
+      lastImportedProposal = res;
+
+      if (!res.valid) {
+        $("proposalResultOutput").innerHTML = `
+          <div class="card" style="border-color:var(--red); background:var(--red-soft); color:var(--red)">
+            <strong>提案校驗失敗 (Validation Failed)：</strong>
+            <ul style="margin:8px 0 0 0; padding-left:20px">
+              ${(res.errors || []).map(e => `<li>${esc(e)}</li>`).join("")}
+            </ul>
+          </div>
+        `;
+        $("proposalResultCard").style.display = "block";
+        return;
+      }
+
+      const sch = res.schema || {};
+      const props = sch.properties || [];
+
+      $("proposalResultOutput").innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px">
+              <h3 style="margin:0">${esc(sch.schema_name || sch.name || 'unnamed')}</h3>
+              <span class="pill ok">Contract v${esc(res.proposal_version || '1.0')}</span>
+            </div>
+            <p class="muted" style="margin:4px 0 0 0; font-size:13px">${esc(sch.description || '無詳細說明')}</p>
+            ${res.rationale ? `<p style="font-size:12.5px; color:var(--brand); margin:4px 0 0 0">💡 <strong>設計理念 (Rationale)：</strong> ${esc(res.rationale)}</p>` : ''}
+            ${res.target_note ? `<p style="font-size:12px; color:var(--muted); margin:2px 0 0 0">🎯 目標筆記：<code>${esc(res.target_note)}</code></p>` : ''}
+          </div>
+          <div style="display:flex; gap:8px">
+            <button class="primary" id="proposalSaveAsNamedBtn">儲存至具名架構庫 (Save as Named Schema)</button>
+            <button class="secondary" id="proposalReconcileBtn">套用核對 (Reconcile)</button>
+          </div>
+        </div>
+
+        <table class="data-table" style="margin-bottom:14px">
+          <thead>
+            <tr>
+              <th>屬性名稱</th>
+              <th>儲存型態</th>
+              <th>UI 控制元件</th>
+              <th>必填</th>
+              <th>使用理由 / 說明</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${props.map(p => `
+              <tr>
+                <td><strong>${esc(p.name)}</strong></td>
+                <td><span class="pill">${esc(p.storage_type)}</span></td>
+                <td><code>${esc(p.ui_control || 'plain')}</code></td>
+                <td>${p.required ? '<span class="pill alert">必填</span>' : '<span class="muted">可選</span>'}</td>
+                <td style="font-size:12.5px">${esc(p.reason || '—')}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+
+        <details style="margin-top:14px; border-top:1px solid var(--line); padding-top:10px">
+          <summary style="cursor:pointer; font-size:12.5px; color:var(--muted)">檢視原始比對與校驗 JSON</summary>
+          <pre style="max-height:220px; font-size:12px">${esc(JSON.stringify(res, null, 2))}</pre>
+        </details>
+      `;
+
       $("proposalResultCard").style.display = "block";
+
+      // Bind action buttons
+      const saveBtn = document.getElementById("proposalSaveAsNamedBtn");
+      if (saveBtn) {
+        saveBtn.onclick = async () => {
+          try {
+            await api("/api/schemas/create", { schema: sch });
+            toast(I18N.t("toast.schema_saved", { name: sch.schema_name || sch.name }));
+            setTab("schemas");
+          } catch (err) {
+            toast(err.message, true);
+          }
+        };
+      }
+
+      const recBtn = document.getElementById("proposalReconcileBtn");
+      if (recBtn) {
+        recBtn.onclick = () => {
+          S.currentSchema = sch;
+          if (typeof StateTransfer !== 'undefined') {
+            StateTransfer.setPending("workspace", {
+              schema: sch,
+              note_path: res.target_note || ""
+            }, "reconcile");
+          }
+          setTab("workspace");
+          if (res.target_note) {
+            inspectNoteInWorkspace(res.target_note);
+          }
+        };
+      }
     } catch (e) {
       toast(e.message, true);
     }

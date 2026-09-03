@@ -4,7 +4,7 @@
 
 **Understand, design, fill and govern Obsidian Properties — without learning YAML.**
 
-Version 1.1.0 · Standalone Local-first · Read-only · **Your Vault is never modified**
+Version 1.2.0 · Standalone Local-first · Read-only · **Your Vault is never modified**
 
 ---
 
@@ -29,7 +29,7 @@ Obsidian's Properties turn a collection of Markdown notes into a structured know
 
 ## Human-Readable Property Vocabulary Layer
 
-Obsidian Property Studio v1.1.0 introduces a dedicated **Property Vocabulary Layer** designed for human-centric Personal Knowledge Management (PKM):
+Obsidian Property Studio v1.2.0 introduces a dedicated **Property Vocabulary Layer** designed for human-centric Personal Knowledge Management (PKM):
 
 * **Bilingual Presentation Badges:** Front-end presentation displays human-friendly labels alongside canonical keys:
   * Traditional Chinese UI: `狀態 (status)`, `負責人 (owner)`, `截止日期 (due_date)`
@@ -45,7 +45,7 @@ Obsidian Property Studio v1.1.0 introduces a dedicated **Property Vocabulary Lay
 
 ---
 
-## Safety Guarantees (v1.1.0)
+## Safety Guarantees (v1.2.0)
 
 * **Strictly Read-Only:** No note is created, edited, renamed, moved, or deleted. Markdown note bodies and the `.obsidian/` configuration folder are never touched.
 * **No "Apply to Vault" Mechanism:** Refactor operations are strictly planning-only. There is no vault-mutation code path in the backend, enforced by automated regression suites.
@@ -53,6 +53,22 @@ Obsidian Property Studio v1.1.0 introduces a dedicated **Property Vocabulary Lay
 * **No Required AI:** Every analysis, schema recommendation, and health check executes deterministically via local Python algorithms.
 * **Fail-Closed on Ambiguity:** Ambiguous property names, duplicate frontmatter keys, and ambiguous note links fail closed with clear warnings and never guess intent.
 * **External Artifact Storage:** Reports and exports are saved to user-designated external directories or local browser storage.
+
+---
+
+---
+
+## What's New in v1.2.0 (Workflow Closure & Local Governance)
+
+Obsidian Property Studio v1.2.0 completes the loop between analysis, design, and existing note governance:
+
+* **Named Schema Library:** Save, organize, version, and reuse custom frontmatter schemas stored safely outside the vault with OCC revision protection.
+* **Personal Glossary Overrides:** Customize bilingual property labels and usage guidance while keeping underlying YAML keys strictly immutable.
+* **Existing Note Reconciliation:** Inspect any existing note against an adopted schema across 4 distinct states (`Matches`, `Missing`, `Conflict`, `Outside-Schema Preserved`) with zero silent property discard.
+* **Scope Governance & Schema Drift:** Associate folders with expected schemas and diagnose Desired vs Actual drift across notes in the active scope.
+* **Schema Versioning & Migration Planner:** Compare schema versions, detect breaking changes, determine SemVer bump levels (major/minor/patch), and generate step-by-step migration plans.
+* **External AI Companion Skill:** Standalone companion skill packaged at `skills/obsidian-property-advisor/` supporting Proposal Contract 1.0 and 1.1.
+* **Portable Governance Profiles:** One-click export/import of all named schemas, scope bindings, and custom glossaries with SHA-256 checksum integrity verification.
 
 ---
 

@@ -1,0 +1,25 @@
+{
+  "case": "V12-RO-001",
+  "milestone": "M022",
+  "environment": {
+    "python": "3.13.7",
+    "platform": "Windows-10-10.0.19045-SP0",
+    "processor": "Intel64 Family 6 Model 158 Stepping 10, GenuineIntel",
+    "cpu_count": 12
+  },
+  "vault_fixture": {
+    "markdown_notes": 5040,
+    "files_hashed": 5041,
+    "vault_bytes": 848296,
+    "generator": "scripts/make_benchmark_vault.py (seeded, deterministic)",
+    "generate_seconds": 2.109
+  },
+  "vault_integrity": {
+    "files_created": 0,
+    "files_modified": 0,
+    "files_deleted": 0,
+    "unchanged": true
+  },
+  "rule_assertion": "Vault byte-for-byte read-only PASS. Zero files created, modified, or deleted inside vault.",
+  "verdict": "PASS"
+}

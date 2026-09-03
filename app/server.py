@@ -29,7 +29,16 @@ from .core import (
     refactor,
     relationships,
     saved_checks,
+    state_transfer,
+    named_schemas,
+    reconciliation,
+    scope_governance,
+    drift,
+    migration,
+    governance_profile,
+    user_glossary,
 )
+from . import storage
 
 from .core.fill import fill_preview
 from .core.manifest import assert_unchanged, vault_manifest
@@ -48,7 +57,7 @@ from .core.scope import (
     filter_scan_by_scope,
 )
 
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.2.0"
 UI_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui")
 
 
@@ -557,6 +566,11 @@ def api_glossary_property(body: dict[str, Any]) -> dict[str, Any]:
     if not key:
         raise ApiError("Property key is required.", 400)
     entry = property_glossary.get_property_glossary_entry(key)
+    override = user_glossary.USER_GLOSSARY_STORE.get_override(key)
+    is_known = (entry is not None) or (override is not None)
+    metadata = None
+    if is_known:
+        metadata = user_glossary.USER_GLOSSARY_STORE.resolve_property(key)
 
     scope_usage = 0
     vault_usage = 0
@@ -573,7 +587,6 @@ def api_glossary_property(body: dict[str, Any]) -> dict[str, Any]:
             dt = all_inv.properties[key].dominant_type
             dominant_type = dt.value if hasattr(dt, "value") else str(dt)
 
-
         scoped_scan = STORE.get_scoped_scan()
         scoped_inv = inventory.build_inventory(scoped_scan)
         if key in scoped_inv.properties:
@@ -581,13 +594,246 @@ def api_glossary_property(body: dict[str, Any]) -> dict[str, Any]:
 
     return {
         "canonical_key": key,
-        "is_known": entry is not None,
-        "metadata": entry.to_dict() if entry else None,
+        "is_known": is_known,
+        "metadata": metadata,
         "scope_usage": scope_usage,
         "vault_usage": vault_usage,
         "detected_type": dominant_type,
         "common_values": observed_values,
     }
+
+
+def api_glossary_user_list(_body: dict[str, Any]) -> dict[str, Any]:
+    overrides = user_glossary.USER_GLOSSARY_STORE.list_overrides()
+    return {"overrides": overrides, "total": len(overrides)}
+
+
+def api_glossary_user_save(body: dict[str, Any]) -> dict[str, Any]:
+    override_data = body.get("override") or body
+    try:
+        override = user_glossary.UserGlossaryOverride.from_dict(override_data)
+        expected_rev = body.get("expected_revision")
+        res = user_glossary.USER_GLOSSARY_STORE.save_override(override, expected_rev)
+        return {"status": "saved", "override": override.to_dict(), "revision": res.get("revision")}
+    except Exception as exc:
+        raise ApiError(str(exc), 400) from exc
+
+
+def api_glossary_user_delete(body: dict[str, Any]) -> dict[str, Any]:
+    key = str(body.get("key") or body.get("canonical_key") or "").strip()
+    if not key:
+        raise ApiError("Property key is required.", 400)
+    expected_rev = body.get("expected_revision")
+    deleted = user_glossary.USER_GLOSSARY_STORE.delete_override(key, expected_rev)
+    return {"status": "deleted" if deleted else "not_found", "key": key}
+
+
+def api_schemas_list(_body: dict[str, Any]) -> dict[str, Any]:
+    schemas = named_schemas.NAMED_SCHEMA_LIBRARY.list_schemas()
+    return {"schemas": schemas, "total": len(schemas)}
+
+
+def api_schemas_get(body: dict[str, Any]) -> dict[str, Any]:
+    schema_id = str(body.get("id") or body.get("schema_id") or "").strip()
+    if not schema_id:
+        raise ApiError("Schema ID is required.", 400)
+    schema = named_schemas.NAMED_SCHEMA_LIBRARY.get_schema(schema_id)
+    if not schema:
+        raise ApiError(f"Schema '{schema_id}' not found.", 404)
+    return {"schema": schema.to_dict()}
+
+
+def api_schemas_create(body: dict[str, Any]) -> dict[str, Any]:
+    schema_data = body.get("schema") or body
+    try:
+        expected_rev = body.get("expected_revision")
+        res = named_schemas.NAMED_SCHEMA_LIBRARY.create_schema(schema_data, expected_rev)
+        return {"status": "created", "schema": res.get("schema"), "revision": res.get("revision")}
+    except (ValueError, storage.ConcurrencyError) as exc:
+        raise ApiError(str(exc), 400) from exc
+
+
+def api_schemas_update(body: dict[str, Any]) -> dict[str, Any]:
+    schema_id = str(body.get("id") or body.get("schema_id") or "").strip()
+    schema_data = body.get("schema") or body
+    if not schema_id:
+        schema_id = str(schema_data.get("id") or "").strip()
+    if not schema_id:
+        raise ApiError("Schema ID is required.", 400)
+    try:
+        expected_rev = body.get("expected_revision")
+        res = named_schemas.NAMED_SCHEMA_LIBRARY.update_schema(schema_id, schema_data, expected_rev)
+        return {"status": "updated", "schema": res.get("schema"), "revision": res.get("revision")}
+    except (ValueError, storage.ConcurrencyError) as exc:
+        raise ApiError(str(exc), 400) from exc
+
+
+def api_schemas_delete(body: dict[str, Any]) -> dict[str, Any]:
+    schema_id = str(body.get("id") or body.get("schema_id") or "").strip()
+    if not schema_id:
+        raise ApiError("Schema ID is required.", 400)
+    expected_rev = body.get("expected_revision")
+    try:
+        deleted = named_schemas.NAMED_SCHEMA_LIBRARY.delete_schema(schema_id, expected_rev)
+        return {"status": "deleted" if deleted else "not_found", "id": schema_id}
+    except storage.ConcurrencyError as exc:
+        raise ApiError(str(exc), 400) from exc
+
+
+def api_state_validate_context(body: dict[str, Any]) -> dict[str, Any]:
+    return state_transfer.validate_navigation_payload(body)
+
+
+def api_reconcile_inspect(body: dict[str, Any]) -> dict[str, Any]:
+    scan = STORE.require_scan()
+    note_path = str(body.get("note_path") or "").strip()
+    if not note_path:
+        raise ApiError("note_path is required.", 400)
+
+    inspect_res = note_workspace.inspect_note_for_workspace(scan, note_path)
+    note_props = inspect_res.original_properties
+
+    schema_props = body.get("schema_properties") or []
+    schema_name = str(body.get("schema_name") or "adopted-schema")
+    schema_id = body.get("schema_id")
+
+    if schema_id and not schema_props:
+        sch = named_schemas.NAMED_SCHEMA_LIBRARY.get_schema(str(schema_id))
+        if sch:
+            schema_props = [p.to_dict() for p in sch.properties]
+            schema_name = sch.name
+
+    report = reconciliation.reconcile_note_frontmatter(
+        note_properties=note_props,
+        schema_properties=schema_props,
+        schema_name=schema_name,
+        schema_id=str(schema_id) if schema_id else None,
+        note_path=note_path,
+    )
+    return report.to_dict()
+
+
+def api_reconcile_preview(body: dict[str, Any]) -> dict[str, Any]:
+    orig_props = body.get("original_properties") or {}
+    schema_props = body.get("schema_properties") or []
+    resolved_vals = body.get("resolved_values") or {}
+
+    result = reconciliation.preview_reconciled_frontmatter(
+        original_properties=orig_props,
+        schema_properties=schema_props,
+        resolved_values=resolved_vals,
+    )
+    return result
+
+
+def api_scope_schema_assign(body: dict[str, Any]) -> dict[str, Any]:
+    scope_key = str(body.get("scope_key") or "default").strip()
+    schema_id = str(body.get("schema_id") or "").strip()
+    if not schema_id:
+        raise ApiError("schema_id is required.", 400)
+    sch = named_schemas.NAMED_SCHEMA_LIBRARY.get_schema(schema_id)
+    if not sch:
+        raise ApiError(f"Schema '{schema_id}' not found.", 404)
+    expected_rev = body.get("expected_revision")
+    res = scope_governance.SCOPE_GOVERNANCE_STORE.assign_schema(
+        scope_key=scope_key,
+        schema_id=schema_id,
+        schema_name=sch.name,
+        expected_revision=expected_rev,
+    )
+    return {"status": "assigned", "assignment": res.get("assignment")}
+
+
+def api_scope_schema_current(body: dict[str, Any]) -> dict[str, Any]:
+    scope_key = str(body.get("scope_key") or "default").strip()
+    asgn = scope_governance.SCOPE_GOVERNANCE_STORE.get_assignment(scope_key)
+    return {"scope_key": scope_key, "assignment": asgn.to_dict() if asgn else None}
+
+
+def api_scope_schema_unassign(body: dict[str, Any]) -> dict[str, Any]:
+    scope_key = str(body.get("scope_key") or "default").strip()
+    expected_rev = body.get("expected_revision")
+    deleted = scope_governance.SCOPE_GOVERNANCE_STORE.unassign_schema(scope_key, expected_rev)
+    return {"status": "unassigned" if deleted else "not_found", "scope_key": scope_key}
+
+
+def api_drift_analyze(body: dict[str, Any]) -> dict[str, Any]:
+    STORE.require_scan()
+    scoped_scan = STORE.get_scoped_scan()
+    scope_key = str(body.get("scope_key") or "default").strip()
+
+    schema_id = body.get("schema_id")
+    schema_props = body.get("schema_properties")
+    schema_name = body.get("schema_name")
+
+    if not schema_id and not schema_props:
+        asgn = scope_governance.SCOPE_GOVERNANCE_STORE.get_assignment(scope_key)
+        if asgn:
+            schema_id = asgn.schema_id
+            schema_name = asgn.schema_name
+
+    if schema_id and not schema_props:
+        sch = named_schemas.NAMED_SCHEMA_LIBRARY.get_schema(str(schema_id))
+        if sch:
+            schema_props = [p.to_dict() for p in sch.properties]
+            schema_name = sch.name
+
+    if not schema_props:
+        raise ApiError("No expected schema specified or assigned to this scope.", 400)
+
+    report = drift.analyze_schema_drift(
+        notes=scoped_scan.notes,
+        schema_properties=schema_props,
+        schema_id=str(schema_id or "custom"),
+        schema_name=str(schema_name or "Custom Schema"),
+        scope_key=scope_key,
+    )
+    return report.to_dict()
+
+
+def api_schema_migration_plan(body: dict[str, Any]) -> dict[str, Any]:
+    src_props = body.get("source_properties") or []
+    tgt_props = body.get("target_properties") or []
+    src_ver = str(body.get("source_version") or "1.0.0")
+    tgt_ver = str(body.get("target_version") or "1.1.0")
+
+    src_id = body.get("source_schema_id")
+    tgt_id = body.get("target_schema_id")
+
+    if src_id and not src_props:
+        s = named_schemas.NAMED_SCHEMA_LIBRARY.get_schema(str(src_id))
+        if s:
+            src_props = [p.to_dict() for p in s.properties]
+            src_ver = s.version
+    if tgt_id and not tgt_props:
+        s = named_schemas.NAMED_SCHEMA_LIBRARY.get_schema(str(tgt_id))
+        if s:
+            tgt_props = [p.to_dict() for p in s.properties]
+            tgt_ver = s.version
+
+    plan = migration.plan_schema_migration(
+        source_properties=src_props,
+        target_properties=tgt_props,
+        source_version=src_ver,
+        target_version=tgt_ver,
+    )
+    return plan.to_dict()
+
+
+def api_governance_profile_export(_body: dict[str, Any]) -> dict[str, Any]:
+    return governance_profile.export_governance_profile()
+
+
+def api_governance_profile_import(body: dict[str, Any]) -> dict[str, Any]:
+    profile_data = body.get("profile")
+    if not profile_data:
+        raise ApiError("profile data is required.", 400)
+    mode = str(body.get("mode") or "merge")
+    try:
+        res = governance_profile.import_governance_profile(profile_data, mode=mode)
+        return res
+    except ValueError as exc:
+        raise ApiError(str(exc), 400) from exc
 
 
 # --------------------------------------------------------------------------
@@ -623,11 +869,29 @@ ROUTES: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "/api/scope/set": api_scope_set,
     "/api/scope/apply": api_scope_set,
     "/api/scope/current": api_scope_current,
+    "/api/scope/schema/assign": api_scope_schema_assign,
+    "/api/scope/schema/current": api_scope_schema_current,
+    "/api/scope/schema/unassign": api_scope_schema_unassign,
+    "/api/drift/analyze": api_drift_analyze,
     "/api/note_candidates": api_note_candidates,
     "/api/notes/candidates": api_note_candidates,
     "/api/glossary": api_glossary_catalog,
     "/api/glossary/catalog": api_glossary_catalog,
     "/api/glossary/property": api_glossary_property,
+    "/api/glossary/user/list": api_glossary_user_list,
+    "/api/glossary/user/save": api_glossary_user_save,
+    "/api/glossary/user/delete": api_glossary_user_delete,
+    "/api/schemas/list": api_schemas_list,
+    "/api/schemas/get": api_schemas_get,
+    "/api/schemas/create": api_schemas_create,
+    "/api/schemas/update": api_schemas_update,
+    "/api/schemas/delete": api_schemas_delete,
+    "/api/schemas/migration/plan": api_schema_migration_plan,
+    "/api/governance/profile/export": api_governance_profile_export,
+    "/api/governance/profile/import": api_governance_profile_import,
+    "/api/reconcile/inspect": api_reconcile_inspect,
+    "/api/reconcile/preview": api_reconcile_preview,
+    "/api/state/validate_context": api_state_validate_context,
 }
 
 

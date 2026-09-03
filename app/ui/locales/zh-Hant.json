@@ -1,6 +1,6 @@
 {
   "app.title": "Obsidian 屬性工作室",
-  "app.subtitle": "Obsidian PKM v1.1.0",
+  "app.subtitle": "Obsidian PKM v1.2.0",
   "safety.read_only": "知識庫唯讀",
   "safety.offline": "完全離線 · 無須連網與 AI",
   "nav.group.home": "首頁",
@@ -75,7 +75,6 @@
   "discover.drawer_val": "屬性數值",
   "discover.drawer_count": "出現次數",
   "workspace.title": "單篇筆記屬性工作區",
-
   "workspace.lead": "搜尋全庫筆記，檢視既有 Frontmatter 屬性，在不修改檔案的情況下進行表單編輯、檢視語意 Diff，並複製安全合法的 YAML。",
   "workspace.search_label": "搜尋或選擇筆記",
   "workspace.search_placeholder": "輸入筆記名稱或相對路徑搜尋...",
@@ -106,7 +105,6 @@
   "ws.collapse_all": "全部收合",
   "ws.notes_count_suffix": "篇筆記",
   "ws.search_results_title": "搜尋結果",
-
   "fill.title": "填寫並複製 Frontmatter",
   "fill.lead": "依據設計的 Schema 填寫屬性值。下方將即時產生合法的 YAML Frontmatter，供您複製貼上到 Obsidian 筆記頂端。",
   "fill.form_title": "填寫表單",
@@ -279,7 +277,30 @@
   "refactor.normalize_summary": "預計標準化 {groups} 組數值，影響 {notes} 篇筆記；保留 {untouched} 組原值。",
   "refactor.no_available_properties": "無可用屬性",
   "refactor.no_available_properties_option": "-- 無可用屬性 --",
-  "relations.empty": "此範圍內無相符的關聯項目。"
+  "relations.empty": "此範圍內無相符的關聯項目。",
+  "nav.glossary": "個人詞彙庫",
+  "nav.schemas": "具名架構庫",
+  "glossary.title": "個人詞彙庫 (Personal Glossary)",
+  "glossary.lead": "自訂與擴充屬性標籤、使用指引與說明。系統優先採用使用者自訂指引，底層 YAML 鍵名保持不可變。",
+  "glossary.btn_add": "+ 新增自訂定義",
+  "glossary.search_placeholder": "搜尋詞彙庫屬性鍵名或標籤...",
+  "glossary.table_key": "標準鍵名 (Key)",
+  "glossary.table_label": "顯示標籤",
+  "glossary.table_source": "定義來源",
+  "glossary.table_guidance": "使用指引",
+  "glossary.table_actions": "操作",
+  "schemas.title": "具名架構庫 (Named Schema Library)",
+  "schemas.lead": "儲存、版本化與重用筆記屬性架構規範。可套用於分析範圍治理或單篇筆記核對。",
+  "schemas.btn_create": "+ 建立新架構",
+  "schemas.card_version": "版本",
+  "schemas.card_properties": "項屬性",
+  "schemas.btn_apply": "套用至筆記",
+  "schemas.btn_assign": "指派至範圍",
+  "schemas.btn_edit": "編輯架構",
+  "schemas.btn_delete": "刪除",
+  "design.next_save_named": "儲存至具名架構庫 (Save as Named Schema)",
+  "design.next_save_named_desc": "儲存此架構至個人具名架構庫中，供未來重複引用",
+  "toast.schema_saved": "已成功儲存架構「{name}」至具名架構庫",
+  "toast.override_saved": "已成功儲存屬性「{key}」的個人自訂定義",
+  "toast.override_deleted": "已移除個人自訂定義，已還原為系統標準定義"
 }
-
-

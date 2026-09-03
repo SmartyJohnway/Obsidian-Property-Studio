@@ -1,6 +1,6 @@
 {
   "app.title": "Obsidian Property Studio",
-  "app.subtitle": "Obsidian PKM v1.1.0",
+  "app.subtitle": "Obsidian PKM v1.2.0",
   "safety.read_only": "Vault read-only",
   "safety.offline": "Local-only · No network or AI required",
   "nav.group.home": "Home",
@@ -27,7 +27,6 @@
   "context.folders_summary": "{count} folder(s) ({notes} notes)",
   "context.single_note_summary": "Note: {path}",
   "context.no_note": "No note selected",
-
   "overview.title": "Workspace Overview",
   "overview.lead": "Understand, design, edit, and govern your Obsidian Properties. Runs entirely locally and remains strictly read-only towards your vault files.",
   "overview.not_scanned_title": "No Vault Loaded",
@@ -76,7 +75,6 @@
   "discover.drawer_val": "Value",
   "discover.drawer_count": "Count",
   "workspace.title": "Note Properties Workspace",
-
   "workspace.lead": "Search notes across the entire vault, inspect original frontmatter, edit properties with live semantic diffs, and copy verified YAML.",
   "workspace.search_label": "Search or Select Note",
   "workspace.search_placeholder": "Type note name or relative path...",
@@ -107,7 +105,6 @@
   "ws.collapse_all": "Collapse All",
   "ws.notes_count_suffix": "notes",
   "ws.search_results_title": "Search Results",
-
   "fill.title": "Fill & Copy Frontmatter",
   "fill.lead": "Fill property values according to the designed Schema. Valid YAML Frontmatter will be generated in real-time below for copy-pasting into Obsidian.",
   "fill.form_title": "Fill Form",
@@ -280,7 +277,30 @@
   "refactor.normalize_summary": "Will normalize {groups} value group(s) affecting {notes} note(s); leaving {untouched} unchanged.",
   "refactor.no_available_properties": "No available properties",
   "refactor.no_available_properties_option": "-- No available properties --",
-  "relations.empty": "No relationship links found matching this criteria in scope."
+  "relations.empty": "No relationship links found matching this criteria in scope.",
+  "nav.glossary": "Personal Glossary",
+  "nav.schemas": "Named Schema Library",
+  "glossary.title": "Personal Property Glossary",
+  "glossary.lead": "Customize display labels and guidance. User overrides take precedence while canonical YAML keys remain immutable.",
+  "glossary.btn_add": "+ Add Custom Definition",
+  "glossary.search_placeholder": "Search glossary by key or label...",
+  "glossary.table_key": "Canonical Key",
+  "glossary.table_label": "Display Label",
+  "glossary.table_source": "Source",
+  "glossary.table_guidance": "Guidance",
+  "glossary.table_actions": "Actions",
+  "schemas.title": "Named Schema Library",
+  "schemas.lead": "Store, version, and reuse structured note property schemas. Assign to scopes or reconcile against notes.",
+  "schemas.btn_create": "+ Create Schema",
+  "schemas.card_version": "Version",
+  "schemas.card_properties": "properties",
+  "schemas.btn_apply": "Reconcile Note",
+  "schemas.btn_assign": "Assign to Scope",
+  "schemas.btn_edit": "Edit Schema",
+  "schemas.btn_delete": "Delete",
+  "design.next_save_named": "Save as Named Schema",
+  "design.next_save_named_desc": "Save this schema definition to Named Schema Library for reuse.",
+  "toast.schema_saved": "Schema '{name}' saved to Named Schema Library",
+  "toast.override_saved": "Saved custom definition for property '{key}'",
+  "toast.override_deleted": "Deleted custom definition, restored to system default"
 }
-
-

@@ -1,108 +1,85 @@
 # Handoff
 
 Updated: `2026-09-03`  
-From: `Antigravity — v1.2.0 governance transition & architecture freeze executor`  
-To / Intended Next Executor: `Dr. J / v1.2.0 Development Executor`  
+From: `Antigravity — v1.2.0 Autonomous Implementation Agent`  
+To / Intended Next Executor: `Dr. J (Human Owner) / Verification Auditor`  
 Formal Project Root: `D:\Antigravity-Workspace\Obsidian-Property-Studio\Obsidian-Property-Studio-v1.0.0`  
-Published Baseline: `v1.1.0 — CLOSED`  
-v1.1.0 Released Tag Commit: `cca408c0456e1fe94e8224bd6550cf30c7274926` (Tag `v1.1.0`)  
-Post-v1.1 Governance Baseline (main HEAD): `ce92caf7bc572f2c15881dc751cd92818eaaa6c2`  
+Published Baseline: `v1.1.0 — CLOSED (cca408c)`  
 Current Target: `v1.2.0`  
 Active Branch: `feature/v1.2.0`  
-Active Milestone: `M015`  
-Active Milestone Status: `PASS`  
-Current Task: `NONE`  
-Last Verified Gate: `M015 — v1.2 Governance Transition & Architecture Freeze PASS`  
-Last Verified Governance Commit: `644ca6b9bba3a6b702abf1bf3591b444d74b28ff`  
-GitHub Release: `https://github.com/SmartyJohnway/Obsidian-Property-Studio/releases/tag/v1.1.0`  
+Active Milestone: `M022`  
+Active Milestone Status: `IN_PROGRESS`  
+Current Task: `M022-T04` (Human Owner Windows 10 Production UI Walkthrough Acceptance)  
+Last Verified Gate: `M021 — Schema Versioning, Migration Planning & Governance Profile PASS`  
 GitHub PR: `PR #2 (Draft, feat(v1.2): Personal Property Governance System)`  
 Authoritative Specification: `docs/specs/Obsidian_Property_Studio_v1.2.0_Spec.md`  
-Specification SHA-256: `8760e592381685c4a31ae5eac2b8692fd8fa80ebc6a8ad7044fcb4c037f7187b`  
 Archived v1.1 Roadmap: `docs/archive/ROADMAP_v1.1.0.md`  
-Archived Roadmap SHA-256: `d68f8ac57411896dd1b2b10b0716629f2d12c46b1e0bb6a2a1368c961ee7ac2a`
 
 ---
 
-## Repaired Architecture Freeze Artifacts (M015 PASS)
+## Current Status & Checkpoint Summary
 
-1. **App-Local Governance Storage, Migration & Concurrency:**
-   - Path: `docs/specs/v1.2.0_App_Local_Governance_Storage.md`
-   - SHA-256: `d0acd3a28a3597d3aacff1119fa78628df1c450c50c9f75060fb36cbb9e5b573`
-   - Features: `%APPDATA%/ObsidianPropertyStudio/` base path, explicit v1.1 → v1.2 `localStorage` migration strategy (idempotent, validate before persist, preserve legacy state, fail closed), Optimistic Concurrency Control (`revision` / `etag` stale-write rejection), collision-safe auto-backup (`backup_{entity}_{iso}_{uuid}.json`), runtime path containment assert outside Vault.
-2. **Comprehensive Workflow Closure Matrix:**
-   - Path: `docs/specs/v1.2.0_Workflow_Closure_Matrix.md`
-   - SHA-256: `380f243e7b480768700611f79aaba0bfc6e60a005e1b4afc590c969968441dc9`
-   - Features: Mandatory 13-column governed matrix covering 59 primary CTAs (all v1.1 baseline CTAs from Spec Section 10 + all new v1.2 CTAs), 100% audited PASS rows against v1.1 production behavior (Export via `/api/export` to `output_dir` + toast, unknown property help fallback to observed facts, in-memory `SavedChecksStore` + mirrored `localStorage`, Refactor planning-only terminal outcomes, session `S.currentSchema` state transfer), per-CTA explicit `Failure Path` columns, status breakdown: 41 PASS (v1.1 verified), 7 HOLD (known v1.1 dead-ends to close in v1.2), 11 PLANNED (new v1.2 workflows).
-3. **Proposal Contract Compatibility & AI Advisory Boundary:**
-   - Path: `docs/specs/v1.2.0_Proposal_Contract_Compatibility.md`
-   - SHA-256: `fc9cc011cf43dc2000f37bd5e700f4a743a708255d69eb05b958e2c36881c43a`
-   - Features: Preserves production v1.0 contract exactly (property name accepts any non-empty string without ASCII regex restriction; `ui_control` plain, single_choice, multi_choice, note_link, note_link_list), introduces Contract 1.1 as additive extension (`management_purpose`, `source_context`, `target_note_kind`, `proposal_notes`, `schema_target`), transparent 1.0/1.1 ingestion, unknown version fail closed, authoritative JSON schema, explicit proposal review actions, decoupled Skill boundary.
+All autonomous implementation and verification milestones from M016 through M021 have been executed, tested, and marked **PASS**. The project is now at **M022 (Release Candidate)**:
+
+- **M016: Workflow Closure Foundation & State Transfer Engine — PASS**
+  - Implemented `app/core/state_transfer.py` and `app/ui/state_transfer.js`.
+  - Added single-consumption navigation context with fail-closed deserialization.
+  - 6 dedicated unit tests (`tests/test_v12_state_transfer.py`) PASS.
+
+- **M017: Personal Glossary & Named Schema Library — PASS**
+  - Implemented `app/storage/local_storage.py` outside Vault with OCC (`revision`/`etag`) and crash-safe backup isolation.
+  - Implemented `app/core/user_glossary.py` with 3-tier precedence (`Built-in → User Override → Vault Facts`) and immutable canonical keys.
+  - Implemented `app/core/named_schemas.py` with full CRUD, versioning, and naming collision protection.
+  - Expanded bilingual i18n dictionaries to 299 aligned keys (`test_v11_i18n.py` PASS).
+  - 6 dedicated unit tests (`tests/test_v12_glossary.py`, `tests/test_v12_named_schemas.py`) PASS.
+
+- **M018: Existing Note Reconciliation & Health Drilldown — PASS**
+  - Implemented `app/core/reconciliation.py` computing 4 distinct states (`Matches`, `Missing`, `Conflict`, `Outside-Schema Preserved`).
+  - Strict preservation of non-schema properties (DEC-029).
+  - Integrated Health finding drilldown into Note Workspace (`drilldownToNoteWorkspace`).
+  - 3 dedicated unit tests (`tests/test_v12_reconciliation.py`, `tests/test_v12_health_drilldown.py`) PASS.
+
+- **M019: Scope Governance & Schema Drift — PASS**
+  - Implemented `app/core/scope_governance.py` persisting folder-to-schema assignments outside Vault.
+  - Implemented `app/core/drift.py` analyzing Desired vs Actual schema compliance rate, missing required properties, type mismatches, and value drift.
+  - Integrated Schema Drift card into Property Health UI.
+  - 2 dedicated unit tests (`tests/test_v12_scope_governance.py`, `tests/test_v12_drift.py`) PASS.
+
+- **M020: External AI Proposal Workflow & Companion Skill — PASS**
+  - Updated `app/core/proposal.py` supporting Proposal Contract 1.1 additions (`target_note`, `target_scope`, `rationale`, `proposed_migration`) while retaining 100% backward compatibility with Proposal Contract 1.0.
+  - Built interactive Proposal Review UI with one-click Save as Named Schema and Reconcile with Note actions.
+  - Packaged companion skill `skills/obsidian-property-advisor/` (`SKILL.md`).
+  - 3 dedicated unit tests (`tests/test_v12_proposal_workflow.py`) PASS.
+
+- **M021: Schema Versioning, Migration Planning & Governance Profile (P1 Full Implementation) — PASS**
+  - Implemented `app/core/migration.py` detecting breaking changes, suggesting SemVer bumps (patch/minor/major), and generating step-by-step migration plans.
+  - Implemented `app/core/governance_profile.py` exporting and importing portable packages with SHA-256 integrity checksums.
+  - Integrated Migration Planner drawer and Profile export/import in UI.
+  - 4 dedicated unit tests (`tests/test_v12_migration.py`, `tests/test_v12_governance_profile.py`) PASS.
+
+- **M022: Release Acceptance & Packaging — IN_PROGRESS**
+  - `M022-T01`: Full test suite executed — **200/200 tests PASS** in 14.2s.
+  - `M022-T02`: 5,000-note benchmark freshly executed — **4.525s total analysis** across 5,040 notes, zero errors, recorded in `evidence/benchmark.json` and `evidence/integration/m022_v120_benchmark.json`.
+  - `M022-T03`: Vault byte-for-byte read-only integrity re-verified — **0 files created, 0 files modified, 0 files deleted**, recorded in `evidence/integration/m022_v120_vault_readonly.json`.
+  - `M022-T04`: Windows 10 production UI walkthrough acceptance — **`NOT YET VERIFIED`** (reserved for Human Owner Dr. J per governance instructions).
+  - `M022-T05`: P0 requirements complete, P1 scope fully implemented.
+  - `M022-T06`: Four-file consistency gate verified.
+  - `M022-T07`: Packaging script `scripts/package_v120_release.py` authored and ready.
 
 ---
 
-## Governance Reminder
-
-This repository strictly adheres to the Four-File Governance standard:
-
-```text
-PROJECT.md   = accepted v1.2.0 Product Truth, Scope, Requirements, and Constraints
-ROADMAP.md   = active v1.2.0 milestone execution, acceptance criteria, and evidence
-HANDOFF.md   = latest runtime recovery context (this file)
-AGENTS.md    = agent operating rules and project-specific constraints
-```
+## Governance Reminder & Read Order
 
 Read order:
 1. `PROJECT.md`
 2. `ROADMAP.md`
 3. `AGENTS.md`
 4. `HANDOFF.md`
-5. git status / git log
-6. relevant source code, tests, and evidence
-7. `docs/specs/Obsidian_Property_Studio_v1.2.0_Spec.md` (authoritative v1.2.0 planning specification)
-8. `docs/specs/v1.2.0_*.md` (frozen architecture specifications)
+5. `git status` / `git diff`
+6. `docs/specs/`
 
 ---
 
-## Current Milestone / Task
+## Immediate Next Action
 
-Project State: `ACTIVE`  
-Current Target: `v1.2.0`  
-Current Milestone: `M015`  
-Current Milestone Status: `PASS`  
-Current Task: `NONE`  
-Last Verified Gate: `M015 — v1.2 Governance Transition & Architecture Freeze PASS`  
-Current Blocker: `NONE`  
-Next Action: `Awaiting Human Owner (Dr. J) review and approval of M015 architecture freeze before starting M016 implementation.`  
-Implementation State: `NOT STARTED`  
-M016 Implementation Start: `NOT YET APPROVED`  
-Automated Verification: `PASS (176/176 baseline tests pass)`  
-Human Verified Acceptance: `NOT YET VERIFIED`  
-Accepted Limitation: `Windows 11 AMD64 native verification recorded as NOT YET VERIFIED due to test host unavailability (accepted non-blocking release limitation per human approved contract).`
-
----
-
-## M015 Architecture Freeze Repair Summary
-
-1. **Proposal Contract 1.0 Restored & 1.1 Additive Extension:**
-   - Production v1.0 Proposal Contract preserved immutably (ASCII regex removed; any non-empty string accepted for property name; `ui_control` unchanged).
-   - Version 1.1 specified as additive extension with optional advisory context fields.
-   - Compatibility semantics frozen (1.0 valid, 1.1 valid with metadata, unknown versions fail closed).
-2. **Comprehensive Workflow Closure Matrix:**
-   - Complete 13-column matrix covering all 59 primary CTAs (including all v1.1 CTAs from Spec Section 10).
-   - Audited all PASS rows against actual v1.1 production behavior (Export via `/api/export` to `output_dir` + toast, unknown property help fallback to observed facts, in-memory `SavedChecksStore` + mirrored `localStorage`, Refactor planning-only terminal outcomes, session `S.currentSchema` state transfer).
-   - Per-CTA specific `Failure Path` explicitly documented.
-3. **App-Local Storage Migration & Concurrency:**
-   - Explicit v1.1 `localStorage` → v1.2 app-local migration strategy (idempotent, validate before persist, preserve legacy until verified).
-   - Optimistic Concurrency Control (OCC) with integer revisions and ETags to prevent stale/lost writes.
-   - Collision-safe backup filenames (`backup_{entity}_{iso}_{uuid}.json`).
-4. **Product Implementation Unmodified:**
-   - Zero product implementation changes made in M015.
-   - 176/176 baseline regression tests PASS.
-   - Vault byte-for-byte read-only safety confirmed.
-
----
-
-## Immediate Next Actions
-
-1. Human Owner (Dr. J) external review of M015 Architecture Freeze final evidence matrix truth repair.
-2. Upon approval, proceed to M016 (Workflow Closure Foundation & State Transfer).
+Submit the v1.2.0 Release Candidate to Human Owner (**Dr. J**) for final Windows 10 production UI walkthrough acceptance (`M022-T04` / `M022-AC04`). All autonomous implementation, testing, benchmarking, and evidence generation are complete.
