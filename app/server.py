@@ -269,11 +269,13 @@ def api_workspace_preview(body: dict[str, Any]) -> dict[str, Any]:
     schema_data = body.get("schema")
     schema = Schema.from_dict(schema_data) if schema_data else None
     deleted_keys = list(body.get("deleted_keys", []) or [])
+    touched_keys = list(body["touched_keys"]) if "touched_keys" in body else None
     diff_res = note_workspace.compute_workspace_diff_and_frontmatter(
         original_note=note,
         updated_values=values,
         schema=schema,
         deleted_keys=deleted_keys,
+        touched_keys=touched_keys,
     )
     return diff_res.to_dict()
 

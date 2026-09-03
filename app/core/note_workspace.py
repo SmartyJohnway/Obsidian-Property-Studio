@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from app.core.fill import render_frontmatter, roundtrip_check
-from app.core.model import FAILED_PARSE_STATUSES, Note, ParseStatus, Schema, VaultScan
+from app.core.model import FAILED_PARSE_STATUSES, Note, ParseStatus, Schema, SchemaProperty, VaultScan
 from app.core.scope import ScopeSpec, is_note_in_scope
 
 
@@ -170,12 +170,14 @@ def compute_workspace_diff_and_frontmatter(
     updated_values: dict[str, Any],
     schema: Schema | None = None,
     deleted_keys: list[str] | None = None,
+    touched_keys: list[str] | None = None,
 ) -> NoteWorkspaceDiffResult:
     """Compute semantic diff, merge properties, and enforce YAML round-trip safety gate (R08)."""
     errors: list[str] = []
     warnings: list[str] = []
     diffs: list[PropertyDiff] = []
     deleted_set = set(deleted_keys or [])
+    touched_set = set(touched_keys) if touched_keys is not None else None
 
     if original_note is not None:
         if original_note.parse_failed or original_note.parse_status in FAILED_PARSE_STATUSES:
@@ -205,10 +207,12 @@ def compute_workspace_diff_and_frontmatter(
         orig_map = {k: v.raw for k, v in original_note.properties.items()}
 
     coerced_updates: dict[str, Any] = {}
+    schema_prop_names: set[str] = set()
 
     # Canonical Schema constraint validation & type coercion (REQ-043)
     if schema is not None:
         from .fill import coerce_value
+        schema_prop_names = {p.name for p in schema.properties}
 
         for prop in schema.properties:
             is_deleted = prop.name in deleted_set
@@ -226,7 +230,7 @@ def compute_workspace_diff_and_frontmatter(
                 if prop.name not in orig_map:
                     errors.append(f"Required property '{prop.name}' is missing or empty.")
 
-    # Build merged dictionary (V11-006: preserve unrelated properties)
+    # Build merged dictionary (V11-006 & REQ-043: preserve outside-schema native types byte-faithfully)
     merged: dict[str, Any] = {}
     all_keys = sorted(set(orig_map.keys()) | set(updated_values.keys()))
 
@@ -234,6 +238,54 @@ def compute_workspace_diff_and_frontmatter(
         if key in deleted_set:
             if key in orig_map:
                 diffs.append(PropertyDiff(key=key, change_type="deleted", old_value=orig_map[key]))
+            continue
+
+        if key in orig_map and key not in schema_prop_names:
+            # Outside-Schema Property: MUST preserve original native type and raw object (P0 Blocker 1)
+            old_val = orig_map[key]
+            pv = original_note.properties[key] if original_note else None
+            user_raw = updated_values.get(key)
+
+            # Determine if untouched
+            is_untouched = False
+            if touched_set is not None:
+                is_untouched = (key not in touched_set)
+            else:
+                # If key is completely omitted from updated_values, it was not touched at all
+                if key not in updated_values:
+                    is_untouched = True
+                elif user_raw is not None:
+                    if isinstance(old_val, bool) and str(user_raw).strip().lower() == str(old_val).lower():
+                        is_untouched = True
+                    elif isinstance(old_val, (int, float)) and str(user_raw).strip() == str(old_val):
+                        is_untouched = True
+                    elif isinstance(old_val, list) and (str(user_raw).strip() == ", ".join(str(x) for x in old_val) or str(user_raw).strip() == str(old_val)):
+                        is_untouched = True
+                    elif str(user_raw) == str(old_val):
+                        is_untouched = True
+
+            if is_untouched:
+                # Untouched outside-schema property: directly preserve original raw object
+                diffs.append(PropertyDiff(key=key, change_type="preserved", old_value=old_val, new_value=old_val))
+                merged[key] = old_val
+            else:
+                # User genuinely touched/modified outside-schema property: coerce using pv.storage_type
+                if pv is not None:
+                    from .fill import coerce_value
+                    temp_prop = SchemaProperty(name=key, storage_type=pv.storage_type)
+                    coerced, prop_errs = coerce_value(temp_prop, user_raw)
+                    if prop_errs:
+                        errors.extend(prop_errs)
+                    target_val = coerced if coerced is not None else user_raw
+                else:
+                    target_val = user_raw
+
+                if target_val != old_val:
+                    diffs.append(PropertyDiff(key=key, change_type="modified", old_value=old_val, new_value=target_val))
+                    merged[key] = target_val
+                else:
+                    diffs.append(PropertyDiff(key=key, change_type="preserved", old_value=old_val, new_value=old_val))
+                    merged[key] = old_val
             continue
 
         if key in updated_values and key in orig_map:

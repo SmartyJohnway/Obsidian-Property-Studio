@@ -89,17 +89,24 @@ def analyze_schema_drift(
     drifted_note_paths: set[str] = set()
 
     for note in notes:
-        if hasattr(note, "properties") and isinstance(note.properties, dict):
-            props = {k: (v.raw if hasattr(v, "raw") else v) for k, v in note.properties.items()}
-        elif hasattr(note, "frontmatter") and isinstance(note.frontmatter, dict):
+        prop_map = note.properties if (hasattr(note, "properties") and isinstance(note.properties, dict)) else {}
+        props = {}
+        types_map = {}
+        for k, v in prop_map.items():
+            if hasattr(v, "raw"):
+                props[k] = v.raw
+                types_map[k] = v.storage_type.value if hasattr(v, "storage_type") else "text"
+            else:
+                props[k] = v
+                types_map[k] = "text"
+        if not props and hasattr(note, "frontmatter") and isinstance(note.frontmatter, dict):
             props = note.frontmatter
-        else:
-            props = {}
+            types_map = {k: "text" for k in props}
         has_critical_drift = False
 
-        # 0. Check Schema Version Mismatch (REQ-045)
+        # 0. Check Schema Version Mismatch (REQ-045: exclusively use dedicated schema_version key)
         if schema_version:
-            note_ver = props.get("schema_version") or props.get("version")
+            note_ver = props.get("schema_version")
             if note_ver is not None and str(note_ver).strip() != str(schema_version).strip():
                 findings.append(
                     NoteDriftFinding(
@@ -159,20 +166,50 @@ def analyze_schema_drift(
                     )
             else:
                 val = props[name]
-                # Relationship check: if ui_control is note_link, value should contain wikilink format [[...]]
-                if ctrl == "note_link" and required:
-                    if not val or not re.search(r"\[\[.+?\]\]", str(val)):
+                actual_type = types_map.get(name, "text")
+
+                # Relationship check: if ui_control is note_link or note_link_list
+                if ctrl in ("note_link", "note_link_list") and required:
+                    if val is None or val == "":
                         findings.append(
                             NoteDriftFinding(
                                 note_path=note.path,
                                 category=DriftCategory.MISSING_REQUIRED_RELATIONSHIP,
                                 property_key=name,
-                                detail=f"Required relationship '{name}' does not contain a valid note link: '{val}'.",
-                                expected="[[target_note]]",
-                                actual=str(val) if val is not None else None,
+                                detail=f"Required relationship '{name}' is missing or empty.",
+                                expected=ctrl,
+                                actual=None,
                             )
                         )
                         has_critical_drift = True
+                    elif ctrl == "note_link":
+                        if not re.search(r"\[\[.+?\]\]", str(val)):
+                            findings.append(
+                                NoteDriftFinding(
+                                    note_path=note.path,
+                                    category=DriftCategory.MISSING_REQUIRED_RELATIONSHIP,
+                                    property_key=name,
+                                    detail=f"Required relationship '{name}' does not contain a valid note link: '{val}'.",
+                                    expected="[[target_note]]",
+                                    actual=str(val),
+                                )
+                            )
+                            has_critical_drift = True
+                    elif ctrl == "note_link_list":
+                        is_list = isinstance(val, (list, tuple)) and len(val) > 0
+                        all_wikilinks = is_list and all(re.search(r"\[\[.+?\]\]", str(item)) for item in val)
+                        if not is_list or not all_wikilinks:
+                            findings.append(
+                                NoteDriftFinding(
+                                    note_path=note.path,
+                                    category=DriftCategory.MISSING_REQUIRED_RELATIONSHIP,
+                                    property_key=name,
+                                    detail=f"Required relationship list '{name}' must be a non-empty list of note links: '{val}'.",
+                                    expected="[[link_1]], [[link_2]]",
+                                    actual=str(val),
+                                )
+                            )
+                            has_critical_drift = True
 
                 # Check allowed values
                 if allowed and isinstance(allowed, list) and len(allowed) > 0:
@@ -203,78 +240,33 @@ def analyze_schema_drift(
                         )
                         has_critical_drift = True
 
-                # Check storage type mismatch across all canonical types
+                # Check storage type mismatch using canonical PropertyValue.storage_type (REQ-045)
+                type_matched = True
                 if exp_type in ("number", "integer"):
-                    if not isinstance(val, (int, float)) and not str(val).replace(".", "", 1).isdigit():
-                        findings.append(
-                            NoteDriftFinding(
-                                note_path=note.path,
-                                category=DriftCategory.TYPE_MISMATCH,
-                                property_key=name,
-                                detail=f"Expected numeric value, got '{val}'.",
-                                expected=exp_type,
-                                actual=type(val).__name__,
-                            )
-                        )
-                        has_critical_drift = True
+                    type_matched = (actual_type in ("number", "integer"))
                 elif exp_type in ("checkbox", "boolean"):
-                    if not isinstance(val, bool) and str(val).lower() not in ("true", "false", "1", "0"):
-                        findings.append(
-                            NoteDriftFinding(
-                                note_path=note.path,
-                                category=DriftCategory.TYPE_MISMATCH,
-                                property_key=name,
-                                detail=f"Expected boolean, got '{val}'.",
-                                expected=exp_type,
-                                actual=type(val).__name__,
-                            )
-                        )
-                        has_critical_drift = True
-                elif exp_type == "date":
-                    val_str = str(val).strip()
-                    if not isinstance(val, date) and not re.match(r"^\d{4}-\d{2}-\d{2}$", val_str):
-                        findings.append(
-                            NoteDriftFinding(
-                                note_path=note.path,
-                                category=DriftCategory.TYPE_MISMATCH,
-                                property_key=name,
-                                detail=f"Expected date (YYYY-MM-DD), got '{val}'.",
-                                expected="date",
-                                actual=type(val).__name__,
-                            )
-                        )
-                        has_critical_drift = True
-                elif exp_type == "datetime":
-                    val_str = str(val).strip()
-                    is_dt = isinstance(val, datetime)
-                    if not is_dt:
-                        try:
-                            datetime.fromisoformat(val_str.replace("Z", "+00:00"))
-                        except ValueError:
-                            findings.append(
-                                NoteDriftFinding(
-                                    note_path=note.path,
-                                    category=DriftCategory.TYPE_MISMATCH,
-                                    property_key=name,
-                                    detail=f"Expected datetime, got '{val}'.",
-                                    expected="datetime",
-                                    actual=type(val).__name__,
-                                )
-                            )
-                            has_critical_drift = True
+                    type_matched = (actual_type in ("checkbox", "boolean"))
                 elif exp_type in ("list", "tags"):
-                    if not isinstance(val, (list, tuple)) and not (isinstance(val, str) and ("," in val or "\n" in val)):
-                        findings.append(
-                            NoteDriftFinding(
-                                note_path=note.path,
-                                category=DriftCategory.TYPE_MISMATCH,
-                                property_key=name,
-                                detail=f"Expected list/tags structure, got scalar '{val}'.",
-                                expected=exp_type,
-                                actual=type(val).__name__,
-                            )
+                    type_matched = (actual_type in ("list", "tags"))
+                elif exp_type in ("date", "datetime"):
+                    type_matched = (actual_type in ("date", "datetime"))
+                elif exp_type == "text":
+                    type_matched = (actual_type == "text")
+                else:
+                    type_matched = (actual_type == exp_type)
+
+                if not type_matched:
+                    findings.append(
+                        NoteDriftFinding(
+                            note_path=note.path,
+                            category=DriftCategory.TYPE_MISMATCH,
+                            property_key=name,
+                            detail=f"Expected storage type '{exp_type}', but note has '{actual_type}' (value: {repr(val)}).",
+                            expected=exp_type,
+                            actual=actual_type,
                         )
-                        has_critical_drift = True
+                    )
+                    has_critical_drift = True
 
         # 2. Unexpected properties
         # Exclude internal metadata properties such as schema_version

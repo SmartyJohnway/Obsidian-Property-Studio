@@ -1815,13 +1815,13 @@ function setupSchemasHandlers() {
                 <div style="margin-top:10px">
                   <label style="font-size:12px; font-weight:600">匯入策略 (Import Mode)：</label>
                   <select id="profileImportModeSelect" class="form-control" style="width:100%; margin-top:4px">
-                    <option value="merge">合併模式 (Merge - 保留現有未衝突項目)</option>
-                    <option value="replace">覆蓋模式 (Replace - 清空現有本地設定並套用)</option>
+                    <option value="merge">${esc(I18N.t("profile.mode_merge"))}</option>
+                    <option value="replace">${esc(I18N.t("profile.mode_replace"))}</option>
                   </select>
                 </div>
               </div>
               <div style="display:flex; justify-content:flex-end; gap:8px">
-                <button class="primary" id="confirmApplyProfileBtn" style="background:var(--teal)">確認套用匯入</button>
+                <button class="primary" id="confirmApplyProfileBtn" style="background:var(--teal)">${esc(I18N.t("profile.confirm_apply"))}</button>
               </div>
             `;
 
@@ -1923,15 +1923,15 @@ async function loadGlossaryList() {
       <tr>
         <td><code>${esc(item.key)}</code></td>
         <td><strong>${esc(item.label)}</strong> <span class="muted" style="font-size:11px">(${esc(item.label_en)})</span></td>
-        <td><span class="pill ${item.isOverride ? 'warn' : (item.isObserved ? 'muted' : 'ok')}">${item.isOverride ? '自訂優先 (Override)' : (item.isObserved ? '庫內觀測 (Observed)' : '系統內建 (Built-in)')}</span></td>
+        <td><span class="pill ${item.isOverride ? 'warn' : (item.isObserved ? 'muted' : 'ok')}">${esc(item.isOverride ? I18N.t("glossary.source_override") : (item.isObserved ? I18N.t("glossary.source_observed") : I18N.t("glossary.source_builtin")))}</span></td>
         <td style="font-size:12.5px">${esc(item.guidance)}</td>
         <td>
-          <button class="secondary" style="font-size:11.5px; padding:3px 7px" onclick="openEditGlossaryModal('${esc(item.key)}')">${item.isObserved ? '建立定義' : '編輯定義'}</button>
+          <button class="secondary" style="font-size:11.5px; padding:3px 7px" onclick="openEditGlossaryModal('${esc(item.key)}')">${esc(item.isObserved ? I18N.t("glossary.btn_create") : I18N.t("glossary.btn_edit"))}</button>
         </td>
       </tr>
     `).join("");
   } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="5" style="color:var(--red)">載入失敗: ${esc(e.message)}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" style="color:var(--red)">${esc(I18N.t("common.load_failed"))}: ${esc(e.message)}</td></tr>`;
   }
 }
 
@@ -1948,59 +1948,59 @@ window.openEditGlossaryModal = async function(key = "") {
     const html = `
       <div style="display:flex; flex-direction:column; gap:12px">
         <div>
-          <label style="font-size:12px; color:var(--muted)">標準鍵名 (Canonical Key, 不可變):</label>
+          <label style="font-size:12px; color:var(--muted)">${esc(I18N.t("glossary.label_canonical_key"))}</label>
           ${isNew 
             ? `<input type="text" id="editGlossaryKey" class="form-control" placeholder="e.g. project_code" style="width:100%; margin-top:4px" />` 
             : `<div><code>${esc(key)}</code><input type="hidden" id="editGlossaryKey" value="${esc(key)}" /></div>`}
         </div>
         <div class="grid cols2" style="gap:10px">
           <div>
-            <label style="font-size:12px; color:var(--muted)">顯示標籤 (繁中 Label):</label>
+            <label style="font-size:12px; color:var(--muted)">${esc(I18N.t("glossary.label_label_zh"))}</label>
             <input type="text" id="editGlossaryLabelZh" class="form-control" value="${esc(meta.label_zh || key)}" style="width:100%; margin-top:4px" />
           </div>
           <div>
-            <label style="font-size:12px; color:var(--muted)">English Label:</label>
+            <label style="font-size:12px; color:var(--muted)">${esc(I18N.t("glossary.label_label_en"))}</label>
             <input type="text" id="editGlossaryLabelEn" class="form-control" value="${esc(meta.label_en || key)}" style="width:100%; margin-top:4px" />
           </div>
         </div>
         <div>
-          <label style="font-size:12px; color:var(--muted)">使用指引與規範說明 (Guidance):</label>
+          <label style="font-size:12px; color:var(--muted)">${esc(I18N.t("glossary.label_guidance"))}</label>
           <textarea id="editGlossaryGuidance" class="form-control" style="width:100%; height:60px; margin-top:4px">${esc(meta.guidance_zh || meta.guidance || meta.short_description_zh || "")}</textarea>
         </div>
         <div class="grid cols2" style="gap:10px">
           <div>
-            <label style="font-size:12px; color:var(--muted)">繁中詳細說明 (Description zh):</label>
+            <label style="font-size:12px; color:var(--muted)">${esc(I18N.t("glossary.label_desc_zh"))}</label>
             <textarea id="editGlossaryDescZh" class="form-control" style="width:100%; height:50px; margin-top:4px">${esc(meta.description_zh || meta.long_description_zh || "")}</textarea>
           </div>
           <div>
-            <label style="font-size:12px; color:var(--muted)">English Description:</label>
+            <label style="font-size:12px; color:var(--muted)">${esc(I18N.t("glossary.label_desc_en"))}</label>
             <textarea id="editGlossaryDescEn" class="form-control" style="width:100%; height:50px; margin-top:4px">${esc(meta.description_en || meta.long_description_en || "")}</textarea>
           </div>
         </div>
         <div class="grid cols2" style="gap:10px">
           <div>
-            <label style="font-size:12px; color:var(--muted)">分類 / 領域 (Category):</label>
+            <label style="font-size:12px; color:var(--muted)">${esc(I18N.t("glossary.label_category"))}</label>
             <input type="text" id="editGlossaryCategory" class="form-control" value="${esc(meta.category || '')}" placeholder="e.g. general, project, reading" style="width:100%; margin-top:4px" />
           </div>
           <div>
-            <label style="font-size:12px; color:var(--muted)">潛在別名 (Aliases, 逗號分隔):</label>
+            <label style="font-size:12px; color:var(--muted)">${esc(I18N.t("glossary.label_aliases"))}</label>
             <input type="text" id="editGlossaryAliases" class="form-control" value="${esc(Array.isArray(meta.aliases) ? meta.aliases.join(', ') : (meta.aliases || ''))}" placeholder="e.g. tag, label, 專案標籤" style="width:100%; margin-top:4px" />
           </div>
         </div>
         <div>
-          <label style="font-size:12px; color:var(--muted)">範例數值 (Examples, 逗號分隔):</label>
+          <label style="font-size:12px; color:var(--muted)">${esc(I18N.t("glossary.label_examples"))}</label>
           <input type="text" id="editGlossaryExamples" class="form-control" value="${esc(Array.isArray(meta.examples) ? meta.examples.join(', ') : (meta.examples || ''))}" placeholder="e.g. active, archived, draft" style="width:100%; margin-top:4px" />
         </div>
         <div style="display:flex; justify-content:space-between; margin-top:14px">
-          ${(!isNew && isKnown && meta.source === 'user_override') ? `<button class="secondary" onclick="deleteGlossaryOverride('${esc(key)}')">還原預設</button>` : '<div></div>'}
+          ${(!isNew && isKnown && meta.source === 'user_override') ? `<button class="secondary" onclick="deleteGlossaryOverride('${esc(key)}')">${esc(I18N.t("glossary.btn_restore_default"))}</button>` : '<div></div>'}
           <div style="display:flex; gap:8px">
-            <button class="secondary" onclick="closeDrawer()">取消</button>
-            <button class="primary" onclick="saveGlossaryOverride()">儲存定義</button>
+            <button class="secondary" onclick="closeDrawer()">${esc(I18N.t("common.btn_cancel"))}</button>
+            <button class="primary" onclick="saveGlossaryOverride()">${esc(I18N.t("glossary.btn_save"))}</button>
           </div>
         </div>
       </div>
     `;
-    openDrawer(isNew ? "新增個人詞彙定義" : ("編輯詞彙庫定義 — " + key), html);
+    openDrawer(isNew ? I18N.t("glossary.modal_add_title") : I18N.t("glossary.modal_edit_title", { key }), html);
   } catch (e) {
     toast(e.message, true);
   }
@@ -2869,6 +2869,7 @@ async function inspectNoteInWorkspace(notePath) {
 }
 
 function renderWorkspaceFields(propsMap) {
+  S.wsTouchedKeys = new Set();
   const container = $("wsPropFields");
   container.innerHTML = Object.entries(propsMap).map(([k, v]) => `
     <div class="ws-prop-row" data-key="${esc(k)}" style="display:grid; grid-template-columns:220px 1fr 36px; gap:8px; align-items:center; margin-bottom:8px; padding:6px 8px; background:var(--panel2); border-radius:var(--radius-sm)">
@@ -2882,11 +2883,23 @@ function renderWorkspaceFields(propsMap) {
   `).join("");
 
   document.querySelectorAll(".ws-prop-val").forEach(input => {
-    input.oninput = updateWorkspacePreview;
+    input.oninput = (e) => {
+      const row = e.target.closest(".ws-prop-row");
+      if (row) {
+        const k = row.getAttribute("data-key") || (row.querySelector(".ws-prop-key") ? row.querySelector(".ws-prop-key").value.trim() : "");
+        if (k && S.wsTouchedKeys) S.wsTouchedKeys.add(k);
+      }
+      updateWorkspacePreview();
+    };
   });
   document.querySelectorAll(".ws-prop-del").forEach(btn => {
     btn.onclick = (e) => {
-      e.target.closest(".ws-prop-row").remove();
+      const row = e.target.closest(".ws-prop-row");
+      if (row) {
+        const k = row.getAttribute("data-key") || (row.querySelector(".ws-prop-key") ? row.querySelector(".ws-prop-key").value.trim() : "");
+        if (k && S.wsTouchedKeys) S.wsTouchedKeys.add(k);
+        row.remove();
+      }
       updateWorkspacePreview();
     };
   });
@@ -2957,8 +2970,9 @@ window.addMissingPropertyToWorkspace = function(propName, defaultVal = "") {
 
   const valInput = row.querySelector(".ws-prop-val");
   const delBtn = row.querySelector(".ws-prop-del");
-  valInput.oninput = updateWorkspacePreview;
-  delBtn.onclick = () => { row.remove(); updateWorkspacePreview(); };
+  if (S.wsTouchedKeys) S.wsTouchedKeys.add(propName);
+  valInput.oninput = () => { if (S.wsTouchedKeys) S.wsTouchedKeys.add(propName); updateWorkspacePreview(); };
+  delBtn.onclick = () => { if (S.wsTouchedKeys) S.wsTouchedKeys.add(propName); row.remove(); updateWorkspacePreview(); };
 
   updateWorkspacePreview();
   valInput.focus();
@@ -2998,7 +3012,8 @@ async function updateWorkspacePreview() {
       note_path: S.currentNote.note_path,
       values: values,
       schema: S.currentSchema,
-      deleted_keys: deletedKeys
+      deleted_keys: deletedKeys,
+      touched_keys: Array.from(S.wsTouchedKeys || [])
     });
 
     // Render Semantic Diff
@@ -4134,7 +4149,7 @@ function setupProposalHandlers() {
       if (!res.valid) {
         $("proposalResultOutput").innerHTML = `
           <div class="card" style="border-color:var(--red); background:var(--red-soft); color:var(--red)">
-            <strong>提案校驗失敗 (Validation Failed)：</strong>
+            <strong>${esc(I18N.t("proposal.validation_failed"))}：</strong>
             <ul style="margin:8px 0 0 0; padding-left:20px">
               ${(res.errors || []).map(e => `<li>${esc(e)}</li>`).join("")}
             </ul>

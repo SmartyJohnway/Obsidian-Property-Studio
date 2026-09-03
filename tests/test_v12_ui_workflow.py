@@ -130,6 +130,45 @@ def test_e2e_wf_003_reconciliation_constraint_validation_and_fill_workflow():
     assert type(parsed_yaml["is_active"]) is bool
     assert parsed_yaml["is_active"] is True
 
+    # Strict Outside-Schema untouched property preservation test (P0 BLOCKER 1)
+    orig_note = Note(path="Legacy/Project.md", parse_status=ParseStatus.OK)
+    orig_note.properties = {
+        "status": PropertyValue(key="status", raw="draft", storage_type=StorageType.TEXT),
+        "legacy_score": PropertyValue(key="legacy_score", raw=95, storage_type=StorageType.NUMBER),
+        "custom_tags": PropertyValue(key="custom_tags", raw=["alpha", "beta"], storage_type=StorageType.LIST),
+        "archived": PropertyValue(key="archived", raw=False, storage_type=StorageType.CHECKBOX),
+    }
+    outside_schema = Schema(
+        name="status_only_spec",
+        properties=[SchemaProperty(name="status", storage_type=StorageType.TEXT)],
+    )
+
+    # User opens reconciliation: only sees inputs as strings, does NOT touch outside properties
+    outside_res = compute_workspace_diff_and_frontmatter(
+        original_note=orig_note,
+        updated_values={
+            "status": "active",
+            "legacy_score": "95",
+            "custom_tags": "alpha, beta",
+            "archived": "false",
+        },
+        schema=outside_schema,
+        deleted_keys=[],
+        touched_keys=["status"],  # User only edited status
+    )
+    assert outside_res.valid is True
+    assert outside_res.can_copy is True
+    parsed_outside = [d for d in yaml.safe_load_all(outside_res.frontmatter_preview) if d is not None][0]
+
+    # Must preserve exact original types and values without silent string conversion!
+    assert type(parsed_outside["legacy_score"]) is int
+    assert parsed_outside["legacy_score"] == 95
+    assert type(parsed_outside["custom_tags"]) is list
+    assert parsed_outside["custom_tags"] == ["alpha", "beta"]
+    assert type(parsed_outside["archived"]) is bool
+    assert parsed_outside["archived"] is False
+    assert parsed_outside["status"] == "active"
+
 
 def test_e2e_wf_004_proposal_four_way_comparison_workflow():
     """Verify true four-way proposal comparison against Scope, Vault, Glossary, and Schema Library (REQ-046)."""
@@ -212,6 +251,10 @@ def test_e2e_wf_004_proposal_four_way_comparison_workflow():
     v10_rep = validate_proposal(v10_proposal)
     assert v10_rep["valid"] is True
     assert any("Proposal Contract 1.1 extension and is ignored" in w for w in v10_rep["warnings"])
+    assert v10_rep["management_purpose"] is None
+    assert v10_rep["target_note_kind"] is None
+    assert v10_rep["schema_target"] is None
+    assert v10_rep["proposal_notes"] is None
 
 
 def test_e2e_wf_005_scope_canonical_assignment_workflow():
@@ -264,6 +307,23 @@ def test_e2e_wf_006_drift_detection_and_compliant_rate_workflow():
         "schema_version": PropertyValue(key="schema_version", raw="0.9.0", storage_type=StorageType.TEXT),  # Version mismatch
     }
 
+    # Note 3: contains string representations of numbers, booleans, and lists (StorageType.TEXT)
+    # Drift must NOT guess string content: "95", "true", "a,b" in text format MUST be TYPE_MISMATCH (P0 Blocker 2)
+    schema_typed_props = [
+        {"name": "score", "storage_type": "number", "required": True},
+        {"name": "active", "storage_type": "checkbox", "required": True},
+        {"name": "tags", "storage_type": "tags", "required": True},
+        {"name": "related_tasks", "storage_type": "list", "ui_control": "note_link_list", "required": True},
+    ]
+    n3 = Note(path="n3.md", parse_status=ParseStatus.OK)
+    n3.properties = {
+        "score": PropertyValue(key="score", raw="95", storage_type=StorageType.TEXT),
+        "active": PropertyValue(key="active", raw="true", storage_type=StorageType.TEXT),
+        "tags": PropertyValue(key="tags", raw="alpha,beta", storage_type=StorageType.TEXT),
+        "related_tasks": PropertyValue(key="related_tasks", raw=[], storage_type=StorageType.LIST),  # Empty relationship list
+        "version": PropertyValue(key="version", raw="2.0.0", storage_type=StorageType.TEXT),  # Document version, NOT schema_version
+    }
+
     report = analyze_schema_drift(
         notes=[n1, n2],
         schema_properties=schema_props,
@@ -278,6 +338,22 @@ def test_e2e_wf_006_drift_detection_and_compliant_rate_workflow():
     assert DriftCategory.SCHEMA_VERSION_MISMATCH in findings_cats
     assert DriftCategory.MISSING_REQUIRED_RELATIONSHIP in findings_cats
     assert DriftCategory.TYPE_MISMATCH in findings_cats
+
+    # Note 3 strict canonical storage type verification (P0 Blocker 2)
+    typed_report = analyze_schema_drift(
+        notes=[n3],
+        schema_properties=schema_typed_props,
+        schema_id="typed_drift",
+        schema_name="Typed Drift",
+        schema_version="1.0.0",
+    )
+    n3_findings = {f.property_key: f.category for f in typed_report.findings}
+    assert n3_findings.get("score") == DriftCategory.TYPE_MISMATCH
+    assert n3_findings.get("active") == DriftCategory.TYPE_MISMATCH
+    assert n3_findings.get("tags") == DriftCategory.TYPE_MISMATCH
+    assert n3_findings.get("related_tasks") == DriftCategory.MISSING_REQUIRED_RELATIONSHIP
+    # Plain 'version' property MUST NOT trigger SCHEMA_VERSION_MISMATCH!
+    assert DriftCategory.SCHEMA_VERSION_MISMATCH not in {f.category for f in typed_report.findings}
 
     # Compliance rate: 1 compliant out of 2 notes (50%)
     assert report.total_notes == 2
@@ -310,18 +386,52 @@ def test_e2e_wf_007_governance_profile_validate_preview_confirm_workflow():
     assert merge_res["mode"] == "merge"
     assert merge_res["imported"]["saved_checks"] == 1
 
-    # 5. Import in replace mode with transactional safety
+    # 5. Import in replace mode with transactional safety & true replace
+    mock_checks_store.save_check(SavedCheck(id="stale_check_99", name="Obsolete Check"))
+    assert len(mock_checks_store.list_checks()) == 2
     replace_res = import_governance_profile(pkg, mode="replace", saved_checks_store=mock_checks_store)
     assert replace_res["status"] == "imported"
     assert replace_res["mode"] == "replace"
+    # True Replace verification: stale_check_99 MUST be wiped out, only the 1 profile check exists
+    remaining_ids = {c.id for c in mock_checks_store.list_checks()}
+    assert "stale_check_99" not in remaining_ids
+    assert "chk_01" in remaining_ids
 
-    # 6. Verify transactional rollback on corrupted import data
+    # 6. Verify transactional rollback on Phase-1 corrupted import data
     from app.core.governance_profile import compute_profile_checksum
     bad_pkg = json.loads(json.dumps(pkg))
     bad_pkg["data"]["named_schemas"].append("not_an_object_corrupted")
     bad_pkg["profile_metadata"]["sha256_checksum"] = compute_profile_checksum(bad_pkg["data"])
     with pytest.raises(ValueError, match="Invalid schema at index"):
         import_governance_profile(bad_pkg, mode="replace")
+
+    # 7. Verify TRUE Phase-2 transactional rollback on mid-mutation crash (monkeypatch)
+    # Establish known baseline state
+    NAMED_SCHEMA_LIBRARY.save_schema({"name": "baseline_schema", "properties": []})
+    mock_checks_store.clear()
+    mock_checks_store.save_check(SavedCheck(id="baseline_chk", name="Baseline Check"))
+    
+    # Prepare profile with new data
+    crash_pkg = export_governance_profile(
+        saved_checks_list=[{"id": "new_chk", "name": "New Check"}],
+        preferences={"locale": "en", "theme": "dark"},
+    )
+    crash_pkg["data"]["named_schemas"] = [{"name": "new_schema", "properties": []}]
+    crash_pkg["profile_metadata"]["sha256_checksum"] = compute_profile_checksum(crash_pkg["data"])
+
+    # Monkeypatch USER_GLOSSARY_STORE.save_override to crash during Phase 2
+    import unittest.mock as mock
+    with mock.patch("app.core.user_glossary.USER_GLOSSARY_STORE.save_override", side_effect=RuntimeError("Simulated Phase 2 crash")):
+        with pytest.raises(ValueError, match="Import aborted and rolled back due to error: Simulated Phase 2 crash"):
+            import_governance_profile(crash_pkg, mode="replace", saved_checks_store=mock_checks_store)
+
+    # Assert 100% rollback: baseline_schema and baseline_chk must survive untouched!
+    current_schemas = [s["name"] for s in NAMED_SCHEMA_LIBRARY.list_schemas()]
+    assert "baseline_schema" in current_schemas
+    assert "new_schema" not in current_schemas
+    current_chk_ids = {c.id for c in mock_checks_store.list_checks()}
+    assert "baseline_chk" in current_chk_ids
+    assert "new_chk" not in current_chk_ids
 
 
 def test_e2e_wf_008_companion_skill_fixtures_and_principles_workflow():

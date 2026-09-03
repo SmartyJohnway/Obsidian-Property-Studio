@@ -14,8 +14,10 @@ from typing import Any
 from app.core.named_schemas import NAMED_SCHEMA_LIBRARY
 from app.core.scope_governance import SCOPE_GOVERNANCE_STORE
 from app.core.user_glossary import USER_GLOSSARY_STORE, UserGlossaryOverride
+from app.storage.local_storage import EntityStorage
 
 PROFILE_FORMAT_VERSION = "1.0"
+PREFERENCES_STORAGE = EntityStorage("governance_preferences", "preferences.json")
 
 
 def compute_profile_checksum(payload: dict[str, Any]) -> str:
@@ -35,7 +37,9 @@ def export_governance_profile(
     scope_assignments = SCOPE_GOVERNANCE_STORE.list_assignments()
     glossary_overrides = USER_GLOSSARY_STORE.list_overrides()
     checks = saved_checks_list or []
-    prefs = preferences or {"locale": "zh-Hant", "theme": "system"}
+    
+    stored_prefs = PREFERENCES_STORAGE.load().get("data")
+    prefs = preferences or stored_prefs or {"locale": "zh-Hant", "theme": "system"}
 
     data_payload = {
         "format_version": PROFILE_FORMAT_VERSION,
@@ -63,9 +67,9 @@ def export_governance_profile(
 
 
 def validate_governance_profile(profile_data: dict[str, Any]) -> dict[str, Any]:
-    """Validate a governance profile package and return structured preview before applying (REQ-047)."""
+    """Validate a profile package structure and checksum before import (REQ-047)."""
     if not isinstance(profile_data, dict):
-        return {"valid": False, "error": "Profile data must be a JSON object."}
+        return {"valid": False, "error": "Invalid profile format: must be a JSON object."}
 
     data = profile_data.get("data")
     if not isinstance(data, dict):
@@ -119,6 +123,7 @@ def import_governance_profile(
     assignments = data.get("scope_assignments") or {}
     glossary = data.get("user_glossary") or {}
     checks = data.get("saved_checks") or []
+    prefs = data.get("governance_preferences")
 
     # Phase 1: Semantic Pre-validation (fail-closed before any mutation)
     for index, s in enumerate(schemas):
@@ -135,13 +140,22 @@ def import_governance_profile(
     old_schemas = None
     old_assignments = None
     old_glossary = None
+    old_checks = None
+    old_preferences = None
     if mode == "replace":
         old_schemas = NAMED_SCHEMA_LIBRARY.storage.load().get("data", {})
         old_assignments = SCOPE_GOVERNANCE_STORE.storage.load().get("data", {})
         old_glossary = USER_GLOSSARY_STORE.storage.load().get("data", {})
+        old_preferences = PREFERENCES_STORAGE.load().get("data", {})
+        if saved_checks_store and hasattr(saved_checks_store, "list_checks"):
+            old_checks = [c.to_dict() for c in saved_checks_store.list_checks()]
+            if hasattr(saved_checks_store, "clear"):
+                saved_checks_store.clear()
+
         NAMED_SCHEMA_LIBRARY.storage.save({})
         SCOPE_GOVERNANCE_STORE.storage.save({})
         USER_GLOSSARY_STORE.storage.save({})
+        PREFERENCES_STORAGE.save({})
 
     imported_schemas = 0
     imported_assignments = 0
@@ -185,12 +199,24 @@ def import_governance_profile(
                     saved_checks_store.save_check(chk)
                     imported_checks += 1
 
+        # 5. Import preferences if present
+        if isinstance(prefs, dict):
+            PREFERENCES_STORAGE.save(prefs)
+
     except Exception as exc:
-        # Rollback in replace mode if mutation failed mid-way
+        # True Transactional Rollback in replace mode if mutation failed mid-way
         if mode == "replace" and old_schemas is not None:
             NAMED_SCHEMA_LIBRARY.storage.save(old_schemas)
             SCOPE_GOVERNANCE_STORE.storage.save(old_assignments)
             USER_GLOSSARY_STORE.storage.save(old_glossary)
+            if old_preferences is not None:
+                PREFERENCES_STORAGE.save(old_preferences)
+            if saved_checks_store and old_checks is not None:
+                if hasattr(saved_checks_store, "clear"):
+                    saved_checks_store.clear()
+                from app.core.saved_checks import SavedCheck
+                for c in old_checks:
+                    saved_checks_store.save_check(SavedCheck.from_dict(c))
         raise ValueError(f"Import aborted and rolled back due to error: {exc}") from exc
 
     return {
@@ -202,5 +228,6 @@ def import_governance_profile(
             "glossary_overrides": imported_glossary,
             "user_glossary": imported_glossary,
             "saved_checks": imported_checks,
+            "preferences": bool(prefs),
         },
     }

@@ -103,6 +103,9 @@ class SavedChecksStore:
             return True
         return False
 
+    def clear(self) -> None:
+        self._checks.clear()
+
     def to_json(self) -> str:
         data = {
             "format_version": SAVED_CHECKS_FORMAT_VERSION,
