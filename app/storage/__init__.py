@@ -9,6 +9,7 @@ from .local_storage import (
     VaultIsolationError,
     assert_outside_vault,
     get_storage_dir,
+    migrate_legacy_storage_paths,
 )
 
 __all__ = [
@@ -20,4 +21,5 @@ __all__ = [
     "VaultIsolationError",
     "assert_outside_vault",
     "get_storage_dir",
+    "migrate_legacy_storage_paths",
 ]

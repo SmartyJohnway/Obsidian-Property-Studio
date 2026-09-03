@@ -163,6 +163,11 @@ class SavedChecksStore:
         self._checks.clear()
         self._sync_to_storage()
 
+    def replace_all(self, checks: list[SavedCheck]) -> None:
+        """Atomically replace in-memory checks and persist in a single operation."""
+        self._checks = {c.id: c for c in checks}
+        self._sync_to_storage()
+
     def to_json(self) -> str:
         data = {
             "format_version": SAVED_CHECKS_FORMAT_VERSION,

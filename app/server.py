@@ -143,9 +143,10 @@ def api_meta(_body: dict[str, Any]) -> dict[str, Any]:
 
 def api_scan(body: dict[str, Any]) -> dict[str, Any]:
     path = body.get("vault_path", "")
-    from app.storage.local_storage import VaultIsolationError, set_active_vault_path
+    from app.storage.local_storage import VaultIsolationError, set_active_vault_path, migrate_legacy_storage_paths
     try:
         set_active_vault_path(path)
+        migrate_legacy_storage_paths()
     except VaultIsolationError as exc:
         raise ApiError(f"Vault isolation violation: {exc}", 400) from exc
 
@@ -917,8 +918,16 @@ def api_storage_migrate_legacy(body: dict[str, Any]) -> dict[str, Any]:
     current_prefs_data = PREFERENCES_STORAGE.load().get("data") or {}
     existing_checks = STORE.saved_checks_store.list_checks()
 
-    # One-time migration guard: Only migrate when backend storage is uninitialized / not yet migrated
-    if current_prefs_data.get("_legacy_migrated") or (current_prefs_data and len(existing_checks) > 0):
+    # Per-entity initialized-state guard (Blocker 2):
+    # Preferences are initialized if marker is present OR if non-empty locale/theme already saved
+    prefs_initialized = bool(current_prefs_data.get("_legacy_migrated")) or (
+        bool(current_prefs_data) and ("locale" in current_prefs_data or "theme" in current_prefs_data)
+    )
+    # Checks are initialized if any saved checks already exist in backend authority
+    checks_initialized = len(existing_checks) > 0
+
+    # If both entities are already initialized, skip entire migration
+    if prefs_initialized and checks_initialized:
         saved_prefs_readback = current_prefs_data
         saved_checks_readback = [c.to_dict() for c in existing_checks]
         return {
@@ -973,35 +982,52 @@ def api_storage_migrate_legacy(body: dict[str, Any]) -> dict[str, Any]:
             except Exception as exc:
                 raise ApiError(f"Malformed legacy check at index {index}: {exc}", 400) from exc
 
-    # Phase 2: Transactional Persistence (All validated, write all)
-    target_prefs = dict(current_prefs_data)
-    target_prefs["locale"] = new_locale
-    target_prefs["theme"] = new_theme
-    target_prefs["_legacy_migrated"] = True
-    PREFERENCES_STORAGE.save(target_prefs)
+    # Phase 2: Transactional Persistence with Rollback Protection (Blocker 1)
+    old_prefs_snapshot = dict(current_prefs_data)
+    old_checks_snapshot = [c for c in existing_checks]
 
     migrated_checks_count = 0
-    for chk in valid_check_objects:
-        STORE.saved_checks_store.save_check(chk)
-        migrated_checks_count += 1
+    try:
+        # Migrate preferences only if not already initialized
+        target_prefs = dict(current_prefs_data)
+        if not prefs_initialized:
+            target_prefs["locale"] = new_locale
+            target_prefs["theme"] = new_theme
+        target_prefs["_legacy_migrated"] = True
+        PREFERENCES_STORAGE.save(target_prefs)
 
-    # Phase 3: Exact Read-back Proof (Validate requested canonical state == persisted state)
-    saved_prefs_readback = PREFERENCES_STORAGE.load().get("data", {})
-    saved_checks_readback = [c.to_dict() for c in STORE.saved_checks_store.list_checks()]
+        # Migrate checks only if not already initialized (using bulk atomic replace)
+        if not checks_initialized and valid_check_objects:
+            STORE.saved_checks_store.replace_all(valid_check_objects)
+            migrated_checks_count = len(valid_check_objects)
 
-    readback_ok = (
-        saved_prefs_readback.get("locale") == new_locale
-        and saved_prefs_readback.get("theme") == new_theme
-        and saved_prefs_readback.get("_legacy_migrated") is True
-    )
-    persisted_ids = {c["id"] for c in saved_checks_readback}
-    for chk in valid_check_objects:
-        if chk.id not in persisted_ids:
-            readback_ok = False
-            break
+        # Phase 3: Exact Canonical Read-back Proof
+        saved_prefs_readback = PREFERENCES_STORAGE.load().get("data", {})
+        saved_checks_readback = [c.to_dict() for c in STORE.saved_checks_store.list_checks()]
 
-    if not readback_ok:
-        raise ApiError("Legacy migration failed exact readback verification.", 500)
+        # Preferences exact verification
+        if not prefs_initialized:
+            if (
+                saved_prefs_readback.get("locale") != new_locale
+                or saved_prefs_readback.get("theme") != new_theme
+                or saved_prefs_readback.get("_legacy_migrated") is not True
+            ):
+                raise RuntimeError("Preferences exact readback mismatch")
+
+        # Saved Checks exact verification with canonical dict equality
+        if not checks_initialized and valid_check_objects:
+            readback_map = {c["id"]: c for c in saved_checks_readback}
+            for chk in valid_check_objects:
+                expected_dict = chk.to_dict()
+                actual_dict = readback_map.get(chk.id)
+                if actual_dict != expected_dict:
+                    raise RuntimeError(f"Saved check '{chk.id}' canonical exact readback mismatch")
+
+    except Exception as exc:
+        # 100% atomic rollback across all entities
+        PREFERENCES_STORAGE.save(old_prefs_snapshot)
+        STORE.saved_checks_store.replace_all(old_checks_snapshot)
+        raise ApiError(f"Legacy migration transaction failed and was rolled back: {exc}", 500) from exc
 
     return {
         "status": "migrated",
@@ -1184,7 +1210,14 @@ class Handler(BaseHTTPRequestHandler):
             )
 
 
+def init_runtime_storage() -> None:
+    """Initialize app-local runtime storage and migrate legacy pre-release storage paths safely."""
+    from app.storage.local_storage import migrate_legacy_storage_paths
+    migrate_legacy_storage_paths()
+
+
 def create_server(host: str = "127.0.0.1", port: int = 8765) -> ThreadingHTTPServer:
+    init_runtime_storage()
     return ThreadingHTTPServer((host, port), Handler)
 
 

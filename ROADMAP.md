@@ -20,8 +20,8 @@ Current Task: `M022-T04`
 Last Verified Gate: `M021 — Schema Versioning, Migration Planning & Governance Profile PASS`  
 Current Blocker: `NONE`  
 Next Action: `Package v1.2.0 RC and submit to Human Owner (Dr. J) for final Windows 10 production UI walkthrough acceptance (M022-T04 / M022-AC04).`  
-Implementation: `COMPLETE (Commit 18 Storage Side-Effect, Pure Path Resolution & Migration Atomicity Closure: Pure Path Resolution before mkdir, Negative Inside-Vault 0-Mutation Proof, Atomic Validate-Before-Persist Legacy Migration with Exact Readback, One-time Idempotency Guard, Path Migration out of __init__ with Fail-Closed Protection, Governance Profile Clear-Stage Rollback & Preferences Preview, 0 residual openDrawer/toast hardcoded Chinese)`  
-Automated Verification: `PASS (218/218 tests pass, 5,040-note benchmark 4.794s analysis / 4.639s scan, Vault 100% byte-for-byte read-only and 0 directory mutation on violation)`  
+Implementation: `COMPLETE (Commit 19 Migration Transaction Rollback, Per-Entity Initialized-State Guard & Runtime Path Migration Closure: True Transaction Rollback with Full Snapshot, Bulk Atomic Saved Checks Replacement, Per-Entity Initialized State Protection for Prefs & Checks, Canonical Dict Exact Readback, Runtime Lifecycle Path Migration Invocation in create_server / api_scan / __main__, Negative Zero-Mutation Proof, Pure Path Resolution before mkdir)`  
+Automated Verification: `PASS (222/222 tests pass, 5,040-note benchmark 5.125s analysis / 4.928s scan, Vault 100% byte-for-byte read-only and 0 directory mutation on violation)`  
 Human Verified Acceptance: `NOT YET VERIFIED`  
 Release Readiness: `READY_FOR_HUMAN_ACCEPTANCE` (Human Owner UI Walkthrough: `NOT YET VERIFIED`)  
 Accepted Limitation: `Windows 11 AMD64 native verification recorded as NOT YET VERIFIED due to test host unavailability (accepted non-blocking release limitation per human approved contract).`  
@@ -305,8 +305,8 @@ Status: `IN_PROGRESS`
 Execute complete Workflow Closure Matrix validation, run full regression suite and 5,000-note benchmark, verify Vault byte-for-byte read-only integrity, conduct human walkthrough on Windows 10 production UI, verify P0 completion and P1 implementation, and package v1.2.0 release artifacts.
 
 ### Tasks
-- [x] `M022-T01` Execute complete Workflow Closure Matrix automated test suite (218/218 tests PASS, includes `tests/test_v12_storage_closure.py` validating 9 pure path resolution, negative zero-mutation, and atomic migration invariants).
-- [x] `M022-T02` Run 5,000-note performance benchmark and record in `evidence/benchmark.json` (4.794s analysis / 4.639s scan over 5,040 notes).
+- [x] `M022-T01` Execute complete Workflow Closure Matrix automated test suite (222/222 tests PASS, includes `tests/test_v12_storage_closure.py` validating 13 pure path resolution, negative zero-mutation, persistence transaction rollback, per-entity guard, canonical readback, and runtime lifecycle path migration invariants).
+- [x] `M022-T02` Run 5,000-note performance benchmark and record in `evidence/benchmark.json` (5.125s analysis / 4.928s scan over 5,040 notes).
 - [x] `M022-T03` Verify Vault byte-for-byte read-only integrity across all v1.2 workflows (`evidence/integration/m022_v120_vault_readonly.json`).
 - [ ] `M022-T04` Conduct Windows 10 production UI walkthrough acceptance with Human Owner (Dr. J).
 - [x] `M022-T05` Verify P0 requirements complete and P1 status (P1 M021 fully implemented).
@@ -314,8 +314,8 @@ Execute complete Workflow Closure Matrix validation, run full regression suite a
 - [x] `M022-T07` Generate release packaging and record formal release verdict (`scripts/package_v120_release.py`).
 
 ### Acceptance Criteria
-- [x] `M022-AC01` All automated regression and closure tests PASS (218/218).
-- [x] `M022-AC02` 5,000-note benchmark recorded (4.794s analysis / 4.639s scan over 5,040 notes).
+- [x] `M022-AC01` All automated regression and closure tests PASS (222/222).
+- [x] `M022-AC02` 5,000-note benchmark recorded (5.125s analysis / 4.928s scan over 5,040 notes).
 - [x] `M022-AC03` Vault remains byte-for-byte untouched and zero directory created on violation.
 - [ ] `M022-AC04` Human Owner walkthrough PASS (Reserved for Human Owner Dr. J).
 - [x] `M022-AC05` Four-file consistency gate PASS.
