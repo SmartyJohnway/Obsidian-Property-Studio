@@ -11,6 +11,7 @@ Active Milestone: `M022`
 Active Milestone Status: `IN_PROGRESS`  
 Current Task: `M022-T04` (Human Owner Windows 10 Production UI Walkthrough Acceptance)  
 Last Verified Gate: `M021 — Schema Versioning, Migration Planning & Governance Profile PASS`  
+Last Verified Implementation Commit: `04d8d9f169a11f9c597ce77ac827739d7748fbad`  
 GitHub PR: `PR #2 (Draft, feat(v1.2): Personal Property Governance System)`  
 Authoritative Specification: `docs/specs/Obsidian_Property_Studio_v1.2.0_Spec.md`  
 Archived v1.1 Roadmap: `docs/archive/ROADMAP_v1.1.0.md`  
