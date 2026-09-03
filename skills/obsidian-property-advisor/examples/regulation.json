@@ -2,8 +2,6 @@
   "proposal_version": "1.1",
   "schema_name": "compliance_regulation",
   "description": "Schema for tracking legal, compliance, and industry standards",
-  "target_scope": "Regulations",
-  "rationale": "Tracks jurisdiction, compliance status, effective dates, and audit cycles.",
   "properties": [
     {
       "name": "jurisdiction",
@@ -51,5 +49,10 @@
       "required": false,
       "reason": "List of internal products or systems bound by regulation."
     }
-  ]
+  ],
+  "management_purpose": "Maintains regulatory compliance tracking, effective dates, and authority sources.",
+  "target_note_kind": "regulation",
+  "schema_target": "Regulations",
+  "source_context": "Legal compliance and policy library governance",
+  "proposal_notes": "Structured compliance metadata."
 }

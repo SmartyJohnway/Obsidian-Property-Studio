@@ -31,7 +31,13 @@ KNOWN_TOP_LEVEL = {
     "generated_by",
     "provenance",
     "notes",
-    # Proposal Contract 1.1 additions (optional)
+    # Authoritative Proposal Contract 1.1 additions (REQ-046, Spec Section 2)
+    "management_purpose",
+    "source_context",
+    "target_note_kind",
+    "proposal_notes",
+    "schema_target",
+    # Backward compatibility additions
     "target_note",
     "target_scope",
     "rationale",
@@ -215,14 +221,21 @@ def validate_proposal(data: dict[str, Any]) -> dict[str, Any]:
         "contract_version": PROPOSAL_CONTRACT_VERSION,
         "schema": schema.to_dict() if not errors else None,
         "_schema_obj": schema if not errors else None,
+        # Authoritative Proposal Contract 1.1 fields (REQ-046)
+        "management_purpose": data.get("management_purpose") or data.get("rationale"),
+        "source_context": data.get("source_context"),
+        "target_note_kind": data.get("target_note_kind"),
+        "proposal_notes": data.get("proposal_notes") or data.get("notes"),
+        "schema_target": data.get("schema_target") or data.get("target_scope"),
+        # Backward compatibility aliases
         "target_note": data.get("target_note"),
-        "target_scope": data.get("target_scope"),
-        "rationale": data.get("rationale"),
+        "target_scope": data.get("target_scope") or data.get("schema_target"),
+        "rationale": data.get("rationale") or data.get("management_purpose"),
         "proposed_migration": data.get("proposed_migration"),
         "provenance": {
             "generated_by": data.get("generated_by"),
             "provenance": data.get("provenance"),
-            "notes": data.get("notes"),
+            "notes": data.get("notes") or data.get("proposal_notes"),
             "per_property": extras,
         },
         "vault_modified": False,
@@ -230,27 +243,127 @@ def validate_proposal(data: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def compare_with_vault(schema: Schema, inv: Inventory) -> list[dict[str, Any]]:
+def compare_proposal_four_way(
+    schema: Schema,
+    scoped_inv: Inventory | None = None,
+    vault_inv: Inventory | None = None,
+    glossary_store: Any | None = None,
+    schema_library: Any | None = None,
+) -> list[dict[str, Any]]:
+    """Execute authoritative four-way comparison against Scope, Vault, Glossary, and Schema Library (REQ-046)."""
     comparisons = []
+    schemas_list = schema_library.list_schemas() if schema_library and hasattr(schema_library, "list_schemas") else []
+
+    # Build reverse alias index from user glossary and built-in catalog
+    reverse_alias_map: dict[str, str] = {}
+    if glossary_store:
+        try:
+            # Check user overrides
+            for item in glossary_store.list_overrides():
+                ckey = item.get("canonical_key")
+                for alias in item.get("aliases", []):
+                    if alias and alias != ckey:
+                        reverse_alias_map[alias.lower()] = ckey
+        except Exception:
+            pass
+
     for prop in schema.properties:
-        review = check_property_reuse(prop.name, inv)
-        entry = inv.get(prop.name)
-        review["proposed_storage_type"] = prop.storage_type.value
-        review["proposed_ui_control"] = prop.ui_control.value
-        review["proposed_required"] = prop.required
-        review["reason"] = prop.reason
-        review["confidence"] = prop.confidence
-        if entry is not None:
-            review["vault_dominant_type"] = entry.dominant_type
-            review["type_agreement"] = (
-                "matches" if entry.dominant_type == prop.storage_type.value else "differs"
-            )
-        comparisons.append(review)
+        name = prop.name
+        scoped_entry = scoped_inv.get(name) if scoped_inv else None
+        vault_entry = vault_inv.get(name) if vault_inv else None
+
+        scope_usage = scoped_entry.usage_count if scoped_entry else 0
+        vault_usage = vault_entry.usage_count if vault_entry else 0
+
+        dt = None
+        if vault_entry and vault_entry.dominant_type:
+            dt = vault_entry.dominant_type
+        elif scoped_entry and scoped_entry.dominant_type:
+            dt = scoped_entry.dominant_type
+
+        dominant_type_str = dt.value if hasattr(dt, "value") else (str(dt) if dt else None)
+
+        # 1. Glossary Lookup
+        glossary_meta = None
+        if glossary_store and hasattr(glossary_store, "resolve_property"):
+            try:
+                glossary_meta = glossary_store.resolve_property(name)
+            except Exception:
+                pass
+
+        is_known_glossary = bool(glossary_meta and glossary_meta.get("is_known", True))
+
+        # 2. Reverse Alias Lookup
+        alias_of = reverse_alias_map.get(name.lower())
+
+        # 3. Schema Library Lookup
+        schema_matches = [
+            {"id": s.get("id"), "name": s.get("name"), "version": s.get("version")}
+            for s in schemas_list
+            if any(p.get("name") == name for p in s.get("properties", []))
+        ]
+
+        # 4. Compatibility State Determination (REQ-046)
+        comp_state = "compatible"
+        comp_detail = "Property aligns with vault and schema governance conventions."
+
+        if alias_of and alias_of != name:
+            comp_state = "potential_alias"
+            comp_detail = f"Property '{name}' is declared as an alias of canonical property '{alias_of}'."
+        elif dominant_type_str and dominant_type_str != prop.storage_type.value:
+            comp_state = "type_conflict"
+            comp_detail = f"Vault dominant type is '{dominant_type_str}', but proposal specifies '{prop.storage_type.value}'."
+        elif prop.allowed_values and vault_entry:
+            observed_vals = {str(v.value) for v in vault_entry.values.values() if v.value}
+            unmatched = [ov for ov in observed_vals if ov not in prop.allowed_values]
+            if unmatched:
+                comp_state = "value_vocabulary_conflict"
+                comp_detail = f"Observed vault values {unmatched[:3]} not in proposed allowed_values {prop.allowed_values}."
+        elif vault_usage == 0 and scope_usage == 0 and not is_known_glossary and not schema_matches:
+            comp_state = "new_property"
+            comp_detail = f"New property '{name}' not previously recorded in vault, glossary, or schema library."
+
+        # Base review using check_property_reuse for full v1.1 compatibility
+        target_inv = vault_inv if vault_inv else scoped_inv
+        review = check_property_reuse(name, target_inv) if target_inv else {}
+
+        item = dict(review)
+        item.update({
+            "name": name,
+            "proposed_name": name,
+            "proposed_storage_type": prop.storage_type.value,
+            "proposed_ui_control": prop.ui_control.value,
+            "proposed_required": prop.required,
+            "reason": prop.reason,
+            "confidence": prop.confidence,
+            "scope_usage_count": scope_usage,
+            "vault_usage_count": vault_usage,
+            "dominant_type": dominant_type_str,
+            "glossary_entry": glossary_meta,
+            "schema_library_matches": schema_matches,
+            "compatibility_state": comp_state,
+            "compatibility_detail": comp_detail,
+            # Legacy compatibility fields
+            "exists_in_scope": scope_usage > 0,
+            "in_scope_count": scope_usage,
+            "exists_in_vault_only": (vault_usage > 0 and scope_usage == 0),
+            "vault_count": vault_usage,
+            "vault_dominant_type": dominant_type_str,
+            "type_agreement": "matches" if dominant_type_str == prop.storage_type.value else ("differs" if dominant_type_str else "new"),
+        })
+        comparisons.append(item)
+
     return comparisons
 
 
-def import_proposal(text: str, inv: Inventory | None) -> dict[str, Any]:
-    """Full import pipeline used by the API/UI."""
+def import_proposal(
+    text: str,
+    scoped_inv: Inventory | None = None,
+    vault_inv: Inventory | None = None,
+    glossary_store: Any | None = None,
+    schema_library: Any | None = None,
+) -> dict[str, Any]:
+    """Full import and four-way comparison pipeline used by the API/UI."""
     try:
         data = parse_proposal_text(text)
     except ProposalError as exc:
@@ -260,13 +373,23 @@ def import_proposal(text: str, inv: Inventory | None) -> dict[str, Any]:
             "warnings": [],
             "schema": None,
             "comparison": [],
+            "four_way_comparison": [],
             "vault_modified": False,
         }
     report = validate_proposal(data)
     schema_obj = report.pop("_schema_obj", None)
-    report["comparison"] = (
-        compare_with_vault(schema_obj, inv)
-        if (schema_obj is not None and inv is not None)
+    
+    four_way = (
+        compare_proposal_four_way(
+            schema=schema_obj,
+            scoped_inv=scoped_inv,
+            vault_inv=vault_inv,
+            glossary_store=glossary_store,
+            schema_library=schema_library,
+        )
+        if schema_obj is not None
         else []
     )
+    report["comparison"] = four_way
+    report["four_way_comparison"] = four_way
     return report

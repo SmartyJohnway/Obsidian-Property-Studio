@@ -2,8 +2,6 @@
   "proposal_version": "1.1",
   "schema_name": "equipment_spec",
   "description": "Schema for managing physical and lab equipment specifications",
-  "target_scope": "Equipment",
-  "rationale": "Tracks hardware model, serial, vendor, location, and maintenance lifecycle.",
   "properties": [
     {
       "name": "model",
@@ -52,5 +50,10 @@
       "required": false,
       "reason": "Recurrence interval for routine inspection in days."
     }
-  ]
+  ],
+  "management_purpose": "Tracks equipment maintenance schedules, physical location, and operational readiness.",
+  "target_note_kind": "equipment",
+  "schema_target": "Equipment",
+  "source_context": "Hardware inventory and laboratory equipment tracking",
+  "proposal_notes": "Recommended property structure avoiding conflation with literature or notes."
 }

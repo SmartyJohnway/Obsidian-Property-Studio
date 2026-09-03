@@ -846,6 +846,7 @@
           </div>
           <div style="display:flex; gap:10px">
             <input type="text" id="glossarySearchInput" data-i18n-placeholder="glossary.search_placeholder" placeholder="搜尋詞彙庫屬性鍵名或標籤..." style="width:280px">
+            <button class="primary" id="addGlossaryBtn" style="font-size:12.5px; padding:6px 12px">+ 新增自訂定義</button>
           </div>
         </div>
 
@@ -1771,31 +1772,80 @@ function setupSchemasHandlers() {
   if ($("govProfileImportBtn")) {
     $("govProfileImportBtn").onclick = () => {
       const html = `
-        <div>
-          <p class="muted" style="margin-top:0">貼上先前匯出的治理設定檔 JSON（包含 Named Schemas, Scope Assignments, Personal Glossary）。</p>
-          <textarea id="importProfileText" rows="10" style="width:100%; font-family:monospace; font-size:12px" placeholder='{"profile_metadata": {...}, "data": {...}}'></textarea>
+        <div id="profileImportDrawerContent">
+          <p class="muted" style="margin-top:0">貼上先前匯出的治理設定檔 JSON（包含具名架構庫、範圍指派、個人詞彙庫與儲存檢查）。</p>
+          <textarea id="importProfileText" class="form-control" rows="8" style="width:100%; font-family:monospace; font-size:12px" placeholder='{"profile_metadata": {...}, "data": {...}}'></textarea>
           <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:14px">
             <button class="secondary" onclick="closeDrawer()">取消</button>
-            <button class="primary" id="submitImportProfileBtn">驗證並匯入</button>
+            <button class="primary" id="validateProfileBtn">驗證並預覽變更 →</button>
           </div>
+          <div id="profilePreviewArea" style="display:none; margin-top:16px; border-top:1px solid var(--line); padding-top:14px"></div>
         </div>
       `;
       openDrawer("匯入治理設定檔 (Import Governance Profile)", html);
 
-      const submitBtn = document.getElementById("submitImportProfileBtn");
-      if (submitBtn) {
-        submitBtn.onclick = async () => {
+      const valBtn = document.getElementById("validateProfileBtn");
+      if (valBtn) {
+        valBtn.onclick = async () => {
           const area = document.getElementById("importProfileText");
           const raw = area ? area.value.trim() : "";
-          if (!raw) return toast("請貼上設定檔 JSON", true);
+          if (!raw) return toast("請先貼上設定檔 JSON", true);
           try {
             const parsed = JSON.parse(raw);
-            const res = await api("/api/governance/profile/import", { profile: parsed });
-            toast(`成功匯入：${res.imported.schemas} 個架構，${res.imported.scope_assignments} 個範圍指派，${res.imported.glossary_overrides} 個詞彙`);
-            closeDrawer();
-            await loadSchemasList();
+            const valReport = await api("/api/governance/profile/validate", { profile: parsed });
+            if (!valReport.valid) {
+              return toast("設定檔校驗失敗: " + (valReport.error || "格式不正確"), true);
+            }
+
+            const previewArea = document.getElementById("profilePreviewArea");
+            if (!previewArea) return;
+            previewArea.style.display = "block";
+            previewArea.innerHTML = `
+              <div class="card" style="background:var(--panel2); margin-bottom:12px">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
+                  <h4 style="margin:0">✓ 校驗通過：待匯入項目摘要</h4>
+                  <span class="pill ok">v${esc(valReport.format_version || '1.0')}</span>
+                </div>
+                <div class="grid cols2" style="gap:8px; font-size:12.5px; margin-bottom:10px">
+                  <div>具名架構數：<strong>${valReport.schema_count}</strong></div>
+                  <div>範圍指派數：<strong>${valReport.assignment_count}</strong></div>
+                  <div>詞彙自訂數：<strong>${valReport.glossary_count}</strong></div>
+                  <div>關聯檢查數：<strong>${valReport.saved_checks_count}</strong></div>
+                </div>
+                <div style="margin-top:10px">
+                  <label style="font-size:12px; font-weight:600">匯入策略 (Import Mode)：</label>
+                  <select id="profileImportModeSelect" class="form-control" style="width:100%; margin-top:4px">
+                    <option value="merge">合併模式 (Merge - 保留現有未衝突項目)</option>
+                    <option value="replace">覆蓋模式 (Replace - 清空現有本地設定並套用)</option>
+                  </select>
+                </div>
+              </div>
+              <div style="display:flex; justify-content:flex-end; gap:8px">
+                <button class="primary" id="confirmApplyProfileBtn" style="background:var(--teal)">確認套用匯入</button>
+              </div>
+            `;
+
+            const confirmBtn = document.getElementById("confirmApplyProfileBtn");
+            if (confirmBtn) {
+              confirmBtn.onclick = async () => {
+                const modeSel = document.getElementById("profileImportModeSelect");
+                const mode = modeSel ? modeSel.value : "merge";
+                try {
+                  const res = await api("/api/governance/profile/import", { profile: parsed, mode: mode });
+                  toast(`成功匯入（模式：${mode}）：${res.imported.schemas} 個架構，${res.imported.scope_assignments} 個範圍指派，${res.imported.user_glossary} 個詞彙！`);
+                  closeDrawer();
+                  await loadSchemasList();
+                  await loadGlossaryList();
+                  if (typeof updateScopeSchemaAssignmentUI === 'function') {
+                    await updateScopeSchemaAssignmentUI();
+                  }
+                } catch (err) {
+                  toast(err.message, true);
+                }
+              };
+            }
           } catch (e) {
-            toast(e.message, true);
+            toast("JSON 解析失敗: " + e.message, true);
           }
         };
       }
@@ -1817,7 +1867,9 @@ async function loadGlossaryList() {
 
     const q = ($("glossarySearchInput") ? $("glossarySearchInput").value : "").toLowerCase().trim();
 
+    const seenKeys = new Set();
     const merged = catalog.map(entry => {
+      seenKeys.add(entry.canonical_key);
       const ov = overrides[entry.canonical_key];
       return {
         key: entry.canonical_key,
@@ -1827,6 +1879,21 @@ async function loadGlossaryList() {
         guidance: (ov && ov.guidance) ? ov.guidance : (entry.short_description_zh || entry.long_description_zh || ""),
         isOverride: !!ov,
       };
+    });
+
+    // Also include custom properties recorded in user overrides but not in builtin catalog (REQ-041)
+    Object.entries(overrides).forEach(([ckey, ov]) => {
+      if (!seenKeys.has(ckey) && ov) {
+        seenKeys.add(ckey);
+        merged.push({
+          key: ckey,
+          label: ov.label_zh || ckey,
+          label_en: ov.label_en || ckey,
+          source: "user_override",
+          guidance: ov.guidance || ov.description || "",
+          isOverride: true,
+        });
+      }
     });
 
     const filtered = merged.filter(item => {
@@ -1841,7 +1908,7 @@ async function loadGlossaryList() {
         <td><span class="pill ${item.isOverride ? 'warn' : 'ok'}">${item.isOverride ? '自訂優先 (Override)' : '系統內建 (Built-in)'}</span></td>
         <td style="font-size:12.5px">${esc(item.guidance)}</td>
         <td>
-          <button class="secondary" style="font-size:11.5px; padding:3px 7px" onclick="openEditGlossaryModal('${esc(item.key)}')">編輯指引</button>
+          <button class="secondary" style="font-size:11.5px; padding:3px 7px" onclick="openEditGlossaryModal('${esc(item.key)}')">編輯定義</button>
         </td>
       </tr>
     `).join("");
@@ -1850,52 +1917,92 @@ async function loadGlossaryList() {
   }
 }
 
-window.openEditGlossaryModal = async function(key) {
+window.openEditGlossaryModal = async function(key = "") {
   try {
-    const detail = await api("/api/glossary/property", { property: key });
-    const meta = detail.metadata || {};
+    let meta = {};
+    let isKnown = false;
+    if (key) {
+      const detail = await api("/api/glossary/property", { property: key });
+      meta = detail.metadata || {};
+      isKnown = detail.is_known;
+    }
+    const isNew = !key;
     const html = `
       <div style="display:flex; flex-direction:column; gap:12px">
         <div>
-          <label style="font-size:12px; color:var(--muted)">標準鍵名 (不可變):</label>
-          <div><code>${esc(key)}</code></div>
+          <label style="font-size:12px; color:var(--muted)">標準鍵名 (Canonical Key, 不可變):</label>
+          ${isNew 
+            ? `<input type="text" id="editGlossaryKey" class="form-control" placeholder="e.g. project_code" style="width:100%; margin-top:4px" />` 
+            : `<div><code>${esc(key)}</code><input type="hidden" id="editGlossaryKey" value="${esc(key)}" /></div>`}
+        </div>
+        <div class="grid cols2" style="gap:10px">
+          <div>
+            <label style="font-size:12px; color:var(--muted)">顯示標籤 (繁中 Label):</label>
+            <input type="text" id="editGlossaryLabelZh" class="form-control" value="${esc(meta.label_zh || key)}" style="width:100%; margin-top:4px" />
+          </div>
+          <div>
+            <label style="font-size:12px; color:var(--muted)">English Label:</label>
+            <input type="text" id="editGlossaryLabelEn" class="form-control" value="${esc(meta.label_en || key)}" style="width:100%; margin-top:4px" />
+          </div>
         </div>
         <div>
-          <label style="font-size:12px; color:var(--muted)">顯示標籤 (繁中):</label>
-          <input type="text" id="editGlossaryLabelZh" value="${esc(meta.label_zh || key)}" style="width:100%; margin-top:4px" />
+          <label style="font-size:12px; color:var(--muted)">使用指引與規範說明 (Guidance):</label>
+          <textarea id="editGlossaryGuidance" class="form-control" style="width:100%; height:70px; margin-top:4px">${esc(meta.guidance_zh || meta.guidance || meta.short_description_zh || "")}</textarea>
         </div>
-        <div>
-          <label style="font-size:12px; color:var(--muted)">使用指引與規範說明:</label>
-          <textarea id="editGlossaryGuidance" style="width:100%; height:80px; margin-top:4px">${esc(meta.guidance_zh || meta.short_description_zh || meta.description_zh || "")}</textarea>
+        <div class="grid cols2" style="gap:10px">
+          <div>
+            <label style="font-size:12px; color:var(--muted)">分類 / 領域 (Category):</label>
+            <input type="text" id="editGlossaryCategory" class="form-control" value="${esc(meta.category || '')}" placeholder="e.g. general, project, reading" style="width:100%; margin-top:4px" />
+          </div>
+          <div>
+            <label style="font-size:12px; color:var(--muted)">潛在別名 (Aliases, 逗號分隔):</label>
+            <input type="text" id="editGlossaryAliases" class="form-control" value="${esc(Array.isArray(meta.aliases) ? meta.aliases.join(', ') : (meta.aliases || ''))}" placeholder="e.g. tag, label, 專案標籤" style="width:100%; margin-top:4px" />
+          </div>
         </div>
         <div style="display:flex; justify-content:space-between; margin-top:14px">
-          ${detail.is_known && meta.source === 'user_override' ? `<button class="secondary" onclick="deleteGlossaryOverride('${esc(key)}')">還原預設</button>` : '<div></div>'}
+          ${(!isNew && isKnown && meta.source === 'user_override') ? `<button class="secondary" onclick="deleteGlossaryOverride('${esc(key)}')">還原預設</button>` : '<div></div>'}
           <div style="display:flex; gap:8px">
             <button class="secondary" onclick="closeDrawer()">取消</button>
-            <button class="primary" onclick="saveGlossaryOverride('${esc(key)}')">儲存定義</button>
+            <button class="primary" onclick="saveGlossaryOverride()">儲存定義</button>
           </div>
         </div>
       </div>
     `;
-    openDrawer("編輯詞彙庫定義 — " + key, html);
+    openDrawer(isNew ? "新增個人詞彙定義" : ("編輯詞彙庫定義 — " + key), html);
   } catch (e) {
     toast(e.message, true);
   }
 };
 
-window.saveGlossaryOverride = async function(key) {
-  const elLabel = document.getElementById("editGlossaryLabelZh");
+window.saveGlossaryOverride = async function() {
+  const elKey = document.getElementById("editGlossaryKey");
+  const elLabelZh = document.getElementById("editGlossaryLabelZh");
+  const elLabelEn = document.getElementById("editGlossaryLabelEn");
   const elGuidance = document.getElementById("editGlossaryGuidance");
-  const label_zh = elLabel ? elLabel.value.trim() : "";
+  const elCategory = document.getElementById("editGlossaryCategory");
+  const elAliases = document.getElementById("editGlossaryAliases");
+
+  const key = elKey ? elKey.value.trim() : "";
+  if (!key) return toast("標準鍵名不能為空", true);
+
+  const label_zh = elLabelZh ? elLabelZh.value.trim() : "";
+  const label_en = elLabelEn ? elLabelEn.value.trim() : "";
   const guidance = elGuidance ? elGuidance.value.trim() : "";
+  const category = elCategory ? elCategory.value.trim() : "";
+  const aliases = elAliases ? elAliases.value.split(",").map(s => s.trim()).filter(Boolean) : [];
+
   try {
     await api("/api/glossary/user/save", {
       canonical_key: key,
       label_zh: label_zh,
-      guidance: guidance
+      label_en: label_en,
+      guidance: guidance,
+      category: category,
+      aliases: aliases,
     });
     toast(I18N.t("toast.override_saved", { key }));
     closeDrawer();
+    await loadGlossaryCatalog(); // 刷新全局 GLOSSARY_CACHE
     await loadGlossaryList();
   } catch (e) {
     toast(e.message, true);
@@ -1907,6 +2014,7 @@ window.deleteGlossaryOverride = async function(key) {
     await api("/api/glossary/user/delete", { canonical_key: key });
     toast(I18N.t("toast.override_deleted", { key }));
     closeDrawer();
+    await loadGlossaryCatalog(); // 刷新全局 GLOSSARY_CACHE
     await loadGlossaryList();
   } catch (e) {
     toast(e.message, true);
@@ -1916,6 +2024,9 @@ window.deleteGlossaryOverride = async function(key) {
 function setupGlossaryHandlers() {
   if ($("glossarySearchInput")) {
     $("glossarySearchInput").oninput = () => loadGlossaryList();
+  }
+  if ($("addGlossaryBtn")) {
+    $("addGlossaryBtn").onclick = () => openEditGlossaryModal("");
   }
 }
 
@@ -1938,14 +2049,32 @@ window.drilldownToNoteWorkspace = function(notePath, findingId, propKey, finding
 /* ============================================================
    Initialization & Navigation
    ============================================================ */
+function renderMismatchBanner(backendVer) {
+  let existing = document.getElementById("versionMismatchAlert");
+  if (!existing) {
+    existing = document.createElement("div");
+    existing.id = "versionMismatchAlert";
+    existing.style.cssText = "background:var(--red); color:#fff; padding:10px 16px; font-weight:700; text-align:center; position:sticky; top:0; z-index:99999; box-shadow:0 2px 8px rgba(0,0,0,0.3)";
+    document.body.prepend(existing);
+  }
+  const msg = backendVer
+    ? `⚠️ 伺服器版本不相容！前端介面需要 v1.2.0，但後端伺服器版本為 v${backendVer}。請停止並重啟伺服器 (python -m app)！`
+    : `⚠️ 無法連線至後端伺服器！請確認本機伺服器已啟動 (python -m app)！`;
+  existing.textContent = msg;
+}
+
 async function init() {
-  // Load meta first to populate version badge and capability flags
+  // Load meta first to populate version badge and verify backend compatibility
   try {
     const meta = await api("/api/meta");
     S.meta = meta;
     if ($("versionBadge")) $("versionBadge").textContent = "v" + meta.version;
+    if (meta.version !== "1.2.0") {
+      renderMismatchBanner(meta.version);
+    }
   } catch (e) {
     console.warn("Failed to load /api/meta:", e);
+    renderMismatchBanner(null);
   }
   await I18N.init();
   await loadGlossaryCatalog();
@@ -2239,6 +2368,19 @@ function setupScopeHandlers() {
     }
   };
 
+function getCanonicalScopeKey() {
+  if (!S.scope || S.scope.mode === 'entire_vault') return 'entire_vault';
+  if (S.scope.mode === 'single_note') {
+    const np = (S.scope.note_path || '').trim().replace(/\\/g, '/').replace(/^\/+/, '');
+    return np ? `note:${np}` : 'default';
+  }
+  if (S.scope.mode === 'folders') {
+    const folders = (S.scope.folders || []).map(f => f.trim().replace(/\\/g, '/').replace(/^\/+/, '')).filter(Boolean).sort();
+    return folders.length > 0 ? `folders:${folders.join(',')}` : 'default';
+  }
+  return 'default';
+}
+
   // Expected Schema Assignment Handlers (REQ-044)
   async function updateScopeSchemaAssignmentUI() {
     const card = $("scopeSchemaAssignCard");
@@ -2253,8 +2395,8 @@ function setupScopeHandlers() {
         <option value="${esc(s.id)}">${esc(s.name)} (v${esc(s.version || '1.0')})</option>
       `).join("");
 
-      // 2. Fetch current assignment
-      const scopeKey = S.scope.mode === 'entire_vault' ? 'entire_vault' : ((S.scope.folders || []).join(",") || 'default');
+      // 2. Fetch current assignment with canonical scope key
+      const scopeKey = getCanonicalScopeKey();
       const cur = await api("/api/scope/schema/current", { scope_key: scopeKey });
       const badge = $("scopeCurrentSchemaAssignBadge");
       const display = $("scopeCurrentAssignDisplay");
@@ -2284,7 +2426,7 @@ function setupScopeHandlers() {
       const select = $("scopeSchemaAssignSelect");
       const schemaId = select ? select.value.trim() : "";
       if (!schemaId) return toast("請先選擇要指派的具名架構", true);
-      const scopeKey = S.scope.mode === 'entire_vault' ? 'entire_vault' : ((S.scope.folders || []).join(",") || 'default');
+      const scopeKey = getCanonicalScopeKey();
       try {
         await api("/api/scope/schema/assign", { scope_key: scopeKey, schema_id: schemaId });
         toast("預期架構已成功指派至此範圍");
@@ -2298,7 +2440,7 @@ function setupScopeHandlers() {
 
   if ($("scopeUnassignSchemaBtn")) {
     $("scopeUnassignSchemaBtn").onclick = async () => {
-      const scopeKey = S.scope.mode === 'entire_vault' ? 'entire_vault' : ((S.scope.folders || []).join(",") || 'default');
+      const scopeKey = getCanonicalScopeKey();
       try {
         await api("/api/scope/schema/unassign", { scope_key: scopeKey });
         toast("已取消此範圍之預期架構指派");
@@ -2821,13 +2963,20 @@ async function updateWorkspacePreview() {
 
     $("wsYamlPreview").textContent = res.frontmatter_preview || "";
 
-    const canCopy = res.can_copy && res.roundtrip_matches;
+    const canCopy = res.can_copy && res.roundtrip_matches && (res.valid !== false);
     if (canCopy) {
       $("wsRoundtripStatus").innerHTML = `<span class="ok">${I18N.t("workspace.roundtrip_ok")}</span>`;
       $("wsCopyBtn").disabled = false;
     } else {
-      const errs = res.errors.length ? res.errors.join("<br>") : I18N.t("workspace.roundtrip_err");
-      $("wsRoundtripStatus").innerHTML = `<span class="bad">${errs}</span>`;
+      const errList = (res.errors && res.errors.length) 
+        ? res.errors.map(e => `<li>${esc(e)}</li>`).join("") 
+        : `<li>${esc(I18N.t("workspace.roundtrip_err"))}</li>`;
+      $("wsRoundtripStatus").innerHTML = `
+        <div class="bad" style="line-height:1.4">
+          <strong>⚠ 屬性規範檢核未通過 (Schema Constraint Mismatch)：</strong>
+          <ul style="margin:4px 0 0 0; padding-left:18px">${errList}</ul>
+        </div>
+      `;
       $("wsCopyBtn").disabled = true;
     }
   } catch (e) {
@@ -3942,58 +4091,43 @@ function setupProposalHandlers() {
       }
 
       const sch = res.schema || {};
-      const props = sch.properties || [];
+      const fourWay = res.four_way_comparison || res.comparison || [];
 
-      // Fetch comparison datasets (Glossary, Schemas, Vault Inventory)
-      let schemasList = [];
-      try {
-        const sRes = await api("/api/schemas/list");
-        schemasList = sRes.schemas || [];
-      } catch (_) {}
-
-      const invProps = (S.inventory && S.inventory.properties) ? S.inventory.properties : [];
-
-      const rowsHtml = props.map(p => {
-        // 1. Vault/Scope usage
-        const invMatch = invProps.find(ip => ip.key === p.name);
-        const vaultCount = invMatch ? invMatch.usage_count : 0;
-        const dominantType = invMatch ? invMatch.detected_type : null;
-
-        // 2. Glossary match
-        const glossaryEntry = GLOSSARY_CACHE ? GLOSSARY_CACHE[p.name.toLowerCase()] : null;
-
-        // 3. Schema Library match
-        const schemasWithProp = schemasList.filter(s => (s.properties || []).some(sp => sp.name === p.name));
-
-        // 4. Compatibility State Determination
-        let compatBadge = '<span class="pill ok">相容 (Compatible)</span>';
-        if (!invMatch && !glossaryEntry && schemasWithProp.length === 0) {
-          compatBadge = '<span class="pill brand">全新 (New)</span>';
-        } else if (dominantType && dominantType !== p.storage_type) {
-          compatBadge = `<span class="pill alert" title="庫中既有型態為 ${dominantType}">型態衝突 (${dominantType})</span>`;
-        } else if (glossaryEntry && glossaryEntry.aliases && glossaryEntry.aliases.includes(p.name)) {
-          compatBadge = '<span class="pill warn">潛在別名 (Alias)</span>';
+      const rowsHtml = fourWay.map(item => {
+        let compatBadge = `<span class="pill ok">${esc(I18N.t("proposal.comp_compatible"))}</span>`;
+        if (item.compatibility_state === "new_property") {
+          compatBadge = `<span class="pill brand">${esc(I18N.t("proposal.comp_new"))}</span>`;
+        } else if (item.compatibility_state === "type_conflict") {
+          compatBadge = `<span class="pill alert" title="${esc(item.compatibility_detail)}">${esc(I18N.t("proposal.comp_type_conflict"))} (${esc(item.dominant_type || '')})</span>`;
+        } else if (item.compatibility_state === "value_vocabulary_conflict") {
+          compatBadge = `<span class="pill warn" title="${esc(item.compatibility_detail)}">${esc(I18N.t("proposal.comp_val_conflict"))}</span>`;
+        } else if (item.compatibility_state === "potential_alias") {
+          compatBadge = `<span class="pill warn" title="${esc(item.compatibility_detail)}">${esc(I18N.t("proposal.comp_alias"))}</span>`;
         }
+
+        const glo = item.glossary_entry;
+        const schMatches = item.schema_library_matches || [];
 
         return `
           <tr>
             <td>
-              <strong>${esc(p.name)}</strong>
-              ${p.required ? '<span style="color:var(--red); font-weight:bold" title="必填屬性">*</span>' : ''}
+              <strong>${esc(item.name)}</strong>
+              ${item.proposed_required ? '<span style="color:var(--red); font-weight:bold" title="必填屬性">*</span>' : ''}
             </td>
-            <td><span class="pill">${esc(p.storage_type)}</span></td>
-            <td><code>${esc(p.ui_control || 'plain')}</code></td>
+            <td><span class="pill">${esc(item.proposed_storage_type)}</span></td>
+            <td><code>${esc(item.proposed_ui_control || 'plain')}</code></td>
             <td>${compatBadge}</td>
             <td style="font-size:12px">
-              ${vaultCount > 0 ? `<code>${vaultCount}</code> 篇筆記` : '<span class="muted">未曾使用</span>'}
+              <div>範圍: <strong>${item.scope_usage_count || 0}</strong></div>
+              <div class="muted" style="font-size:11px">全庫: ${item.vault_usage_count || 0}</div>
             </td>
             <td style="font-size:12px">
-              ${glossaryEntry ? `<span class="pill ok">${esc(glossaryEntry.label_zh || glossaryEntry.label_en || '收錄')}</span>` : '<span class="muted">未收錄</span>'}
+              ${glo ? `<span class="pill ok" title="${esc(glo.canonical_key)}">${esc(glo.label_zh || glo.label_en || '收錄')}</span>` : '<span class="muted">—</span>'}
             </td>
             <td style="font-size:12px">
-              ${schemasWithProp.length > 0 ? `${schemasWithProp.length} 個架構` : '<span class="muted">無</span>'}
+              ${schMatches.length > 0 ? `<span class="pill" title="${esc(schMatches.map(s => s.name).join(', '))}">${schMatches.length} 個架構</span>` : '<span class="muted">—</span>'}
             </td>
-            <td style="font-size:12px; color:var(--muted)">${esc(p.reason || '—')}</td>
+            <td style="font-size:12px; color:var(--muted)">${esc(item.reason || item.compatibility_detail || '—')}</td>
           </tr>
         `;
       }).join("");
@@ -4003,17 +4137,20 @@ function setupProposalHandlers() {
           <div>
             <div style="display:flex; align-items:center; gap:8px">
               <h3 style="margin:0">${esc(sch.schema_name || sch.name || 'unnamed')}</h3>
-              <span class="pill ok">Contract v${esc(res.proposal_version || '1.0')}</span>
+              <span class="pill ok">Proposal Contract v${esc(res.proposal_version || '1.1')}</span>
+              ${res.target_note_kind ? `<span class="pill brand">${esc(res.target_note_kind)}</span>` : ''}
             </div>
             <p class="muted" style="margin:4px 0 0 0; font-size:13px">${esc(sch.description || '無詳細說明')}</p>
-            ${res.rationale ? `<p style="font-size:12.5px; color:var(--brand); margin:4px 0 0 0">💡 <strong>設計理念 (Rationale)：</strong> ${esc(res.rationale)}</p>` : ''}
-            ${res.target_note ? `<p style="font-size:12px; color:var(--muted); margin:2px 0 0 0">🎯 目標筆記：<code>${esc(res.target_note)}</code></p>` : ''}
+            ${res.management_purpose ? `<p style="font-size:12.5px; color:var(--teal); margin:4px 0 0 0">🎯 <strong>管理目的 (Management Purpose)：</strong> ${esc(res.management_purpose)}</p>` : ''}
+            ${res.source_context ? `<p style="font-size:12px; color:var(--muted); margin:2px 0 0 0">📂 來源脈絡：${esc(res.source_context)}</p>` : ''}
+            ${res.schema_target ? `<p style="font-size:12px; color:var(--muted); margin:2px 0 0 0">🎯 目標架構/路徑：<code>${esc(res.schema_target)}</code></p>` : ''}
+            ${res.proposal_notes ? `<p style="font-size:12px; color:var(--muted); margin:2px 0 0 0">📝 建議備註：${esc(res.proposal_notes)}</p>` : ''}
           </div>
           <div style="display:flex; gap:6px; flex-wrap:wrap">
-            <button class="primary" id="proposalSaveAsNamedBtn">儲存為具名架構</button>
-            <button class="secondary" id="proposalReconcileBtn">核對至筆記</button>
-            <button class="secondary" id="proposalEditCandidateBtn">✏️ 編輯候選內容</button>
-            <button class="ghost" id="proposalRejectBtn" style="color:var(--red)">✕ 拒絕提案</button>
+            <button class="primary" id="proposalSaveAsNamedBtn">${esc(I18N.t("design.next_save_named"))}</button>
+            <button class="secondary" id="proposalReconcileBtn">${esc(I18N.t("schemas.btn_reconcile"))}</button>
+            <button class="secondary" id="proposalEditCandidateBtn">${esc(I18N.t("proposal.edit_btn"))}</button>
+            <button class="ghost" id="proposalRejectBtn" style="color:var(--red)">${esc(I18N.t("proposal.reject_btn"))}</button>
           </div>
         </div>
 
@@ -4025,8 +4162,8 @@ function setupProposalHandlers() {
                 <th style="width:90px">型態</th>
                 <th style="width:90px">控制元件</th>
                 <th style="width:110px">相容狀態</th>
-                <th style="width:100px">知識庫使用</th>
-                <th style="width:90px">詞彙庫收錄</th>
+                <th style="width:110px">範圍 / 全庫使用</th>
+                <th style="width:90px">個人詞彙庫</th>
                 <th style="width:90px">架構庫引用</th>
                 <th>使用理由 / 說明</th>
               </tr>
@@ -4036,7 +4173,7 @@ function setupProposalHandlers() {
         </div>
 
         <details style="margin-top:14px; border-top:1px solid var(--line); padding-top:10px">
-          <summary style="cursor:pointer; font-size:12.5px; color:var(--muted)">檢視原始比對與校驗 JSON</summary>
+          <summary style="cursor:pointer; font-size:12.5px; color:var(--muted)">檢視原始比對與校驗 JSON (Four-way JSON Output)</summary>
           <pre style="max-height:220px; font-size:12px">${esc(JSON.stringify(res, null, 2))}</pre>
         </details>
       `;

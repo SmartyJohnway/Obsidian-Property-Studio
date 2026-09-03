@@ -18,9 +18,11 @@ from .model import Note, VaultScan
 
 class DriftCategory(str, enum.Enum):
     MISSING_REQUIRED = "missing_required"
+    MISSING_EXPECTED = "missing_expected"
     TYPE_MISMATCH = "type_mismatch"
     VALUE_DRIFT = "value_drift"
     UNEXPECTED_PROPERTY = "unexpected_property"
+    SCHEMA_VERSION_MISMATCH = "schema_version_mismatch"
 
 
 @dataclass
@@ -109,6 +111,18 @@ def analyze_schema_drift(
                         )
                     )
                     has_critical_drift = True
+                else:
+                    # Optional schema property not populated in note - record for information, but does NOT invalidate note compliance
+                    findings.append(
+                        NoteDriftFinding(
+                            note_path=note.path,
+                            category=DriftCategory.MISSING_EXPECTED,
+                            property_key=name,
+                            detail=f"Optional expected property '{name}' is not present in note.",
+                            expected=exp_type,
+                            actual=None,
+                        )
+                    )
             else:
                 val = props[name]
                 # Check allowed values
@@ -181,6 +195,7 @@ def analyze_schema_drift(
                         actual=props[k],
                     )
                 )
+                has_critical_drift = True
 
         if has_critical_drift:
             drifted_note_paths.add(note.path)

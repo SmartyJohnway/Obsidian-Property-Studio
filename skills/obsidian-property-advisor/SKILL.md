@@ -82,8 +82,11 @@ Example Proposal (v1.1):
   "proposal_version": "1.1",
   "schema_name": "project_tracking",
   "description": "Schema for managing project notes, milestones, and deliverables",
-  "target_scope": "Projects",
-  "rationale": "Enables systematic filtering, status tracking, and owner accountability across vault projects.",
+  "management_purpose": "Enables systematic filtering, status tracking, and owner accountability across vault projects.",
+  "target_note_kind": "project",
+  "schema_target": "Projects",
+  "source_context": "Project management and deliverable tracking",
+  "proposal_notes": "Minimalist property structure for project tracking.",
   "properties": [
     {
       "name": "status",

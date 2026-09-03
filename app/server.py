@@ -451,8 +451,15 @@ def api_proposal_import(body: dict[str, Any]) -> dict[str, Any]:
     text = body.get("text")
     if not isinstance(text, str) or not text.strip():
         raise ApiError("Paste or open a proposal JSON file first.", 400)
-    inv = STORE.get_scoped_inventory() if STORE.scan else inventory.Inventory()
-    return proposal.import_proposal(text, inv)
+    scoped_inv = STORE.get_scoped_inventory() if STORE.scan else inventory.Inventory()
+    vault_inv = STORE.inventory if STORE.scan else inventory.Inventory()
+    return proposal.import_proposal(
+        text=text,
+        scoped_inv=scoped_inv,
+        vault_inv=vault_inv,
+        glossary_store=user_glossary.USER_GLOSSARY_STORE,
+        schema_library=named_schemas.NAMED_SCHEMA_LIBRARY,
+    )
 
 
 def api_export(body: dict[str, Any]) -> dict[str, Any]:
@@ -811,17 +818,26 @@ def api_schema_migration_plan(body: dict[str, Any]) -> dict[str, Any]:
             tgt_props = [p.to_dict() for p in s.properties]
             tgt_ver = s.version
 
+    scoped_notes = STORE.get_scoped_scan().notes if STORE.scan else None
     plan = migration.plan_schema_migration(
         source_properties=src_props,
         target_properties=tgt_props,
         source_version=src_ver,
         target_version=tgt_ver,
+        notes=scoped_notes,
     )
     return plan.to_dict()
 
 
 def api_governance_profile_export(_body: dict[str, Any]) -> dict[str, Any]:
     return governance_profile.export_governance_profile()
+
+
+def api_governance_profile_validate(body: dict[str, Any]) -> dict[str, Any]:
+    profile_data = body.get("profile")
+    if not profile_data:
+        raise ApiError("profile data is required.", 400)
+    return governance_profile.validate_governance_profile(profile_data)
 
 
 def api_governance_profile_import(body: dict[str, Any]) -> dict[str, Any]:
@@ -888,7 +904,11 @@ ROUTES: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "/api/schemas/delete": api_schemas_delete,
     "/api/schemas/migration/plan": api_schema_migration_plan,
     "/api/governance/profile/export": api_governance_profile_export,
+    "/api/governance/profile/validate": api_governance_profile_validate,
     "/api/governance/profile/import": api_governance_profile_import,
+    "/api/profile/validate": api_governance_profile_validate,
+    "/api/profile/export": api_governance_profile_export,
+    "/api/profile/import": api_governance_profile_import,
     "/api/reconcile/inspect": api_reconcile_inspect,
     "/api/reconcile/preview": api_reconcile_preview,
     "/api/state/validate_context": api_state_validate_context,

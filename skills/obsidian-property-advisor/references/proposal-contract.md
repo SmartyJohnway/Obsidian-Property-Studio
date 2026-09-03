@@ -3,13 +3,17 @@
 All proposals produced by the Obsidian Property Advisor Skill must strictly adhere to the Proposal Contract specification.
 
 ## Core Schema Structure
-- `proposal_version`: String, '1.0' or '1.1'.
+- `proposal_version`: String, exactly '1.0' or '1.1'.
 - `schema_name`: String, required. Identifies the schema.
 - `description`: String, optional. Brief human-readable purpose.
 - `properties`: Array of Property objects, required.
-- `target_scope`: String (v1.1+), optional target folder/scope name.
-- `rationale`: String (v1.1+), optional explanation of the overall design.
-- `target_note`: String (v1.1+), optional path of the note this proposal applies to.
+- `management_purpose`: String (v1.1+), optional PKM management intent.
+- `source_context`: String (v1.1+), optional context of source conversation/topic.
+- `target_note_kind`: String (v1.1+), optional classification (e.g. project, equipment, regulation).
+- `proposal_notes`: String (v1.1+), optional advisory caveats or trade-offs.
+- `schema_target`: String (v1.1+), optional target Scope path or Named Schema ID.
+- `target_note`: String (optional legacy compatibility alias).
+- `rationale`: String (optional legacy compatibility alias).
 
 ## Property Object Fields
 - `name`: String, required. Valid non-empty property identifier.

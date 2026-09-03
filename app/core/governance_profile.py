@@ -54,30 +54,64 @@ def export_governance_profile() -> dict[str, Any]:
     }
 
 
-def import_governance_profile(profile_data: dict[str, Any], mode: str = "merge") -> dict[str, Any]:
-    """Validate and import a governance profile package (merge or replace)."""
+def validate_governance_profile(profile_data: dict[str, Any]) -> dict[str, Any]:
+    """Validate a governance profile package and return structured preview before applying (REQ-047)."""
     if not isinstance(profile_data, dict):
-        raise ValueError("Profile data must be a JSON object.")
+        return {"valid": False, "error": "Profile data must be a JSON object."}
 
     data = profile_data.get("data")
     if not isinstance(data, dict):
-        raise ValueError("Invalid profile format: missing 'data' object.")
+        return {"valid": False, "error": "Invalid profile format: missing 'data' object."}
 
     fmt = data.get("format_version")
     if fmt != PROFILE_FORMAT_VERSION:
-        raise ValueError(f"Unsupported profile format_version '{fmt}'. Supported: {PROFILE_FORMAT_VERSION}")
+        return {"valid": False, "error": f"Unsupported profile format_version '{fmt}'. Supported: {PROFILE_FORMAT_VERSION}"}
 
-    # Optional checksum check
     meta = profile_data.get("profile_metadata") or {}
     expected_hash = meta.get("sha256_checksum")
     if expected_hash:
         actual_hash = compute_profile_checksum(data)
         if expected_hash != actual_hash:
-            raise ValueError(f"Profile checksum mismatch. Data may be corrupted. Expected: {expected_hash}, got: {actual_hash}")
+            return {"valid": False, "error": f"Profile checksum mismatch. Expected: {expected_hash}, got: {actual_hash}"}
 
     schemas = data.get("named_schemas") or []
     assignments = data.get("scope_assignments") or {}
     glossary = data.get("user_glossary") or {}
+    saved_checks = data.get("saved_checks") or []
+
+    schemas_preview = [
+        {"id": s.get("id"), "name": s.get("name"), "version": s.get("version"), "property_count": len(s.get("properties", []))}
+        for s in schemas if isinstance(s, dict)
+    ]
+
+    return {
+        "valid": True,
+        "format_version": fmt,
+        "schema_count": len(schemas),
+        "assignment_count": len(assignments),
+        "glossary_count": len(glossary),
+        "saved_checks_count": len(saved_checks),
+        "schemas_preview": schemas_preview,
+        "exported_at": meta.get("exported_at"),
+    }
+
+
+def import_governance_profile(profile_data: dict[str, Any], mode: str = "merge") -> dict[str, Any]:
+    """Validate and import a governance profile package with real merge or replace behavior (REQ-047)."""
+    val_report = validate_governance_profile(profile_data)
+    if not val_report.get("valid"):
+        raise ValueError(val_report.get("error", "Invalid profile."))
+
+    data = profile_data["data"]
+    schemas = data.get("named_schemas") or []
+    assignments = data.get("scope_assignments") or {}
+    glossary = data.get("user_glossary") or {}
+
+    # If replace mode, clear existing app-local governance stores first
+    if mode == "replace":
+        NAMED_SCHEMA_LIBRARY.storage.save({})
+        SCOPE_GOVERNANCE_STORE.storage.save({})
+        USER_GLOSSARY_STORE.storage.save({})
 
     imported_schemas = 0
     imported_assignments = 0
