@@ -135,7 +135,7 @@ def coerce_value(prop: SchemaProperty, raw: Any) -> tuple[Any, list[str]]:
     result = str(text)
     if control is UIControl.NOTE_LINK:
         result = wrap_note_link(result)
-    if control is UIControl.SINGLE_CHOICE and prop.allowed_values:
+    if prop.allowed_values:
         if result not in prop.allowed_values:
             errors.append(
                 f"'{prop.name}': '{result}' is not one of the allowed values "

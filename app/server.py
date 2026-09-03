@@ -564,7 +564,51 @@ def api_scope_current(_body: dict[str, Any]) -> dict[str, Any]:
 
 
 def api_glossary_catalog(_body: dict[str, Any]) -> dict[str, Any]:
-    catalog = property_glossary.export_glossary_catalog()
+    catalog = dict(property_glossary.export_glossary_catalog())
+    overrides = user_glossary.USER_GLOSSARY_STORE.list_overrides()
+    for ckey, ov in overrides.items():
+        ckey_cf = ckey.strip().casefold()
+        if ckey_cf in catalog:
+            entry = dict(catalog[ckey_cf])
+            if ov.get("label_zh"):
+                entry["label_zh"] = ov["label_zh"]
+            if ov.get("label_en"):
+                entry["label_en"] = ov["label_en"]
+            if ov.get("guidance"):
+                entry["guidance"] = ov["guidance"]
+            if ov.get("description_zh"):
+                entry["short_description_zh"] = ov["description_zh"]
+                entry["long_description_zh"] = ov["description_zh"]
+            if ov.get("description_en"):
+                entry["short_description_en"] = ov["description_en"]
+                entry["long_description_en"] = ov["description_en"]
+            if ov.get("category"):
+                entry["category"] = ov["category"]
+            if ov.get("aliases"):
+                entry["aliases"] = ov["aliases"]
+            if ov.get("examples"):
+                entry["examples"] = ov["examples"]
+            entry["is_user_override"] = True
+            catalog[ckey_cf] = entry
+        else:
+            catalog[ckey_cf] = {
+                "canonical_key": ckey,
+                "label_zh": ov.get("label_zh") or ckey,
+                "label_en": ov.get("label_en") or ckey,
+                "short_description_zh": ov.get("description_zh") or "",
+                "short_description_en": ov.get("description_en") or "",
+                "long_description_zh": ov.get("description_zh") or "",
+                "long_description_en": ov.get("description_en") or "",
+                "usage_hint_zh": ov.get("guidance") or "",
+                "usage_hint_en": ov.get("guidance") or "",
+                "guidance": ov.get("guidance") or "",
+                "category": ov.get("category") or "custom",
+                "aliases": ov.get("aliases") or [],
+                "examples": ov.get("examples") or [],
+                "typical_type": "text",
+                "typical_control": "plain",
+                "is_user_override": True,
+            }
     return {"catalog": catalog, "total": len(catalog)}
 
 
@@ -779,11 +823,13 @@ def api_drift_analyze(body: dict[str, Any]) -> dict[str, Any]:
             schema_id = asgn.schema_id
             schema_name = asgn.schema_name
 
+    schema_ver = None
     if schema_id and not schema_props:
         sch = named_schemas.NAMED_SCHEMA_LIBRARY.get_schema(str(schema_id))
         if sch:
             schema_props = [p.to_dict() for p in sch.properties]
             schema_name = sch.name
+            schema_ver = sch.version
 
     if not schema_props:
         raise ApiError("No expected schema specified or assigned to this scope.", 400)
@@ -794,6 +840,7 @@ def api_drift_analyze(body: dict[str, Any]) -> dict[str, Any]:
         schema_id=str(schema_id or "custom"),
         schema_name=str(schema_name or "Custom Schema"),
         scope_key=scope_key,
+        schema_version=schema_ver,
     )
     return report.to_dict()
 
@@ -830,7 +877,8 @@ def api_schema_migration_plan(body: dict[str, Any]) -> dict[str, Any]:
 
 
 def api_governance_profile_export(_body: dict[str, Any]) -> dict[str, Any]:
-    return governance_profile.export_governance_profile()
+    checks = [c.to_dict() for c in STORE.saved_checks_store.list_checks()]
+    return governance_profile.export_governance_profile(saved_checks_list=checks)
 
 
 def api_governance_profile_validate(body: dict[str, Any]) -> dict[str, Any]:
@@ -846,7 +894,9 @@ def api_governance_profile_import(body: dict[str, Any]) -> dict[str, Any]:
         raise ApiError("profile data is required.", 400)
     mode = str(body.get("mode") or "merge")
     try:
-        res = governance_profile.import_governance_profile(profile_data, mode=mode)
+        res = governance_profile.import_governance_profile(
+            profile_data, mode=mode, saved_checks_store=STORE.saved_checks_store
+        )
         return res
     except ValueError as exc:
         raise ApiError(str(exc), 400) from exc

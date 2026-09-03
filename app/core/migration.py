@@ -18,6 +18,7 @@ class MigrationChangeType(str, enum.Enum):
     UI_CONTROL_CHANGED = "ui_control_changed"
     REQUIRED_CHANGED = "required_changed"
     ALLOWED_VALUES_CHANGED = "allowed_values_changed"
+    RELATIONSHIP_EXPECTATION_CHANGED = "relationship_expectation_changed"
 
 
 @dataclass
@@ -180,20 +181,34 @@ def plan_schema_migration(
                 )
             )
 
-        # UI control
+        # UI control & Relationship expectations (DEC-031)
         src_ctrl = str(sp.get("ui_control") or "plain")
         tgt_ctrl = str(tp.get("ui_control") or "plain")
         if src_ctrl != tgt_ctrl:
-            changes.append(
-                PropertyChangeDetail(
-                    property_name=name,
-                    change_type=MigrationChangeType.UI_CONTROL_CHANGED,
-                    is_breaking=False,
-                    description=f"UI control widget changed from '{src_ctrl}' to '{tgt_ctrl}'.",
-                    old_value=src_ctrl,
-                    new_value=tgt_ctrl,
+            is_rel_change = any(c in ("note_link", "note_link_list") for c in (src_ctrl, tgt_ctrl))
+            if is_rel_change:
+                has_breaking = True
+                changes.append(
+                    PropertyChangeDetail(
+                        property_name=name,
+                        change_type=MigrationChangeType.RELATIONSHIP_EXPECTATION_CHANGED,
+                        is_breaking=True,
+                        description=f"Relationship expectation changed from '{src_ctrl}' to '{tgt_ctrl}'.",
+                        old_value=src_ctrl,
+                        new_value=tgt_ctrl,
+                    )
                 )
-            )
+            else:
+                changes.append(
+                    PropertyChangeDetail(
+                        property_name=name,
+                        change_type=MigrationChangeType.UI_CONTROL_CHANGED,
+                        is_breaking=False,
+                        description=f"UI control widget changed from '{src_ctrl}' to '{tgt_ctrl}'.",
+                        old_value=src_ctrl,
+                        new_value=tgt_ctrl,
+                    )
+                )
 
     # Derive suggested SemVer bump
     if has_breaking:
@@ -211,6 +226,10 @@ def plan_schema_migration(
             steps.append(f"Convert '{c.property_name}' values from {c.old_value} to {c.new_value}.")
         elif c.change_type == MigrationChangeType.ADDED_PROPERTY and c.is_breaking:
             steps.append(f"Populate newly required property '{c.property_name}' across existing notes.")
+        elif c.change_type == MigrationChangeType.RELATIONSHIP_EXPECTATION_CHANGED:
+            steps.append(f"Convert '{c.property_name}' values from '{c.old_value}' to WikiLink format for '{c.new_value}'.")
+        elif c.change_type == MigrationChangeType.ALLOWED_VALUES_CHANGED:
+            steps.append(f"Review values for '{c.property_name}' against updated vocabulary: {c.new_value}.")
 
     # Scope-aware evaluation if notes are provided (DEC-031)
     affected_by_prop: dict[str, list[str]] = {}
@@ -218,6 +237,7 @@ def plan_schema_migration(
     total_notes_count = len(notes) if notes is not None else 0
 
     if notes:
+        import re
         for n in notes:
             n_props = {}
             if hasattr(n, "properties") and isinstance(n.properties, dict):
@@ -229,9 +249,30 @@ def plan_schema_migration(
                 pname = c.property_name
                 # Note has property that is deleted or modified
                 if pname in n_props:
-                    if c.change_type in (MigrationChangeType.DELETED_PROPERTY, MigrationChangeType.STORAGE_TYPE_CHANGED, MigrationChangeType.ALLOWED_VALUES_CHANGED):
+                    val = n_props[pname]
+                    is_note_affected = False
+
+                    if c.change_type == MigrationChangeType.DELETED_PROPERTY:
+                        is_note_affected = True
+                    elif c.change_type == MigrationChangeType.STORAGE_TYPE_CHANGED:
+                        is_note_affected = True
+                    elif c.change_type == MigrationChangeType.ALLOWED_VALUES_CHANGED:
+                        # Precise check: only affected if actual note value violates target vocabulary
+                        target_vocab = {str(av) for av in (c.new_value or [])}
+                        if target_vocab:
+                            if isinstance(val, (list, tuple)):
+                                is_note_affected = any(str(v) not in target_vocab for v in val)
+                            else:
+                                is_note_affected = str(val) not in target_vocab
+                    elif c.change_type == MigrationChangeType.RELATIONSHIP_EXPECTATION_CHANGED:
+                        # If expecting note_link, check if value already has [[...]]
+                        if "note_link" in str(c.new_value):
+                            is_note_affected = not bool(re.search(r"\[\[.+?\]\]", str(val)))
+
+                    if is_note_affected:
                         affected_by_prop.setdefault(pname, []).append(n.path)
                         all_affected_notes.add(n.path)
+
                 # Note is missing newly required property
                 elif c.change_type == MigrationChangeType.ADDED_PROPERTY and c.is_breaking:
                     affected_by_prop.setdefault(pname, []).append(n.path)

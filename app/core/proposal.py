@@ -23,7 +23,7 @@ from .model import (
 PROPOSAL_CONTRACT_VERSION = "1.0"
 SUPPORTED_PROPOSAL_VERSIONS = ("1.0", "1.1")
 
-KNOWN_TOP_LEVEL = {
+KNOWN_TOP_LEVEL_V10 = {
     "proposal_version",
     "schema_name",
     "description",
@@ -31,18 +31,28 @@ KNOWN_TOP_LEVEL = {
     "generated_by",
     "provenance",
     "notes",
-    # Authoritative Proposal Contract 1.1 additions (REQ-046, Spec Section 2)
+}
+
+# Authoritative Proposal Contract 1.1 additions (REQ-046, Spec Section 2)
+ADDITIVE_FIELDS_V11 = {
     "management_purpose",
     "source_context",
     "target_note_kind",
     "proposal_notes",
     "schema_target",
-    # Backward compatibility additions
+}
+
+# Compatibility aliases
+COMPATIBILITY_ALIASES = {
     "target_note",
     "target_scope",
     "rationale",
     "proposed_migration",
 }
+
+KNOWN_TOP_LEVEL_V11 = KNOWN_TOP_LEVEL_V10 | ADDITIVE_FIELDS_V11 | COMPATIBILITY_ALIASES
+KNOWN_TOP_LEVEL = KNOWN_TOP_LEVEL_V11
+
 KNOWN_PROPERTY_FIELDS = {
     "name",
     "storage_type",
@@ -97,8 +107,15 @@ def validate_proposal(data: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(name, str) or not name.strip():
         errors.append("'schema_name' must be a non-empty string.")
 
-    for key in sorted(set(data) - KNOWN_TOP_LEVEL):
-        warnings.append(f"Unknown top-level field '{key}' was ignored.")
+    # Version-specific top-level field enforcement
+    known_for_ver = KNOWN_TOP_LEVEL_V11 if version == "1.1" else KNOWN_TOP_LEVEL_V10
+    for key in sorted(set(data) - known_for_ver):
+        if version == "1.0" and key in (ADDITIVE_FIELDS_V11 | COMPATIBILITY_ALIASES):
+            warnings.append(
+                f"Field '{key}' is a Proposal Contract 1.1 extension and is ignored under proposal_version '1.0'."
+            )
+        else:
+            warnings.append(f"Unknown top-level field '{key}' was ignored.")
 
     properties = data.get("properties")
     props: list[SchemaProperty] = []
@@ -254,16 +271,31 @@ def compare_proposal_four_way(
     comparisons = []
     schemas_list = schema_library.list_schemas() if schema_library and hasattr(schema_library, "list_schemas") else []
 
-    # Build reverse alias index from user glossary and built-in catalog
+    # Build reverse alias index from built-in catalog and user glossary overrides
     reverse_alias_map: dict[str, str] = {}
-    if glossary_store:
+    from .property_glossary import PROPERTY_GLOSSARY
+    for entry in PROPERTY_GLOSSARY.values():
+        for alias in getattr(entry, "aliases", []):
+            if alias and alias.lower() != entry.canonical_key.lower():
+                reverse_alias_map[alias.lower()] = entry.canonical_key
+
+    if glossary_store and hasattr(glossary_store, "list_overrides"):
         try:
-            # Check user overrides
-            for item in glossary_store.list_overrides():
-                ckey = item.get("canonical_key")
-                for alias in item.get("aliases", []):
-                    if alias and alias != ckey:
-                        reverse_alias_map[alias.lower()] = ckey
+            ov_data = glossary_store.list_overrides()
+            items = ov_data.values() if isinstance(ov_data, dict) else ov_data
+            for item in items:
+                ckey = getattr(item, "canonical_key", None)
+                if not ckey and isinstance(item, dict):
+                    ckey = item.get("canonical_key")
+                aliases = getattr(item, "aliases", None)
+                if aliases is None and isinstance(item, dict):
+                    aliases = item.get("aliases")
+                if ckey and aliases:
+                    for alias in aliases:
+                        alias_clean = str(alias).strip().lower()
+                        ckey_clean = str(ckey).strip()
+                        if alias_clean and alias_clean != ckey_clean.lower():
+                            reverse_alias_map[alias_clean] = ckey_clean
         except Exception:
             pass
 
@@ -343,6 +375,7 @@ def compare_proposal_four_way(
             "schema_library_matches": schema_matches,
             "compatibility_state": comp_state,
             "compatibility_detail": comp_detail,
+            "alias_target": alias_of if (alias_of and alias_of != name) else None,
             # Legacy compatibility fields
             "exists_in_scope": scope_usage > 0,
             "in_scope_count": scope_usage,

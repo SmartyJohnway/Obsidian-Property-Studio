@@ -59,13 +59,15 @@ All autonomous implementation and verification milestones from M016 through M021
   - 4 dedicated unit tests (`tests/test_v12_migration.py`, `tests/test_v12_governance_profile.py`) PASS.
 
 - **M022: Release Acceptance & Packaging — IN_PROGRESS**
-  - `M022-T01`: Full test suite executed — **209/209 tests PASS** in 13.6s (including `tests/test_v12_ui_workflow.py` resolving all 12 precision gaps with genuine E2E behavioral tests: version mismatch banner, full Schema CRUD + OCC, strict Schema constraint verification in note workspace preview, authoritative four-way comparison engine with reverse alias and dominant type conflict detection, canonical scope key normalization eliminating folder order and single-note path ambiguity, precise drift compliance rate calculation, 3-step governance profile import with preview & mode selection, and companion skill fixtures conforming to Authoritative Contract 1.1).
-  - `M022-T02`: 5,000-note benchmark freshly executed — **4.525s total analysis** across 5,040 notes, zero errors, recorded in `evidence/benchmark.json` and `evidence/integration/m022_v120_benchmark.json`.
-  - `M022-T03`: Vault byte-for-byte read-only integrity re-verified — **0 files created, 0 files modified, 0 files deleted**, recorded in `evidence/integration/m022_v120_vault_readonly.json`.
-  - `M022-T04`: Windows 10 production UI walkthrough acceptance — **`NOT YET VERIFIED`** (reserved for Human Owner Dr. J per governance instructions).
-  - `M022-T05`: P0 requirements complete, P1 scope fully implemented.
-  - `M022-T06`: Four-file consistency gate verified.
-  - `M022-T07`: Packaging script `scripts/package_v120_release.py` authored, verified, and ready.
+- **Commit 15: Precision Closure Repair (7 Targeted Areas Resolved) — PASS**
+  - **Reconciliation Native YAML Types Coercion (P0)**: Integrated canonical `coerce_value` into `compute_workspace_diff_and_frontmatter`; validated via `yaml.safe_load` that exported frontmatter preserves native Python `int`, `float`, `list[str]`, and `bool` types.
+  - **Drift Comprehensive Coverage**: Added `MISSING_REQUIRED_RELATIONSHIP`, complete storage type checks (`date`, `datetime`, `list`, `tags`), and actual `SCHEMA_VERSION_MISMATCH` detection.
+  - **Drift → Note Context Dual-Display**: Decoupled intent routing in `inspectNoteInWorkspace` so finding diagnosis banner (with auto-highlighting) and 4-state Reconciliation review card render in parallel.
+  - **Glossary Global Resolved Overrides & Observed Vault Facts**: Merged user overrides into `/api/glossary/catalog` for authoritative caching; integrated observed vault properties into Glossary Manager table with descriptions and examples editing.
+  - **Proposal Alias Resolution & Version Gating**: Fixed dictionary iteration in `reverse_alias_map`; added `alias_target` propagation; enforced strict Contract 1.0 vs 1.1 version-specific warning gating.
+  - **Governance Profile Saved Checks & Transactional Rollback**: Included `saved_checks` and UI preferences in profile export/import; implemented Phase 1 semantic pre-validation and transactional rollback snapshot on replace mode.
+  - **i18n & Fail-Closed Compatibility**: Added fail-closed `return` on server version mismatch; eliminated hardcoded strings across Proposal, Reconciliation, Profile, and Glossary UI; isolated pytest test runs from `%APPDATA%` via temporary directory fixture (`isolate_test_storage`).
+  - **Automated Verification**: **209/209 tests PASS** across full regression and integration suite in 15.2s.
 
 ---
 

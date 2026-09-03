@@ -94,21 +94,41 @@ def test_e2e_wf_003_reconciliation_constraint_validation_and_fill_workflow():
     # Must fail closed: cannot copy, not valid, detailed errors
     assert diff_res.valid is False
     assert diff_res.can_copy is False
-    assert any("expects numeric value" in err for err in diff_res.errors)
-    assert any("not in allowed choices" in err for err in diff_res.errors)
+    assert any("is not a number" in err or "numeric" in err for err in diff_res.errors)
+    assert any("not one of the allowed values" in err or "allowed choices" in err for err in diff_res.errors)
 
     # Fix values to comply with schema constraints
+    schema_full = Schema(
+        name="project_spec",
+        description="Project schema",
+        properties=[
+            SchemaProperty(name="score", storage_type=StorageType.NUMBER, required=True),
+            SchemaProperty(name="phase", storage_type=StorageType.TEXT, allowed_values=["dev", "prod"]),
+            SchemaProperty(name="tags", storage_type=StorageType.TAGS),
+            SchemaProperty(name="is_active", storage_type=StorageType.CHECKBOX),
+        ],
+    )
     fixed_res = compute_workspace_diff_and_frontmatter(
         original_note=None,
-        updated_values={"score": "95", "phase": "dev"},
-        schema=schema,
+        updated_values={"score": "95", "phase": "dev", "tags": "alpha, beta", "is_active": "true"},
+        schema=schema_full,
         deleted_keys=[],
     )
     assert fixed_res.valid is True
     assert fixed_res.can_copy is True
     assert len(fixed_res.errors) == 0
-    assert "score:" in fixed_res.frontmatter_preview
-    assert "phase: dev" in fixed_res.frontmatter_preview
+    assert "score: 95" in fixed_res.frontmatter_preview
+
+    # Strict YAML safe_load read-back: ensure types are coerced to native int, list, bool (REQ-043)
+    import yaml
+    docs = [d for d in yaml.safe_load_all(fixed_res.frontmatter_preview) if d is not None]
+    parsed_yaml = docs[0]
+    assert type(parsed_yaml["score"]) is int
+    assert parsed_yaml["score"] == 95
+    assert type(parsed_yaml["tags"]) is list
+    assert parsed_yaml["tags"] == ["alpha", "beta"]
+    assert type(parsed_yaml["is_active"]) is bool
+    assert parsed_yaml["is_active"] is True
 
 
 def test_e2e_wf_004_proposal_four_way_comparison_workflow():
@@ -132,6 +152,11 @@ def test_e2e_wf_004_proposal_four_way_comparison_workflow():
         values={"1": ValueStat(value="1", count=8)}
     )
 
+    # Setup glossary alias override fixture (status has alias '進度')
+    USER_GLOSSARY_STORE.save_override(
+        UserGlossaryOverride(canonical_key="status", aliases=["進度"])
+    )
+
     proposal_json = json.dumps({
         "proposal_version": "1.1",
         "schema_name": "research_note",
@@ -142,6 +167,7 @@ def test_e2e_wf_004_proposal_four_way_comparison_workflow():
             {"name": "status", "storage_type": "text", "ui_control": "single_choice", "allowed_values": ["active"]},
             {"name": "level", "storage_type": "text"},  # Type conflict: vault is number
             {"name": "new_indicator", "storage_type": "checkbox"},
+            {"name": "進度", "storage_type": "text"},  # Potential alias for status
         ],
     })
 
@@ -171,6 +197,22 @@ def test_e2e_wf_004_proposal_four_way_comparison_workflow():
     p_new = next(p for p in four_way if p["name"] == "new_indicator")
     assert p_new["compatibility_state"] == "new_property"
 
+    # 進度: potential alias detected from glossary overrides
+    p_alias = next(p for p in four_way if p["name"] == "進度")
+    assert p_alias["compatibility_state"] == "potential_alias"
+    assert p_alias["alias_target"] == "status"
+
+    # Version-specific gating: 1.0 proposal with 1.1 fields must warn
+    v10_proposal = {
+        "proposal_version": "1.0",
+        "schema_name": "v10_spec",
+        "management_purpose": "1.1 field in 1.0",
+        "properties": [{"name": "title", "storage_type": "text"}],
+    }
+    v10_rep = validate_proposal(v10_proposal)
+    assert v10_rep["valid"] is True
+    assert any("Proposal Contract 1.1 extension and is ignored" in w for w in v10_rep["warnings"])
+
 
 def test_e2e_wf_005_scope_canonical_assignment_workflow():
     """Verify scope assignment key canonicalization eliminates folder order and note path ambiguity (REQ-044)."""
@@ -196,21 +238,30 @@ def test_e2e_wf_005_scope_canonical_assignment_workflow():
 
 
 def test_e2e_wf_006_drift_detection_and_compliant_rate_workflow():
-    """Verify UNEXPECTED_PROPERTY marks notes as drifted and impacts compliance rate (REQ-048)."""
+    """Verify UNEXPECTED_PROPERTY, SCHEMA_VERSION_MISMATCH, and MISSING_REQUIRED_RELATIONSHIP in drift (REQ-045, REQ-048)."""
     schema_props = [
         {"name": "title", "storage_type": "text", "required": True},
+        {"name": "parent", "storage_type": "text", "ui_control": "note_link", "required": True},
+        {"name": "due_date", "storage_type": "date", "required": False},
         {"name": "status", "storage_type": "text", "required": False},
     ]
 
     # Note 1: perfectly compliant
     n1 = Note(path="n1.md", parse_status=ParseStatus.OK)
-    n1.properties = {"title": PropertyValue(key="title", raw="Note 1", storage_type=StorageType.TEXT)}
+    n1.properties = {
+        "title": PropertyValue(key="title", raw="Note 1", storage_type=StorageType.TEXT),
+        "parent": PropertyValue(key="parent", raw="[[ParentNote]]", storage_type=StorageType.TEXT),
+        "due_date": PropertyValue(key="due_date", raw="2026-12-31", storage_type=StorageType.DATE),
+    }
 
-    # Note 2: has unexpected property 'custom_leak'
+    # Note 2: has unexpected property 'custom_leak', missing required relationship, and wrong date format
     n2 = Note(path="n2.md", parse_status=ParseStatus.OK)
     n2.properties = {
         "title": PropertyValue(key="title", raw="Note 2", storage_type=StorageType.TEXT),
+        "parent": PropertyValue(key="parent", raw="not_a_link", storage_type=StorageType.TEXT),  # Invalid relationship
+        "due_date": PropertyValue(key="due_date", raw="tomorrow", storage_type=StorageType.TEXT),  # Type mismatch
         "custom_leak": PropertyValue(key="custom_leak", raw="unmanaged", storage_type=StorageType.TEXT),
+        "schema_version": PropertyValue(key="schema_version", raw="0.9.0", storage_type=StorageType.TEXT),  # Version mismatch
     }
 
     report = analyze_schema_drift(
@@ -218,34 +269,59 @@ def test_e2e_wf_006_drift_detection_and_compliant_rate_workflow():
         schema_properties=schema_props,
         schema_id="test_drift",
         schema_name="Test Drift",
+        schema_version="1.0.0",
     )
 
-    # Note 2 has UNEXPECTED_PROPERTY finding
-    assert any(f.category == DriftCategory.UNEXPECTED_PROPERTY for f in report.findings)
-    # Compliance rate cannot be 100% when Note 2 has drift
+    # Note 2 findings verification
+    findings_cats = {f.category for f in report.findings if f.note_path == "n2.md"}
+    assert DriftCategory.UNEXPECTED_PROPERTY in findings_cats
+    assert DriftCategory.SCHEMA_VERSION_MISMATCH in findings_cats
+    assert DriftCategory.MISSING_REQUIRED_RELATIONSHIP in findings_cats
+    assert DriftCategory.TYPE_MISMATCH in findings_cats
+
+    # Compliance rate: 1 compliant out of 2 notes (50%)
     assert report.total_notes == 2
     assert report.compliant_notes == 1
     assert report.compliance_rate == 50.0
 
 
 def test_e2e_wf_007_governance_profile_validate_preview_confirm_workflow():
-    """Verify Governance Profile Validate -> Preview -> Confirm 3-step workflow with real merge and replace (REQ-047)."""
-    # 1. Export valid profile
-    pkg = export_governance_profile()
+    """Verify Governance Profile Validate -> Preview -> Confirm with real merge, replace, and transactional rollback (REQ-047)."""
+    from app.core.saved_checks import SavedChecksStore, SavedCheck
+
+    # 1. Setup mock saved checks
+    mock_checks_store = SavedChecksStore()
+    mock_checks_store.save_check(SavedCheck(id="chk_01", name="Project-to-Task Link Check"))
+
+    # 2. Export valid profile including saved checks
+    pkg = export_governance_profile(saved_checks_list=[c.to_dict() for c in mock_checks_store.list_checks()])
     assert "profile_metadata" in pkg
     assert "data" in pkg
+    assert len(pkg["data"].get("saved_checks", [])) == 1
 
-    # 2. Validate & preview before applying
+    # 3. Validate & preview before applying
     val_res = validate_governance_profile(pkg)
     assert val_res["valid"] is True
-    assert "schema_count" in val_res
-    assert "assignment_count" in val_res
-    assert "glossary_count" in val_res
+    assert val_res["saved_checks_count"] == 1
 
-    # 3. Import in merge mode
-    merge_res = import_governance_profile(pkg, mode="merge")
+    # 4. Import in merge mode
+    merge_res = import_governance_profile(pkg, mode="merge", saved_checks_store=mock_checks_store)
     assert merge_res["status"] == "imported"
     assert merge_res["mode"] == "merge"
+    assert merge_res["imported"]["saved_checks"] == 1
+
+    # 5. Import in replace mode with transactional safety
+    replace_res = import_governance_profile(pkg, mode="replace", saved_checks_store=mock_checks_store)
+    assert replace_res["status"] == "imported"
+    assert replace_res["mode"] == "replace"
+
+    # 6. Verify transactional rollback on corrupted import data
+    from app.core.governance_profile import compute_profile_checksum
+    bad_pkg = json.loads(json.dumps(pkg))
+    bad_pkg["data"]["named_schemas"].append("not_an_object_corrupted")
+    bad_pkg["profile_metadata"]["sha256_checksum"] = compute_profile_checksum(bad_pkg["data"])
+    with pytest.raises(ValueError, match="Invalid schema at index"):
+        import_governance_profile(bad_pkg, mode="replace")
 
 
 def test_e2e_wf_008_companion_skill_fixtures_and_principles_workflow():

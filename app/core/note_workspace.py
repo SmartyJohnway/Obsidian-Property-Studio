@@ -204,61 +204,27 @@ def compute_workspace_diff_and_frontmatter(
     if original_note is not None:
         orig_map = {k: v.raw for k, v in original_note.properties.items()}
 
-    # Check schema constraints (required, storage_type, allowed_values) if schema provided (REQ-043)
+    coerced_updates: dict[str, Any] = {}
+
+    # Canonical Schema constraint validation & type coercion (REQ-043)
     if schema is not None:
-        import re
-        from datetime import datetime
+        from .fill import coerce_value
 
         for prop in schema.properties:
-            val = updated_values.get(prop.name)
             is_deleted = prop.name in deleted_set
+            raw_val = updated_values.get(prop.name)
 
-            # 1. Required check
-            if prop.required and not is_deleted:
-                if val is None or (isinstance(val, str) and not val.strip()):
-                    if prop.name not in orig_map or prop.name in deleted_set:
-                        errors.append(f"Required property '{prop.name}' is missing or empty.")
-
-            # 2. Type & Value validation if value is provided
-            if val is not None and not is_deleted and (not isinstance(val, str) or val.strip()):
-                st = prop.storage_type.value if hasattr(prop.storage_type, "value") else str(prop.storage_type)
-                
-                # Numeric validation
-                if st == "number":
-                    try:
-                        float(str(val).strip())
-                    except ValueError:
-                        errors.append(f"Property '{prop.name}' expects numeric value, got '{val}'.")
-
-                # Date validation (YYYY-MM-DD)
-                elif st == "date":
-                    val_str = str(val).strip()
-                    if not re.match(r"^\d{4}-\d{2}-\d{2}$", val_str):
-                        errors.append(f"Property '{prop.name}' expects date in YYYY-MM-DD format, got '{val_str}'.")
-
-                # Datetime validation
-                elif st == "datetime":
-                    val_str = str(val).strip()
-                    try:
-                        datetime.fromisoformat(val_str.replace("Z", "+00:00"))
-                    except ValueError:
-                        errors.append(f"Property '{prop.name}' expects ISO datetime format, got '{val_str}'.")
-
-                # Checkbox validation
-                elif st == "checkbox":
-                    if not isinstance(val, bool) and str(val).strip().lower() not in ("true", "false", "yes", "no", "1", "0"):
-                        errors.append(f"Property '{prop.name}' expects boolean value, got '{val}'.")
-
-                # Allowed values validation
-                if prop.allowed_values:
-                    allowed_set = {str(av) for av in prop.allowed_values}
-                    if isinstance(val, (list, tuple)):
-                        invalid = [str(v) for v in val if str(v) not in allowed_set]
-                        if invalid:
-                            errors.append(f"Property '{prop.name}' values {invalid} not in allowed choices: {prop.allowed_values}.")
-                    else:
-                        if str(val).strip() not in allowed_set:
-                            errors.append(f"Property '{prop.name}' value '{val}' not in allowed choices: {prop.allowed_values}.")
+            # If the user touched or supplied the property
+            if prop.name in updated_values and not is_deleted:
+                coerced, prop_errs = coerce_value(prop, raw_val)
+                if prop_errs:
+                    errors.extend(prop_errs)
+                elif coerced is not None:
+                    coerced_updates[prop.name] = coerced
+            elif prop.required and not is_deleted:
+                # Required property missing from updates and not in original note
+                if prop.name not in orig_map:
+                    errors.append(f"Required property '{prop.name}' is missing or empty.")
 
     # Build merged dictionary (V11-006: preserve unrelated properties)
     merged: dict[str, Any] = {}
@@ -271,7 +237,7 @@ def compute_workspace_diff_and_frontmatter(
             continue
 
         if key in updated_values and key in orig_map:
-            new_val = updated_values[key]
+            new_val = coerced_updates[key] if key in coerced_updates else updated_values[key]
             old_val = orig_map[key]
             if new_val != old_val:
                 diffs.append(PropertyDiff(key=key, change_type="modified", old_value=old_val, new_value=new_val))
@@ -280,7 +246,7 @@ def compute_workspace_diff_and_frontmatter(
                 diffs.append(PropertyDiff(key=key, change_type="preserved", old_value=old_val, new_value=new_val))
                 merged[key] = old_val
         elif key in updated_values:
-            new_val = updated_values[key]
+            new_val = coerced_updates[key] if key in coerced_updates else updated_values[key]
             diffs.append(PropertyDiff(key=key, change_type="added", new_value=new_val))
             merged[key] = new_val
         else:

@@ -24,19 +24,26 @@ def compute_profile_checksum(payload: dict[str, Any]) -> str:
     return hashlib.sha256(data_bytes).hexdigest()
 
 
-def export_governance_profile() -> dict[str, Any]:
+def export_governance_profile(
+    saved_checks_list: list[dict[str, Any]] | None = None,
+    preferences: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """Export all app-local governance entities into a signed profile package."""
     from datetime import datetime, timezone
 
     schemas = NAMED_SCHEMA_LIBRARY.list_schemas()
     scope_assignments = SCOPE_GOVERNANCE_STORE.list_assignments()
     glossary_overrides = USER_GLOSSARY_STORE.list_overrides()
+    checks = saved_checks_list or []
+    prefs = preferences or {"locale": "zh-Hant", "theme": "system"}
 
     data_payload = {
         "format_version": PROFILE_FORMAT_VERSION,
         "named_schemas": schemas,
         "scope_assignments": scope_assignments,
         "user_glossary": glossary_overrides,
+        "saved_checks": checks,
+        "governance_preferences": prefs,
     }
 
     checksum = compute_profile_checksum(data_payload)
@@ -49,6 +56,7 @@ def export_governance_profile() -> dict[str, Any]:
             "schema_count": len(schemas),
             "assignment_count": len(scope_assignments),
             "glossary_count": len(glossary_overrides),
+            "saved_checks_count": len(checks),
         },
         "data": data_payload,
     }
@@ -96,8 +104,12 @@ def validate_governance_profile(profile_data: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def import_governance_profile(profile_data: dict[str, Any], mode: str = "merge") -> dict[str, Any]:
-    """Validate and import a governance profile package with real merge or replace behavior (REQ-047)."""
+def import_governance_profile(
+    profile_data: dict[str, Any],
+    mode: str = "merge",
+    saved_checks_store: Any | None = None,
+) -> dict[str, Any]:
+    """Validate and import a governance profile package with transactional safety (REQ-047)."""
     val_report = validate_governance_profile(profile_data)
     if not val_report.get("valid"):
         raise ValueError(val_report.get("error", "Invalid profile."))
@@ -106,9 +118,27 @@ def import_governance_profile(profile_data: dict[str, Any], mode: str = "merge")
     schemas = data.get("named_schemas") or []
     assignments = data.get("scope_assignments") or {}
     glossary = data.get("user_glossary") or {}
+    checks = data.get("saved_checks") or []
 
-    # If replace mode, clear existing app-local governance stores first
+    # Phase 1: Semantic Pre-validation (fail-closed before any mutation)
+    for index, s in enumerate(schemas):
+        if not isinstance(s, dict) or not s.get("name"):
+            raise ValueError(f"Invalid schema at index {index}: must be object with 'name'.")
+    for key, asgn in assignments.items():
+        if not isinstance(asgn, dict) or not asgn.get("schema_id"):
+            raise ValueError(f"Invalid scope assignment for '{key}': missing 'schema_id'.")
+    for key, ov in glossary.items():
+        if not isinstance(ov, dict) or not (ov.get("canonical_key") or key):
+            raise ValueError(f"Invalid glossary override for '{key}': missing 'canonical_key'.")
+
+    # Phase 2: Snapshot current state for rollback protection if in replace mode
+    old_schemas = None
+    old_assignments = None
+    old_glossary = None
     if mode == "replace":
+        old_schemas = NAMED_SCHEMA_LIBRARY.storage.load().get("data", {})
+        old_assignments = SCOPE_GOVERNANCE_STORE.storage.load().get("data", {})
+        old_glossary = USER_GLOSSARY_STORE.storage.load().get("data", {})
         NAMED_SCHEMA_LIBRARY.storage.save({})
         SCOPE_GOVERNANCE_STORE.storage.save({})
         USER_GLOSSARY_STORE.storage.save({})
@@ -116,30 +146,52 @@ def import_governance_profile(profile_data: dict[str, Any], mode: str = "merge")
     imported_schemas = 0
     imported_assignments = 0
     imported_glossary = 0
+    imported_checks = 0
 
-    # 1. Import schemas
-    for s in schemas:
-        if isinstance(s, dict) and s.get("id") and s.get("name"):
-            NAMED_SCHEMA_LIBRARY.save_schema(s)
-            imported_schemas += 1
+    try:
+        # 1. Import schemas
+        for s in schemas:
+            if isinstance(s, dict) and s.get("name"):
+                NAMED_SCHEMA_LIBRARY.save_schema(s)
+                imported_schemas += 1
 
-    # 2. Import scope assignments
-    for scope_key, asgn in assignments.items():
-        if isinstance(asgn, dict) and asgn.get("schema_id"):
-            SCOPE_GOVERNANCE_STORE.assign_schema(
-                scope_key=scope_key,
-                schema_id=asgn["schema_id"],
-                schema_name=asgn.get("schema_name", ""),
-            )
-            imported_assignments += 1
+        # 2. Import scope assignments
+        for scope_key, asgn in assignments.items():
+            if isinstance(asgn, dict) and asgn.get("schema_id"):
+                SCOPE_GOVERNANCE_STORE.assign_schema(
+                    scope_key=scope_key,
+                    schema_id=asgn["schema_id"],
+                    schema_name=asgn.get("schema_name", ""),
+                )
+                imported_assignments += 1
 
-    # 3. Import glossary overrides
-    for key, ov in glossary.items():
-        if isinstance(ov, dict) and ov.get("canonical_key"):
-            USER_GLOSSARY_STORE.save_override(
-                UserGlossaryOverride.from_dict(ov)
-            )
-            imported_glossary += 1
+        # 3. Import glossary overrides
+        for key, ov in glossary.items():
+            if isinstance(ov, dict):
+                ov_dict = dict(ov)
+                if "canonical_key" not in ov_dict:
+                    ov_dict["canonical_key"] = key
+                USER_GLOSSARY_STORE.save_override(
+                    UserGlossaryOverride.from_dict(ov_dict)
+                )
+                imported_glossary += 1
+
+        # 4. Import saved relationship checks if store available
+        if saved_checks_store and hasattr(saved_checks_store, "save_check"):
+            from app.core.saved_checks import SavedCheck
+            for c in checks:
+                if isinstance(c, dict) and c.get("name"):
+                    chk = SavedCheck.from_dict(c)
+                    saved_checks_store.save_check(chk)
+                    imported_checks += 1
+
+    except Exception as exc:
+        # Rollback in replace mode if mutation failed mid-way
+        if mode == "replace" and old_schemas is not None:
+            NAMED_SCHEMA_LIBRARY.storage.save(old_schemas)
+            SCOPE_GOVERNANCE_STORE.storage.save(old_assignments)
+            USER_GLOSSARY_STORE.storage.save(old_glossary)
+        raise ValueError(f"Import aborted and rolled back due to error: {exc}") from exc
 
     return {
         "status": "imported",
@@ -148,5 +200,7 @@ def import_governance_profile(profile_data: dict[str, Any], mode: str = "merge")
             "schemas": imported_schemas,
             "scope_assignments": imported_assignments,
             "glossary_overrides": imported_glossary,
+            "user_glossary": imported_glossary,
+            "saved_checks": imported_checks,
         },
     }

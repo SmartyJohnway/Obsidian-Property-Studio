@@ -846,7 +846,7 @@
           </div>
           <div style="display:flex; gap:10px">
             <input type="text" id="glossarySearchInput" data-i18n-placeholder="glossary.search_placeholder" placeholder="搜尋詞彙庫屬性鍵名或標籤..." style="width:280px">
-            <button class="primary" id="addGlossaryBtn" style="font-size:12.5px; padding:6px 12px">+ 新增自訂定義</button>
+            <button class="primary" id="addGlossaryBtn" style="font-size:12.5px; padding:6px 12px" data-i18n="glossary.add_custom_btn">+ 新增自訂定義</button>
           </div>
         </div>
 
@@ -1761,7 +1761,7 @@ function setupSchemasHandlers() {
         const profile = await api("/api/governance/profile/export");
         const jsonStr = JSON.stringify(profile, null, 2);
         navigator.clipboard.writeText(jsonStr).then(() => {
-          toast("治理設定檔已複製至剪貼簿 (含 SHA-256 驗證碼)");
+          toast(I18N.t("profile.copied_toast"));
         });
       } catch (err) {
         toast(err.message, true);
@@ -1831,8 +1831,8 @@ function setupSchemasHandlers() {
                 const modeSel = document.getElementById("profileImportModeSelect");
                 const mode = modeSel ? modeSel.value : "merge";
                 try {
-                  const res = await api("/api/governance/profile/import", { profile: parsed, mode: mode });
-                  toast(`成功匯入（模式：${mode}）：${res.imported.schemas} 個架構，${res.imported.scope_assignments} 個範圍指派，${res.imported.user_glossary} 個詞彙！`);
+                  const gCount = res.imported.user_glossary || res.imported.glossary_overrides || 0;
+                  toast(I18N.t("profile.imported_toast", { mode, schemas: res.imported.schemas, scopes: res.imported.scope_assignments, glossary: gCount }));
                   closeDrawer();
                   await loadSchemasList();
                   await loadGlossaryList();
@@ -1896,6 +1896,24 @@ async function loadGlossaryList() {
       }
     });
 
+    // Also include observed vault properties from active inventory (REQ-041 Tier 3: Observed Vault Facts)
+    if (S.inventory && S.inventory.properties) {
+      Object.entries(S.inventory.properties).forEach(([pkey, pdata]) => {
+        if (!seenKeys.has(pkey)) {
+          seenKeys.add(pkey);
+          merged.push({
+            key: pkey,
+            label: pkey,
+            label_en: pkey,
+            source: "observed",
+            guidance: `庫內出現 ${pdata.usage_count || 0} 篇筆記 (主導型態: ${pdata.dominant_type || 'text'})`,
+            isOverride: false,
+            isObserved: true,
+          });
+        }
+      });
+    }
+
     const filtered = merged.filter(item => {
       if (!q) return true;
       return item.key.toLowerCase().includes(q) || item.label.toLowerCase().includes(q) || item.guidance.toLowerCase().includes(q);
@@ -1905,10 +1923,10 @@ async function loadGlossaryList() {
       <tr>
         <td><code>${esc(item.key)}</code></td>
         <td><strong>${esc(item.label)}</strong> <span class="muted" style="font-size:11px">(${esc(item.label_en)})</span></td>
-        <td><span class="pill ${item.isOverride ? 'warn' : 'ok'}">${item.isOverride ? '自訂優先 (Override)' : '系統內建 (Built-in)'}</span></td>
+        <td><span class="pill ${item.isOverride ? 'warn' : (item.isObserved ? 'muted' : 'ok')}">${item.isOverride ? '自訂優先 (Override)' : (item.isObserved ? '庫內觀測 (Observed)' : '系統內建 (Built-in)')}</span></td>
         <td style="font-size:12.5px">${esc(item.guidance)}</td>
         <td>
-          <button class="secondary" style="font-size:11.5px; padding:3px 7px" onclick="openEditGlossaryModal('${esc(item.key)}')">編輯定義</button>
+          <button class="secondary" style="font-size:11.5px; padding:3px 7px" onclick="openEditGlossaryModal('${esc(item.key)}')">${item.isObserved ? '建立定義' : '編輯定義'}</button>
         </td>
       </tr>
     `).join("");
@@ -1947,7 +1965,17 @@ window.openEditGlossaryModal = async function(key = "") {
         </div>
         <div>
           <label style="font-size:12px; color:var(--muted)">使用指引與規範說明 (Guidance):</label>
-          <textarea id="editGlossaryGuidance" class="form-control" style="width:100%; height:70px; margin-top:4px">${esc(meta.guidance_zh || meta.guidance || meta.short_description_zh || "")}</textarea>
+          <textarea id="editGlossaryGuidance" class="form-control" style="width:100%; height:60px; margin-top:4px">${esc(meta.guidance_zh || meta.guidance || meta.short_description_zh || "")}</textarea>
+        </div>
+        <div class="grid cols2" style="gap:10px">
+          <div>
+            <label style="font-size:12px; color:var(--muted)">繁中詳細說明 (Description zh):</label>
+            <textarea id="editGlossaryDescZh" class="form-control" style="width:100%; height:50px; margin-top:4px">${esc(meta.description_zh || meta.long_description_zh || "")}</textarea>
+          </div>
+          <div>
+            <label style="font-size:12px; color:var(--muted)">English Description:</label>
+            <textarea id="editGlossaryDescEn" class="form-control" style="width:100%; height:50px; margin-top:4px">${esc(meta.description_en || meta.long_description_en || "")}</textarea>
+          </div>
         </div>
         <div class="grid cols2" style="gap:10px">
           <div>
@@ -1958,6 +1986,10 @@ window.openEditGlossaryModal = async function(key = "") {
             <label style="font-size:12px; color:var(--muted)">潛在別名 (Aliases, 逗號分隔):</label>
             <input type="text" id="editGlossaryAliases" class="form-control" value="${esc(Array.isArray(meta.aliases) ? meta.aliases.join(', ') : (meta.aliases || ''))}" placeholder="e.g. tag, label, 專案標籤" style="width:100%; margin-top:4px" />
           </div>
+        </div>
+        <div>
+          <label style="font-size:12px; color:var(--muted)">範例數值 (Examples, 逗號分隔):</label>
+          <input type="text" id="editGlossaryExamples" class="form-control" value="${esc(Array.isArray(meta.examples) ? meta.examples.join(', ') : (meta.examples || ''))}" placeholder="e.g. active, archived, draft" style="width:100%; margin-top:4px" />
         </div>
         <div style="display:flex; justify-content:space-between; margin-top:14px">
           ${(!isNew && isKnown && meta.source === 'user_override') ? `<button class="secondary" onclick="deleteGlossaryOverride('${esc(key)}')">還原預設</button>` : '<div></div>'}
@@ -1979,17 +2011,23 @@ window.saveGlossaryOverride = async function() {
   const elLabelZh = document.getElementById("editGlossaryLabelZh");
   const elLabelEn = document.getElementById("editGlossaryLabelEn");
   const elGuidance = document.getElementById("editGlossaryGuidance");
+  const elDescZh = document.getElementById("editGlossaryDescZh");
+  const elDescEn = document.getElementById("editGlossaryDescEn");
   const elCategory = document.getElementById("editGlossaryCategory");
   const elAliases = document.getElementById("editGlossaryAliases");
+  const elExamples = document.getElementById("editGlossaryExamples");
 
   const key = elKey ? elKey.value.trim() : "";
-  if (!key) return toast("標準鍵名不能為空", true);
+  if (!key) return toast(I18N.t("glossary.key_required_error"), true);
 
   const label_zh = elLabelZh ? elLabelZh.value.trim() : "";
   const label_en = elLabelEn ? elLabelEn.value.trim() : "";
   const guidance = elGuidance ? elGuidance.value.trim() : "";
+  const description_zh = elDescZh ? elDescZh.value.trim() : "";
+  const description_en = elDescEn ? elDescEn.value.trim() : "";
   const category = elCategory ? elCategory.value.trim() : "";
   const aliases = elAliases ? elAliases.value.split(",").map(s => s.trim()).filter(Boolean) : [];
+  const examples = elExamples ? elExamples.value.split(",").map(s => s.trim()).filter(Boolean) : [];
 
   try {
     await api("/api/glossary/user/save", {
@@ -1997,8 +2035,11 @@ window.saveGlossaryOverride = async function() {
       label_zh: label_zh,
       label_en: label_en,
       guidance: guidance,
+      description_zh: description_zh,
+      description_en: description_en,
       category: category,
       aliases: aliases,
+      examples: examples,
     });
     toast(I18N.t("toast.override_saved", { key }));
     closeDrawer();
@@ -2054,12 +2095,17 @@ function renderMismatchBanner(backendVer) {
   if (!existing) {
     existing = document.createElement("div");
     existing.id = "versionMismatchAlert";
-    existing.style.cssText = "background:var(--red); color:#fff; padding:10px 16px; font-weight:700; text-align:center; position:sticky; top:0; z-index:99999; box-shadow:0 2px 8px rgba(0,0,0,0.3)";
+    existing.style.cssText = "background:var(--red); color:#fff; padding:12px 16px; font-weight:700; text-align:center; position:sticky; top:0; z-index:99999; box-shadow:0 2px 8px rgba(0,0,0,0.3)";
     document.body.prepend(existing);
   }
+  const isEn = (localStorage.getItem("ps_locale") || "").startsWith("en");
   const msg = backendVer
-    ? `⚠️ 伺服器版本不相容！前端介面需要 v1.2.0，但後端伺服器版本為 v${backendVer}。請停止並重啟伺服器 (python -m app)！`
-    : `⚠️ 無法連線至後端伺服器！請確認本機伺服器已啟動 (python -m app)！`;
+    ? (isEn 
+        ? `⚠️ Server Version Mismatch! The Web UI requires v1.2.0, but the backend server is v${backendVer}. Please stop and restart the server (python -m app)!`
+        : `⚠️ 伺服器版本不相容！前端介面需要 v1.2.0，但後端伺服器版本為 v${backendVer}。請停止並重啟伺服器 (python -m app)！`)
+    : (isEn
+        ? `⚠️ Unable to connect to backend server! Please ensure the local server is running (python -m app)!`
+        : `⚠️ 無法連線至後端伺服器！請確認本機伺服器已啟動 (python -m app)！`);
   existing.textContent = msg;
 }
 
@@ -2071,10 +2117,12 @@ async function init() {
     if ($("versionBadge")) $("versionBadge").textContent = "v" + meta.version;
     if (meta.version !== "1.2.0") {
       renderMismatchBanner(meta.version);
+      return; // FAIL CLOSED: Stop execution immediately on backend version mismatch
     }
   } catch (e) {
     console.warn("Failed to load /api/meta:", e);
     renderMismatchBanner(null);
+    return; // FAIL CLOSED: Stop execution immediately on connection failure
   }
   await I18N.init();
   await loadGlossaryCatalog();
@@ -2726,20 +2774,26 @@ async function inspectNoteInWorkspace(notePath) {
       ? StateTransfer.consumePending("workspace") 
       : null;
 
-    if (pending && pending.intent === "inspect_finding") {
+    if (pending && (pending.finding_id || pending.property_key || pending.finding_type)) {
+      const pKey = pending.property_key || '';
+      const fType = pending.finding_type || pending.finding_id || 'Drift Finding';
       bannerHtml += `
         <div class="card" style="border-color:var(--amber); background:var(--amber-soft); color:var(--text); margin-bottom:14px">
-          <strong>🔍 診斷事項聚焦：</strong> 發現項目 <code>${esc(pending.finding_id || pending.finding_type || '')}</code>（針對屬性 <code>${esc(pending.property_key || '')}</code>）。請在下方檢視或調整。
+          <strong>🔍 診斷事項聚焦：</strong> 發現項目 <code>${esc(fType)}</code>${pKey ? `（針對屬性 <code>${esc(pKey)}</code>）` : ''}。已自動為您定位。
         </div>
       `;
-      setTimeout(() => {
-        const row = document.querySelector(`.ws-prop-row[data-key="${pending.property_key}"]`);
-        if (row) {
-          row.style.outline = "2px solid var(--amber)";
-          row.scrollIntoView({ behavior: "smooth", block: "center" });
-        }
-      }, 150);
-    } else if (pending && pending.intent === "reconcile") {
+      if (pKey) {
+        setTimeout(() => {
+          const row = document.querySelector(`.ws-prop-row[data-key="${pKey}"]`);
+          if (row) {
+            row.style.outline = "2px solid var(--amber)";
+            row.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }, 200);
+      }
+    }
+
+    if (pending && (pending.schema_id || pending.schema || pending.intent === "reconcile")) {
       try {
         const recRes = await api("/api/reconcile/inspect", {
           note_path: notePath,
@@ -2748,10 +2802,10 @@ async function inspectNoteInWorkspace(notePath) {
         });
         const items = recRes.items || [];
         const statePill = (st) => {
-          if (st === "matches") return '<span class="pill ok">✓ 符合 (Match)</span>';
-          if (st === "missing") return '<span class="pill warn">+ 缺漏 (Missing)</span>';
-          if (st === "conflict") return '<span class="pill alert">⚠ 衝突 (Conflict)</span>';
-          return '<span class="pill">• 非架構屬性保留 (Preserved)</span>';
+          if (st === "matches") return `<span class="pill ok">${esc(I18N.t("reconcile.state_match"))}</span>`;
+          if (st === "missing") return `<span class="pill warn">${esc(I18N.t("reconcile.state_missing"))}</span>`;
+          if (st === "conflict") return `<span class="pill alert">${esc(I18N.t("reconcile.state_conflict"))}</span>`;
+          return `<span class="pill">${esc(I18N.t("reconcile.state_preserved"))}</span>`;
         };
 
         const rowsHtml = items.map(it => `
@@ -2760,10 +2814,10 @@ async function inspectNoteInWorkspace(notePath) {
             <td><strong>${esc(it.name)}</strong> ${it.required ? '<span style="color:var(--red)">*</span>' : ''}</td>
             <td><code>${esc(it.current_value == null ? '(無)' : (Array.isArray(it.current_value) ? it.current_value.join(", ") : it.current_value))}</code></td>
             <td><span class="pill" style="font-size:11px">${esc(it.expected_type || '—')}</span></td>
-            <td style="font-size:12px; color:var(--muted)">${esc(it.conflict_reason || (it.state === 'outside_schema' ? '保留原始筆記自訂屬性' : ''))}</td>
+            <td style="font-size:12px; color:var(--muted)">${esc(it.conflict_reason || (it.state === 'outside_schema' ? I18N.t("reconcile.state_preserved") : ''))}</td>
             <td>
-              ${it.state === 'missing' ? `<button type="button" class="primary" style="font-size:11px; padding:2px 8px" onclick="addMissingPropertyToWorkspace('${esc(it.name)}', '${esc(it.suggested_value || '')}')">+ 填入編輯器</button>` : ''}
-              ${it.state === 'conflict' ? `<button type="button" class="secondary" style="font-size:11px; padding:2px 8px" onclick="focusPropertyInWorkspace('${esc(it.name)}')">檢視/修正</button>` : ''}
+              ${it.state === 'missing' ? `<button type="button" class="primary" style="font-size:11px; padding:2px 8px" onclick="addMissingPropertyToWorkspace('${esc(it.name)}', '${esc(it.suggested_value || '')}')">${esc(I18N.t("reconcile.btn_fill"))}</button>` : ''}
+              ${it.state === 'conflict' ? `<button type="button" class="secondary" style="font-size:11px; padding:2px 8px" onclick="focusPropertyInWorkspace('${esc(it.name)}')">${esc(I18N.t("reconcile.btn_focus"))}</button>` : ''}
             </td>
           </tr>
         `).join("");
@@ -2772,14 +2826,14 @@ async function inspectNoteInWorkspace(notePath) {
           <div class="card" style="border-color:var(--brand); background:var(--panel2); margin-bottom:14px">
             <div style="display:flex; justify-content:space-between; align-items:flex-start">
               <div>
-                <strong style="font-size:14px">⚖️ 屬性架構核對 (Reconciliation)：與「${esc(recRes.schema_name)}」比對</strong>
+                <strong style="font-size:14px">⚖️ ${esc(I18N.t("schemas.btn_reconcile"))}：${esc(recRes.schema_name)}</strong>
                 <p class="muted" style="margin:4px 0 0 0; font-size:12px">四態分類逐項診斷：符合、缺漏、衝突與保留。可在下方直接補齊或調整。</p>
               </div>
               <div style="display:flex; gap:6px; font-size:11.5px">
-                <span class="pill ok">符合: ${recRes.summary.matches}</span>
-                <span class="pill warn">缺漏: ${recRes.summary.missing}</span>
-                <span class="pill alert">衝突: ${recRes.summary.conflict}</span>
-                <span class="pill">保留: ${recRes.summary.outside_schema}</span>
+                <span class="pill ok">${esc(I18N.t("reconcile.state_match"))}: ${recRes.summary.matches}</span>
+                <span class="pill warn">${esc(I18N.t("reconcile.state_missing"))}: ${recRes.summary.missing}</span>
+                <span class="pill alert">${esc(I18N.t("reconcile.state_conflict"))}: ${recRes.summary.conflict}</span>
+                <span class="pill">${esc(I18N.t("reconcile.state_preserved"))}: ${recRes.summary.outside_schema}</span>
               </div>
             </div>
 
@@ -2787,12 +2841,12 @@ async function inspectNoteInWorkspace(notePath) {
               <table class="data-table" style="margin:0; font-size:12px">
                 <thead>
                   <tr>
-                    <th style="width:130px">狀態</th>
-                    <th style="width:140px">屬性名稱</th>
-                    <th>筆記目前值</th>
-                    <th style="width:90px">架構型態</th>
-                    <th>衝突原因 / 說明</th>
-                    <th style="width:100px">操作</th>
+                    <th style="width:130px">${esc(I18N.t("reconcile.col_state"))}</th>
+                    <th style="width:140px">${esc(I18N.t("reconcile.col_prop"))}</th>
+                    <th>${esc(I18N.t("reconcile.col_current"))}</th>
+                    <th style="width:90px">${esc(I18N.t("reconcile.col_expected"))}</th>
+                    <th>${esc(I18N.t("reconcile.col_diagnosis"))}</th>
+                    <th style="width:100px">${esc(I18N.t("reconcile.col_action"))}</th>
                   </tr>
                 </thead>
                 <tbody>${rowsHtml}</tbody>
@@ -4140,11 +4194,11 @@ function setupProposalHandlers() {
               <span class="pill ok">Proposal Contract v${esc(res.proposal_version || '1.1')}</span>
               ${res.target_note_kind ? `<span class="pill brand">${esc(res.target_note_kind)}</span>` : ''}
             </div>
-            <p class="muted" style="margin:4px 0 0 0; font-size:13px">${esc(sch.description || '無詳細說明')}</p>
-            ${res.management_purpose ? `<p style="font-size:12.5px; color:var(--teal); margin:4px 0 0 0">🎯 <strong>管理目的 (Management Purpose)：</strong> ${esc(res.management_purpose)}</p>` : ''}
-            ${res.source_context ? `<p style="font-size:12px; color:var(--muted); margin:2px 0 0 0">📂 來源脈絡：${esc(res.source_context)}</p>` : ''}
-            ${res.schema_target ? `<p style="font-size:12px; color:var(--muted); margin:2px 0 0 0">🎯 目標架構/路徑：<code>${esc(res.schema_target)}</code></p>` : ''}
-            ${res.proposal_notes ? `<p style="font-size:12px; color:var(--muted); margin:2px 0 0 0">📝 建議備註：${esc(res.proposal_notes)}</p>` : ''}
+            <p class="muted" style="margin:4px 0 0 0; font-size:13px">${esc(sch.description || '—')}</p>
+            ${res.management_purpose ? `<p style="font-size:12.5px; color:var(--teal); margin:4px 0 0 0">🎯 <strong>${esc(I18N.t("proposal.meta_purpose"))}：</strong> ${esc(res.management_purpose)}</p>` : ''}
+            ${res.source_context ? `<p style="font-size:12px; color:var(--muted); margin:2px 0 0 0">📂 <strong>${esc(I18N.t("proposal.meta_context"))}：</strong> ${esc(res.source_context)}</p>` : ''}
+            ${res.schema_target ? `<p style="font-size:12px; color:var(--muted); margin:2px 0 0 0">🎯 <strong>${esc(I18N.t("proposal.meta_target_schema"))}：</strong> <code>${esc(res.schema_target)}</code></p>` : ''}
+            ${res.proposal_notes ? `<p style="font-size:12px; color:var(--muted); margin:2px 0 0 0">📝 <strong>${esc(I18N.t("proposal.meta_notes"))}：</strong> ${esc(res.proposal_notes)}</p>` : ''}
           </div>
           <div style="display:flex; gap:6px; flex-wrap:wrap">
             <button class="primary" id="proposalSaveAsNamedBtn">${esc(I18N.t("design.next_save_named"))}</button>
@@ -4158,14 +4212,14 @@ function setupProposalHandlers() {
           <table class="data-table" style="margin:0; font-size:12px">
             <thead>
               <tr>
-                <th style="width:130px">屬性名稱</th>
-                <th style="width:90px">型態</th>
-                <th style="width:90px">控制元件</th>
-                <th style="width:110px">相容狀態</th>
-                <th style="width:110px">範圍 / 全庫使用</th>
-                <th style="width:90px">個人詞彙庫</th>
-                <th style="width:90px">架構庫引用</th>
-                <th>使用理由 / 說明</th>
+                <th style="width:130px">${esc(I18N.t("proposal.col_prop_name"))}</th>
+                <th style="width:90px">${esc(I18N.t("proposal.col_type"))}</th>
+                <th style="width:90px">${esc(I18N.t("proposal.col_control"))}</th>
+                <th style="width:110px">${esc(I18N.t("proposal.col_usage"))}</th>
+                <th style="width:110px">Scope / Vault</th>
+                <th style="width:90px">Glossary</th>
+                <th style="width:90px">Schema</th>
+                <th>Reason / Guidance</th>
               </tr>
             </thead>
             <tbody>${rowsHtml}</tbody>
