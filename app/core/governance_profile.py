@@ -96,6 +96,16 @@ def validate_governance_profile(profile_data: dict[str, Any]) -> dict[str, Any]:
         for s in schemas if isinstance(s, dict)
     ]
 
+    prefs = data.get("governance_preferences") or {}
+    current_prefs = PREFERENCES_STORAGE.load().get("data") or {}
+    preferences_preview = {
+        "profile": prefs,
+        "current": current_prefs,
+        "has_changes": bool(prefs and (prefs.get("locale") != current_prefs.get("locale") or prefs.get("theme") != current_prefs.get("theme"))),
+        "locale": {"from": current_prefs.get("locale"), "to": prefs.get("locale")} if prefs.get("locale") else None,
+        "theme": {"from": current_prefs.get("theme"), "to": prefs.get("theme")} if prefs.get("theme") else None,
+    }
+
     return {
         "valid": True,
         "format_version": fmt,
@@ -104,6 +114,7 @@ def validate_governance_profile(profile_data: dict[str, Any]) -> dict[str, Any]:
         "glossary_count": len(glossary),
         "saved_checks_count": len(saved_checks),
         "schemas_preview": schemas_preview,
+        "preferences_preview": preferences_preview,
         "exported_at": meta.get("exported_at"),
     }
 

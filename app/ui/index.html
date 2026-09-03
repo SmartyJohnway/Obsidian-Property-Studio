@@ -1612,7 +1612,7 @@ window.openSchemaEditModal = async function(id) {
       </div>
     `;
 
-    openDrawer("編輯具名架構 (Edit Named Schema)", html);
+    openDrawer(I18N.t("schema.edit_drawer_title"), html);
     renderPropsTable();
 
     const addBtn = document.getElementById("editSchemaAddPropBtn");
@@ -1704,7 +1704,7 @@ window.openSchemaMigrationModal = async function(sourceId) {
         <div id="migrationPlanResult"></div>
       </div>
     `;
-    openDrawer("架構版本遷移規劃 (Migration Planner)", html);
+    openDrawer(I18N.t("schema.migration_drawer_title"), html);
 
     const calcBtn = document.getElementById("calcMigrationBtn");
     if (calcBtn) {
@@ -1773,16 +1773,16 @@ function setupSchemasHandlers() {
     $("govProfileImportBtn").onclick = () => {
       const html = `
         <div id="profileImportDrawerContent">
-          <p class="muted" style="margin-top:0">貼上先前匯出的治理設定檔 JSON（包含具名架構庫、範圍指派、個人詞彙庫與儲存檢查）。</p>
+          <p class="muted" style="margin-top:0">${esc(I18N.t("profile.import_drawer_desc"))}</p>
           <textarea id="importProfileText" class="form-control" rows="8" style="width:100%; font-family:monospace; font-size:12px" placeholder='{"profile_metadata": {...}, "data": {...}}'></textarea>
           <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:14px">
-            <button class="secondary" onclick="closeDrawer()">取消</button>
-            <button class="primary" id="validateProfileBtn">驗證並預覽變更 →</button>
+            <button class="secondary" onclick="closeDrawer()">${esc(I18N.t("common.cancel"))}</button>
+            <button class="primary" id="validateProfileBtn">${esc(I18N.t("profile.btn_validate_preview"))}</button>
           </div>
           <div id="profilePreviewArea" style="display:none; margin-top:16px; border-top:1px solid var(--line); padding-top:14px"></div>
         </div>
       `;
-      openDrawer("匯入治理設定檔 (Import Governance Profile)", html);
+      openDrawer(I18N.t("profile.import_drawer_title"), html);
 
       const valBtn = document.getElementById("validateProfileBtn");
       if (valBtn) {
@@ -1800,6 +1800,18 @@ function setupSchemasHandlers() {
             const previewArea = document.getElementById("profilePreviewArea");
             if (!previewArea) return;
             previewArea.style.display = "block";
+
+            const prefPrev = valReport.preferences_preview;
+            let prefChangeHtml = "";
+            if (prefPrev && prefPrev.has_changes) {
+              const details = [];
+              if (prefPrev.locale) details.push(`Locale: <code>${esc(prefPrev.locale.from || 'none')}</code> → <strong>${esc(prefPrev.locale.to)}</strong>`);
+              if (prefPrev.theme) details.push(`Theme: <code>${esc(prefPrev.theme.from || 'none')}</code> → <strong>${esc(prefPrev.theme.to)}</strong>`);
+              prefChangeHtml = `<div style="margin-top:8px; font-size:12px; padding:6px 8px; background:var(--panel); border-radius:var(--radius-sm)"><strong>${esc(I18N.t("profile.preview_prefs_change"))}</strong> ${details.join(", ")}</div>`;
+            } else {
+              prefChangeHtml = `<div style="margin-top:8px; font-size:12px; color:var(--muted)">✓ ${esc(I18N.t("profile.preview_no_prefs_change"))}</div>`;
+            }
+
             previewArea.innerHTML = `
               <div class="card" style="background:var(--panel2); margin-bottom:12px">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
@@ -1812,6 +1824,7 @@ function setupSchemasHandlers() {
                   <div>${esc(I18N.t("profile.preview_glossary_count"))}<strong>${valReport.glossary_count}</strong></div>
                   <div>${esc(I18N.t("profile.preview_checks_count"))}<strong>${valReport.saved_checks_count}</strong></div>
                 </div>
+                ${prefChangeHtml}
                 <div style="margin-top:10px">
                   <label style="font-size:12px; font-weight:600">${esc(I18N.t("profile.mode_label"))}</label>
                   <select id="profileImportModeSelect" class="form-control" style="width:100%; margin-top:4px">
@@ -2120,7 +2133,6 @@ async function syncPreferencesFromServer() {
       const p = res.preferences;
       if (p.theme) {
         document.documentElement.setAttribute("data-theme", p.theme);
-        localStorage.setItem("ps_theme", p.theme);
       }
       if (p.locale && I18N.currentLocale !== p.locale) {
         I18N.setLocale(p.locale);
@@ -2132,6 +2144,10 @@ async function syncPreferencesFromServer() {
 }
 
 async function migrateLegacyStateIfNeeded() {
+  if (localStorage.getItem("ps_v12_legacy_migrated")) {
+    return; // Migration already completed; never repeat or override backend authority
+  }
+
   const pLocale = localStorage.getItem("ps_locale") || localStorage.getItem("property_studio_locale");
   const pTheme = localStorage.getItem("ps_theme") || localStorage.getItem("property_studio_theme");
   const pChecks = localStorage.getItem("ops_saved_relationship_checks_v110") || localStorage.getItem("property_studio_saved_checks");
@@ -2145,12 +2161,21 @@ async function migrateLegacyStateIfNeeded() {
 
       const res = await api("/api/storage/migrate_legacy", payload);
       if (res && res.readback_verified) {
+        // Clean all legacy migration keys from localStorage
         localStorage.removeItem("ops_saved_relationship_checks_v110");
         localStorage.removeItem("property_studio_saved_checks");
+        localStorage.removeItem("ps_locale");
+        localStorage.removeItem("property_studio_locale");
+        localStorage.removeItem("ps_theme");
+        localStorage.removeItem("property_studio_theme");
+        localStorage.setItem("ps_v12_legacy_migrated", "true");
       }
     } catch (err) {
       console.warn("Legacy migration failed to complete:", err);
     }
+  } else {
+    // If no legacy keys present on fresh launch, mark as migrated to prevent later interference
+    localStorage.setItem("ps_v12_legacy_migrated", "true");
   }
 }
 
@@ -3741,7 +3766,7 @@ window.openDriftDetailsDrawer = function() {
 
   const findings = rep.findings || [];
   if (!findings.length) {
-    openDrawer("架構漂移詳細清單", `<div style="padding:20px; text-align:center" class="muted">🎉 目前範圍完全符合架構「${esc(rep.schema_name)}」，未發現任何漂移事項！</div>`);
+    openDrawer(I18N.t("drift.drawer_title"), `<div style="padding:20px; text-align:center" class="muted">🎉 目前範圍完全符合架構「${esc(rep.schema_name)}」，未發現任何漂移事項！</div>`);
     return;
   }
 
@@ -3793,7 +3818,7 @@ window.openDriftDetailsDrawer = function() {
     </div>
   `;
 
-  openDrawer("架構漂移詳細清單 (Schema Drift Drilldown)", html);
+  openDrawer(I18N.t("drift.drawer_title"), html);
 };
 
 function setupHealthHandlers() {
@@ -4408,13 +4433,13 @@ window.openProposalCandidateEditor = function(schema, proposalVersion) {
       </div>
 
       <div style="display:flex; justify-content:flex-end; gap:8px">
-        <button class="secondary" onclick="closeDrawer()">取消</button>
+        <button class="secondary" onclick="closeDrawer()">${esc(I18N.t("common.cancel"))}</button>
         <button class="primary" id="applyCandidateEditBtn">套用並重新校驗</button>
       </div>
     </div>
   `;
 
-  openDrawer("編輯候選提案 (Edit Candidate Proposal)", html);
+  openDrawer(I18N.t("proposal.edit_candidate_title"), html);
   renderCandidateProps();
 
   const addBtn = document.getElementById("candAddPropBtn");

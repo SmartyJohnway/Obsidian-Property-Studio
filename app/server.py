@@ -912,30 +912,47 @@ def api_governance_profile_import(body: dict[str, Any]) -> dict[str, Any]:
 
 def api_storage_migrate_legacy(body: dict[str, Any]) -> dict[str, Any]:
     """Migrate v1.1.0 legacy localStorage state (theme, locale, saved checks) to app-local storage (REQ-051, REQ-052)."""
-    # 1. Migrate preferences (locale & theme) supporting documented & actual historical aliases
+    from app.core.governance_profile import PREFERENCES_STORAGE
+
+    current_prefs_data = PREFERENCES_STORAGE.load().get("data") or {}
+    existing_checks = STORE.saved_checks_store.list_checks()
+
+    # One-time migration guard: Only migrate when backend storage is uninitialized / not yet migrated
+    if current_prefs_data.get("_legacy_migrated") or (current_prefs_data and len(existing_checks) > 0):
+        saved_prefs_readback = current_prefs_data
+        saved_checks_readback = [c.to_dict() for c in existing_checks]
+        return {
+            "status": "already_initialized",
+            "message": "Backend storage is already initialized. Legacy migration skipped.",
+            "preferences": saved_prefs_readback,
+            "migrated_checks_count": 0,
+            "total_saved_checks": len(saved_checks_readback),
+            "checks": saved_checks_readback,
+            "readback_verified": True,
+        }
+
+    # Phase 1: Validate ALL legacy input before writing anything (Atomic Validate-Before-Persist)
     locale = body.get("ps_locale") or body.get("property_studio_locale")
     theme = body.get("ps_theme") or body.get("property_studio_theme")
 
-    from app.core.governance_profile import PREFERENCES_STORAGE
-    current_prefs = PREFERENCES_STORAGE.load().get("data") or {}
-    prefs_updated = False
-    if locale and isinstance(locale, str) and locale in ("zh-Hant", "en"):
-        current_prefs["locale"] = locale
-        prefs_updated = True
-    if theme and isinstance(theme, str) and theme in ("light", "dark", "system"):
-        current_prefs["theme"] = theme
-        prefs_updated = True
-    if prefs_updated or not current_prefs:
-        if not current_prefs:
-            current_prefs = {"locale": locale or "zh-Hant", "theme": theme or "system"}
-        PREFERENCES_STORAGE.save(current_prefs)
+    new_locale = current_prefs_data.get("locale", "zh-Hant")
+    new_theme = current_prefs_data.get("theme", "system")
 
-    # 2. Migrate saved relationship checks supporting documented & actual historical aliases
+    if locale is not None:
+        if not isinstance(locale, str) or locale not in ("zh-Hant", "en"):
+            raise ApiError(f"Invalid legacy locale '{locale}'. Must be 'zh-Hant' or 'en'.", 400)
+        new_locale = locale
+
+    if theme is not None:
+        if not isinstance(theme, str) or theme not in ("light", "dark", "system"):
+            raise ApiError(f"Invalid legacy theme '{theme}'. Must be 'light', 'dark', or 'system'.", 400)
+        new_theme = theme
+
     raw_checks = body.get("ops_saved_relationship_checks_v110")
     if raw_checks is None:
         raw_checks = body.get("property_studio_saved_checks")
 
-    migrated_checks_count = 0
+    valid_check_objects: list[saved_checks.SavedCheck] = []
     if raw_checks is not None:
         if isinstance(raw_checks, str):
             try:
@@ -952,14 +969,39 @@ def api_storage_migrate_legacy(body: dict[str, Any]) -> dict[str, Any]:
         for index, item in enumerate(raw_checks):
             try:
                 chk = saved_checks.SavedCheck.from_dict(item)
-                STORE.saved_checks_store.save_check(chk)
-                migrated_checks_count += 1
+                valid_check_objects.append(chk)
             except Exception as exc:
                 raise ApiError(f"Malformed legacy check at index {index}: {exc}", 400) from exc
 
-    # Read-back verification
+    # Phase 2: Transactional Persistence (All validated, write all)
+    target_prefs = dict(current_prefs_data)
+    target_prefs["locale"] = new_locale
+    target_prefs["theme"] = new_theme
+    target_prefs["_legacy_migrated"] = True
+    PREFERENCES_STORAGE.save(target_prefs)
+
+    migrated_checks_count = 0
+    for chk in valid_check_objects:
+        STORE.saved_checks_store.save_check(chk)
+        migrated_checks_count += 1
+
+    # Phase 3: Exact Read-back Proof (Validate requested canonical state == persisted state)
     saved_prefs_readback = PREFERENCES_STORAGE.load().get("data", {})
     saved_checks_readback = [c.to_dict() for c in STORE.saved_checks_store.list_checks()]
+
+    readback_ok = (
+        saved_prefs_readback.get("locale") == new_locale
+        and saved_prefs_readback.get("theme") == new_theme
+        and saved_prefs_readback.get("_legacy_migrated") is True
+    )
+    persisted_ids = {c["id"] for c in saved_checks_readback}
+    for chk in valid_check_objects:
+        if chk.id not in persisted_ids:
+            readback_ok = False
+            break
+
+    if not readback_ok:
+        raise ApiError("Legacy migration failed exact readback verification.", 500)
 
     return {
         "status": "migrated",

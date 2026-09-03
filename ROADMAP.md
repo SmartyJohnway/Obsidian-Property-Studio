@@ -20,8 +20,8 @@ Current Task: `M022-T04`
 Last Verified Gate: `M021 — Schema Versioning, Migration Planning & Governance Profile PASS`  
 Current Blocker: `NONE`  
 Next Action: `Package v1.2.0 RC and submit to Human Owner (Dr. J) for final Windows 10 production UI walkthrough acceptance (M022-T04 / M022-AC04).`  
-Implementation: `COMPLETE (Commit 17 Frozen Storage Architecture & Safety Closure: Runtime Vault Isolation, Legacy State Migration /api/storage/migrate_legacy, App-Local Saved Checks Persistence & REQ-052 corruption protection, M015 storage layout alignment, Governance Preferences UI real source of truth, Transaction Boundary rollback, Exact Canonical StorageType, 0 residual dynamic JS Chinese)`  
-Automated Verification: `PASS (219/219 tests pass, 5,000-note benchmark 10.28s, Vault 100% byte-for-byte read-only, all P0 and P1 criteria satisfied)`  
+Implementation: `COMPLETE (Commit 18 Storage Side-Effect, Pure Path Resolution & Migration Atomicity Closure: Pure Path Resolution before mkdir, Negative Inside-Vault 0-Mutation Proof, Atomic Validate-Before-Persist Legacy Migration with Exact Readback, One-time Idempotency Guard, Path Migration out of __init__ with Fail-Closed Protection, Governance Profile Clear-Stage Rollback & Preferences Preview, 0 residual openDrawer/toast hardcoded Chinese)`  
+Automated Verification: `PASS (218/218 tests pass, 5,040-note benchmark 4.794s analysis / 4.639s scan, Vault 100% byte-for-byte read-only and 0 directory mutation on violation)`  
 Human Verified Acceptance: `NOT YET VERIFIED`  
 Release Readiness: `READY_FOR_HUMAN_ACCEPTANCE` (Human Owner UI Walkthrough: `NOT YET VERIFIED`)  
 Accepted Limitation: `Windows 11 AMD64 native verification recorded as NOT YET VERIFIED due to test host unavailability (accepted non-blocking release limitation per human approved contract).`  
@@ -305,8 +305,8 @@ Status: `IN_PROGRESS`
 Execute complete Workflow Closure Matrix validation, run full regression suite and 5,000-note benchmark, verify Vault byte-for-byte read-only integrity, conduct human walkthrough on Windows 10 production UI, verify P0 completion and P1 implementation, and package v1.2.0 release artifacts.
 
 ### Tasks
-- [x] `M022-T01` Execute complete Workflow Closure Matrix automated test suite (219/219 tests PASS, includes `tests/test_v12_storage_closure.py` validating 10 storage architecture, runtime isolation, and safety invariants).
-- [x] `M022-T02` Run 5,000-note performance benchmark and record in `evidence/benchmark.json` (10.28s release benchmark).
+- [x] `M022-T01` Execute complete Workflow Closure Matrix automated test suite (218/218 tests PASS, includes `tests/test_v12_storage_closure.py` validating 9 pure path resolution, negative zero-mutation, and atomic migration invariants).
+- [x] `M022-T02` Run 5,000-note performance benchmark and record in `evidence/benchmark.json` (4.794s analysis / 4.639s scan over 5,040 notes).
 - [x] `M022-T03` Verify Vault byte-for-byte read-only integrity across all v1.2 workflows (`evidence/integration/m022_v120_vault_readonly.json`).
 - [ ] `M022-T04` Conduct Windows 10 production UI walkthrough acceptance with Human Owner (Dr. J).
 - [x] `M022-T05` Verify P0 requirements complete and P1 status (P1 M021 fully implemented).
@@ -314,9 +314,9 @@ Execute complete Workflow Closure Matrix validation, run full regression suite a
 - [x] `M022-T07` Generate release packaging and record formal release verdict (`scripts/package_v120_release.py`).
 
 ### Acceptance Criteria
-- [x] `M022-AC01` All automated regression and closure tests PASS (219/219).
-- [x] `M022-AC02` 5,000-note benchmark recorded (10.28s).
-- [x] `M022-AC03` Vault remains byte-for-byte untouched.
+- [x] `M022-AC01` All automated regression and closure tests PASS (218/218).
+- [x] `M022-AC02` 5,000-note benchmark recorded (4.794s analysis / 4.639s scan over 5,040 notes).
+- [x] `M022-AC03` Vault remains byte-for-byte untouched and zero directory created on violation.
 - [ ] `M022-AC04` Human Owner walkthrough PASS (Reserved for Human Owner Dr. J).
 - [x] `M022-AC05` Four-file consistency gate PASS.
 

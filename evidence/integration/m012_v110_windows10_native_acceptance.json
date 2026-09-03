@@ -16,7 +16,7 @@
     "native_execution_verified": true
   },
   "http_server_walkthrough": {
-    "base_url": "http://127.0.0.1:6454",
+    "base_url": "http://127.0.0.1:4436",
     "static_html_served": true,
     "i18n_locales_served": true,
     "api_scan_verified": true,

@@ -41,20 +41,19 @@ class VaultIsolationError(StorageError):
     pass
 
 
-def get_storage_dir() -> Path:
-    """Resolve base directory for app-local storage."""
+def get_storage_dir(create: bool = False) -> Path:
+    """Resolve base directory for app-local storage without mutating filesystem unless requested."""
     env_dir = os.environ.get("PROPERTY_STUDIO_STORAGE_DIR")
     if env_dir:
         p = Path(env_dir).resolve()
-        p.mkdir(parents=True, exist_ok=True)
-        return p
-
-    app_data = os.environ.get("APPDATA")
-    if app_data:
-        p = (Path(app_data) / "ObsidianPropertyStudio").resolve()
     else:
-        p = (Path.home() / ".property_studio").resolve()
-    p.mkdir(parents=True, exist_ok=True)
+        app_data = os.environ.get("APPDATA")
+        if app_data:
+            p = (Path(app_data) / "ObsidianPropertyStudio").resolve()
+        else:
+            p = (Path.home() / ".property_studio").resolve()
+    if create:
+        p.mkdir(parents=True, exist_ok=True)
     return p
 
 
@@ -68,7 +67,7 @@ def set_active_vault_path(vault_path: str | Path | None) -> None:
         _ACTIVE_VAULT_PATH = None
         return
     v_real = Path(vault_path).resolve()
-    s_real = get_storage_dir().resolve()
+    s_real = get_storage_dir(create=False).resolve()
     assert_outside_vault(s_real, v_real)
     _ACTIVE_VAULT_PATH = v_real
 
@@ -106,7 +105,13 @@ def assert_outside_vault(storage_path: Path, vault_path: str | Path | None) -> N
 
 def migrate_legacy_storage_paths() -> None:
     """Idempotently migrate pre-release entity paths to frozen M015 layout without data loss."""
-    base = get_storage_dir()
+    if _ACTIVE_VAULT_PATH is not None:
+        assert_outside_vault(get_storage_dir(create=False), _ACTIVE_VAULT_PATH)
+
+    base = get_storage_dir(create=False)
+    if not base.exists():
+        return
+
     migrations = [
         ("preferences.json", "config/preferences.json"),
         ("governance/scope_assignments.json", "scope_profiles/scope_expected_schemas.json"),
@@ -121,8 +126,10 @@ def migrate_legacy_storage_paths() -> None:
             new_path.parent.mkdir(parents=True, exist_ok=True)
             try:
                 shutil.copy2(old_path, new_path)
-            except Exception:
-                pass
+            except Exception as exc:
+                raise StorageError(
+                    f"Failed to migrate legacy storage path '{old_rel}' to '{new_rel}': {exc}"
+                ) from exc
 
 
 class EntityStorage:
@@ -132,19 +139,19 @@ class EntityStorage:
         self.entity_type = entity_type
         self.relative_file = relative_file
         self.lock = threading.RLock()
-        # Automatically run idempotent path migration on first use
-        migrate_legacy_storage_paths()
 
     def verify_isolation(self) -> None:
         """Enforce that this entity's file and root storage directory are strictly outside the active vault."""
         if _ACTIVE_VAULT_PATH is not None:
-            assert_outside_vault(self._file_path(), _ACTIVE_VAULT_PATH)
-            assert_outside_vault(get_storage_dir(), _ACTIVE_VAULT_PATH)
+            # Pure path calculation without filesystem side effects!
+            assert_outside_vault(self._file_path(create=False), _ACTIVE_VAULT_PATH)
+            assert_outside_vault(get_storage_dir(create=False), _ACTIVE_VAULT_PATH)
 
-    def _file_path(self) -> Path:
-        base = get_storage_dir()
+    def _file_path(self, create: bool = False) -> Path:
+        base = get_storage_dir(create=create)
         p = base / self.relative_file
-        p.parent.mkdir(parents=True, exist_ok=True)
+        if create:
+            p.parent.mkdir(parents=True, exist_ok=True)
         return p
 
     def _compute_etag(self, raw_data: Any) -> str:
@@ -155,7 +162,7 @@ class EntityStorage:
         """Load entity data with OCC metadata."""
         self.verify_isolation()
         with self.lock:
-            path = self._file_path()
+            path = self._file_path(create=False)
             if not path.exists():
                 empty_data: dict[str, Any] = {}
                 return {
@@ -202,10 +209,10 @@ class EntityStorage:
     def create_backup(self) -> Path | None:
         """Create collision-safe snapshot before mutation."""
         self.verify_isolation()
-        path = self._file_path()
+        path = self._file_path(create=False)
         if not path.exists():
             return None
-        backups_dir = get_storage_dir() / "backups"
+        backups_dir = get_storage_dir(create=True) / "backups"
         backups_dir.mkdir(parents=True, exist_ok=True)
         ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
         uid = uuid.uuid4().hex[:8]
@@ -245,7 +252,7 @@ class EntityStorage:
                 "data": data,
             }
 
-            path = self._file_path()
+            path = self._file_path(create=True)
             tmp_path = path.with_suffix(f".tmp.{os.getpid()}_{uuid.uuid4().hex[:6]}")
             try:
                 with open(tmp_path, "w", encoding="utf-8", newline="\n") as f:
