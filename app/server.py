@@ -70,12 +70,12 @@ class Store:
         self.inventory = None
         self.baseline_manifest: dict[str, str] | None = None
         self.scope: ScopeSpec = ScopeSpec()
-        self.saved_checks_store = saved_checks.SavedChecksStore()
-
-
+        self.saved_checks_store = saved_checks.SavedChecksStore(persistent=True)
 
     def set_scan(self, scan, manifest: dict[str, str] | None) -> None:
         with self.lock:
+            from app.storage.local_storage import set_active_vault_path
+            set_active_vault_path(scan.vault_path if hasattr(scan, "vault_path") else None)
             self.scan = scan
             self.inventory = inventory.build_inventory(scan)
             self.baseline_manifest = manifest
@@ -143,6 +143,12 @@ def api_meta(_body: dict[str, Any]) -> dict[str, Any]:
 
 def api_scan(body: dict[str, Any]) -> dict[str, Any]:
     path = body.get("vault_path", "")
+    from app.storage.local_storage import VaultIsolationError, set_active_vault_path
+    try:
+        set_active_vault_path(path)
+    except VaultIsolationError as exc:
+        raise ApiError(f"Vault isolation violation: {exc}", 400) from exc
+
     try:
         scan = scan_vault(path, ScanOptions())
     except VaultPathError as exc:
@@ -904,6 +910,87 @@ def api_governance_profile_import(body: dict[str, Any]) -> dict[str, Any]:
         raise ApiError(str(exc), 400) from exc
 
 
+def api_storage_migrate_legacy(body: dict[str, Any]) -> dict[str, Any]:
+    """Migrate v1.1.0 legacy localStorage state (theme, locale, saved checks) to app-local storage (REQ-051, REQ-052)."""
+    # 1. Migrate preferences (locale & theme) supporting documented & actual historical aliases
+    locale = body.get("ps_locale") or body.get("property_studio_locale")
+    theme = body.get("ps_theme") or body.get("property_studio_theme")
+
+    from app.core.governance_profile import PREFERENCES_STORAGE
+    current_prefs = PREFERENCES_STORAGE.load().get("data") or {}
+    prefs_updated = False
+    if locale and isinstance(locale, str) and locale in ("zh-Hant", "en"):
+        current_prefs["locale"] = locale
+        prefs_updated = True
+    if theme and isinstance(theme, str) and theme in ("light", "dark", "system"):
+        current_prefs["theme"] = theme
+        prefs_updated = True
+    if prefs_updated or not current_prefs:
+        if not current_prefs:
+            current_prefs = {"locale": locale or "zh-Hant", "theme": theme or "system"}
+        PREFERENCES_STORAGE.save(current_prefs)
+
+    # 2. Migrate saved relationship checks supporting documented & actual historical aliases
+    raw_checks = body.get("ops_saved_relationship_checks_v110")
+    if raw_checks is None:
+        raw_checks = body.get("property_studio_saved_checks")
+
+    migrated_checks_count = 0
+    if raw_checks is not None:
+        if isinstance(raw_checks, str):
+            try:
+                raw_checks = json.loads(raw_checks)
+            except Exception as exc:
+                raise ApiError(f"Malformed legacy saved checks JSON: {exc}", 400) from exc
+
+        if isinstance(raw_checks, dict):
+            raw_checks = raw_checks.get("checks", [])
+
+        if not isinstance(raw_checks, list):
+            raise ApiError("Malformed legacy saved checks: payload must be a list.", 400)
+
+        for index, item in enumerate(raw_checks):
+            try:
+                chk = saved_checks.SavedCheck.from_dict(item)
+                STORE.saved_checks_store.save_check(chk)
+                migrated_checks_count += 1
+            except Exception as exc:
+                raise ApiError(f"Malformed legacy check at index {index}: {exc}", 400) from exc
+
+    # Read-back verification
+    saved_prefs_readback = PREFERENCES_STORAGE.load().get("data", {})
+    saved_checks_readback = [c.to_dict() for c in STORE.saved_checks_store.list_checks()]
+
+    return {
+        "status": "migrated",
+        "preferences": saved_prefs_readback,
+        "migrated_checks_count": migrated_checks_count,
+        "total_saved_checks": len(saved_checks_readback),
+        "checks": saved_checks_readback,
+        "readback_verified": True,
+    }
+
+
+def api_preferences_get(_body: dict[str, Any]) -> dict[str, Any]:
+    """Retrieve app-local governance preferences (REQ-051)."""
+    from app.core.governance_profile import PREFERENCES_STORAGE
+    prefs = PREFERENCES_STORAGE.load().get("data") or {"locale": "zh-Hant", "theme": "system"}
+    return {"preferences": prefs}
+
+
+def api_preferences_set(body: dict[str, Any]) -> dict[str, Any]:
+    """Persist app-local governance preferences (REQ-051)."""
+    from app.core.governance_profile import PREFERENCES_STORAGE
+    prefs = PREFERENCES_STORAGE.load().get("data") or {"locale": "zh-Hant", "theme": "system"}
+    new_prefs = body.get("preferences") or body
+    if isinstance(new_prefs, dict):
+        for k, v in new_prefs.items():
+            if k in ("locale", "theme"):
+                prefs[k] = v
+        PREFERENCES_STORAGE.save(prefs)
+    return {"status": "saved", "preferences": prefs}
+
+
 # --------------------------------------------------------------------------
 # Dispatch Table
 # --------------------------------------------------------------------------
@@ -964,6 +1051,9 @@ ROUTES: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "/api/reconcile/inspect": api_reconcile_inspect,
     "/api/reconcile/preview": api_reconcile_preview,
     "/api/state/validate_context": api_state_validate_context,
+    "/api/storage/migrate_legacy": api_storage_migrate_legacy,
+    "/api/preferences/get": api_preferences_get,
+    "/api/preferences/set": api_preferences_set,
 }
 
 

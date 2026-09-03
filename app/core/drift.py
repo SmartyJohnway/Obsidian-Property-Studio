@@ -246,10 +246,14 @@ def analyze_schema_drift(
                     type_matched = (actual_type in ("number", "integer"))
                 elif exp_type in ("checkbox", "boolean"):
                     type_matched = (actual_type in ("checkbox", "boolean"))
-                elif exp_type in ("list", "tags"):
-                    type_matched = (actual_type in ("list", "tags"))
-                elif exp_type in ("date", "datetime"):
-                    type_matched = (actual_type in ("date", "datetime"))
+                elif exp_type == "list":
+                    type_matched = (actual_type == "list")
+                elif exp_type == "tags":
+                    type_matched = (actual_type == "tags")
+                elif exp_type == "date":
+                    type_matched = (actual_type == "date")
+                elif exp_type == "datetime":
+                    type_matched = (actual_type == "datetime")
                 elif exp_type == "text":
                     type_matched = (actual_type == "text")
                 else:

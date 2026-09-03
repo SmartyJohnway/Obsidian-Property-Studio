@@ -58,22 +58,71 @@ def get_storage_dir() -> Path:
     return p
 
 
+_ACTIVE_VAULT_PATH: Path | None = None
+
+
+def set_active_vault_path(vault_path: str | Path | None) -> None:
+    """Set and enforce runtime isolation invariant against the active vault (REQ-051)."""
+    global _ACTIVE_VAULT_PATH
+    if not vault_path:
+        _ACTIVE_VAULT_PATH = None
+        return
+    v_real = Path(vault_path).resolve()
+    s_real = get_storage_dir().resolve()
+    assert_outside_vault(s_real, v_real)
+    _ACTIVE_VAULT_PATH = v_real
+
+
+def get_active_vault_path() -> Path | None:
+    """Return currently active vault path, if any."""
+    return _ACTIVE_VAULT_PATH
+
+
 def assert_outside_vault(storage_path: Path, vault_path: str | Path | None) -> None:
-    """Assert that storage directory is strictly not within the selected vault."""
+    """Assert that storage directory is strictly not within the selected vault (REQ-051)."""
     if not vault_path:
         return
-    try:
-        v_real = Path(vault_path).resolve()
-        s_real = Path(storage_path).resolve()
-        # Ensure s_real is not inside v_real, nor is v_real inside s_real, nor are they equal
-        if s_real == v_real or s_real in v_real.parents or v_real in s_real.parents:
-            raise VaultIsolationError(
-                f"Storage path '{s_real}' violates Vault isolation contract with Vault '{v_real}'."
-            )
-    except Exception as exc:
-        if isinstance(exc, VaultIsolationError):
-            raise
-        # Path resolution defensive
+    v_real = Path(vault_path).resolve()
+    s_real = Path(storage_path).resolve()
+
+    # Reject equal paths
+    if s_real == v_real:
+        raise VaultIsolationError(
+            f"Storage path '{s_real}' is identical to selected Vault path '{v_real}'. Storage must reside outside the Vault."
+        )
+
+    # Reject storage root being an ancestor of the Vault (storage parent containing Vault)
+    if s_real in v_real.parents:
+        raise VaultIsolationError(
+            f"Storage path '{s_real}' is a parent directory containing selected Vault '{v_real}'. Storage must reside outside the Vault."
+        )
+
+    # Reject storage being inside the Vault or a Vault subdirectory
+    if v_real in s_real.parents:
+        raise VaultIsolationError(
+            f"Storage path '{s_real}' is located inside selected Vault '{v_real}'. Storage must reside outside the Vault."
+        )
+
+
+def migrate_legacy_storage_paths() -> None:
+    """Idempotently migrate pre-release entity paths to frozen M015 layout without data loss."""
+    base = get_storage_dir()
+    migrations = [
+        ("preferences.json", "config/preferences.json"),
+        ("governance/scope_assignments.json", "scope_profiles/scope_expected_schemas.json"),
+        ("user_glossary.json", "glossary/user_glossary.json"),
+        ("named_schemas.json", "schemas/named_schemas.json"),
+        ("saved_relationship_checks.json", "saved_checks/saved_relationship_checks.json"),
+    ]
+    for old_rel, new_rel in migrations:
+        old_path = base / old_rel
+        new_path = base / new_rel
+        if old_path.exists() and not new_path.exists():
+            new_path.parent.mkdir(parents=True, exist_ok=True)
+            try:
+                shutil.copy2(old_path, new_path)
+            except Exception:
+                pass
 
 
 class EntityStorage:
@@ -83,6 +132,14 @@ class EntityStorage:
         self.entity_type = entity_type
         self.relative_file = relative_file
         self.lock = threading.RLock()
+        # Automatically run idempotent path migration on first use
+        migrate_legacy_storage_paths()
+
+    def verify_isolation(self) -> None:
+        """Enforce that this entity's file and root storage directory are strictly outside the active vault."""
+        if _ACTIVE_VAULT_PATH is not None:
+            assert_outside_vault(self._file_path(), _ACTIVE_VAULT_PATH)
+            assert_outside_vault(get_storage_dir(), _ACTIVE_VAULT_PATH)
 
     def _file_path(self) -> Path:
         base = get_storage_dir()
@@ -96,6 +153,7 @@ class EntityStorage:
 
     def load(self) -> dict[str, Any]:
         """Load entity data with OCC metadata."""
+        self.verify_isolation()
         with self.lock:
             path = self._file_path()
             if not path.exists():
@@ -143,6 +201,7 @@ class EntityStorage:
 
     def create_backup(self) -> Path | None:
         """Create collision-safe snapshot before mutation."""
+        self.verify_isolation()
         path = self._file_path()
         if not path.exists():
             return None
@@ -157,6 +216,7 @@ class EntityStorage:
 
     def save(self, data: Any, expected_revision: int | None = None) -> dict[str, Any]:
         """Save entity data atomically with OCC check and backup."""
+        self.verify_isolation()
         with self.lock:
             current = self.load()
             current_rev = current.get("revision", 0)

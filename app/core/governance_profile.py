@@ -17,7 +17,7 @@ from app.core.user_glossary import USER_GLOSSARY_STORE, UserGlossaryOverride
 from app.storage.local_storage import EntityStorage
 
 PROFILE_FORMAT_VERSION = "1.0"
-PREFERENCES_STORAGE = EntityStorage("governance_preferences", "preferences.json")
+PREFERENCES_STORAGE = EntityStorage("governance_preferences", "config/preferences.json")
 
 
 def compute_profile_checksum(payload: dict[str, Any]) -> str:
@@ -114,6 +114,9 @@ def import_governance_profile(
     saved_checks_store: Any | None = None,
 ) -> dict[str, Any]:
     """Validate and import a governance profile package with transactional safety (REQ-047)."""
+    if mode not in ("merge", "replace"):
+        raise ValueError(f"Invalid import mode '{mode}'. Supported modes are 'merge' and 'replace'.")
+
     val_report = validate_governance_profile(profile_data)
     if not val_report.get("valid"):
         raise ValueError(val_report.get("error", "Invalid profile."))
@@ -149,13 +152,6 @@ def import_governance_profile(
         old_preferences = PREFERENCES_STORAGE.load().get("data", {})
         if saved_checks_store and hasattr(saved_checks_store, "list_checks"):
             old_checks = [c.to_dict() for c in saved_checks_store.list_checks()]
-            if hasattr(saved_checks_store, "clear"):
-                saved_checks_store.clear()
-
-        NAMED_SCHEMA_LIBRARY.storage.save({})
-        SCOPE_GOVERNANCE_STORE.storage.save({})
-        USER_GLOSSARY_STORE.storage.save({})
-        PREFERENCES_STORAGE.save({})
 
     imported_schemas = 0
     imported_assignments = 0
@@ -163,6 +159,15 @@ def import_governance_profile(
     imported_checks = 0
 
     try:
+        # Destructive clear occurs strictly within protected transaction boundary
+        if mode == "replace":
+            NAMED_SCHEMA_LIBRARY.storage.save({})
+            SCOPE_GOVERNANCE_STORE.storage.save({})
+            USER_GLOSSARY_STORE.storage.save({})
+            PREFERENCES_STORAGE.save({})
+            if saved_checks_store and hasattr(saved_checks_store, "clear"):
+                saved_checks_store.clear()
+
         # 1. Import schemas
         for s in schemas:
             if isinstance(s, dict) and s.get("name"):

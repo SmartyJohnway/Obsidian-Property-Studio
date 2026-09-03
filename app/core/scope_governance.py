@@ -58,7 +58,7 @@ def canonical_scope_key(scope_data: dict[str, Any] | str | None) -> str:
 
 class ScopeGovernanceStore:
     def __init__(self) -> None:
-        self.storage = EntityStorage("scope_assignments", "governance/scope_assignments.json")
+        self.storage = EntityStorage("scope_assignments", "scope_profiles/scope_expected_schemas.json")
 
     def list_assignments(self) -> dict[str, dict[str, Any]]:
         record = self.storage.load()

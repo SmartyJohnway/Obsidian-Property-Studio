@@ -1506,7 +1506,7 @@ window.assignSchemaToScope = async function(id) {
   const scopeKey = S.scope.mode === 'entire_vault' ? 'entire_vault' : ((S.scope.folders || []).join(",") || 'default');
   try {
     await api("/api/scope/schema/assign", { scope_key: scopeKey, schema_id: id });
-    toast("已成功將架構指派至目前範圍！");
+    toast(I18N.t("toast.schema_assigned_scope"));
     if (typeof updateScopeSchemaAssignmentUI === 'function') {
       await updateScopeSchemaAssignmentUI();
     }
@@ -1630,8 +1630,8 @@ window.openSchemaEditModal = async function(id) {
         const ver = (document.getElementById("editSchemaVerInput").value || "").trim() || "1.0";
         const desc = (document.getElementById("editSchemaDescInput").value || "").trim();
 
-        if (!name) return toast("架構名稱不能為空", true);
-        if (!propsList.length) return toast("架構至少需要包含一個屬性", true);
+        if (!name) return toast(I18N.t("toast.schema_name_required"), true);
+        if (!propsList.length) return toast(I18N.t("toast.schema_at_least_one_prop"), true);
 
         try {
           await api("/api/schemas/update", {
@@ -1643,7 +1643,7 @@ window.openSchemaEditModal = async function(id) {
               properties: propsList
             }
           });
-          toast("具名架構已成功儲存！");
+          toast(I18N.t("toast.schema_saved"));
           closeDrawer();
           await loadSchemasList();
         } catch (err) {
@@ -1657,10 +1657,10 @@ window.openSchemaEditModal = async function(id) {
 };
 
 window.deleteNamedSchema = async function(id) {
-  if (!confirm("確定要刪除此架構嗎？")) return;
+  if (!confirm(I18N.t("toast.schema_delete_confirm"))) return;
   try {
     await api("/api/schemas/delete", { id });
-    toast("架構已成功刪除");
+    toast(I18N.t("toast.schema_deleted"));
     await loadSchemasList();
   } catch (e) {
     toast(e.message, true);
@@ -1789,12 +1789,12 @@ function setupSchemasHandlers() {
         valBtn.onclick = async () => {
           const area = document.getElementById("importProfileText");
           const raw = area ? area.value.trim() : "";
-          if (!raw) return toast("請先貼上設定檔 JSON", true);
+          if (!raw) return toast(I18N.t("toast.paste_profile_json"), true);
           try {
             const parsed = JSON.parse(raw);
             const valReport = await api("/api/governance/profile/validate", { profile: parsed });
             if (!valReport.valid) {
-              return toast("設定檔校驗失敗: " + (valReport.error || "格式不正確"), true);
+              return toast(I18N.t("toast.profile_val_failed", { err: valReport.error || "" }), true);
             }
 
             const previewArea = document.getElementById("profilePreviewArea");
@@ -1803,17 +1803,17 @@ function setupSchemasHandlers() {
             previewArea.innerHTML = `
               <div class="card" style="background:var(--panel2); margin-bottom:12px">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
-                  <h4 style="margin:0">✓ 校驗通過：待匯入項目摘要</h4>
+                  <h4 style="margin:0">${esc(I18N.t("profile.preview_validated_title"))}</h4>
                   <span class="pill ok">v${esc(valReport.format_version || '1.0')}</span>
                 </div>
                 <div class="grid cols2" style="gap:8px; font-size:12.5px; margin-bottom:10px">
-                  <div>具名架構數：<strong>${valReport.schema_count}</strong></div>
-                  <div>範圍指派數：<strong>${valReport.assignment_count}</strong></div>
-                  <div>詞彙自訂數：<strong>${valReport.glossary_count}</strong></div>
-                  <div>關聯檢查數：<strong>${valReport.saved_checks_count}</strong></div>
+                  <div>${esc(I18N.t("profile.preview_schemas_count"))}<strong>${valReport.schema_count}</strong></div>
+                  <div>${esc(I18N.t("profile.preview_scopes_count"))}<strong>${valReport.assignment_count}</strong></div>
+                  <div>${esc(I18N.t("profile.preview_glossary_count"))}<strong>${valReport.glossary_count}</strong></div>
+                  <div>${esc(I18N.t("profile.preview_checks_count"))}<strong>${valReport.saved_checks_count}</strong></div>
                 </div>
                 <div style="margin-top:10px">
-                  <label style="font-size:12px; font-weight:600">匯入策略 (Import Mode)：</label>
+                  <label style="font-size:12px; font-weight:600">${esc(I18N.t("profile.mode_label"))}</label>
                   <select id="profileImportModeSelect" class="form-control" style="width:100%; margin-top:4px">
                     <option value="merge">${esc(I18N.t("profile.mode_merge"))}</option>
                     <option value="replace">${esc(I18N.t("profile.mode_replace"))}</option>
@@ -1831,6 +1831,7 @@ function setupSchemasHandlers() {
                 const modeSel = document.getElementById("profileImportModeSelect");
                 const mode = modeSel ? modeSel.value : "merge";
                 try {
+                  const res = await api("/api/governance/profile/import", { profile: parsed, mode });
                   const gCount = res.imported.user_glossary || res.imported.glossary_overrides || 0;
                   toast(I18N.t("profile.imported_toast", { mode, schemas: res.imported.schemas, scopes: res.imported.scope_assignments, glossary: gCount }));
                   closeDrawer();
@@ -1839,13 +1840,16 @@ function setupSchemasHandlers() {
                   if (typeof updateScopeSchemaAssignmentUI === 'function') {
                     await updateScopeSchemaAssignmentUI();
                   }
+                  if (typeof syncPreferencesFromServer === 'function') {
+                    await syncPreferencesFromServer();
+                  }
                 } catch (err) {
                   toast(err.message, true);
                 }
               };
             }
           } catch (e) {
-            toast("JSON 解析失敗: " + e.message, true);
+            toast(I18N.t("toast.json_parse_error", { msg: e.message }), true);
           }
         };
       }
@@ -2109,6 +2113,47 @@ function renderMismatchBanner(backendVer) {
   existing.textContent = msg;
 }
 
+async function syncPreferencesFromServer() {
+  try {
+    const res = await api("/api/preferences/get", {});
+    if (res && res.preferences) {
+      const p = res.preferences;
+      if (p.theme) {
+        document.documentElement.setAttribute("data-theme", p.theme);
+        localStorage.setItem("ps_theme", p.theme);
+      }
+      if (p.locale && I18N.currentLocale !== p.locale) {
+        I18N.setLocale(p.locale);
+      }
+    }
+  } catch (e) {
+    console.warn("syncPreferencesFromServer error:", e);
+  }
+}
+
+async function migrateLegacyStateIfNeeded() {
+  const pLocale = localStorage.getItem("ps_locale") || localStorage.getItem("property_studio_locale");
+  const pTheme = localStorage.getItem("ps_theme") || localStorage.getItem("property_studio_theme");
+  const pChecks = localStorage.getItem("ops_saved_relationship_checks_v110") || localStorage.getItem("property_studio_saved_checks");
+
+  if (pLocale || pTheme || pChecks) {
+    try {
+      const payload = {};
+      if (pLocale) payload.ps_locale = pLocale;
+      if (pTheme) payload.ps_theme = pTheme;
+      if (pChecks) payload.ops_saved_relationship_checks_v110 = pChecks;
+
+      const res = await api("/api/storage/migrate_legacy", payload);
+      if (res && res.readback_verified) {
+        localStorage.removeItem("ops_saved_relationship_checks_v110");
+        localStorage.removeItem("property_studio_saved_checks");
+      }
+    } catch (err) {
+      console.warn("Legacy migration failed to complete:", err);
+    }
+  }
+}
+
 async function init() {
   // Load meta first to populate version badge and verify backend compatibility
   try {
@@ -2125,6 +2170,8 @@ async function init() {
     return; // FAIL CLOSED: Stop execution immediately on connection failure
   }
   await I18N.init();
+  await migrateLegacyStateIfNeeded();
+  await syncPreferencesFromServer();
   await loadGlossaryCatalog();
 
   // Navigation handlers
@@ -2153,19 +2200,27 @@ async function init() {
     $("fillGoToDesignBtn").onclick = () => setTab("design");
   }
 
-  // Top buttons
-  $("langToggleBtn").onclick = () => {
+  // Top buttons with App-Local Preferences persistence (REQ-051)
+  $("langToggleBtn").onclick = async () => {
     I18N.toggleLocale();
     renderAllDynamicViews();
+    try {
+      await api("/api/preferences/set", { preferences: { locale: I18N.currentLocale } });
+    } catch (e) {
+      console.warn("Failed to persist locale:", e);
+    }
   };
-  $("themeToggleBtn").onclick = () => {
+  $("themeToggleBtn").onclick = async () => {
     const cur = document.documentElement.getAttribute("data-theme") || "dark";
     const next = cur === "dark" ? "light" : "dark";
     document.documentElement.setAttribute("data-theme", next);
     localStorage.setItem("ps_theme", next);
+    try {
+      await api("/api/preferences/set", { preferences: { theme: next } });
+    } catch (e) {
+      console.warn("Failed to persist theme:", e);
+    }
   };
-  const savedTheme = localStorage.getItem("ps_theme");
-  if (savedTheme) document.documentElement.setAttribute("data-theme", savedTheme);
 
   // Drawer
   $("drawerCloseBtn").onclick = closeDrawer;
@@ -2473,11 +2528,11 @@ function getCanonicalScopeKey() {
     $("scopeAssignSchemaBtn").onclick = async () => {
       const select = $("scopeSchemaAssignSelect");
       const schemaId = select ? select.value.trim() : "";
-      if (!schemaId) return toast("請先選擇要指派的具名架構", true);
+      if (!schemaId) return toast(I18N.t("toast.select_schema_to_assign"), true);
       const scopeKey = getCanonicalScopeKey();
       try {
         await api("/api/scope/schema/assign", { scope_key: scopeKey, schema_id: schemaId });
-        toast("預期架構已成功指派至此範圍");
+        toast(I18N.t("toast.schema_assigned_scope"));
         await updateScopeSchemaAssignmentUI();
         await loadHealth(); // Refresh health drift
       } catch (err) {
@@ -2491,7 +2546,7 @@ function getCanonicalScopeKey() {
       const scopeKey = getCanonicalScopeKey();
       try {
         await api("/api/scope/schema/unassign", { scope_key: scopeKey });
-        toast("已取消此範圍之預期架構指派");
+        toast(I18N.t("toast.schema_unassigned_scope"));
         await updateScopeSchemaAssignmentUI();
         await loadHealth(); // Refresh health drift
       } catch (err) {
@@ -2777,9 +2832,10 @@ async function inspectNoteInWorkspace(notePath) {
     if (pending && (pending.finding_id || pending.property_key || pending.finding_type)) {
       const pKey = pending.property_key || '';
       const fType = pending.finding_type || pending.finding_id || 'Drift Finding';
+      const targetStr = pKey ? I18N.t("workspace.diagnostic_target_prop", { prop: esc(pKey) }) : '';
       bannerHtml += `
         <div class="card" style="border-color:var(--amber); background:var(--amber-soft); color:var(--text); margin-bottom:14px">
-          <strong>🔍 診斷事項聚焦：</strong> 發現項目 <code>${esc(fType)}</code>${pKey ? `（針對屬性 <code>${esc(pKey)}</code>）` : ''}。已自動為您定位。
+          <strong>${esc(I18N.t("workspace.diagnostic_focus_title"))}</strong> ${I18N.t("workspace.diagnostic_focus_body", { type: esc(fType), target: targetStr })}
         </div>
       `;
       if (pKey) {
@@ -2950,7 +3006,7 @@ window.addMissingPropertyToWorkspace = function(propName, defaultVal = "") {
       if (defaultVal && !valInput.value) valInput.value = defaultVal;
       valInput.focus();
     }
-    toast(`屬性「${propName}」已在編輯器中，已為您聚焦輸入欄位。`);
+    toast(I18N.t("toast.prop_already_in_editor", { prop: propName }));
     return;
   }
 
@@ -2976,7 +3032,7 @@ window.addMissingPropertyToWorkspace = function(propName, defaultVal = "") {
 
   updateWorkspacePreview();
   valInput.focus();
-  toast(`已將缺漏屬性「${propName}」補填入編輯器！`);
+  toast(I18N.t("toast.missing_prop_added", { prop: propName }));
 };
 
 window.focusPropertyInWorkspace = function(propName) {
@@ -2987,7 +3043,7 @@ window.focusPropertyInWorkspace = function(propName) {
     const valInput = row.querySelector(".ws-prop-val");
     if (valInput) valInput.focus();
   } else {
-    toast(`在目前編輯器中未找到屬性「${propName}」`, true);
+    toast(I18N.t("toast.prop_not_found_in_editor", { prop: propName }), true);
   }
 };
 
@@ -3526,32 +3582,10 @@ function getSelectedRelScope(entireCbId, folderCbClass) {
   };
 }
 
-const SAVED_CHECKS_STORAGE_KEY = "ops_saved_relationship_checks_v110";
-
 async function loadSavedChecks() {
   try {
     const res = await api("/api/relationships/saved/list", {});
-    let checks = res.checks || [];
-
-    if (checks.length === 0) {
-      try {
-        const raw = localStorage.getItem(SAVED_CHECKS_STORAGE_KEY);
-        if (raw) {
-          const arr = JSON.parse(raw);
-          if (Array.isArray(arr) && arr.length > 0) {
-            for (const c of arr) {
-              await api("/api/relationships/saved/save", { check: c });
-            }
-            const res2 = await api("/api/relationships/saved/list", {});
-            checks = res2.checks || [];
-          }
-        }
-      } catch (_) {}
-    } else {
-      try {
-        localStorage.setItem(SAVED_CHECKS_STORAGE_KEY, JSON.stringify(checks));
-      } catch (_) {}
-    }
+    const checks = res.checks || [];
 
     S.savedChecks = checks;
     const listEl = $("savedChecksList");
@@ -3624,13 +3658,6 @@ async function loadSavedChecks() {
         const id = btn.getAttribute("data-id");
         if (!confirm(I18N.t("relations.confirm_delete"))) return;
         await api("/api/relationships/saved/delete", { id: id });
-        try {
-          const raw = localStorage.getItem(SAVED_CHECKS_STORAGE_KEY);
-          if (raw) {
-            const arr = JSON.parse(raw).filter(x => x.id !== id);
-            localStorage.setItem(SAVED_CHECKS_STORAGE_KEY, JSON.stringify(arr));
-          }
-        } catch (_) {}
         toast(I18N.t("toast.check_deleted"));
         await loadSavedChecks();
       };
@@ -3710,7 +3737,7 @@ async function loadHealth() {
 
 window.openDriftDetailsDrawer = function() {
   const rep = S.lastDriftReport;
-  if (!rep) return toast("目前範圍尚未指派預期架構或無漂移報告", true);
+  if (!rep) return toast(I18N.t("toast.no_drift_report"), true);
 
   const findings = rep.findings || [];
   if (!findings.length) {
@@ -4132,7 +4159,7 @@ function setupProposalHandlers() {
       const reader = new FileReader();
       reader.onload = (evt) => {
         $("proposalTextInput").value = evt.target.result;
-        toast(`已載入檔案「${file.name}」，正在校驗比對...`);
+        toast(I18N.t("toast.proposal_file_loaded", { file: file.name }));
         $("validateProposalBtn").click();
       };
       reader.readAsText(file);
@@ -4290,10 +4317,10 @@ function setupProposalHandlers() {
       const rejectBtn = document.getElementById("proposalRejectBtn");
       if (rejectBtn) {
         rejectBtn.onclick = () => {
-          if (!confirm("確定要拒絕此提案嗎？未儲存的提案內容將會清除。")) return;
+          if (!confirm(I18N.t("toast.proposal_reject_confirm"))) return;
           $("proposalTextInput").value = "";
           $("proposalResultCard").style.display = "none";
-          toast("已拒絕此提案，知識庫與架構庫保持未變動。");
+          toast(I18N.t("toast.proposal_rejected"));
         };
       }
     } catch (e) {
@@ -4413,7 +4440,7 @@ window.openProposalCandidateEditor = function(schema, proposalVersion) {
 
       $("proposalTextInput").value = JSON.stringify(newProposal, null, 2);
       closeDrawer();
-      toast("候選內容已更新，正在重新校驗...");
+      toast(I18N.t("toast.candidate_updated_revalidating"));
       $("validateProposalBtn").click();
     };
   }

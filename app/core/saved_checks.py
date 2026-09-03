@@ -22,7 +22,17 @@ from .model import VaultScan
 from .relationships import build_inbox
 from .scope import ScopeSpec
 
+from app.storage.local_storage import EntityStorage
+
 SAVED_CHECKS_FORMAT_VERSION = "1.1.0"
+
+
+class CorruptedSavedChecksError(ValueError):
+    """Raised when persisted or legacy saved relationship checks are corrupt (REQ-052)."""
+
+    def __init__(self, message: str, raw_payload: Any = None) -> None:
+        super().__init__(message)
+        self.raw_payload = raw_payload
 
 
 @dataclass
@@ -54,6 +64,8 @@ class SavedCheck:
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "SavedCheck":
+        if not isinstance(data, dict):
+            raise ValueError("SavedCheck data must be a dictionary.")
         link_type = str(data.get("link_type", "property_link"))
         if link_type == "body":
             link_type = "body_wikilink"
@@ -80,13 +92,55 @@ class SavedCheck:
 
 
 class SavedChecksStore:
-    """In-memory manager for saved checks (Constraint 2: pure in-memory core)."""
+    """Manager for saved checks with app-local persistence (REQ-033, REQ-051, REQ-052)."""
 
-    def __init__(self, initial_checks: list[SavedCheck] | None = None):
+    def __init__(
+        self,
+        initial_checks: list[SavedCheck] | None = None,
+        storage: EntityStorage | None = None,
+        persistent: bool = False,
+    ):
         self._checks: dict[str, SavedCheck] = {}
+        self.storage = storage or (
+            EntityStorage("saved_checks", "saved_checks/saved_relationship_checks.json")
+            if persistent
+            else None
+        )
+
         if initial_checks is not None:
             for c in initial_checks:
                 self._checks[c.id] = c
+        elif self.storage is not None:
+            self._load_from_storage()
+
+    def _load_from_storage(self) -> None:
+        if self.storage is None:
+            return
+        payload = self.storage.load()
+        raw_checks = payload.get("data")
+        if raw_checks is None or raw_checks == {}:
+            return
+        if isinstance(raw_checks, dict):
+            raw_checks = raw_checks.get("checks", [])
+        if not isinstance(raw_checks, list):
+            raise CorruptedSavedChecksError(
+                "Saved checks storage payload is not a valid list.",
+                raw_payload=raw_checks,
+            )
+        for index, item in enumerate(raw_checks):
+            try:
+                chk = SavedCheck.from_dict(item)
+                self._checks[chk.id] = chk
+            except Exception as exc:
+                raise CorruptedSavedChecksError(
+                    f"Corrupted item in saved checks storage at index {index}: {exc}",
+                    raw_payload=item,
+                ) from exc
+
+    def _sync_to_storage(self) -> None:
+        if self.storage is not None:
+            data = [c.to_dict() for c in self.list_checks()]
+            self.storage.save(data)
 
     def list_checks(self) -> list[SavedCheck]:
         return sorted(self._checks.values(), key=lambda c: c.created_at)
@@ -96,15 +150,18 @@ class SavedChecksStore:
 
     def save_check(self, check: SavedCheck) -> None:
         self._checks[check.id] = check
+        self._sync_to_storage()
 
     def delete_check(self, check_id: str) -> bool:
         if check_id in self._checks:
             del self._checks[check_id]
+            self._sync_to_storage()
             return True
         return False
 
     def clear(self) -> None:
         self._checks.clear()
+        self._sync_to_storage()
 
     def to_json(self) -> str:
         data = {
@@ -117,10 +174,36 @@ class SavedChecksStore:
     def from_json(json_str: str) -> "SavedChecksStore":
         try:
             data = json.loads(json_str)
-            checks = [SavedCheck.from_dict(item) for item in data.get("checks", [])]
-            return SavedChecksStore(initial_checks=checks)
-        except Exception:
-            return SavedChecksStore(initial_checks=[])
+        except Exception as exc:
+            raise CorruptedSavedChecksError(
+                f"Malformed JSON in saved checks payload: {exc}",
+                raw_payload=json_str,
+            ) from exc
+
+        if not isinstance(data, dict):
+            raise CorruptedSavedChecksError(
+                "Saved checks JSON root must be an object.",
+                raw_payload=data,
+            )
+
+        raw_list = data.get("checks")
+        if not isinstance(raw_list, list):
+            raise CorruptedSavedChecksError(
+                "Saved checks payload missing 'checks' list.",
+                raw_payload=data,
+            )
+
+        checks = []
+        for index, item in enumerate(raw_list):
+            try:
+                checks.append(SavedCheck.from_dict(item))
+            except Exception as exc:
+                raise CorruptedSavedChecksError(
+                    f"Malformed check at index {index}: {exc}",
+                    raw_payload=item,
+                ) from exc
+
+        return SavedChecksStore(initial_checks=checks, persistent=False)
 
     def execute_check(self, scan: VaultScan, check_id: str) -> dict[str, Any]:
         chk = self.get_check(check_id)
