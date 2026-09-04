@@ -108,7 +108,7 @@ class NamedSchemaLibrary:
         record = self.storage.load()
         data = record.get("data") or {}
         schemas = [NamedSchema.from_dict(s).to_dict() for s in data.values()]
-        return sorted(schemas, key=lambda s: s["name"].lower())
+        return sorted(schemas, key=lambda s: (s["name"].lower(), str(s.get("version", "1.0"))))
 
     def get_schema(self, schema_id: str) -> NamedSchema | None:
         record = self.storage.load()
@@ -123,7 +123,11 @@ class NamedSchemaLibrary:
         
         # Check duplicate name with same version
         for existing in data.values():
-            if existing.get("name") == schema.name and existing.get("version") == schema.version and existing.get("id") != schema.id:
+            if (
+                existing.get("id") != schema.id
+                and existing.get("name", "").strip().lower() == schema.name.strip().lower()
+                and str(existing.get("version", "")).strip().lower() == str(schema.version).strip().lower()
+            ):
                 raise ValueError(f"A schema named '{schema.name}' (v{schema.version}) already exists.")
 
         data[schema.id] = schema.to_dict()
@@ -149,6 +153,15 @@ class NamedSchemaLibrary:
 
         if schema_id not in data:
             raise ValueError(f"Schema '{schema_id}' not found.")
+
+        # Collision guard: check if another schema already has the same name and version
+        for existing in data.values():
+            if (
+                existing.get("id") != schema_id
+                and existing.get("name", "").strip().lower() == schema.name.strip().lower()
+                and str(existing.get("version", "")).strip().lower() == str(schema.version).strip().lower()
+            ):
+                raise ValueError(f"A schema named '{schema.name}' (v{schema.version}) already exists with ID '{existing.get('id')}'.")
 
         data[schema_id] = schema.to_dict()
         res = self.storage.save(data, expected_revision)

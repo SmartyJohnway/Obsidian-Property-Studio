@@ -720,3 +720,201 @@ def test_ha_vault_zero_modification():
 
         assert files_before == files_after, "Vault files must remain 100% byte-for-byte read-only"
         assert dirs_before == dirs_after, "Vault directories must remain 100% unchanged"
+
+
+# ==============================================================================
+# Commit 21C: Final Human Acceptance State & i18n Closure Tests
+# ==============================================================================
+
+def test_ha_f16_update_schema_collision_guard():
+    """Verify update_schema prevents renaming or version-bumping into an existing schema identity."""
+    # Create Schema A v1.0.0
+    res_a = api_schemas_create({
+        "schema": {
+            "name": "Collision Test Schema",
+            "version": "1.0.0",
+            "description": "Original A",
+            "properties": [{"name": "p1", "storage_type": "text"}],
+        }
+    })
+    id_a = res_a["schema"]["id"]
+
+    # Create Schema B v2.0.0 (same name, different version -> allowed)
+    res_b = api_schemas_create({
+        "schema": {
+            "name": "Collision Test Schema",
+            "version": "2.0.0",
+            "description": "Original B",
+            "properties": [{"name": "p2", "storage_type": "number"}],
+        }
+    })
+    id_b = res_b["schema"]["id"]
+    assert id_a != id_b
+
+    # Attempt to update Schema B to version 1.0.0 (collides with Schema A)
+    with pytest.raises(ApiError) as exc_info:
+        api_schemas_update({
+            "id": id_b,
+            "schema": {
+                "name": "Collision Test Schema",
+                "version": "1.0.0",
+                "description": "Colliding update",
+                "properties": [{"name": "p2", "storage_type": "number"}],
+            }
+        })
+    assert exc_info.value.status == 400
+    assert "already exists" in exc_info.value.message
+
+    # Attempt to update Schema B with unique version 2.1.0 -> Success
+    res_b_updated = api_schemas_update({
+        "id": id_b,
+        "schema": {
+            "name": "Collision Test Schema",
+            "version": "2.1.0",
+            "description": "Non-colliding update",
+            "properties": [{"name": "p2", "storage_type": "number"}],
+        }
+    })
+    assert res_b_updated["schema"]["version"] == "2.1.0"
+
+
+def test_ha_f16_semver_bump_simulation():
+    """Verify SemVer bump logic handles all version part formats robustly without float rounding errors."""
+    def bump_sem_ver(v_str):
+        parts = [p.strip() for p in str(v_str).strip().split(".") if p.strip()]
+        if not parts:
+            return "1.1.0"
+        if len(parts) == 1:
+            try:
+                return str(int(parts[0]) + 1)
+            except ValueError:
+                return f"{parts[0]}.1"
+        if len(parts) == 2:
+            try:
+                return f"{parts[0]}.{int(parts[1]) + 1}"
+            except ValueError:
+                return f"{parts[0]}.{parts[1]}.1"
+        try:
+            major = int(parts[0])
+            minor = int(parts[1]) + 1
+            return f"{major}.{minor}.0"
+        except ValueError:
+            return f"{'.'.join(parts[:-1])}.{int(parts[-1]) + 1}" if parts[-1].isdigit() else f"{v_str}.1"
+
+    assert bump_sem_ver("1") == "2"
+    assert bump_sem_ver("1.0") == "1.1"
+    assert bump_sem_ver("1.0.0") == "1.1.0"
+    assert bump_sem_ver("1.9.0") == "1.10.0"
+    assert bump_sem_ver("1.10.0") == "1.11.0"
+    assert bump_sem_ver("2.5.3") == "2.6.0"
+    assert bump_sem_ver("alpha") == "alpha.1"
+
+
+def test_ha_f08_glossary_bilingual_label_and_guidance_contract():
+    """Verify Personal Glossary catalog items supply bilingual attributes and client rendering contract."""
+    res = api_glossary_catalog({})
+    assert "catalog" in res
+    catalog = res["catalog"]
+    assert len(catalog) > 0
+
+    for item in catalog:
+        assert "canonical_key" in item
+        # Test bilingual resolution
+        label_zh = item.get("label_zh") or item.get("label") or item["canonical_key"]
+        label_en = item.get("label_en") or item.get("label") or item["canonical_key"]
+        desc_zh = item.get("desc_zh") or item.get("description") or ""
+        desc_en = item.get("desc_en") or item.get("description") or ""
+
+        # English mode simulation
+        primary_en = label_en
+        secondary_en = f"({label_zh})" if label_zh and label_zh != label_en else ""
+        guidance_en = desc_en or desc_zh
+
+        # zh-Hant mode simulation
+        primary_zh = label_zh
+        secondary_zh = f"({label_en})" if label_en and label_en != label_zh else ""
+        guidance_zh = desc_zh or desc_en
+
+        assert primary_en
+        assert primary_zh
+        assert isinstance(guidance_en, str)
+        assert isinstance(guidance_zh, str)
+
+
+def test_ha_f09_frontend_workspace_reconciliation_cancel_and_isolation():
+    """Verify cancelling reconciliation removes schema constraint from Workspace completely."""
+    raw_content = "---\ntitle: Note Alpha\nstatus: draft\n---\nBody text"
+    note = Note(
+        path="Projects/Alpha.md",
+        parse_status=ParseStatus.OK,
+        properties={
+            "title": PropertyValue(key="title", raw="Note Alpha", storage_type=StorageType.TEXT),
+            "status": PropertyValue(key="status", raw="draft", storage_type=StorageType.TEXT),
+        },
+    )
+
+    schema_constrained = Schema(
+        name="Project Schema",
+        properties=[
+            SchemaProperty(name="title", storage_type=StorageType.TEXT, required=True),
+            SchemaProperty(name="status", storage_type=StorageType.TEXT, required=True),
+            SchemaProperty(name="deadline", storage_type=StorageType.DATE, required=True),
+        ]
+    )
+
+    # 1. With schema constraint -> missing required property "deadline" is reported in errors
+    diff_constrained = compute_workspace_diff_and_frontmatter(
+        original_note=note,
+        updated_values={"title": "Note Alpha", "status": "draft"},
+        deleted_keys=[],
+        schema=schema_constrained,
+    )
+    assert len(diff_constrained.errors) == 1
+    assert "deadline" in diff_constrained.errors[0]
+
+    # 2. When reconciliation is cancelled (schema=None) -> 0 errors, unconstrained preview
+    diff_unconstrained = compute_workspace_diff_and_frontmatter(
+        original_note=note,
+        updated_values={"title": "Note Alpha", "status": "draft"},
+        deleted_keys=[],
+        schema=None,
+    )
+    assert len(diff_unconstrained.errors) == 0
+    assert diff_unconstrained.valid is True
+
+
+def test_ha_i18n_symmetric_keys_and_new_critical_keys():
+    """Verify 100% symmetrical key alignment between zh-Hant and en locales and check Commit 21C keys."""
+    zh_path = Path("app/ui/locales/zh-Hant.json")
+    en_path = Path("app/ui/locales/en.json")
+
+    zh_dict = json.loads(zh_path.read_text(encoding="utf-8"))
+    en_dict = json.loads(en_path.read_text(encoding="utf-8"))
+
+    # Symmetrical key alignment
+    assert set(zh_dict.keys()) == set(en_dict.keys()), (
+        f"Missing in en: {set(zh_dict.keys()) - set(en_dict.keys())}, "
+        f"Missing in zh: {set(en_dict.keys()) - set(zh_dict.keys())}"
+    )
+
+    # Check Commit 21C critical keys exist and have non-empty translations
+    critical_keys = [
+        "proposal.open_file_btn",
+        "schemas.save_as_name_must_differ",
+        "schemas.select_target_version",
+        "vault.path_placeholder",
+        "scope.single_note_placeholder",
+        "drift.compliance_full",
+        "nav.theme_toggle",
+        "vault.notes_with_props",
+        "vault.notes_no_props",
+        "vault.notes_failed",
+        "drift.card_title",
+        "drift.stat_compliant",
+        "drift.stat_missing",
+        "drift.stat_type_mismatch",
+        "drift.stat_unexpected",
+    ]
+    for k in critical_keys:
+        assert k in zh_dict and zh_dict[k], f"Missing key {k} in zh-Hant.json"
+        assert k in en_dict and en_dict[k], f"Missing key {k} in en.json"

@@ -619,7 +619,7 @@
 
       <div class="top-actions">
         <button class="icon-btn" id="langToggleBtn" title="切換語言 (Language)" style="font-size:12px; font-weight:700">EN</button>
-        <button class="icon-btn" id="themeToggleBtn" title="切換深淺色主題 (Theme)">🌓</button>
+        <button class="icon-btn" id="themeToggleBtn" title="切換深淺色主題 (Theme)" data-i18n-title="nav.theme_toggle">🌓</button>
       </div>
     </header>
 
@@ -687,7 +687,7 @@
         <div class="card">
           <label class="form-label" for="vaultPathInput" data-i18n="vault.path_label">知識庫資料夾絕對路徑</label>
           <div style="display:flex; gap:10px; margin-bottom:12px">
-            <input type="text" id="vaultPathInput" placeholder="D:\Notes\MyVault 或 /home/user/vault" />
+            <input type="text" id="vaultPathInput" placeholder="D:\Notes\MyVault 或 /home/user/vault" data-i18n-placeholder="vault.path_placeholder" />
             <button class="primary" id="scanVaultBtn" data-i18n="vault.scan_btn">掃描知識庫</button>
           </div>
           <div id="scanMsg"></div>
@@ -696,9 +696,9 @@
         <div id="vaultStatsCard" class="card" style="display:none">
           <div class="grid cols4" style="margin-bottom:16px">
             <div class="stat"><div class="n" id="statNotesTotal">0</div><div class="l" data-i18n="overview.notes_count">筆記總數</div></div>
-            <div class="stat ok"><div class="n" id="statNotesWithProps">0</div><div class="l">具備屬性之筆記</div></div>
-            <div class="stat"><div class="n" id="statNotesNoProps">0</div><div class="l">無屬性之筆記</div></div>
-            <div class="stat alert"><div class="n" id="statNotesFailed">0</div><div class="l">解析失敗筆記</div></div>
+            <div class="stat ok"><div class="n" id="statNotesWithProps">0</div><div class="l" data-i18n="vault.notes_with_props">具備屬性之筆記</div></div>
+            <div class="stat"><div class="n" id="statNotesNoProps">0</div><div class="l" data-i18n="vault.notes_no_props">無屬性之筆記</div></div>
+            <div class="stat alert"><div class="n" id="statNotesFailed">0</div><div class="l" data-i18n="vault.notes_failed">解析失敗筆記</div></div>
           </div>
           <!-- Safety contract: Verify vault untouched, read-only, never changes it, no vault write API -->
           <button class="secondary" id="verifyUntouchedBtn" data-i18n="vault.verify_btn" title="Verify vault untouched">驗證知識庫未受修改 (Verify vault untouched)</button>
@@ -733,7 +733,7 @@
 
             <div id="scopeSingleNoteSelector" style="display:none; margin-bottom:16px">
               <label class="form-label" for="scopeSingleNoteInput" data-i18n="scope.note_select_title">指定單篇筆記路徑：</label>
-              <input type="text" id="scopeSingleNoteInput" placeholder="例如：Projects/Alpha.md" />
+              <input type="text" id="scopeSingleNoteInput" placeholder="例如：Projects/Alpha.md" data-i18n-placeholder="scope.single_note_placeholder" />
             </div>
 
             <div style="display:flex; gap:10px; margin-top:14px">
@@ -747,24 +747,24 @@
         <div class="card" id="scopeSchemaAssignCard" style="margin-top:16px; border-left:4px solid var(--brand)">
           <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px">
             <div>
-              <h3 style="margin:0">預期架構指派 (Expected Schema Assignment)</h3>
-              <p class="muted" style="font-size:12.5px; margin:4px 0 0 0">為當前範圍指定一個「期望架構」，系統將在健康度報告中顯示「架構漂移」分析。</p>
+              <h3 style="margin:0" data-i18n="scope.schema_assign_title">預期架構指派 (Expected Schema Assignment)</h3>
+              <p class="muted" style="font-size:12.5px; margin:4px 0 0 0" data-i18n="scope.schema_assign_desc">為當前範圍指定一個「期望架構」，系統將在健康度報告中顯示「架構漂移」分析。</p>
             </div>
-            <span class="pill brand" id="scopeCurrentSchemaAssignBadge" style="display:none">已指派</span>
+            <span class="pill brand" id="scopeCurrentSchemaAssignBadge" style="display:none" data-i18n="scope.assigned_badge">已指派</span>
           </div>
           <div id="scopeCurrentAssignDisplay" style="display:none; margin-bottom:12px; padding:10px; background:var(--panel2); border-radius:var(--radius-sm); font-size:13px">
-            <span class="muted">目前指派：</span> <strong id="scopeCurrentAssignName">—</strong>
+            <span class="muted" data-i18n="scope.schema_current_prefix">目前指派：</span> <strong id="scopeCurrentAssignName">—</strong>
             <span class="muted" style="margin-left:8px; font-size:11.5px" id="scopeCurrentAssignVersion"></span>
           </div>
           <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap">
             <div style="flex:1; min-width:200px">
-              <label class="form-label" style="font-size:12px">選擇具名架構：</label>
+              <label class="form-label" style="font-size:12px" data-i18n="scope.select_schema_label">選擇具名架構：</label>
               <select id="scopeSchemaAssignSelect" class="form-control" style="width:100%">
-                <option value="">— 選擇架構 —</option>
+                <option value="" data-i18n="scope.select_schema_placeholder">— 選擇架構 —</option>
               </select>
             </div>
-            <button class="primary" id="scopeAssignSchemaBtn">指派架構</button>
-            <button class="secondary" id="scopeUnassignSchemaBtn" style="display:none">取消指派</button>
+            <button class="primary" id="scopeAssignSchemaBtn" data-i18n="scope.btn_assign_schema">指派架構</button>
+            <button class="secondary" id="scopeUnassignSchemaBtn" style="display:none" data-i18n="scope.btn_unassign_schema">取消指派</button>
           </div>
         </div>
       </section>
@@ -976,8 +976,8 @@
             <p class="lead" data-i18n="schemas.lead">儲存、版本化與重用筆記屬性架構規範。可套用於分析範圍治理或單篇筆記核對。</p>
           </div>
           <div style="display:flex; gap:8px">
-            <button class="secondary" id="govProfileExportBtn">匯出治理設定檔 (Export Profile)</button>
-            <button class="secondary" id="govProfileImportBtn">匯入治理設定檔 (Import Profile)</button>
+            <button class="secondary" id="govProfileExportBtn" data-i18n="profile.btn_export">匯出治理設定檔 (Export Profile)</button>
+            <button class="secondary" id="govProfileImportBtn" data-i18n="profile.btn_import">匯入治理設定檔 (Import Profile)</button>
             <button class="primary" id="schemaCreateNewBtn" data-i18n="schemas.btn_create">+ 建立新架構</button>
           </div>
         </div>
@@ -1063,19 +1063,19 @@
         <div id="healthDriftCard" class="card" style="display:none; border-left:4px solid var(--brand); margin-bottom:16px">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
             <div>
-              <h3 style="margin:0">架構漂移診斷 (Desired vs Actual Schema Drift)</h3>
-              <p class="muted" style="font-size:12.5px; margin:4px 0 0 0">比對當前範圍與預期架構 <strong id="healthDriftSchemaName">—</strong></p>
+              <h3 style="margin:0" data-i18n="drift.card_title">架構漂移診斷 (Desired vs Actual Schema Drift)</h3>
+              <p class="muted" style="font-size:12.5px; margin:4px 0 0 0"><span data-i18n="drift.card_desc">比對當前範圍與預期架構</span> <strong id="healthDriftSchemaName">—</strong></p>
             </div>
-            <span class="pill ok" id="healthDriftComplianceBadge">100% 符合</span>
+            <span class="pill ok" id="healthDriftComplianceBadge" data-i18n="drift.compliance_full">100% 符合</span>
           </div>
           <div class="grid cols4" style="margin-bottom:12px">
-            <div class="stat ok"><div class="n" id="healthDriftCompliant">0</div><div class="l">完全符合筆記</div></div>
-            <div class="stat alert"><div class="n" id="healthDriftMissing">0</div><div class="l">必填缺漏事項</div></div>
-            <div class="stat warn"><div class="n" id="healthDriftTypeMismatch">0</div><div class="l">型態衝突事項</div></div>
-            <div class="stat"><div class="n" id="healthDriftUnexpected">0</div><div class="l">架構外自訂屬性</div></div>
+            <div class="stat ok"><div class="n" id="healthDriftCompliant">0</div><div class="l" data-i18n="drift.stat_compliant">完全符合筆記</div></div>
+            <div class="stat alert"><div class="n" id="healthDriftMissing">0</div><div class="l" data-i18n="drift.stat_missing">必填缺漏事項</div></div>
+            <div class="stat warn"><div class="n" id="healthDriftTypeMismatch">0</div><div class="l" data-i18n="drift.stat_type_mismatch">型態衝突事項</div></div>
+            <div class="stat"><div class="n" id="healthDriftUnexpected">0</div><div class="l" data-i18n="drift.stat_unexpected">架構外自訂屬性</div></div>
           </div>
           <div style="display:flex; justify-content:flex-end">
-            <button type="button" class="secondary" id="viewDriftDetailsBtn" style="font-size:12px; padding:4px 10px">🔍 檢視漂移詳情與受影響筆記 →</button>
+            <button type="button" class="secondary" id="viewDriftDetailsBtn" data-i18n="drift.btn_view_details" style="font-size:12px; padding:4px 10px">🔍 檢視漂移詳情與受影響筆記 →</button>
           </div>
         </div>
 
@@ -1175,7 +1175,7 @@
           <textarea id="proposalTextInput" rows="6" placeholder="{\n  &quot;proposal_version&quot;: &quot;1.0&quot;,\n  &quot;schema_name&quot;: &quot;example&quot;,\n  &quot;properties&quot;: [...]\n}"></textarea>
           <div style="display:flex; gap:10px; margin-top:12px">
             <button class="primary" id="validateProposalBtn" data-i18n="proposal.validate_btn">校驗並比對提案</button>
-            <button class="secondary" id="openProposalFileBtn">📂 開啟 JSON 檔案 (Open File)</button>
+            <button class="secondary" id="openProposalFileBtn" data-i18n="proposal.open_file_btn">📂 開啟 JSON 檔案 (Open File)</button>
             <input type="file" id="proposalFileInput" accept=".json,application/json" style="display:none">
           </div>
         </div>
@@ -1528,6 +1528,25 @@ window.assignSchemaToScope = async function(id) {
   }
 };
 
+function bumpSemVer(v) {
+  if (!v || typeof v !== 'string') return "1.1.0";
+  const trimmed = v.trim();
+  const parts = trimmed.split('.');
+  if (parts.length === 1) {
+    const n = parseInt(parts[0], 10);
+    return isNaN(n) ? "1.1" : `${n + 1}`;
+  }
+  if (parts.length === 2) {
+    const major = parseInt(parts[0], 10) || 1;
+    const minor = parseInt(parts[1], 10) || 0;
+    return `${major}.${minor + 1}`;
+  }
+  const major = parseInt(parts[0], 10) || 1;
+  const minor = parseInt(parts[1], 10) || 0;
+  const patch = parseInt(parts[2], 10) || 0;
+  return `${major}.${minor + 1}.0`;
+}
+
 window.openSaveNamedSchemaModal = async function(schemaToSave, onSavedCallback) {
   if (!schemaToSave) return;
   try {
@@ -1539,20 +1558,38 @@ window.openSaveNamedSchemaModal = async function(schemaToSave, onSavedCallback) 
     let initialDesc = (schemaToSave.description || "").trim();
     let props = JSON.parse(JSON.stringify(schemaToSave.properties || []));
 
-    const checkMatching = (name) => {
-      const match = allSchemas.find(s => s.name.toLowerCase() === name.toLowerCase());
-      return match;
+    const getMatches = (name) => {
+      if (!name) return [];
+      return allSchemas.filter(s => s.name.toLowerCase() === name.toLowerCase());
     };
 
     const renderFormHtml = () => {
       const curName = (document.getElementById("saveSchemaNameInput") ? document.getElementById("saveSchemaNameInput").value : initialName).trim();
-      const match = checkMatching(curName);
+      const matches = getMatches(curName);
 
       let actionOptionsHtml = "";
-      if (match) {
+      if (matches.length > 0) {
+        // Sort matches descending by version
+        matches.sort((a, b) => strnatcmp(b.version || "1.0", a.version || "1.0"));
+        const latestMatch = matches[0];
+
+        const targetVersionSelectHtml = matches.length > 1 ? `
+          <div style="margin-top:6px">
+            <label class="form-label" style="font-size:11.5px; color:var(--muted)">${esc(I18N.t("schemas.select_target_version"))}</label>
+            <select id="saveSchemaTargetSelect" class="form-control" style="font-size:12px; padding:3px 6px">
+              ${matches.map((m, idx) => `
+                <option value="${esc(m.id)}" ${idx === 0 ? 'selected' : ''}>v${esc(m.version || '1.0')} (ID: ${esc(m.id)}) - ${esc(m.description || m.name)}</option>
+              `).join("")}
+            </select>
+          </div>
+        ` : `<input type="hidden" id="saveSchemaTargetSelect" value="${esc(latestMatch.id)}" />`;
+
         actionOptionsHtml = `
           <div class="card" style="border-left:4px solid var(--amber); background:var(--panel2); margin:12px 0">
-            <div style="font-size:12.5px; font-weight:600; color:var(--amber)">${esc(I18N.t("schemas.existing_match_notice"))} <strong>${esc(match.name)} (v${esc(match.version || '1.0')})</strong></div>
+            <div style="font-size:12.5px; font-weight:600; color:var(--amber)">
+              ${esc(I18N.t("schemas.existing_match_notice"))} <strong>${esc(curName)}</strong> (${matches.length} version${matches.length > 1 ? 's' : ''})
+            </div>
+            ${targetVersionSelectHtml}
             <div style="margin-top:8px; display:flex; flex-direction:column; gap:6px; font-size:12px">
               <label><input type="radio" name="saveSchemaAction" value="update_existing" checked /> ${esc(I18N.t("schemas.action_update_existing"))}</label>
               <label><input type="radio" name="saveSchemaAction" value="new_version" /> ${esc(I18N.t("schemas.action_new_version"))}</label>
@@ -1593,28 +1630,48 @@ window.openSaveNamedSchemaModal = async function(schemaToSave, onSavedCallback) 
 
     openDrawer(I18N.t("schemas.save_drawer_title"), renderFormHtml());
 
+    const updateActionUI = () => {
+      const nameInp = document.getElementById("saveSchemaNameInput");
+      const curName = nameInp ? nameInp.value.trim() : "";
+      const matches = getMatches(curName);
+      const actionArea = document.getElementById("saveSchemaActionArea");
+      if (!actionArea) return;
+
+      if (matches.length > 0) {
+        matches.sort((a, b) => strnatcmp(b.version || "1.0", a.version || "1.0"));
+        const latestMatch = matches[0];
+        const targetVersionSelectHtml = matches.length > 1 ? `
+          <div style="margin-top:6px">
+            <label class="form-label" style="font-size:11.5px; color:var(--muted)">${esc(I18N.t("schemas.select_target_version"))}</label>
+            <select id="saveSchemaTargetSelect" class="form-control" style="font-size:12px; padding:3px 6px">
+              ${matches.map((m, idx) => `
+                <option value="${esc(m.id)}" ${idx === 0 ? 'selected' : ''}>v${esc(m.version || '1.0')} (ID: ${esc(m.id)}) - ${esc(m.description || m.name)}</option>
+              `).join("")}
+            </select>
+          </div>
+        ` : `<input type="hidden" id="saveSchemaTargetSelect" value="${esc(latestMatch.id)}" />`;
+
+        actionArea.innerHTML = `
+          <div class="card" style="border-left:4px solid var(--amber); background:var(--panel2); margin:12px 0">
+            <div style="font-size:12.5px; font-weight:600; color:var(--amber)">
+              ${esc(I18N.t("schemas.existing_match_notice"))} <strong>${esc(curName)}</strong> (${matches.length} version${matches.length > 1 ? 's' : ''})
+            </div>
+            ${targetVersionSelectHtml}
+            <div style="margin-top:8px; display:flex; flex-direction:column; gap:6px; font-size:12px">
+              <label><input type="radio" name="saveSchemaAction" value="update_existing" checked /> ${esc(I18N.t("schemas.action_update_existing"))}</label>
+              <label><input type="radio" name="saveSchemaAction" value="new_version" /> ${esc(I18N.t("schemas.action_new_version"))}</label>
+              <label><input type="radio" name="saveSchemaAction" value="save_as" /> ${esc(I18N.t("schemas.action_save_as"))}</label>
+            </div>
+          </div>
+        `;
+      } else {
+        actionArea.innerHTML = "";
+      }
+    };
+
     const nameInput = document.getElementById("saveSchemaNameInput");
     if (nameInput) {
-      nameInput.oninput = () => {
-        const match = checkMatching(nameInput.value.trim());
-        const actionArea = document.getElementById("saveSchemaActionArea");
-        if (actionArea) {
-          if (match) {
-            actionArea.innerHTML = `
-              <div class="card" style="border-left:4px solid var(--amber); background:var(--panel2); margin:12px 0">
-                <div style="font-size:12.5px; font-weight:600; color:var(--amber)">${esc(I18N.t("schemas.existing_match_notice"))} <strong>${esc(match.name)} (v${esc(match.version || '1.0')})</strong></div>
-                <div style="margin-top:8px; display:flex; flex-direction:column; gap:6px; font-size:12px">
-                  <label><input type="radio" name="saveSchemaAction" value="update_existing" checked /> ${esc(I18N.t("schemas.action_update_existing"))}</label>
-                  <label><input type="radio" name="saveSchemaAction" value="new_version" /> ${esc(I18N.t("schemas.action_new_version"))}</label>
-                  <label><input type="radio" name="saveSchemaAction" value="save_as" /> ${esc(I18N.t("schemas.action_save_as"))}</label>
-                </div>
-              </div>
-            `;
-          } else {
-            actionArea.innerHTML = "";
-          }
-        }
-      };
+      nameInput.oninput = updateActionUI;
     }
 
     const saveBtn = document.getElementById("confirmSaveNamedSchemaBtn");
@@ -1625,15 +1682,22 @@ window.openSaveNamedSchemaModal = async function(schemaToSave, onSavedCallback) 
         const desc = (document.getElementById("saveSchemaDescInput").value || "").trim();
         if (!name) return toast(I18N.t("toast.schema_name_required"), true);
 
-        const match = checkMatching(name);
+        const matches = getMatches(name);
         const selectedAction = document.querySelector('input[name="saveSchemaAction"]:checked');
-        const actionVal = selectedAction ? selectedAction.value : (match ? "update_existing" : "create_new");
+        const actionVal = selectedAction ? selectedAction.value : (matches.length > 0 ? "update_existing" : "create_new");
+
+        // Save-as must have distinct name
+        if (actionVal === "save_as" && matches.length > 0) {
+          return toast(I18N.t("schemas.save_as_name_must_differ"), true);
+        }
 
         try {
           let savedId = null;
-          if (match && actionVal === "update_existing") {
+          if (matches.length > 0 && actionVal === "update_existing") {
+            const targetSelect = document.getElementById("saveSchemaTargetSelect");
+            const targetId = targetSelect ? targetSelect.value : matches[0].id;
             await api("/api/schemas/update", {
-              id: match.id,
+              id: targetId,
               schema: {
                 name: name,
                 version: ver,
@@ -1641,12 +1705,13 @@ window.openSaveNamedSchemaModal = async function(schemaToSave, onSavedCallback) 
                 properties: props
               }
             });
-            savedId = match.id;
-          } else if (match && actionVal === "new_version") {
+            savedId = targetId;
+          } else if (matches.length > 0 && actionVal === "new_version") {
+            matches.sort((a, b) => strnatcmp(b.version || "1.0", a.version || "1.0"));
+            const highestVer = matches[0].version || "1.0";
             let nextVer = ver;
-            if (ver === (match.version || "1.0")) {
-              const parsedVer = parseFloat(match.version || "1.0");
-              nextVer = isNaN(parsedVer) ? "1.1" : (parsedVer + 0.1).toFixed(1);
+            if (ver === highestVer || matches.some(m => m.version === ver)) {
+              nextVer = bumpSemVer(highestVer);
             }
             const createRes = await api("/api/schemas/create", {
               schema: {
@@ -1845,12 +1910,20 @@ window.deleteNamedSchema = async function(id) {
   }
 };
 
+window.cancelWorkspaceReconciliation = function() {
+  S.activeReconciliationSchema = null;
+  const banner = document.getElementById("wsNoteStatusBanner");
+  if (banner) banner.innerHTML = "";
+  if (S.currentNote) {
+    updateWorkspacePreview();
+  }
+};
+
 window.applyNamedSchemaToWorkspace = async function(id) {
   try {
     const res = await api("/api/schemas/get", { id });
     if (res.schema) {
       S.activeReconciliationSchema = res.schema;
-      S.currentSchema = res.schema;
       if (typeof StateTransfer !== 'undefined') {
         StateTransfer.setPending("workspace", { schema_id: res.schema.id, schema: res.schema, intent: "reconcile" }, "reconcile");
       }
@@ -1873,7 +1946,7 @@ window.applyNamedSchemaToWorkspace = async function(id) {
                 <strong>${esc(I18N.t("workspace.reconcile_target_schema", { name: res.schema.name, version: res.schema.version || '1.0' }))}</strong>
                 <p class="muted" style="margin:4px 0 0 0; font-size:12px">${esc(I18N.t("workspace.reconcile_instruction"))}</p>
               </div>
-              <button class="ghost" style="font-size:12px" onclick="S.activeReconciliationSchema=null; this.closest('.card').remove();">${esc(I18N.t("workspace.cancel_reconcile"))}</button>
+              <button class="ghost" style="font-size:12px" onclick="cancelWorkspaceReconciliation()">${esc(I18N.t("workspace.cancel_reconcile"))}</button>
             </div>
           </div>
         `;
@@ -2118,16 +2191,23 @@ async function loadGlossaryList() {
 
     const q = ($("glossarySearchInput") ? $("glossarySearchInput").value : "").toLowerCase().trim();
 
+    const isEn = (localStorage.getItem("ps_locale") || "").startsWith("en");
     const seenKeys = new Set();
     const merged = catalog.map(entry => {
       seenKeys.add(entry.canonical_key);
       const ov = overrides[entry.canonical_key];
+      const primaryLabel = isEn ? (ov?.label_en || entry.label_en || ov?.label_zh || entry.label_zh || entry.canonical_key) : (ov?.label_zh || entry.label_zh || ov?.label_en || entry.label_en || entry.canonical_key);
+      const secondaryLabel = isEn ? (ov?.label_zh || entry.label_zh || '') : (ov?.label_en || entry.label_en || '');
+      const primaryGuidance = isEn 
+        ? (ov?.guidance_en || ov?.description_en || entry.short_description_en || entry.long_description_en || ov?.guidance || entry.short_description_zh || "")
+        : (ov?.guidance || ov?.guidance_zh || entry.short_description_zh || entry.long_description_zh || ov?.description_en || entry.short_description_en || "");
+
       return {
         key: entry.canonical_key,
-        label: (ov && ov.label_zh) ? ov.label_zh : entry.label_zh,
-        label_en: (ov && ov.label_en) ? ov.label_en : entry.label_en,
+        primaryLabel,
+        secondaryLabel,
         source: ov ? "user_override" : "builtin",
-        guidance: (ov && ov.guidance) ? ov.guidance : (entry.short_description_zh || entry.long_description_zh || ""),
+        guidance: primaryGuidance,
         isOverride: !!ov,
       };
     });
@@ -2136,12 +2216,15 @@ async function loadGlossaryList() {
     Object.entries(overrides).forEach(([ckey, ov]) => {
       if (!seenKeys.has(ckey) && ov) {
         seenKeys.add(ckey);
+        const primaryLabel = isEn ? (ov.label_en || ov.label_zh || ckey) : (ov.label_zh || ov.label_en || ckey);
+        const secondaryLabel = isEn ? (ov.label_zh || '') : (ov.label_en || '');
+        const primaryGuidance = isEn ? (ov.guidance_en || ov.description_en || ov.guidance || ov.description || "") : (ov.guidance || ov.guidance_zh || ov.description || "");
         merged.push({
           key: ckey,
-          label: ov.label_zh || ckey,
-          label_en: ov.label_en || ckey,
+          primaryLabel,
+          secondaryLabel,
           source: "user_override",
-          guidance: ov.guidance || ov.description || "",
+          guidance: primaryGuidance,
           isOverride: true,
         });
       }
@@ -2154,8 +2237,8 @@ async function loadGlossaryList() {
           seenKeys.add(pkey);
           merged.push({
             key: pkey,
-            label: pkey,
-            label_en: pkey,
+            primaryLabel: pkey,
+            secondaryLabel: '',
             source: "observed",
             guidance: I18N.t("glossary.vault_observed_guidance", { count: pdata.usage_count || 0, type: pdata.dominant_type || 'text' }),
             isOverride: false,
@@ -2167,13 +2250,13 @@ async function loadGlossaryList() {
 
     const filtered = merged.filter(item => {
       if (!q) return true;
-      return item.key.toLowerCase().includes(q) || item.label.toLowerCase().includes(q) || item.guidance.toLowerCase().includes(q);
+      return item.key.toLowerCase().includes(q) || item.primaryLabel.toLowerCase().includes(q) || item.guidance.toLowerCase().includes(q);
     });
 
     tbody.innerHTML = filtered.map(item => `
       <tr>
         <td><code>${esc(item.key)}</code></td>
-        <td><strong>${esc(item.label)}</strong> <span class="muted" style="font-size:11px">(${esc(item.label_en)})</span></td>
+        <td><strong>${esc(item.primaryLabel)}</strong> ${item.secondaryLabel ? `<span class="muted" style="font-size:11px">(${esc(item.secondaryLabel)})</span>` : ''}</td>
         <td><span class="pill ${item.isOverride ? 'warn' : (item.isObserved ? 'muted' : 'ok')}">${esc(item.isOverride ? I18N.t("glossary.source_override") : (item.isObserved ? I18N.t("glossary.source_observed") : I18N.t("glossary.source_builtin")))}</span></td>
         <td style="font-size:12.5px">${esc(item.guidance)}</td>
         <td>
@@ -2324,6 +2407,9 @@ function setupGlossaryHandlers() {
 
 
 window.drilldownToNoteWorkspace = function(notePath, findingId, propKey, findingType, schemaId = null) {
+  if (!schemaId) {
+    S.activeReconciliationSchema = null;
+  }
   if (typeof StateTransfer !== 'undefined') {
     const intent = schemaId ? "reconcile" : "inspect_finding";
     StateTransfer.setPending("workspace", {
@@ -2349,9 +2435,20 @@ function renderMismatchBanner(backendVer) {
     existing.style.cssText = "background:var(--red); color:#fff; padding:12px 16px; font-weight:700; text-align:center; position:sticky; top:0; z-index:99999; box-shadow:0 2px 8px rgba(0,0,0,0.3)";
     document.body.prepend(existing);
   }
-  const msg = backendVer
+  const isEn = (localStorage.getItem("ps_locale") || "").startsWith("en");
+  let msg = backendVer
     ? I18N.t("server.mismatch_warning", { version: backendVer })
     : I18N.t("server.offline_warning");
+
+  if (!msg || msg.startsWith("server.")) {
+    msg = backendVer
+      ? (isEn 
+          ? `⚠️ Server Version Mismatch! The Web UI requires v1.2.0, but the backend server is v${backendVer}. Please stop and restart the server (python -m app)!`
+          : `⚠️ 伺服器版本不相容！前端介面需要 v1.2.0，但後端伺服器版本為 v${backendVer}。請停止並重啟伺服器 (python -m app)！`)
+      : (isEn
+          ? `⚠️ Unable to connect to backend server! Please ensure the local server is running (python -m app)!`
+          : `⚠️ 無法連線至後端伺服器！請確認本機伺服器已啟動 (python -m app)！`);
+  }
   existing.textContent = msg;
 }
 
@@ -2543,9 +2640,9 @@ function renderAllDynamicViews() {
     populateRefactorTargetOptions();
   }
   loadSchemasList();
-  if (typeof populateGlossaryTable === 'function') {
-    populateGlossaryTable();
-  }
+  loadGlossaryList();
+
+  // If workspace is active with a note, re-render fields preserving active inputs and dirty state
   if (S.currentNote && S.currentNote.can_edit && S.currentNote.original_properties) {
     const currentValues = {};
     document.querySelectorAll(".ws-prop-row").forEach(row => {
@@ -2558,6 +2655,11 @@ function renderAllDynamicViews() {
     const propsToRender = Object.keys(currentValues).length ? currentValues : S.currentNote.original_properties;
     renderWorkspaceFields(propsToRender, true);
     updateWorkspacePreview();
+  }
+
+  // If a proposal review result is active, re-render it to update bilingual labels
+  if (S.proposalReviewResult && typeof renderProposalReview === 'function') {
+    renderProposalReview(S.proposalReviewResult);
   }
 }
 
@@ -3118,6 +3220,9 @@ async function inspectNoteInWorkspace(notePath) {
       }
     }
 
+    if (pending && !pending.schema && !pending.schema_id && pending.intent !== "reconcile") {
+      S.activeReconciliationSchema = null;
+    }
     const targetRecSchema = (pending && (pending.schema || pending.schema_id)) ? (pending.schema || S.activeReconciliationSchema) : S.activeReconciliationSchema;
     const targetSchemaId = (pending && pending.schema_id) ? pending.schema_id : (targetRecSchema ? targetRecSchema.id : null);
     if (targetRecSchema || targetSchemaId || (pending && pending.intent === "reconcile")) {
@@ -3157,11 +3262,14 @@ async function inspectNoteInWorkspace(notePath) {
                 <strong style="font-size:14px">⚖️ ${esc(I18N.t("schemas.btn_reconcile"))}：${esc(recRes.schema_name)}</strong>
                 <p class="muted" style="margin:4px 0 0 0; font-size:12px">${esc(I18N.t("workspace.four_state_lead"))}</p>
               </div>
-              <div style="display:flex; gap:6px; font-size:11.5px">
-                <span class="pill ok">${esc(I18N.t("reconcile.state_match"))}: ${recRes.summary.matches}</span>
-                <span class="pill warn">${esc(I18N.t("reconcile.state_missing"))}: ${recRes.summary.missing}</span>
-                <span class="pill alert">${esc(I18N.t("reconcile.state_conflict"))}: ${recRes.summary.conflict}</span>
-                <span class="pill">${esc(I18N.t("reconcile.state_preserved"))}: ${recRes.summary.outside_schema}</span>
+              <div style="display:flex; align-items:center; gap:8px; font-size:11.5px">
+                <div style="display:flex; gap:6px">
+                  <span class="pill ok">${esc(I18N.t("reconcile.state_match"))}: ${recRes.summary.matches}</span>
+                  <span class="pill warn">${esc(I18N.t("reconcile.state_missing"))}: ${recRes.summary.missing}</span>
+                  <span class="pill alert">${esc(I18N.t("reconcile.state_conflict"))}: ${recRes.summary.conflict}</span>
+                  <span class="pill">${esc(I18N.t("reconcile.state_preserved"))}: ${recRes.summary.outside_schema}</span>
+                </div>
+                <button class="ghost" style="font-size:11.5px; padding:2px 6px" onclick="cancelWorkspaceReconciliation()">${esc(I18N.t("workspace.cancel_reconcile"))}</button>
               </div>
             </div>
 
@@ -3338,10 +3446,11 @@ async function updateWorkspacePreview() {
   const deletedKeys = Object.keys(S.currentNote.original_properties).filter(k => !presentKeys.has(k));
 
   try {
+    const targetSchema = S.activeReconciliationSchema || null;
     const res = await api("/api/workspace/preview", {
       note_path: S.currentNote.note_path,
       values: values,
-      schema: S.currentSchema,
+      schema: targetSchema,
       deleted_keys: deletedKeys,
       touched_keys: Array.from(S.wsTouchedKeys || [])
     });

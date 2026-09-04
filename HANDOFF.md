@@ -59,7 +59,26 @@ All autonomous implementation and verification milestones from M016 through M021
   - 4 dedicated unit tests (`tests/test_v12_migration.py`, `tests/test_v12_governance_profile.py`) PASS.
 
 - **M022: Release Acceptance & Packaging — IN_PROGRESS**
-- **Commit 21B: Human Acceptance Repair Completion (HA-F01 ~ HA-F18) — PASS**
+- **Commit 21C: Final Human Acceptance State & i18n Closure — PASS**
+  - **Workspace & Schema State Complete Decoupling (HA-F09 / HA-F11 Frontend State Isolation)**:
+    - Implemented `window.cancelWorkspaceReconciliation()`: clearing `S.activeReconciliationSchema` and triggering `updateWorkspacePreview()` with `schema: null` to remove all schema-imposed constraints in-place.
+    - Isolated `S.currentSchema` (used exclusively by Designer and Fill) from `S.activeReconciliationSchema` (used exclusively by Note Workspace reconciliation).
+    - Hardened `drilldownToNoteWorkspace()`: if no `schema_id` is supplied, active reconciliation schema is cleared and not inherited.
+  - **HA-F08 Dynamic Locale Re-render & Bilingual Glossary Support**:
+    - Fixed `renderAllDynamicViews()` to call `loadGlossaryList()` correctly (resolved `populateGlossaryTable` typo).
+    - `loadGlossaryList()` renders primary and secondary labels and guidance according to active locale (`label_en` / `desc_en` in English; `label_zh` / `desc_zh` in zh-Hant).
+    - Switching locales strictly retains active uncommitted input values and `wsTouchedKeys` in Note Workspace.
+  - **HA-F16 Named Schema Lifecycle Hardening & Collision Prevention**:
+    - Added `<select id="saveSchemaTargetSelect">` dropdown in Save Modal when multiple versions of the same schema exist, enabling the user to explicitly target which version to update.
+    - Implemented robust `bumpSemVer(v)` handling standard SemVer (`1.0.0` -> `1.1.0`, `1.10.0` -> `1.11.0`) and non-standard tokens without float rounding bugs.
+    - Backend `NamedSchemaLibrary.update_schema` enforces unique `(name, version)` pair across library, raising `ValueError` (HTTP 400) on collision.
+    - Frontend Save As Different Name validates that the target name differs from existing schema name.
+  - **Static HTML i18n & Mismatch Banner Fallback**:
+    - Internationalized remaining static HTML placeholders, badges, titles, and buttons (including `openProposalFileBtn` -> `proposal.open_file_btn`, `vaultPathInput`, `scopeSingleNoteInput`, `healthDriftComplianceBadge`).
+    - Added safe fallback strings in `renderMismatchBanner()` preventing raw key exposure during early initialization.
+    - Synchronized all 537 translation keys symmetrically between `zh-Hant.json` and `en.json`.
+  - **Automated Verification**: **240/240 tests PASS** across full suite in 15.05s. 5,040-note benchmark verified at 9.90s, 0 Vault mutations.
+- **Commit 21B: Human Acceptance Repair Completion (HA-F01 ~ HA-F18) — SUPERSEDED BY 21C**
   - **Named Schema Full Lifecycle & Collision Protection (HA-F16)**: Implemented `openSaveNamedSchemaModal` drawer handling existing schema detection, offering Update Existing Schema (`/api/schemas/update`), Create New Version (`/api/schemas/create` with bumped SemVer), or Save As Different Name (`/api/schemas/create`). Readback verification via `/api/schemas/get` before updating UI state.
   - **Dynamic Locale Re-render & Workspace Edit State Retention (HA-F08)**: Triggered `renderAllDynamicViews()` upon `ps:localeChanged` event. In `renderWorkspaceFields(propsMap, preserveTouched = true)`, active user inputs and `S.wsTouchedKeys` are strictly retained without wiping dirty state. Cleaned all hardcoded Chinese in JS script (517 synchronized keys in `zh-Hant.json` / `en.json`).
   - **Canonical Schema ID Authority in Reconciliation (HA-F09, HA-F11)**: Backend `/api/reconcile/inspect` enforces canonical schema properties and metadata from `NAMED_SCHEMA_LIBRARY` whenever `schema_id` is supplied, overriding stale payload arguments.

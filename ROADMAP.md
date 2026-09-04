@@ -20,8 +20,8 @@ Current Task: `M022-T04`
 Last Verified Gate: `M021 — Schema Versioning, Migration Planning & Governance Profile PASS`  
 Current Blocker: `NONE`  
 Next Action: `Await Human Owner (Dr. J) Windows 10 production UI walkthrough retest and formal Human Acceptance verdict (M022-T04 / M022-AC04).`  
-Implementation: `COMPLETE (Commit 21B Human Acceptance Repair Completion HA-F01 ~ HA-F18: Named Schema full lifecycle & modal drawer for Update Existing / Create New Version / Save As Different Name, Dynamic Locale Re-render with Workspace edit state and wsTouchedKeys preservation, Canonical Schema ID authority in Reconciliation overriding stale payload, Drift canonical navigable Markdown relative path guard & wikilink/bullet defense, StorageType-aware semantic equality preserving text leading zeros, Governance Profile 4-category detailed changeset breakdown with safe object formatting, and 100% JS script i18n elimination)`  
-Automated Verification: `PASS (235/235 tests pass, 5,040-note benchmark verified, Vault 100% byte-for-byte read-only and zero mutation)`  
+Implementation: `COMPLETE (Commit 21C Final Human Acceptance State & i18n Closure: (1) Decoupled Note Workspace reconciliation state from Designer/Fill currentSchema with complete cancellation clearance, (2) HA-F08 Dynamic Locale Re-render & Glossary bilingual rendering with preserved workspace edit inputs, (3) HA-F16 Named Schema lifecycle hardening with multi-version selection drawer, robust SemVer bumper, Save As name differentiation enforcement, and backend update_schema name/version collision guard, (4) Static HTML i18n cleanup & fallback string protection for mismatch banner, (5) 100% key symmetry between zh-Hant and en locales with 537 keys)`  
+Automated Verification: `PASS (240/240 tests pass, 5,040-note benchmark verified, Vault 100% byte-for-byte read-only and zero mutation)`  
 Human Verified Acceptance: `NOT YET VERIFIED`  
 Release Readiness: `READY_FOR_HUMAN_RETEST` (Human Owner UI Walkthrough: `NOT YET VERIFIED`)  
 Accepted Limitation: `Windows 11 AMD64 native verification recorded as NOT YET VERIFIED due to test host unavailability (accepted non-blocking release limitation per human approved contract).`  
@@ -305,7 +305,7 @@ Status: `IN_PROGRESS`
 Execute complete Workflow Closure Matrix validation, run full regression suite and 5,000-note benchmark, verify Vault byte-for-byte read-only integrity, conduct human walkthrough on Windows 10 production UI, verify P0 completion and P1 implementation, and package v1.2.0 release artifacts.
 
 ### Tasks
-- [x] `M022-T01` Execute complete Workflow Closure Matrix automated test suite (235/235 tests PASS, includes `tests/test_v12_human_acceptance_repairs.py` validating 13 regression tests across HA-F01 ~ HA-F18 and `tests/test_v12_storage_closure.py` validating storage closure invariants).
+- [x] `M022-T01` Execute complete Workflow Closure Matrix automated test suite (240/240 tests PASS, includes `tests/test_v12_human_acceptance_repairs.py` validating 18 regression tests across HA-F01 ~ HA-F18, SemVer bump, bilingual glossary, workspace cancellation isolation, and `tests/test_v12_storage_closure.py` validating storage closure invariants).
 - [x] `M022-T02` Run 5,000-note performance benchmark and record in `evidence/benchmark.json` (5.844s analysis / 5.667s scan over 5,040 notes).
 - [x] `M022-T03` Verify Vault byte-for-byte read-only integrity across all v1.2 workflows (`evidence/integration/m022_v120_vault_readonly.json`).
 - [ ] `M022-T04` Conduct Windows 10 production UI walkthrough acceptance with Human Owner (Dr. J).
@@ -314,7 +314,7 @@ Execute complete Workflow Closure Matrix validation, run full regression suite a
 - [x] `M022-T07` Generate release packaging and record formal release verdict (`scripts/package_v120_release.py`).
 
 ### Acceptance Criteria
-- [x] `M022-AC01` All automated regression and closure tests PASS (235/235).
+- [x] `M022-AC01` All automated regression and closure tests PASS (240/240).
 - [x] `M022-AC02` 5,000-note benchmark recorded (5.844s analysis / 5.667s scan over 5,040 notes).
 - [x] `M022-AC03` Vault remains byte-for-byte untouched and zero directory created on violation.
 - [ ] `M022-AC04` Human Owner walkthrough PASS (Reserved for Human Owner Dr. J).
