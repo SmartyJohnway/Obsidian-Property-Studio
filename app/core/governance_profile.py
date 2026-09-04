@@ -38,8 +38,13 @@ def export_governance_profile(
     glossary_overrides = USER_GLOSSARY_STORE.list_overrides()
     checks = saved_checks_list or []
     
-    stored_prefs = PREFERENCES_STORAGE.load().get("data")
-    prefs = preferences or stored_prefs or {"locale": "zh-Hant", "theme": "system"}
+    stored_prefs = PREFERENCES_STORAGE.load().get("data") or {}
+    raw_prefs = preferences or stored_prefs or {"locale": "zh-Hant", "theme": "system"}
+    # Whitelist portable governance preferences only (exclude internal runtime state like _legacy_migrated)
+    PORTABLE_PREF_KEYS = {"locale", "theme"}
+    prefs = {k: v for k, v in raw_prefs.items() if k in PORTABLE_PREF_KEYS}
+    if not prefs:
+        prefs = {"locale": "zh-Hant", "theme": "system"}
 
     data_payload = {
         "format_version": PROFILE_FORMAT_VERSION,
@@ -106,6 +111,88 @@ def validate_governance_profile(profile_data: dict[str, Any]) -> dict[str, Any]:
         "theme": {"from": current_prefs.get("theme"), "to": prefs.get("theme")} if prefs.get("theme") else None,
     }
 
+    # Compute detailed changeset for all entities (HA-F18)
+    # 1. Named Schemas
+    current_schemas = NAMED_SCHEMA_LIBRARY.storage.load().get("data") or {}
+    schemas_changeset = {"add": [], "update": [], "unchanged": [], "conflict": [], "remove": []}
+    profile_schema_ids = set()
+    for s in schemas:
+        if not isinstance(s, dict):
+            continue
+        sid = s.get("id")
+        sname = s.get("name")
+        sver = str(s.get("version") or "1.0")
+        if sid:
+            profile_schema_ids.add(sid)
+        matching_id = current_schemas.get(sid) if sid else None
+        matching_name_ver = None
+        for cur in current_schemas.values():
+            if cur.get("name") == sname and str(cur.get("version") or "1.0") == sver:
+                matching_name_ver = cur
+                break
+        target = matching_id or matching_name_ver
+        if not target:
+            schemas_changeset["add"].append({"name": sname, "version": sver, "id": sid})
+        else:
+            is_same_props = (target.get("properties") == s.get("properties"))
+            is_same_desc = (target.get("description") == s.get("description"))
+            if is_same_props and is_same_desc:
+                schemas_changeset["unchanged"].append({"name": sname, "version": sver, "id": sid})
+            else:
+                if matching_name_ver and matching_id and matching_name_ver.get("id") != matching_id.get("id"):
+                    schemas_changeset["conflict"].append({"name": sname, "version": sver, "id": sid})
+                else:
+                    schemas_changeset["update"].append({"name": sname, "version": sver, "id": sid})
+    for cid, cur in current_schemas.items():
+        if cid not in profile_schema_ids:
+            schemas_changeset["remove"].append({"name": cur.get("name"), "version": cur.get("version"), "id": cid})
+
+    # 2. Scope Assignments
+    current_assignments = SCOPE_GOVERNANCE_STORE.storage.load().get("data") or {}
+    assignments_changeset = {"add": [], "update": [], "unchanged": [], "remove": []}
+    for k, v in assignments.items():
+        if k not in current_assignments:
+            assignments_changeset["add"].append({"scope_key": k, "schema_id": v.get("schema_id")})
+        elif current_assignments[k].get("schema_id") == v.get("schema_id"):
+            assignments_changeset["unchanged"].append({"scope_key": k, "schema_id": v.get("schema_id")})
+        else:
+            assignments_changeset["update"].append({"scope_key": k, "from": current_assignments[k].get("schema_id"), "to": v.get("schema_id")})
+    for k, v in current_assignments.items():
+        if k not in assignments:
+            assignments_changeset["remove"].append({"scope_key": k, "schema_id": v.get("schema_id")})
+
+    # 3. User Glossary
+    current_glossary = USER_GLOSSARY_STORE.storage.load().get("data") or {}
+    glossary_changeset = {"add": [], "update": [], "unchanged": [], "remove": []}
+    for k, v in glossary.items():
+        ckey = v.get("canonical_key") or k
+        if ckey not in current_glossary:
+            glossary_changeset["add"].append({"canonical_key": ckey, "label": v.get("label_zh") or v.get("label_en") or ckey})
+        elif current_glossary[ckey] == v:
+            glossary_changeset["unchanged"].append({"canonical_key": ckey, "label": v.get("label_zh") or v.get("label_en") or ckey})
+        else:
+            glossary_changeset["update"].append({"canonical_key": ckey, "label": v.get("label_zh") or v.get("label_en") or ckey})
+    for k, v in current_glossary.items():
+        if k not in glossary:
+            glossary_changeset["remove"].append({"canonical_key": k, "label": v.get("label_zh") or v.get("label_en") or k})
+
+    # 4. Saved Checks
+    current_checks_storage = EntityStorage("saved_checks", "saved_checks/saved_relationship_checks.json")
+    cur_checks_data = current_checks_storage.load().get("data") or []
+    current_checks_map = {c.get("id"): c for c in cur_checks_data if isinstance(c, dict) and c.get("id")}
+    checks_changeset = {"add": [], "update": [], "unchanged": [], "remove": []}
+    for c in saved_checks:
+        cid = c.get("id")
+        if cid not in current_checks_map:
+            checks_changeset["add"].append({"id": cid, "name": c.get("name")})
+        elif current_checks_map[cid] == c:
+            checks_changeset["unchanged"].append({"id": cid, "name": c.get("name")})
+        else:
+            checks_changeset["update"].append({"id": cid, "name": c.get("name")})
+    for cid, c in current_checks_map.items():
+        if not any(sc.get("id") == cid for sc in saved_checks):
+            checks_changeset["remove"].append({"id": cid, "name": c.get("name")})
+
     return {
         "valid": True,
         "format_version": fmt,
@@ -115,6 +202,12 @@ def validate_governance_profile(profile_data: dict[str, Any]) -> dict[str, Any]:
         "saved_checks_count": len(saved_checks),
         "schemas_preview": schemas_preview,
         "preferences_preview": preferences_preview,
+        "changeset": {
+            "schemas": schemas_changeset,
+            "assignments": assignments_changeset,
+            "glossary": glossary_changeset,
+            "checks": checks_changeset,
+        },
         "exported_at": meta.get("exported_at"),
     }
 
@@ -215,9 +308,13 @@ def import_governance_profile(
                     saved_checks_store.save_check(chk)
                     imported_checks += 1
 
-        # 5. Import preferences if present
+        # 5. Import preferences if present (whitelist portable keys only, HA-F17)
         if isinstance(prefs, dict):
-            PREFERENCES_STORAGE.save(prefs)
+            current_p = dict(PREFERENCES_STORAGE.load().get("data") or {})
+            for k in ("locale", "theme"):
+                if k in prefs and prefs[k]:
+                    current_p[k] = prefs[k]
+            PREFERENCES_STORAGE.save(current_p)
 
     except Exception as exc:
         # True Transactional Rollback in replace mode if mutation failed mid-way

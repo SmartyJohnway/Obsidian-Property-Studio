@@ -165,6 +165,46 @@ def inspect_note_for_workspace(scan: VaultScan, note_path: str) -> NoteWorkspace
     )
 
 
+def are_semantically_equal(val1: Any, val2: Any) -> bool:
+    """Compare two property values for semantic equality ignoring display formatting differences (HA-F10)."""
+    if val1 == val2:
+        return True
+    if val1 is None or val2 is None:
+        return False
+    # Boolean equality (e.g. True vs "true", "True")
+    if isinstance(val1, bool) or isinstance(val2, bool):
+        s1 = str(val1).strip().lower()
+        s2 = str(val2).strip().lower()
+        if s1 in ("true", "false") and s2 in ("true", "false"):
+            return s1 == s2
+    # Number equality (e.g. 100 vs 100.0 vs "100")
+    try:
+        if isinstance(val1, (int, float, str)) and isinstance(val2, (int, float, str)):
+            f1 = float(str(val1).strip())
+            f2 = float(str(val2).strip())
+            if f1 == f2:
+                return True
+    except (ValueError, TypeError):
+        pass
+    # List / Tags / Note-link list equality (e.g. ['a', 'b'] vs "a, b" vs "a,b")
+    items1 = None
+    items2 = None
+    if isinstance(val1, list):
+        items1 = [str(x).strip() for x in val1 if str(x).strip()]
+    elif isinstance(val1, str) and ("," in val1 or val1.strip()):
+        items1 = [x.strip() for x in val1.split(",") if x.strip()]
+
+    if isinstance(val2, list):
+        items2 = [str(x).strip() for x in val2 if str(x).strip()]
+    elif isinstance(val2, str) and ("," in val2 or val2.strip()):
+        items2 = [x.strip() for x in val2.split(",") if x.strip()]
+
+    if items1 is not None and items2 is not None:
+        return items1 == items2
+
+    return str(val1).strip() == str(val2).strip()
+
+
 def compute_workspace_diff_and_frontmatter(
     original_note: Note | None,
     updated_values: dict[str, Any],
@@ -226,7 +266,6 @@ def compute_workspace_diff_and_frontmatter(
                 elif coerced is not None:
                     coerced_updates[prop.name] = coerced
             elif prop.required and not is_deleted:
-                # Required property missing from updates and not in original note
                 if prop.name not in orig_map:
                     errors.append(f"Required property '{prop.name}' is missing or empty.")
 
@@ -240,72 +279,52 @@ def compute_workspace_diff_and_frontmatter(
                 diffs.append(PropertyDiff(key=key, change_type="deleted", old_value=orig_map[key]))
             continue
 
-        if key in orig_map and key not in schema_prop_names:
-            # Outside-Schema Property: MUST preserve original native type and raw object (P0 Blocker 1)
+        if key in orig_map:
             old_val = orig_map[key]
             pv = original_note.properties[key] if original_note else None
             user_raw = updated_values.get(key)
 
-            # Determine if untouched
+            # Determine untouched status consistently across both schema & outside-schema properties (HA-F10)
             is_untouched = False
             if touched_set is not None:
                 is_untouched = (key not in touched_set)
             else:
-                # If key is completely omitted from updated_values, it was not touched at all
                 if key not in updated_values:
                     is_untouched = True
-                elif user_raw is not None:
-                    if isinstance(old_val, bool) and str(user_raw).strip().lower() == str(old_val).lower():
-                        is_untouched = True
-                    elif isinstance(old_val, (int, float)) and str(user_raw).strip() == str(old_val):
-                        is_untouched = True
-                    elif isinstance(old_val, list) and (str(user_raw).strip() == ", ".join(str(x) for x in old_val) or str(user_raw).strip() == str(old_val)):
-                        is_untouched = True
-                    elif str(user_raw) == str(old_val):
-                        is_untouched = True
+                elif are_semantically_equal(old_val, user_raw):
+                    is_untouched = True
 
             if is_untouched:
-                # Untouched outside-schema property: directly preserve original raw object
+                # Untouched property: 100% byte-faithfully preserve original raw object
+                diffs.append(PropertyDiff(key=key, change_type="preserved", old_value=old_val, new_value=old_val))
+                merged[key] = old_val
+                continue
+
+            # User genuinely touched/modified this existing property
+            if key in schema_prop_names and key in coerced_updates:
+                new_val = coerced_updates[key]
+            elif pv is not None:
+                from .fill import coerce_value
+                temp_prop = SchemaProperty(name=key, storage_type=pv.storage_type)
+                coerced, prop_errs = coerce_value(temp_prop, user_raw)
+                if prop_errs:
+                    errors.extend(prop_errs)
+                new_val = coerced if coerced is not None else user_raw
+            else:
+                new_val = user_raw
+
+            if are_semantically_equal(old_val, new_val):
                 diffs.append(PropertyDiff(key=key, change_type="preserved", old_value=old_val, new_value=old_val))
                 merged[key] = old_val
             else:
-                # User genuinely touched/modified outside-schema property: coerce using pv.storage_type
-                if pv is not None:
-                    from .fill import coerce_value
-                    temp_prop = SchemaProperty(name=key, storage_type=pv.storage_type)
-                    coerced, prop_errs = coerce_value(temp_prop, user_raw)
-                    if prop_errs:
-                        errors.extend(prop_errs)
-                    target_val = coerced if coerced is not None else user_raw
-                else:
-                    target_val = user_raw
-
-                if target_val != old_val:
-                    diffs.append(PropertyDiff(key=key, change_type="modified", old_value=old_val, new_value=target_val))
-                    merged[key] = target_val
-                else:
-                    diffs.append(PropertyDiff(key=key, change_type="preserved", old_value=old_val, new_value=old_val))
-                    merged[key] = old_val
-            continue
-
-        if key in updated_values and key in orig_map:
-            new_val = coerced_updates[key] if key in coerced_updates else updated_values[key]
-            old_val = orig_map[key]
-            if new_val != old_val:
                 diffs.append(PropertyDiff(key=key, change_type="modified", old_value=old_val, new_value=new_val))
                 merged[key] = new_val
-            else:
-                diffs.append(PropertyDiff(key=key, change_type="preserved", old_value=old_val, new_value=new_val))
-                merged[key] = old_val
-        elif key in updated_values:
-            new_val = coerced_updates[key] if key in coerced_updates else updated_values[key]
-            diffs.append(PropertyDiff(key=key, change_type="added", new_value=new_val))
-            merged[key] = new_val
-        else:
-            # Preserved unrelated property from existing note (V11-006)
-            old_val = orig_map[key]
-            diffs.append(PropertyDiff(key=key, change_type="preserved", old_value=old_val, new_value=old_val))
-            merged[key] = old_val
+            continue
+
+        # Property is newly added (not in orig_map)
+        new_val = coerced_updates[key] if key in coerced_updates else updated_values[key]
+        diffs.append(PropertyDiff(key=key, change_type="added", new_value=new_val))
+        merged[key] = new_val
 
     # Generate standard governed YAML frontmatter
     frontmatter_text = render_frontmatter(merged) if merged else ""

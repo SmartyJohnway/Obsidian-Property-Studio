@@ -19,13 +19,13 @@ Current Milestone Status: `IN_PROGRESS`
 Current Task: `M022-T04`  
 Last Verified Gate: `M021 — Schema Versioning, Migration Planning & Governance Profile PASS`  
 Current Blocker: `NONE`  
-Next Action: `Package v1.2.0 RC and submit to Human Owner (Dr. J) for final Windows 10 production UI walkthrough acceptance (M022-T04 / M022-AC04).`  
-Implementation: `COMPLETE (Commit 20 Production Lifecycle Safety Timing, Immediate In-Process Rehydration & Real Storage Persistence Failure Closure: Zero Pre-Vault Startup File Mutation, Active Vault Isolation Context Guarded Path Migration in api_scan, Immediate STORE.saved_checks_store.reload() Rehydration, Real Storage-Layer Persistence Failure Mock & Memory/Disk Rollback, Per-Entity Validation Isolation of Corrupted Stale Payloads)`  
-Automated Verification: `PASS (222/222 tests pass, 5,040-note benchmark 4.919s analysis / 4.755s scan, Vault 100% byte-for-byte read-only and 0 directory mutation on violation)`  
+Next Action: `Await Human Owner (Dr. J) Windows 10 production UI walkthrough retest and formal Human Acceptance verdict (M022-T04 / M022-AC04).`  
+Implementation: `COMPLETE (Commit 21 Human Acceptance Findings Repair HA-F01 ~ HA-F18: Personal Glossary API Contract & CatalogList list-with-lookup compatibility, Dynamic Locale Re-render ps:localeChanged event dispatch, Reconciliation Active Schema & Schema Identity preservation, Workspace untouched property semantic equality and native object retention, Drift canonical navigable Markdown relative path guard, Complex nested YAML mapping preservation in Workspace, Proposal Save-as-Named-Schema dictionary parsing & readback verification, Designer schema state separation, Internal migration marker portable profile exclusion, and Governance Profile detailed changeset breakdown)`  
+Automated Verification: `PASS (235/235 tests pass, 5,040-note benchmark 5.844s analysis / 5.667s scan, Vault 100% byte-for-byte read-only and zero mutation)`  
 Human Verified Acceptance: `NOT YET VERIFIED`  
-Release Readiness: `READY_FOR_HUMAN_ACCEPTANCE` (Human Owner UI Walkthrough: `NOT YET VERIFIED`)  
+Release Readiness: `READY_FOR_HUMAN_RETEST` (Human Owner UI Walkthrough: `NOT YET VERIFIED`)  
 Accepted Limitation: `Windows 11 AMD64 native verification recorded as NOT YET VERIFIED due to test host unavailability (accepted non-blocking release limitation per human approved contract).`  
-Last Updated: `2026-09-03`
+Last Updated: `2026-09-04`
 
 ---
 
@@ -305,8 +305,8 @@ Status: `IN_PROGRESS`
 Execute complete Workflow Closure Matrix validation, run full regression suite and 5,000-note benchmark, verify Vault byte-for-byte read-only integrity, conduct human walkthrough on Windows 10 production UI, verify P0 completion and P1 implementation, and package v1.2.0 release artifacts.
 
 ### Tasks
-- [x] `M022-T01` Execute complete Workflow Closure Matrix automated test suite (222/222 tests PASS, includes `tests/test_v12_storage_closure.py` validating 13 pure path resolution, negative zero-mutation, real storage-layer persistence rollback, per-entity guard with corrupted stale payload isolation, canonical readback, zero pre-vault migration, and in-process rehydration invariants).
-- [x] `M022-T02` Run 5,000-note performance benchmark and record in `evidence/benchmark.json` (4.919s analysis / 4.755s scan over 5,040 notes).
+- [x] `M022-T01` Execute complete Workflow Closure Matrix automated test suite (235/235 tests PASS, includes `tests/test_v12_human_acceptance_repairs.py` validating 13 regression tests across HA-F01 ~ HA-F18 and `tests/test_v12_storage_closure.py` validating storage closure invariants).
+- [x] `M022-T02` Run 5,000-note performance benchmark and record in `evidence/benchmark.json` (5.844s analysis / 5.667s scan over 5,040 notes).
 - [x] `M022-T03` Verify Vault byte-for-byte read-only integrity across all v1.2 workflows (`evidence/integration/m022_v120_vault_readonly.json`).
 - [ ] `M022-T04` Conduct Windows 10 production UI walkthrough acceptance with Human Owner (Dr. J).
 - [x] `M022-T05` Verify P0 requirements complete and P1 status (P1 M021 fully implemented).
@@ -314,8 +314,8 @@ Execute complete Workflow Closure Matrix validation, run full regression suite a
 - [x] `M022-T07` Generate release packaging and record formal release verdict (`scripts/package_v120_release.py`).
 
 ### Acceptance Criteria
-- [x] `M022-AC01` All automated regression and closure tests PASS (222/222).
-- [x] `M022-AC02` 5,000-note benchmark recorded (4.919s analysis / 4.755s scan over 5,040 notes).
+- [x] `M022-AC01` All automated regression and closure tests PASS (235/235).
+- [x] `M022-AC02` 5,000-note benchmark recorded (5.844s analysis / 5.667s scan over 5,040 notes).
 - [x] `M022-AC03` Vault remains byte-for-byte untouched and zero directory created on violation.
 - [ ] `M022-AC04` Human Owner walkthrough PASS (Reserved for Human Owner Dr. J).
 - [x] `M022-AC05` Four-file consistency gate PASS.

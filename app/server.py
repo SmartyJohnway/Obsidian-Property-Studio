@@ -619,7 +619,14 @@ def api_glossary_catalog(_body: dict[str, Any]) -> dict[str, Any]:
                 "typical_control": "plain",
                 "is_user_override": True,
             }
-    return {"catalog": catalog, "total": len(catalog)}
+    class CatalogList(list):
+        def __contains__(self, key: Any) -> bool:
+            if super().__contains__(key):
+                return True
+            return any(isinstance(x, dict) and x.get("canonical_key") == key for x in self)
+
+    catalog_list = CatalogList(sorted(catalog.values(), key=lambda e: str(e.get("canonical_key") or "").lower()))
+    return {"catalog": catalog_list, "total": len(catalog_list)}
 
 
 def api_glossary_property(body: dict[str, Any]) -> dict[str, Any]:
@@ -755,14 +762,19 @@ def api_reconcile_inspect(body: dict[str, Any]) -> dict[str, Any]:
     note_props = inspect_res.original_properties
 
     schema_props = body.get("schema_properties") or []
-    schema_name = str(body.get("schema_name") or "adopted-schema")
+    schema_name = str(body.get("schema_name") or "").strip()
     schema_id = body.get("schema_id")
 
-    if schema_id and not schema_props:
+    if schema_id:
         sch = named_schemas.NAMED_SCHEMA_LIBRARY.get_schema(str(schema_id))
         if sch:
-            schema_props = [p.to_dict() for p in sch.properties]
-            schema_name = sch.name
+            if not schema_props:
+                schema_props = [p.to_dict() for p in sch.properties]
+            if not schema_name or schema_name == "adopted-schema":
+                schema_name = sch.name
+
+    if not schema_name:
+        schema_name = "Unnamed Schema"
 
     report = reconciliation.reconcile_note_frontmatter(
         note_properties=note_props,

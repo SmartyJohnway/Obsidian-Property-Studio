@@ -1,6 +1,6 @@
 # Handoff
 
-Updated: `2026-09-03`  
+Updated: `2026-09-04`  
 From: `Antigravity — v1.2.0 Autonomous Implementation Agent`  
 To / Intended Next Executor: `Dr. J (Human Owner) / Verification Auditor`  
 Formal Project Root: `D:\Antigravity-Workspace\Obsidian-Property-Studio\Obsidian-Property-Studio-v1.0.0`  
@@ -9,9 +9,9 @@ Current Target: `v1.2.0`
 Active Branch: `feature/v1.2.0`  
 Active Milestone: `M022`  
 Active Milestone Status: `IN_PROGRESS`  
-Current Task: `M022-T04` (Human Owner Windows 10 Production UI Walkthrough Acceptance)  
+Current Task: `M022-T04` (Human Owner Windows 10 Production UI Walkthrough Acceptance Retest)  
 Last Verified Gate: `M021 — Schema Versioning, Migration Planning & Governance Profile PASS`  
-Last Verified Implementation Commit: `04d8d9f169a11f9c597ce77ac827739d7748fbad`  
+Last Verified Implementation Commit: `0380c83301b438d32cb18161d09a8d1897cc0205`  
 GitHub PR: `PR #2 (Draft, feat(v1.2): Personal Property Governance System)`  
 Authoritative Specification: `docs/specs/Obsidian_Property_Studio_v1.2.0_Spec.md`  
 Archived v1.1 Roadmap: `docs/archive/ROADMAP_v1.1.0.md`  
@@ -59,6 +59,18 @@ All autonomous implementation and verification milestones from M016 through M021
   - 4 dedicated unit tests (`tests/test_v12_migration.py`, `tests/test_v12_governance_profile.py`) PASS.
 
 - **M022: Release Acceptance & Packaging — IN_PROGRESS**
+- **Commit 21: Human Acceptance Findings Repair (HA-F01 ~ HA-F18) — PASS**
+  - **Personal Glossary Contract & CatalogList Compatibility (HA-F01)**: Returns JSON list of catalog entries (`res['catalog']`) resolving `.map()` type errors on the frontend, wrapped in `CatalogList` supporting exact `'status' in res['catalog']` membership checking for backward compatibility.
+  - **Dynamic Locale Re-render Event Dispatch (HA-F08)**: Dispatches `window.dispatchEvent(new CustomEvent("ps:localeChanged"))` upon language toggle in `i18n.js`, wired to `renderAllDynamicViews()` to instantly update dynamic drawers and views without page reload.
+  - **Reconciliation Active Schema & Schema Identity Preservation (HA-F09, HA-F11)**: Preserves `S.activeReconciliationSchema` across note inspections in Note Workspace, ensuring multi-note reconciliation diagnostics and active schema identity are maintained.
+  - **Workspace Untouched Property Semantic Equality (HA-F10)**: Strict semantic equality check preserving native Python data structures (including complex mappings and arrays) without unnecessary string conversion or dirty state triggering.
+  - **Drift Canonical Navigable Path Guard (HA-F12)**: Rejects drive letters, wikilinks, and non-relative paths fail-closed in `is_canonical_navigable_path()`, ensuring valid relative Markdown navigation.
+  - **Workspace Complex YAML Mapping Retention & String Formatting (HA-F13, HA-F14)**: Preserves dictionary and complex mapping values in frontmatter roundtrip, rendering formatted representations in input fields rather than raw string representations.
+  - **Proposal Save-as-Named-Schema Dictionary Parsing & Readback (HA-F15)**: Supports dictionary input with `schema_name` fallback in `NamedSchema.from_dict()`, followed by immediate readback verification before toast confirmation.
+  - **Designer Schema State Separation (HA-F16)**: Strict decoupling between active reconciliation schema and schema designer working draft.
+  - **Internal Migration Marker Exclusion (HA-F17)**: Excludes internal metadata markers like `_legacy_migrated` from exported governance profiles.
+  - **Governance Profile Detailed Changeset Breakdown (HA-F18)**: Computes and renders category-by-category additions, updates, conflicts, and removals in the Profile import preview drawer.
+  - **Automated Verification**: **235/235 tests PASS** across full suite in 17.87s (`tests/test_v12_human_acceptance_repairs.py` 13/13 PASS). 5,040-note benchmark verified at **5.844s** (scan: 5.667s, 0 Vault mutations).
 - **Commit 20: Production Lifecycle Safety Timing, Rehydration & Real Storage Persistence Failure Closure — PASS**
   - **Zero Pre-Vault Destructive Migration (Task A / P0 REQ-051)**: Removed `init_runtime_storage()` from `app/__main__.py::main()` and `server.py::create_server()`. Prohibits any copying, filesystem mutation, or directory creation before the active Vault path is known. Migration is strictly guarded and executed inside `api_scan()` immediately after `assert_outside_vault` succeeds.
   - **Immediate In-Process Saved Checks Rehydration (Task B / REQ-051, REQ-052)**: Added `SavedChecksStore.reload()` method. After `migrate_legacy_storage_paths()` moves legacy files to their canonical location during `api_scan()`, `STORE.saved_checks_store.reload()` is invoked immediately, rehydrating checks in the current running process with zero restart required. Verified via `api_saved_checks_list()`.

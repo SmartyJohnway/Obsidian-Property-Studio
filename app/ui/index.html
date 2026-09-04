@@ -1294,7 +1294,20 @@ let GLOSSARY_CACHE = {};
 async function loadGlossaryCatalog() {
   try {
     const res = await api("/api/glossary");
-    GLOSSARY_CACHE = res.catalog || {};
+    const raw = res.catalog || [];
+    const cache = {};
+    if (Array.isArray(raw)) {
+      raw.forEach(entry => {
+        if (entry && entry.canonical_key) {
+          cache[entry.canonical_key.toLowerCase()] = entry;
+        }
+      });
+    } else if (typeof raw === "object") {
+      Object.entries(raw).forEach(([k, entry]) => {
+        cache[k.toLowerCase()] = entry;
+      });
+    }
+    GLOSSARY_CACHE = cache;
   } catch (e) {
     console.warn("Failed to load glossary catalog:", e);
   }
@@ -1671,9 +1684,34 @@ window.applyNamedSchemaToWorkspace = async function(id) {
   try {
     const res = await api("/api/schemas/get", { id });
     if (res.schema) {
+      S.activeReconciliationSchema = res.schema;
       S.currentSchema = res.schema;
       if (typeof StateTransfer !== 'undefined') {
-        StateTransfer.setPending("workspace", { schema_id: res.schema.id, schema: res.schema }, "reconcile");
+        StateTransfer.setPending("workspace", { schema_id: res.schema.id, schema: res.schema, intent: "reconcile" }, "reconcile");
+      }
+      // Reset workspace note state and search input to avoid stale note display
+      S.currentNote = null;
+      const wsSearch = document.getElementById("wsNoteSearch");
+      if (wsSearch) wsSearch.value = "";
+      const wsBadge = document.getElementById("noteBadge");
+      if (wsBadge) wsBadge.style.display = "none";
+      const wsLabel = document.getElementById("currentNoteLabel");
+      if (wsLabel) wsLabel.textContent = I18N.t("context.no_note");
+      const editorArea = document.getElementById("wsEditorArea");
+      if (editorArea) editorArea.style.display = "none";
+      const banner = document.getElementById("wsNoteStatusBanner");
+      if (banner) {
+        banner.innerHTML = `
+          <div class="card" style="border-color:var(--brand); background:var(--panel2); margin-bottom:14px">
+            <div style="display:flex; justify-content:space-between; align-items:center">
+              <div>
+                <strong>⚖️ 待核對架構：${esc(res.schema.name)} (v${esc(res.schema.version || '1.0')})</strong>
+                <p class="muted" style="margin:4px 0 0 0; font-size:12px">請在上方搜尋或瀏覽資料夾選取筆記，工作室將為該筆記執行四態核對診斷。</p>
+              </div>
+              <button class="ghost" style="font-size:12px" onclick="S.activeReconciliationSchema=null; this.closest('.card').remove();">✕ 取消核對</button>
+            </div>
+          </div>
+        `;
       }
       setTab("workspace");
     }
@@ -1812,6 +1850,29 @@ function setupSchemasHandlers() {
               prefChangeHtml = `<div style="margin-top:8px; font-size:12px; color:var(--muted)">✓ ${esc(I18N.t("profile.preview_no_prefs_change"))}</div>`;
             }
 
+            const cs = valReport.changeset || {};
+            const formatCategoryChanges = (catName, catData) => {
+              if (!catData) return '';
+              const parts = [];
+              if (catData.add && catData.add.length) parts.push(`<span class="pill ok">+${catData.add.length} 新增 (${esc(catData.add.join(", "))})</span>`);
+              if (catData.update && catData.update.length) parts.push(`<span class="pill warn">~${catData.update.length} 更新 (${esc(catData.update.join(", "))})</span>`);
+              if (catData.conflict && catData.conflict.length) parts.push(`<span class="pill alert">!${catData.conflict.length} 衝突 (${esc(catData.conflict.join(", "))})</span>`);
+              if (catData.unchanged && catData.unchanged.length) parts.push(`<span class="pill muted">=${catData.unchanged.length} 無變更</span>`);
+              if (catData.remove && catData.remove.length) parts.push(`<span class="pill alert">-${catData.remove.length} 移除 (僅replace模式)</span>`);
+              if (!parts.length) return `<div style="font-size:12px; color:var(--muted)">${catName}: 無異動</div>`;
+              return `<div style="margin-bottom:6px; font-size:12px"><strong>${catName}:</strong> ${parts.join(" ")}</div>`;
+            };
+
+            let changesetHtml = `
+              <div style="margin-top:10px; padding:8px; background:var(--panel); border-radius:var(--radius-sm)">
+                <div style="font-size:12px; font-weight:700; margin-bottom:6px">變更集預覽 (Changeset Breakdown)：</div>
+                ${formatCategoryChanges("架構庫 (Schemas)", cs.schemas)}
+                ${formatCategoryChanges("範圍指派 (Scope Assignments)", cs.scope_assignments)}
+                ${formatCategoryChanges("術語覆寫 (Glossary)", cs.glossary_overrides)}
+                ${formatCategoryChanges("儲存檢查 (Saved Checks)", cs.saved_checks)}
+              </div>
+            `;
+
             previewArea.innerHTML = `
               <div class="card" style="background:var(--panel2); margin-bottom:12px">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
@@ -1824,6 +1885,7 @@ function setupSchemasHandlers() {
                   <div>${esc(I18N.t("profile.preview_glossary_count"))}<strong>${valReport.glossary_count}</strong></div>
                   <div>${esc(I18N.t("profile.preview_checks_count"))}<strong>${valReport.saved_checks_count}</strong></div>
                 </div>
+                ${changesetHtml}
                 ${prefChangeHtml}
                 <div style="margin-top:10px">
                   <label style="font-size:12px; font-weight:600">${esc(I18N.t("profile.mode_label"))}</label>
@@ -2269,6 +2331,10 @@ async function init() {
   setupProposalHandlers();
 
   await loadDesignPresets();
+
+  window.addEventListener("ps:localeChanged", () => {
+    renderAllDynamicViews();
+  });
 }
 
 function updateContextBarLabels() {
@@ -2874,12 +2940,15 @@ async function inspectNoteInWorkspace(notePath) {
       }
     }
 
-    if (pending && (pending.schema_id || pending.schema || pending.intent === "reconcile")) {
+    const targetRecSchema = (pending && (pending.schema || pending.schema_id)) ? (pending.schema || S.activeReconciliationSchema) : S.activeReconciliationSchema;
+    const targetSchemaId = (pending && pending.schema_id) ? pending.schema_id : (targetRecSchema ? targetRecSchema.id : null);
+    if (targetRecSchema || targetSchemaId || (pending && pending.intent === "reconcile")) {
       try {
         const recRes = await api("/api/reconcile/inspect", {
           note_path: notePath,
-          schema_id: pending.schema_id,
-          schema_properties: pending.schema ? pending.schema.properties : (S.currentSchema ? S.currentSchema.properties : [])
+          schema_id: targetSchemaId,
+          schema_name: targetRecSchema ? targetRecSchema.name : undefined,
+          schema_properties: targetRecSchema ? targetRecSchema.properties : (S.currentSchema ? S.currentSchema.properties : [])
         });
         const items = recRes.items || [];
         const statePill = (st) => {
@@ -2958,7 +3027,7 @@ function renderWorkspaceFields(propsMap) {
         <input type="hidden" class="ws-prop-key" value="${esc(k)}" />
         ${renderPropertyBadge(k)}
       </div>
-      <input type="text" class="ws-prop-val form-control" value="${esc(Array.isArray(v) ? v.join(", ") : (v == null ? "" : v))}" placeholder="${esc(I18N.t("workspace.val_placeholder"))}" />
+      <input type="text" class="ws-prop-val form-control" value="${esc(Array.isArray(v) ? v.join(", ") : ((typeof v === 'object' && v !== null) ? JSON.stringify(v) : (v == null ? "" : String(v))))}" placeholder="${esc(I18N.t("workspace.val_placeholder"))}" />
       <button class="ghost ws-prop-del" title="${esc(I18N.t("workspace.del_prop_title"))}" style="color:var(--red); padding:4px; font-weight:bold">✕</button>
     </div>
   `).join("");
@@ -3330,7 +3399,18 @@ function setupDesignHandlers() {
     $("designSaveToNamedSchemas").onclick = async () => {
       if (!S.currentSchema) return;
       try {
-        await api("/api/schemas/create", { schema: S.currentSchema });
+        const createRes = await api("/api/schemas/create", { schema: S.currentSchema });
+        const savedId = (createRes && createRes.schema) ? createRes.schema.id : null;
+        if (savedId) {
+          const readback = await api("/api/schemas/get", { id: savedId });
+          if (!readback || !readback.schema) {
+            throw new Error("Readback verification failed for newly created schema.");
+          }
+        }
+        await loadSchemasList();
+        if (typeof updateScopeSchemaAssignmentUI === 'function') {
+          await updateScopeSchemaAssignmentUI();
+        }
         toast(I18N.t("toast.schema_saved", { name: S.currentSchema.name }));
         setTab("schemas");
       } catch (e) {
@@ -4306,7 +4386,18 @@ function setupProposalHandlers() {
       if (saveBtn) {
         saveBtn.onclick = async () => {
           try {
-            await api("/api/schemas/create", { schema: sch });
+            const createRes = await api("/api/schemas/create", { schema: sch });
+            const savedId = (createRes && createRes.schema) ? createRes.schema.id : null;
+            if (savedId) {
+              const readback = await api("/api/schemas/get", { id: savedId });
+              if (!readback || !readback.schema) {
+                throw new Error("Readback verification failed for newly created schema.");
+              }
+            }
+            await loadSchemasList();
+            if (typeof updateScopeSchemaAssignmentUI === 'function') {
+              await updateScopeSchemaAssignmentUI();
+            }
             toast(I18N.t("toast.schema_saved", { name: sch.schema_name || sch.name }));
             setTab("schemas");
           } catch (err) {

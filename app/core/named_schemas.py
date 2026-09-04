@@ -70,7 +70,7 @@ class NamedSchema:
             "name": self.name,
             "version": self.version,
             "description": self.description,
-            "properties": [p.to_dict() for p in self.properties],
+            "properties": [p.to_dict() if hasattr(p, "to_dict") else p for p in self.properties],
             "created_at": self.created_at,
             "updated_at": self.updated_at,
             "target_scope": self.target_scope,
@@ -79,7 +79,7 @@ class NamedSchema:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> NamedSchema:
         schema_id = str(data.get("id") or "").strip()
-        name = str(data.get("name") or "").strip()
+        name = str(data.get("name") or data.get("schema_name") or "").strip()
         if not schema_id:
             schema_id = "schema_" + uuid.uuid4().hex[:8]
         if not name:

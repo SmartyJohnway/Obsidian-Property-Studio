@@ -26,6 +26,20 @@ class DriftCategory(str, enum.Enum):
     MISSING_REQUIRED_RELATIONSHIP = "missing_required_relationship"
 
 
+def is_canonical_navigable_path(path: str) -> tuple[bool, str | None]:
+    """Validate if a note path is a safe, canonical relative Vault Markdown path (HA-F12)."""
+    if not path or not isinstance(path, str):
+        return False, "Empty or non-string note path."
+    p = path.strip()
+    if p.startswith("![[") or p.startswith("[[") or "·" in p:
+        return False, "Path contains wikilink or list formatting marker."
+    if not p.endswith(".md"):
+        return False, "Target is not a Markdown file (.md)."
+    if p.startswith("/") or p.startswith("\\") or ".." in p or (len(p) > 1 and p[1] == ":"):
+        return False, "Path traversal or non-relative path rejected."
+    return True, None
+
+
 @dataclass
 class NoteDriftFinding:
     note_path: str
@@ -34,6 +48,14 @@ class NoteDriftFinding:
     detail: str
     expected: Any = None
     actual: Any = None
+    navigation_available: bool = True
+    navigation_reason: str | None = None
+
+    def __post_init__(self) -> None:
+        nav_ok, reason = is_canonical_navigable_path(self.note_path)
+        if not nav_ok:
+            object.__setattr__(self, "navigation_available", False)
+            object.__setattr__(self, "navigation_reason", reason)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -43,6 +65,8 @@ class NoteDriftFinding:
             "detail": self.detail,
             "expected": self.expected,
             "actual": self.actual,
+            "navigation_available": self.navigation_available,
+            "navigation_reason": self.navigation_reason,
         }
 
 
