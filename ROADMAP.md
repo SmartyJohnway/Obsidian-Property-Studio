@@ -17,15 +17,16 @@ Current Target: `v1.2.0`
 Current Milestone: `M022`  
 Current Milestone Status: `IN_PROGRESS`  
 Current Task: `M022-T04`  
-Last Verified Gate: `M021 — Schema Versioning, Migration Planning & Governance Profile PASS`  
+Last Verified Gate: `M021 — Schema Naming, Versioning, Migration & Governance Profile PASS`  
 Current Blocker: `NONE`  
 Next Action: `Await Human Owner (Dr. J) Windows 10 production UI walkthrough retest and formal Human Acceptance verdict (M022-T04 / M022-AC04).`  
-Implementation: `COMPLETE (Commit 21D Final Browser Runtime & State Closure: (1) Replaced missing strnatcmp with canonical compareSchemaVersions eliminating Save Modal ReferenceError, (2) Removed Proposal Reconcile route pollution on S.currentSchema ensuring strict isolation, (3) Completed state-driven dynamic locale rerender across Proposal, Refactor, and Drift/Profile drawers, (4) Upgraded regression test suite to execute real JavaScript production functions in Node.js runtime, (5) Added 100% symmetric storage type i18n bindings across 545 keys)`  
+Implementation: `COMPLETE (Commit 21E Refactor Runtime, Profile State & Evidence Closure: (1) Extracted window.renderRefactorPlanResult as canonical global function called by /api/refactor/plan and renderAllDynamicViews; (2) Extracted window.renderProfilePreviewArea as canonical global function called by Validate flow and renderAllDynamicViews; (3) Restructured setupSchemasHandlers to be syntactically correct without breaking renderProfilePreviewArea scope; (4) Profile mode (merge/replace) preserved correctly in S.lastProfileValidation.mode and restored on locale rerender; (5) Upgraded Node.js regression tests to use realistic per-element DOM mock with innerHTML tracking and ensureEl(); (6) test_ha_f08_dynamic_locale_refactor_and_profile_in_js tests true Refactor rendering, Profile mode save-and-restore via renderAllDynamicViews; (7) test_ha_f16 now validates modal renders with v1.10.0 as first option via real fetch mock; (8) updateContextBarLabels made defensive for null DOM elements (Node.js test safety))`  
 Automated Verification: `PASS (241/241 tests pass, 5,040-note benchmark verified, Vault 100% byte-for-byte read-only and zero mutation)`  
 Human Verified Acceptance: `NOT YET VERIFIED`  
 Release Readiness: `READY_FOR_HUMAN_RETEST` (Human Owner UI Walkthrough: `NOT YET VERIFIED`)  
 Accepted Limitation: `Windows 11 AMD64 native verification recorded as NOT YET VERIFIED due to test host unavailability (accepted non-blocking release limitation per human approved contract).`  
 Last Updated: `2026-09-04`
+
 
 ---
 

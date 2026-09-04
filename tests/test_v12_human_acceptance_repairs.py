@@ -779,51 +779,120 @@ def test_ha_f16_update_schema_collision_guard():
 
 
 # ==============================================================================
-# Commit 21D: Real Browser Runtime, JS SemVer, State Isolation & i18n Closure
-# ==============================================================================
-
-# ==============================================================================
-# Commit 21D: Real Browser Runtime, JS SemVer, State Isolation & i18n Closure
+# Commit 21E: Real Browser Runtime, JS SemVer, Refactor/Profile State & i18n Closure
 # ==============================================================================
 
 def _get_node_harness_prefix() -> str:
     return """
+const elements = {};
+function createMockEl(id) {
+  const classes = new Set();
+  const listeners = {};
+  const el = {
+    id: id,
+    style: {},
+    classList: {
+      add: (c) => classes.add(c),
+      remove: (c) => classes.delete(c),
+      contains: (c) => classes.has(c),
+      toggle: (c, force) => {
+        if (force !== undefined) {
+          if (force) classes.add(c); else classes.delete(c);
+          return force;
+        }
+        if (classes.has(c)) { classes.delete(c); return false; }
+        classes.add(c); return true;
+      }
+    },
+    addEventListener: (evt, fn) => {
+      listeners[evt] = listeners[evt] || [];
+      listeners[evt].push(fn);
+    },
+    dispatchEvent: (evt) => {
+      const fns = listeners[evt.type || evt] || [];
+      const evObj = typeof evt === 'string' ? { target: el, type: evt } : evt;
+      fns.forEach(fn => fn(evObj));
+    },
+    appendChild: () => {},
+    removeChild: () => {},
+    setAttribute: () => {},
+    getAttribute: () => "",
+    _innerHTML: "",
+    get innerHTML() { return this._innerHTML; },
+    set innerHTML(val) {
+      this._innerHTML = val;
+      const idMatches = val.matchAll(/id=["']([^"']+)["']/g);
+      for (const m of idMatches) {
+        if (!elements[m[1]]) {
+          elements[m[1]] = createMockEl(m[1]);
+        }
+        const valMatch = val.match(new RegExp(`id=["']${m[1]}["'][^>]*value=["']([^"']*)["']`));
+        if (valMatch) {
+          elements[m[1]].value = valMatch[1];
+        }
+      }
+    },
+    textContent: "",
+    value: "",
+    focus: () => {}
+  };
+  return el;
+}
+
+function getEl(id) {
+  return elements[id] || null;
+}
+function ensureEl(id) {
+  if (!elements[id]) {
+    elements[id] = createMockEl(id);
+  }
+  return elements[id];
+}
+
 const noop = () => {};
-const dummyEl = {
-  style: {},
-  classList: { add: noop, remove: noop, contains: () => false },
-  appendChild: noop,
-  removeChild: noop,
-  addEventListener: noop,
-  setAttribute: noop,
-  getAttribute: () => "",
-  innerHTML: "",
-  textContent: "",
-  value: "",
-  focus: noop
-};
 global.window = global;
 global.window.addEventListener = noop;
 global.window.scrollTo = noop;
 global.document = {
-  getElementById: () => dummyEl,
-  querySelectorAll: () => [],
-  querySelector: () => dummyEl,
-  createElement: () => dummyEl,
+  getElementById: (id) => getEl(id),
+  querySelectorAll: (sel) => [],
+  querySelector: (sel) => getEl(sel.replace('#', '')),
+  createElement: (tag) => createMockEl(tag),
   addEventListener: noop,
-  documentElement: dummyEl,
-  body: dummyEl
+  documentElement: ensureEl("html"),
+  body: ensureEl("body")
 };
 global.localStorage = { getItem: () => null, setItem: noop };
 global.navigator = { clipboard: { writeText: () => Promise.resolve() } };
-global.fetch = () => Promise.resolve({ json: () => Promise.resolve({}) });
+global.fetch = async (url, opts) => ({ ok: true, status: 200, json: async () => ({}) });
 global.esc = (s) => String(s);
-global.I18N = { t: (k, p) => k, init: noop, setLocale: noop, applyLocale: noop };
-global.S = { currentSchema: null, activeReconciliationSchema: null };
+global.I18N = {
+  t: (k, p) => {
+    let s = k;
+    if (p) {
+      Object.entries(p).forEach(([pk, pv]) => { s += ` [${pk}:${pv}]`; });
+    }
+    return s;
+  },
+  init: noop,
+  setLocale: noop,
+  applyLocale: noop
+};
 global.StateTransfer = { setPending: noop, hasPending: () => false, consumePending: () => null };
 global.setTab = noop;
 global.toast = noop;
-global.api = () => Promise.resolve({});
+
+// Ensure base structural elements exist
+ensureEl("drawerTitle");
+ensureEl("drawerBody");
+ensureEl("drawerOverlay");
+ensureEl("drawerPanel");
+ensureEl("refactorHumanSummary");
+ensureEl("refactorPlanOutput");
+ensureEl("refactorPlanResultCard");
+ensureEl("proposalResultOutput");
+ensureEl("proposalResultCard");
+ensureEl("profilePreviewArea");
 """
 
 
@@ -882,7 +951,7 @@ def test_ha_f16_actual_js_semver_bump_and_version_comparator():
 
 
 def test_ha_f16_actual_js_save_schema_modal_no_strnatcmp_error():
-    """Execute Save Schema Modal multi-version sort and bump logic in Node.js to verify 0 ReferenceError."""
+    """Execute Save Schema Modal multi-version sort and bump logic in Node.js to verify 0 ReferenceError and correct highest version option."""
     import subprocess
     import json
 
@@ -901,11 +970,11 @@ def test_ha_f16_actual_js_save_schema_modal_no_strnatcmp_error():
       {{ id: "cs-3", name: "custom-schema", version: "1.9.0", description: "Base v1.9.0" }}
     ];
 
-    global.api = async (route, body) => {{
-      if (route === "/api/schemas/list") return {{ schemas: fakeLibrary }};
-      if (route === "/api/schemas/create") return {{ schema: {{ id: "cs-4", name: body.schema.name, version: body.schema.version }} }};
-      if (route === "/api/schemas/get") return {{ schema: {{ id: body.id, name: "custom-schema", version: "1.10.0" }} }};
-      return {{}};
+    global.fetch = async (url, opts) => {{
+      if (url.includes("/api/schemas/list")) {{
+        return {{ ok: true, status: 200, json: async () => ({{ schemas: fakeLibrary }}) }};
+      }}
+      return {{ ok: true, status: 200, json: async () => ({{}}) }};
     }};
 
     {full_js}
@@ -916,6 +985,7 @@ def test_ha_f16_actual_js_save_schema_modal_no_strnatcmp_error():
         callbackTriggered = true;
       }});
 
+      const drawerHtml = ensureEl("drawerBody").innerHTML;
       const curName = "custom-schema";
       const matches = fakeLibrary.filter(s => s.name.toLowerCase() === curName.toLowerCase());
       matches.sort((a, b) => compareSchemaVersions(b.version || "1.0", a.version || "1.0"));
@@ -924,6 +994,11 @@ def test_ha_f16_actual_js_save_schema_modal_no_strnatcmp_error():
       const nextVer = bumpSemVer(highestVer);
 
       console.log(JSON.stringify({{
+        modalRendered: drawerHtml.includes("schemas.action_new_version"),
+        hasTargetSelect: drawerHtml.includes("saveSchemaTargetSelect"),
+        targetSelectOptionsContain110: drawerHtml.includes("v1.10.0"),
+        targetSelectOptionsContain19: drawerHtml.includes("v1.9.0"),
+        firstOptionIs110: drawerHtml.indexOf("v1.10.0") < drawerHtml.indexOf("v1.9.0"),
         highest_version: highestVer,
         highest_id: matches[0].id,
         next_version: nextVer,
@@ -940,6 +1015,11 @@ def test_ha_f16_actual_js_save_schema_modal_no_strnatcmp_error():
     proc = subprocess.run(["node"], input=node_script, capture_output=True, text=True, check=True, encoding="utf-8")
     res = json.loads(proc.stdout.strip())
 
+    assert res["modalRendered"] is True
+    assert res["hasTargetSelect"] is True
+    assert res["targetSelectOptionsContain110"] is True
+    assert res["targetSelectOptionsContain19"] is True
+    assert res["firstOptionIs110"] is True
     assert res["highest_version"] == "1.10.0"
     assert res["highest_id"] == "cs-2"
     assert res["next_version"] == "1.11.0"
@@ -978,7 +1058,6 @@ def test_ha_f09_proposal_and_workspace_schema_state_isolation_in_js():
 
     // 2. Cancel Workspace Reconciliation simulation (clears activeReconciliationSchema, preserves S.currentSchema)
     if (typeof window.cancelWorkspaceReconciliation === "function") {{
-      // In Node environment, cancelWorkspaceReconciliation will execute cleanly
       window.cancelWorkspaceReconciliation();
     }} else {{
       S.activeReconciliationSchema = null;
@@ -1001,8 +1080,8 @@ def test_ha_f09_proposal_and_workspace_schema_state_isolation_in_js():
     assert res["afterCancel"]["activeRecSchemaCleared"] is True
 
 
-def test_ha_f08_dynamic_locale_result_rerender_in_js():
-    """Verify in Node.js runtime that renderAllDynamicViews handles proposal, refactor, and drawer rerenders."""
+def test_ha_f08_dynamic_locale_refactor_and_profile_in_js():
+    """Verify in Node.js runtime that Refactor plan renders and Profile import mode preserves across dynamic view rerenders."""
     import subprocess
     import json
 
@@ -1013,32 +1092,95 @@ def test_ha_f08_dynamic_locale_result_rerender_in_js():
 
     node_script = f"""
     {_get_node_harness_prefix()}
-    global.S = {{
-      scanned: true,
-      lastScanSeconds: 1.2,
-      lastImportedProposal: {{ valid: true, schema: {{ name: "ProposalSch", properties: [] }}, four_way_comparison: [] }},
-      lastRefactorPlan: {{ res: {{ summary: {{ notes_to_change: 3 }} }}, payload: {{ target: "tag" }}, op: "rename" }},
-      lastDriftReport: {{ schema_name: "TestSch", findings: [], compliance_rate: 100 }},
-      currentDrawerType: "drift"
-    }};
 
     {full_js}
 
-    // Call renderAllDynamicViews to simulate locale switch event
-    let rerenderOk = false;
-    try {{
+    async function runTests() {{
+      const results = {{}};
+
+      // 1. Test Refactor Plan Rendering
+      const mockPlan = {{
+        res: {{
+          summary: {{ notes_to_change: 5, out_of_scope_notes_to_change: 1 }},
+          in_scope_notes_to_change: ["Note1.md", "Note2.md"],
+          conflicts: [],
+          excluded: [],
+          changes: [
+            {{ variants: [{{ value: "v1", count: 2 }}], canonical_value: "c1", notes_to_change_count: 2 }}
+          ],
+          untouched_values: []
+        }},
+        payload: {{ target: "new_status" }},
+        op: "normalize"
+      }};
+
+      S.lastRefactorPlan = mockPlan;
+      ensureEl("refactorHumanSummary").innerHTML = "placeholder";
+      
+      // Call renderRefactorPlanResult
+      renderRefactorPlanResult(mockPlan);
+      results.refactorRendered = ensureEl("refactorHumanSummary").innerHTML.includes("refactor.in_scope_notes");
+      results.refactorHasMapping = ensureEl("refactorHumanSummary").innerHTML.includes("refactor.normalize_mapping_title");
+      results.refactorPlanVisible = ensureEl("refactorPlanResultCard").style.display === "block";
+
+      // 2. Test Dynamic View Re-render (Locale Switch Simulation)
+      ensureEl("refactorHumanSummary").innerHTML = "existing content";
       renderAllDynamicViews();
-      rerenderOk = true;
-    }} catch (e) {{
-      console.error(e);
+      results.refactorRerendered = ensureEl("refactorHumanSummary").innerHTML.includes("refactor.in_scope_notes");
+
+      // 3. Test Profile Import Preview & Mode Preservation
+      const mockValReport = {{
+        valid: true,
+        schema_count: 2,
+        assignment_count: 1,
+        glossary_count: 5,
+        saved_checks_count: 3,
+        preferences_preview: {{ has_changes: true, locale: {{ from: "en", to: "zh-Hant" }} }},
+        changeset: {{
+          schemas: {{ add: ["Schema1"], update: [], conflict: [], unchanged: [] }}
+        }}
+      }};
+      const mockParsed = {{ profile_metadata: {{ version: "1.0" }}, data: {{}} }};
+      
+      // Open profile drawer
+      ensureEl("drawerPanel").classList.add("active");
+      S.currentDrawerType = "profile_import";
+      S.lastProfileValidation = {{ valReport: mockValReport, parsed: mockParsed, mode: "merge" }};
+
+      renderProfilePreviewArea(mockValReport, mockParsed);
+      results.profilePreviewRendered = ensureEl("profilePreviewArea").innerHTML.includes("profile.mode_label");
+
+      // User changes mode to 'replace'
+      ensureEl("profileImportModeSelect").value = "replace";
+      if (ensureEl("profileImportModeSelect").onchange) {{
+        ensureEl("profileImportModeSelect").onchange({{ target: {{ value: "replace" }} }});
+      }}
+      results.profileModeSavedInState = S.lastProfileValidation.mode === "replace";
+
+      // Simulate locale change calling renderAllDynamicViews
+      renderAllDynamicViews();
+      results.profileModePreservedAfterRerender = ensureEl("profileImportModeSelect").value === "replace" ||
+        ensureEl("profilePreviewArea").innerHTML.includes('value="replace" selected');
+
+      console.log(JSON.stringify(results));
     }}
 
-    console.log(JSON.stringify({{ rerenderOk }}));
+    runTests().catch(err => {{
+      console.error(err);
+      process.exit(1);
+    }});
     """
 
     proc = subprocess.run(["node"], input=node_script, capture_output=True, text=True, check=True, encoding="utf-8")
     res = json.loads(proc.stdout.strip())
-    assert res["rerenderOk"] is True
+
+    assert res["refactorRendered"] is True
+    assert res["refactorHasMapping"] is True
+    assert res["refactorPlanVisible"] is True
+    assert res["refactorRerendered"] is True
+    assert res["profilePreviewRendered"] is True
+    assert res["profileModeSavedInState"] is True
+    assert res["profileModePreservedAfterRerender"] is True
 
 
 def test_ha_i18n_symmetric_keys_and_storage_type_bindings():

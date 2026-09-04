@@ -1218,6 +1218,7 @@ const S = {
   notesInScope: 0,
   currentNote: null,
   currentSchema: null,
+  activeReconciliationSchema: null,
   designPresets: null,
   lastReviewResult: null,
   inventory: null,
@@ -1225,8 +1226,14 @@ const S = {
   relSourceType: "property_link", // "property_link" | "body_wikilink"
   savedChecks: [],
   folders: [],
-  meta: {}
+  meta: {},
+  lastImportedProposal: null,
+  lastRefactorPlan: null,
+  lastProfileValidation: null,
+  lastDriftReport: null,
+  currentDrawerType: null
 };
+window.S = S;
 
 function $(id) { return document.getElementById(id); }
 function esc(s) {
@@ -2056,11 +2063,6 @@ window.openSchemaMigrationModal = async function(sourceId) {
   }
 };
 
-function setupSchemasHandlers() {
-  if ($("schemaCreateNewBtn")) {
-    $("schemaCreateNewBtn").onclick = () => setTab("design");
-  }
-
 window.renderProfilePreviewArea = function(valReport, parsed) {
   if (!valReport) return;
   const previewArea = document.getElementById("profilePreviewArea");
@@ -2108,6 +2110,9 @@ window.renderProfilePreviewArea = function(valReport, parsed) {
     </div>
   `;
 
+  const existingModeSel = document.getElementById("profileImportModeSelect");
+  const selectedMode = existingModeSel ? existingModeSel.value : ((S.lastProfileValidation && S.lastProfileValidation.mode) ? S.lastProfileValidation.mode : "merge");
+
   previewArea.innerHTML = `
     <div class="card" style="background:var(--panel2); margin-bottom:12px">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
@@ -2128,19 +2133,27 @@ window.renderProfilePreviewArea = function(valReport, parsed) {
       <div style="flex:1; max-width:200px">
         <label style="font-size:12px; font-weight:600">${esc(I18N.t("profile.mode_label"))}</label>
         <select id="profileImportModeSelect" class="form-control" style="width:100%; margin-top:4px">
-          <option value="merge">${esc(I18N.t("profile.mode_merge"))}</option>
-          <option value="replace">${esc(I18N.t("profile.mode_replace"))}</option>
+          <option value="merge" ${selectedMode === "merge" ? "selected" : ""}>${esc(I18N.t("profile.mode_merge"))}</option>
+          <option value="replace" ${selectedMode === "replace" ? "selected" : ""}>${esc(I18N.t("profile.mode_replace"))}</option>
         </select>
       </div>
       <button class="primary" id="confirmApplyProfileBtn" style="background:var(--teal)">${esc(I18N.t("profile.confirm_apply"))}</button>
     </div>
   `;
 
+  const modeSel = document.getElementById("profileImportModeSelect");
+  if (modeSel) {
+    modeSel.onchange = (e) => {
+      if (S.lastProfileValidation) {
+        S.lastProfileValidation.mode = e.target.value;
+      }
+    };
+  }
+
   const confirmBtn = document.getElementById("confirmApplyProfileBtn");
   if (confirmBtn) {
     confirmBtn.onclick = async () => {
-      const modeSel = document.getElementById("profileImportModeSelect");
-      const mode = modeSel ? modeSel.value : "merge";
+      const mode = (document.getElementById("profileImportModeSelect") ? document.getElementById("profileImportModeSelect").value : selectedMode) || "merge";
       try {
         const res = await api("/api/governance/profile/import", { profile: parsed, mode });
         const gCount = typeof res.imported.user_glossary === 'number' ? res.imported.user_glossary : Object.keys(res.imported.user_glossary || {}).length;
@@ -2158,6 +2171,11 @@ window.renderProfilePreviewArea = function(valReport, parsed) {
     };
   }
 };
+
+function setupSchemasHandlers() {
+  if ($("schemaCreateNewBtn")) {
+    $("schemaCreateNewBtn").onclick = () => setTab("design");
+  }
 
   if ($("govProfileExportBtn")) {
     $("govProfileExportBtn").onclick = async () => {
@@ -2200,102 +2218,8 @@ window.renderProfilePreviewArea = function(valReport, parsed) {
             if (!valReport.valid) {
               return toast(I18N.t("toast.profile_val_failed", { err: valReport.error || "" }), true);
             }
-
-            const previewArea = document.getElementById("profilePreviewArea");
-            if (!previewArea) return;
-            previewArea.style.display = "block";
-
-            const prefPrev = valReport.preferences_preview;
-            let prefChangeHtml = "";
-            if (prefPrev && prefPrev.has_changes) {
-              const details = [];
-              if (prefPrev.locale) details.push(`Locale: <code>${esc(prefPrev.locale.from || 'none')}</code> → <strong>${esc(prefPrev.locale.to)}</strong>`);
-              if (prefPrev.theme) details.push(`Theme: <code>${esc(prefPrev.theme.from || 'none')}</code> → <strong>${esc(prefPrev.theme.to)}</strong>`);
-              prefChangeHtml = `<div style="margin-top:8px; font-size:12px; padding:6px 8px; background:var(--panel); border-radius:var(--radius-sm)"><strong>${esc(I18N.t("profile.preview_prefs_change"))}</strong> ${details.join(", ")}</div>`;
-            } else {
-              prefChangeHtml = `<div style="margin-top:8px; font-size:12px; color:var(--muted)">✓ ${esc(I18N.t("profile.preview_no_prefs_change"))}</div>`;
-            }
-
-            const cs = valReport.changeset || {};
-            const formatCategoryChanges = (catName, catData) => {
-              if (!catData) return '';
-              const formatItems = (arr) => {
-                if (!arr || !arr.length) return '';
-                return arr.map(item => {
-                  if (typeof item === 'string') return item;
-                  return item.name || item.canonical_key || item.scope_key || item.id || JSON.stringify(item);
-                }).join(", ");
-              };
-              const parts = [];
-              if (catData.add && catData.add.length) parts.push(`<span class="pill ok">${esc(I18N.t("profile.stat_add", { count: catData.add.length, items: formatItems(catData.add) }))}</span>`);
-              if (catData.update && catData.update.length) parts.push(`<span class="pill warn">${esc(I18N.t("profile.stat_update", { count: catData.update.length, items: formatItems(catData.update) }))}</span>`);
-              if (catData.conflict && catData.conflict.length) parts.push(`<span class="pill alert">${esc(I18N.t("profile.stat_conflict", { count: catData.conflict.length, items: formatItems(catData.conflict) }))}</span>`);
-              if (catData.unchanged && catData.unchanged.length) parts.push(`<span class="pill muted">${esc(I18N.t("profile.stat_unchanged", { count: catData.unchanged.length }))}</span>`);
-              if (catData.remove && catData.remove.length) parts.push(`<span class="pill alert">${esc(I18N.t("profile.stat_remove", { count: catData.remove.length }))}</span>`);
-              if (!parts.length) return `<div style="font-size:12px; color:var(--muted)">${esc(I18N.t("profile.no_changes", { category: catName }))}</div>`;
-              return `<div style="margin-bottom:6px; font-size:12px"><strong>${catName}:</strong> ${parts.join(" ")}</div>`;
-            };
-
-            let changesetHtml = `
-              <div style="margin-top:10px; padding:8px; background:var(--panel); border-radius:var(--radius-sm)">
-                <div style="font-size:12px; font-weight:700; margin-bottom:6px">${esc(I18N.t("profile.breakdown_title"))}</div>
-                ${formatCategoryChanges(I18N.t("profile.cat_schemas"), cs.schemas)}
-                ${formatCategoryChanges(I18N.t("profile.cat_scopes"), cs.scope_assignments || cs.assignments)}
-                ${formatCategoryChanges(I18N.t("profile.cat_glossary"), cs.glossary_overrides || cs.glossary)}
-                ${formatCategoryChanges(I18N.t("profile.cat_checks"), cs.saved_checks || cs.checks)}
-              </div>
-            `;
-
-            previewArea.innerHTML = `
-              <div class="card" style="background:var(--panel2); margin-bottom:12px">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
-                  <h4 style="margin:0">${esc(I18N.t("profile.preview_validated_title"))}</h4>
-                  <span class="pill ok">v${esc(valReport.format_version || '1.0')}</span>
-                </div>
-                <div class="grid cols2" style="gap:8px; font-size:12.5px; margin-bottom:10px">
-                  <div>${esc(I18N.t("profile.preview_schemas_count"))}<strong>${valReport.schema_count}</strong></div>
-                  <div>${esc(I18N.t("profile.preview_scopes_count"))}<strong>${valReport.assignment_count}</strong></div>
-                  <div>${esc(I18N.t("profile.preview_glossary_count"))}<strong>${valReport.glossary_count}</strong></div>
-                  <div>${esc(I18N.t("profile.preview_checks_count"))}<strong>${valReport.saved_checks_count}</strong></div>
-                </div>
-                ${changesetHtml}
-                ${prefChangeHtml}
-                <div style="margin-top:10px">
-                  <label style="font-size:12px; font-weight:600">${esc(I18N.t("profile.mode_label"))}</label>
-                  <select id="profileImportModeSelect" class="form-control" style="width:100%; margin-top:4px">
-                    <option value="merge">${esc(I18N.t("profile.mode_merge"))}</option>
-                    <option value="replace">${esc(I18N.t("profile.mode_replace"))}</option>
-                  </select>
-                </div>
-              </div>
-              <div style="display:flex; justify-content:flex-end; gap:8px">
-                <button class="primary" id="confirmApplyProfileBtn" style="background:var(--teal)">${esc(I18N.t("profile.confirm_apply"))}</button>
-              </div>
-            `;
-
-            const confirmBtn = document.getElementById("confirmApplyProfileBtn");
-            if (confirmBtn) {
-              confirmBtn.onclick = async () => {
-                const modeSel = document.getElementById("profileImportModeSelect");
-                const mode = modeSel ? modeSel.value : "merge";
-                try {
-                  const res = await api("/api/governance/profile/import", { profile: parsed, mode });
-                  const gCount = res.imported.user_glossary || res.imported.glossary_overrides || 0;
-                  toast(I18N.t("profile.imported_toast", { mode, schemas: res.imported.schemas, scopes: res.imported.scope_assignments, glossary: gCount }));
-                  closeDrawer();
-                  await loadSchemasList();
-                  await loadGlossaryList();
-                  if (typeof updateScopeSchemaAssignmentUI === 'function') {
-                    await updateScopeSchemaAssignmentUI();
-                  }
-                  if (typeof syncPreferencesFromServer === 'function') {
-                    await syncPreferencesFromServer();
-                  }
-                } catch (err) {
-                  toast(err.message, true);
-                }
-              };
-            }
+            S.lastProfileValidation = { valReport, parsed, mode: "merge" };
+            renderProfilePreviewArea(valReport, parsed);
           } catch (e) {
             toast(I18N.t("toast.json_parse_error", { msg: e.message }), true);
           }
@@ -2731,24 +2655,24 @@ async function init() {
 
 function updateContextBarLabels() {
   if (!S.scanned) {
-    $("currentVaultLabel").textContent = I18N.t("context.no_vault");
-    $("currentScopeLabel").textContent = I18N.t("context.no_vault");
+    if ($("currentVaultLabel")) $("currentVaultLabel").textContent = I18N.t("context.no_vault");
+    if ($("currentScopeLabel")) $("currentScopeLabel").textContent = I18N.t("context.no_vault");
     return;
   }
   const scope = S.scope || { mode: "entire_vault" };
   if (scope.mode === "entire_vault") {
-    $("currentScopeLabel").textContent = I18N.t("context.entire_vault");
+    if ($("currentScopeLabel")) $("currentScopeLabel").textContent = I18N.t("context.entire_vault");
   } else if (scope.mode === "folders") {
-    $("currentScopeLabel").textContent = I18N.t("context.folders_summary", {
+    if ($("currentScopeLabel")) $("currentScopeLabel").textContent = I18N.t("context.folders_summary", {
       count: (scope.folders || []).length,
       notes: S.notesInScope || 0
     });
   } else if (scope.mode === "single_note") {
-    $("currentScopeLabel").textContent = I18N.t("context.single_note_summary", {
+    if ($("currentScopeLabel")) $("currentScopeLabel").textContent = I18N.t("context.single_note_summary", {
       path: scope.note_path || ""
     });
   }
-  if (S.currentNote) {
+  if (S.currentNote && $("currentNoteLabel")) {
     $("currentNoteLabel").textContent = S.currentNote.name || S.currentNote.note_path;
   }
 }
@@ -4464,6 +4388,74 @@ async function populateNormalizeTable(selectedPropKey) {
     };
   });
 }
+
+window.renderRefactorPlanResult = function(planData) {
+  if (!planData || !planData.res) return;
+  const { res, payload, op } = planData;
+  const summary = res.summary || {};
+  const affectedNotes = res.in_scope_notes_to_change || res.affected_notes || [];
+  const conflicts = res.conflicts || [];
+  const excluded = res.excluded || [];
+  const changes = res.changes || [];
+  const untouched = res.untouched_values || [];
+
+  let detailsHtml = "";
+  if (op === "normalize" && changes.length > 0) {
+    detailsHtml = `
+      <div class="card" style="background:var(--panel2); margin-bottom:12px">
+        <h4 style="margin-top:0">${esc(I18N.t("refactor.normalize_mapping_title"))} (${changes.length})</h4>
+        <div style="font-size:12.5px; color:var(--muted); margin-bottom:8px">
+          ${esc(I18N.t("refactor.normalize_summary", { groups: changes.length, notes: summary.notes_to_change || 0, untouched: untouched.length }))}
+        </div>
+        <table style="font-size:12.5px">
+          <thead><tr><th>${esc(I18N.t("refactor.variants_col"))}</th><th style="width:30px; text-align:center">→</th><th>${esc(I18N.t("refactor.target_canonical_col"))}</th><th style="width:80px; text-align:right">${esc(I18N.t("refactor.affected_notes_count_col"))}</th></tr></thead>
+          <tbody>
+            ${changes.map(ch => `
+              <tr>
+                <td>${ch.variants.map(v => `<code>${esc(v.value)}</code> <span class="muted">(${v.count})</span>`).join(", ")}</td>
+                <td style="color:var(--teal); font-weight:bold; text-align:center">→</td>
+                <td><strong style="color:var(--teal)"><code>${esc(ch.canonical_value)}</code></strong></td>
+                <td style="text-align:right; font-weight:600">${ch.notes_to_change_count}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  if ($("refactorHumanSummary")) {
+    $("refactorHumanSummary").innerHTML = `
+      <div class="grid cols3" style="margin-bottom:14px">
+        <div class="stat ok"><div class="n">${summary.notes_to_change != null ? summary.notes_to_change : (Array.isArray(affectedNotes) ? affectedNotes.length : affectedNotes)}</div><div class="l">${I18N.t("refactor.in_scope_notes")}</div></div>
+        <div class="stat"><div class="n">${summary.out_of_scope_notes_to_change || res.out_of_scope_notes_count || 0}</div><div class="l">${I18N.t("refactor.out_of_scope_notes")}</div></div>
+        <div class="stat ${(conflicts.length + excluded.length) ? 'alert' : ''}"><div class="n">${conflicts.length + excluded.length}</div><div class="l">${I18N.t("refactor.conflicts_count")}</div></div>
+      </div>
+
+      ${res.target_already_exists ? `
+        <div class="card" style="border-left:4px solid var(--amber); background:var(--amber-soft); margin-bottom:12px">
+          <strong>⚠ ${esc(I18N.t("refactor.rename_target_conflict_warn", { target: payload.target, count: res.target_existing_usage_count || 0 }))}</strong>
+        </div>
+      ` : ''}
+
+      ${detailsHtml}
+
+      <div class="card" style="background:var(--panel2)">
+        <h4 style="margin-top:0">${I18N.t("refactor.affected_notes_view")} (${Array.isArray(affectedNotes) ? affectedNotes.length : (summary.notes_to_change || 0)})</h4>
+        <ul style="max-height:160px; overflow-y:auto; padding-left:20px; font-size:12.5px; margin:0">
+          ${(Array.isArray(affectedNotes) ? affectedNotes : []).slice(0, 100).map(n => `<li><code>${esc(n.note || n)}</code></li>`).join("")}
+        </ul>
+      </div>
+    `;
+  }
+
+  if ($("refactorPlanOutput")) {
+    $("refactorPlanOutput").innerHTML = `<pre style="font-size:12px">${esc(JSON.stringify(res, null, 2))}</pre>`;
+  }
+  if ($("refactorPlanResultCard")) {
+    $("refactorPlanResultCard").style.display = "block";
+  }
+};
 
 function setupRefactorHandlers() {
   const checkTargetConflict = (targetName) => {
