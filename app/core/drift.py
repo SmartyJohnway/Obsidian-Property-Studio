@@ -31,7 +31,7 @@ def is_canonical_navigable_path(path: str) -> tuple[bool, str | None]:
     if not path or not isinstance(path, str):
         return False, "Empty or non-string note path."
     p = path.strip()
-    if p.startswith("![[") or p.startswith("[[") or "·" in p:
+    if p.startswith("![[") or p.startswith("[[") or "·" in p or p.startswith("*") or p.startswith("-") or p.startswith("+"):
         return False, "Path contains wikilink or list formatting marker."
     if not p.endswith(".md"):
         return False, "Target is not a Markdown file (.md)."

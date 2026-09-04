@@ -1475,7 +1475,7 @@ async function loadSchemasList() {
       container.innerHTML = `
         <div class="card" style="grid-column: 1 / -1; text-align:center; padding:32px 20px">
           <div style="font-size:32px; margin-bottom:8px">📚</div>
-          <p class="muted">目前具名架構庫中尚無儲存的架構。您可以在「屬性架構設計」中建立並儲存，或點擊上方按鈕建立。</p>
+          <p class="muted">${esc(I18N.t("schemas.empty_state"))}</p>
         </div>
       `;
       return;
@@ -1487,7 +1487,7 @@ async function loadSchemasList() {
             <h3 style="margin:0; font-size:16px">${esc(s.name)}</h3>
             <span class="pill ok">v${esc(s.version || '1.0')}</span>
           </div>
-          <p class="muted" style="font-size:12.5px; margin:8px 0 12px 0">${esc(s.description || '無詳細說明')}</p>
+          <p class="muted" style="font-size:12.5px; margin:8px 0 12px 0">${esc(s.description || I18N.t("schemas.no_description"))}</p>
           <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:12px">
             ${(s.properties || []).map(p => `<span class="pill" style="font-size:11px">${esc(p.name)}</span>`).join("")}
           </div>
@@ -1496,14 +1496,14 @@ async function loadSchemasList() {
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
             <span class="muted" style="font-size:11.5px">${(s.properties || []).length} ${esc(I18N.t("schemas.card_properties"))}</span>
             <div style="display:flex; gap:4px">
-              <button class="primary" style="font-size:11.5px; padding:3px 8px" onclick="applyNamedSchemaToWorkspace('${esc(s.id)}')">⚖️ 核對筆記</button>
-              <button class="secondary" style="font-size:11.5px; padding:3px 8px" onclick="openSchemaEditModal('${esc(s.id)}')">✏️ 編輯</button>
+              <button class="primary" style="font-size:11.5px; padding:3px 8px" onclick="applyNamedSchemaToWorkspace('${esc(s.id)}')">${esc(I18N.t("schemas.btn_reconcile"))}</button>
+              <button class="secondary" style="font-size:11.5px; padding:3px 8px" onclick="openSchemaEditModal('${esc(s.id)}')">${esc(I18N.t("schemas.btn_edit"))}</button>
             </div>
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center">
-            <button class="secondary" style="font-size:11px; padding:2px 6px" onclick="openSchemaMigrationModal('${esc(s.id)}')">🔄 版本遷移</button>
+            <button class="secondary" style="font-size:11px; padding:2px 6px" onclick="openSchemaMigrationModal('${esc(s.id)}')">${esc(I18N.t("schemas.btn_migrate"))}</button>
             <div style="display:flex; gap:4px">
-              <button class="secondary" style="font-size:11px; padding:2px 6px" onclick="assignSchemaToScope('${esc(s.id)}')">🎯 指派範圍</button>
+              <button class="secondary" style="font-size:11px; padding:2px 6px" onclick="assignSchemaToScope('${esc(s.id)}')">${esc(I18N.t("schemas.btn_assign_scope"))}</button>
               <button class="ghost" style="font-size:11px; padding:2px 6px; color:var(--red)" onclick="deleteNamedSchema('${esc(s.id)}')">✕</button>
             </div>
           </div>
@@ -1511,7 +1511,7 @@ async function loadSchemasList() {
       </div>
     `).join("");
   } catch (e) {
-    container.innerHTML = `<div class="card" style="grid-column: 1 / -1; color:var(--red)">載入失敗: ${esc(e.message)}</div>`;
+    container.innerHTML = `<div class="card" style="grid-column: 1 / -1; color:var(--red)">${esc(I18N.t("schemas.load_failed"))}: ${esc(e.message)}</div>`;
   }
 }
 
@@ -1522,6 +1522,171 @@ window.assignSchemaToScope = async function(id) {
     toast(I18N.t("toast.schema_assigned_scope"));
     if (typeof updateScopeSchemaAssignmentUI === 'function') {
       await updateScopeSchemaAssignmentUI();
+    }
+  } catch (err) {
+    toast(err.message, true);
+  }
+};
+
+window.openSaveNamedSchemaModal = async function(schemaToSave, onSavedCallback) {
+  if (!schemaToSave) return;
+  try {
+    const listRes = await api("/api/schemas/list");
+    const allSchemas = listRes.schemas || [];
+
+    let initialName = (schemaToSave.name || schemaToSave.schema_name || "custom-schema").trim();
+    let initialVer = (schemaToSave.version || "1.0").trim();
+    let initialDesc = (schemaToSave.description || "").trim();
+    let props = JSON.parse(JSON.stringify(schemaToSave.properties || []));
+
+    const checkMatching = (name) => {
+      const match = allSchemas.find(s => s.name.toLowerCase() === name.toLowerCase());
+      return match;
+    };
+
+    const renderFormHtml = () => {
+      const curName = (document.getElementById("saveSchemaNameInput") ? document.getElementById("saveSchemaNameInput").value : initialName).trim();
+      const match = checkMatching(curName);
+
+      let actionOptionsHtml = "";
+      if (match) {
+        actionOptionsHtml = `
+          <div class="card" style="border-left:4px solid var(--amber); background:var(--panel2); margin:12px 0">
+            <div style="font-size:12.5px; font-weight:600; color:var(--amber)">${esc(I18N.t("schemas.existing_match_notice"))} <strong>${esc(match.name)} (v${esc(match.version || '1.0')})</strong></div>
+            <div style="margin-top:8px; display:flex; flex-direction:column; gap:6px; font-size:12px">
+              <label><input type="radio" name="saveSchemaAction" value="update_existing" checked /> ${esc(I18N.t("schemas.action_update_existing"))}</label>
+              <label><input type="radio" name="saveSchemaAction" value="new_version" /> ${esc(I18N.t("schemas.action_new_version"))}</label>
+              <label><input type="radio" name="saveSchemaAction" value="save_as" /> ${esc(I18N.t("schemas.action_save_as"))}</label>
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div>
+          <p class="muted" style="margin-top:0">${esc(I18N.t("schemas.save_drawer_desc"))}</p>
+          <div style="display:flex; gap:12px; margin-bottom:12px">
+            <div style="flex:2">
+              <label class="form-label" style="font-size:12px">${esc(I18N.t("schemas.label_name"))}</label>
+              <input type="text" id="saveSchemaNameInput" class="form-control" value="${esc(initialName)}" style="font-size:13px">
+            </div>
+            <div style="flex:1">
+              <label class="form-label" style="font-size:12px">${esc(I18N.t("schemas.label_version"))}</label>
+              <input type="text" id="saveSchemaVerInput" class="form-control" value="${esc(initialVer)}" style="font-size:13px">
+            </div>
+          </div>
+          <div style="margin-bottom:12px">
+            <label class="form-label" style="font-size:12px">${esc(I18N.t("schemas.label_description"))}</label>
+            <input type="text" id="saveSchemaDescInput" class="form-control" value="${esc(initialDesc)}" placeholder="${esc(I18N.t("schemas.label_description"))}" style="font-size:13px">
+          </div>
+          <div id="saveSchemaActionArea">${actionOptionsHtml}</div>
+          <div style="margin-bottom:14px; font-size:12px; color:var(--muted)">
+            ${props.length} ${esc(I18N.t("schemas.card_properties"))}: ${esc(props.map(p => p.name).join(", "))}
+          </div>
+          <div style="display:flex; justify-content:flex-end; gap:8px">
+            <button class="secondary" onclick="closeDrawer()">${esc(I18N.t("common.cancel"))}</button>
+            <button class="primary" id="confirmSaveNamedSchemaBtn">${esc(I18N.t("schemas.btn_save_confirm"))}</button>
+          </div>
+        </div>
+      `;
+    };
+
+    openDrawer(I18N.t("schemas.save_drawer_title"), renderFormHtml());
+
+    const nameInput = document.getElementById("saveSchemaNameInput");
+    if (nameInput) {
+      nameInput.oninput = () => {
+        const match = checkMatching(nameInput.value.trim());
+        const actionArea = document.getElementById("saveSchemaActionArea");
+        if (actionArea) {
+          if (match) {
+            actionArea.innerHTML = `
+              <div class="card" style="border-left:4px solid var(--amber); background:var(--panel2); margin:12px 0">
+                <div style="font-size:12.5px; font-weight:600; color:var(--amber)">${esc(I18N.t("schemas.existing_match_notice"))} <strong>${esc(match.name)} (v${esc(match.version || '1.0')})</strong></div>
+                <div style="margin-top:8px; display:flex; flex-direction:column; gap:6px; font-size:12px">
+                  <label><input type="radio" name="saveSchemaAction" value="update_existing" checked /> ${esc(I18N.t("schemas.action_update_existing"))}</label>
+                  <label><input type="radio" name="saveSchemaAction" value="new_version" /> ${esc(I18N.t("schemas.action_new_version"))}</label>
+                  <label><input type="radio" name="saveSchemaAction" value="save_as" /> ${esc(I18N.t("schemas.action_save_as"))}</label>
+                </div>
+              </div>
+            `;
+          } else {
+            actionArea.innerHTML = "";
+          }
+        }
+      };
+    }
+
+    const saveBtn = document.getElementById("confirmSaveNamedSchemaBtn");
+    if (saveBtn) {
+      saveBtn.onclick = async () => {
+        const name = (document.getElementById("saveSchemaNameInput").value || "").trim();
+        const ver = (document.getElementById("saveSchemaVerInput").value || "").trim() || "1.0";
+        const desc = (document.getElementById("saveSchemaDescInput").value || "").trim();
+        if (!name) return toast(I18N.t("toast.schema_name_required"), true);
+
+        const match = checkMatching(name);
+        const selectedAction = document.querySelector('input[name="saveSchemaAction"]:checked');
+        const actionVal = selectedAction ? selectedAction.value : (match ? "update_existing" : "create_new");
+
+        try {
+          let savedId = null;
+          if (match && actionVal === "update_existing") {
+            await api("/api/schemas/update", {
+              id: match.id,
+              schema: {
+                name: name,
+                version: ver,
+                description: desc,
+                properties: props
+              }
+            });
+            savedId = match.id;
+          } else if (match && actionVal === "new_version") {
+            let nextVer = ver;
+            if (ver === (match.version || "1.0")) {
+              const parsedVer = parseFloat(match.version || "1.0");
+              nextVer = isNaN(parsedVer) ? "1.1" : (parsedVer + 0.1).toFixed(1);
+            }
+            const createRes = await api("/api/schemas/create", {
+              schema: {
+                name: name,
+                version: nextVer,
+                description: desc,
+                properties: props
+              }
+            });
+            savedId = (createRes && createRes.schema) ? createRes.schema.id : null;
+          } else {
+            const createRes = await api("/api/schemas/create", {
+              schema: {
+                name: name,
+                version: ver,
+                description: desc,
+                properties: props
+              }
+            });
+            savedId = (createRes && createRes.schema) ? createRes.schema.id : null;
+          }
+
+          if (savedId) {
+            const readback = await api("/api/schemas/get", { id: savedId });
+            if (!readback || !readback.schema) {
+              throw new Error("Readback verification failed for newly created schema.");
+            }
+          }
+
+          closeDrawer();
+          await loadSchemasList();
+          if (typeof updateScopeSchemaAssignmentUI === 'function') {
+            await updateScopeSchemaAssignmentUI();
+          }
+          toast(I18N.t("toast.schema_saved", { name: name }));
+          if (typeof onSavedCallback === 'function') onSavedCallback(savedId);
+        } catch (err) {
+          toast(err.message, true);
+        }
+      };
     }
   } catch (err) {
     toast(err.message, true);
@@ -1552,7 +1717,7 @@ window.openSchemaEditModal = async function(id) {
           <td style="text-align:center">
             <input type="checkbox" class="prop-edit-req" data-idx="${idx}" ${p.required ? 'checked' : ''}>
           </td>
-          <td><input type="text" class="form-control prop-edit-desc" data-idx="${idx}" value="${esc(p.description || '')}" placeholder="說明..." style="font-size:12px; padding:4px 6px"></td>
+          <td><input type="text" class="form-control prop-edit-desc" data-idx="${idx}" value="${esc(p.description || '')}" placeholder="${esc(I18N.t('schemas.col_prop_desc'))}" style="font-size:12px; padding:4px 6px"></td>
           <td style="text-align:center">
             <button type="button" class="ghost prop-edit-del" data-idx="${idx}" style="color:var(--red); font-weight:bold; padding:2px 6px">✕</button>
           </td>
@@ -1585,33 +1750,33 @@ window.openSchemaEditModal = async function(id) {
       <div style="max-width:100%">
         <div style="display:flex; gap:12px; margin-bottom:12px">
           <div style="flex:2">
-            <label class="form-label" style="font-size:12px">架構名稱：</label>
+            <label class="form-label" style="font-size:12px">${esc(I18N.t("schemas.label_name"))}</label>
             <input type="text" id="editSchemaNameInput" class="form-control" value="${esc(s.name)}" style="font-size:13px">
           </div>
           <div style="flex:1">
-            <label class="form-label" style="font-size:12px">版本：</label>
+            <label class="form-label" style="font-size:12px">${esc(I18N.t("schemas.label_version"))}</label>
             <input type="text" id="editSchemaVerInput" class="form-control" value="${esc(s.version || '1.0')}" style="font-size:13px">
           </div>
         </div>
         <div style="margin-bottom:14px">
-          <label class="form-label" style="font-size:12px">架構詳細說明：</label>
-          <input type="text" id="editSchemaDescInput" class="form-control" value="${esc(s.description || '')}" placeholder="輸入說明..." style="font-size:13px">
+          <label class="form-label" style="font-size:12px">${esc(I18N.t("schemas.label_description"))}</label>
+          <input type="text" id="editSchemaDescInput" class="form-control" value="${esc(s.description || '')}" placeholder="${esc(I18N.t("schemas.label_description"))}" style="font-size:13px">
         </div>
 
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
-          <label class="form-label" style="margin:0; font-size:12px; font-weight:600">屬性清單 (Properties)：</label>
-          <button type="button" class="secondary" id="editSchemaAddPropBtn" style="font-size:11px; padding:2px 8px">+ 新增屬性</button>
+          <label class="form-label" style="margin:0; font-size:12px; font-weight:600">${esc(I18N.t("schemas.edit_props_label"))}</label>
+          <button type="button" class="secondary" id="editSchemaAddPropBtn" style="font-size:11px; padding:2px 8px">${esc(I18N.t("schemas.btn_add_prop"))}</button>
         </div>
 
         <div style="max-height:300px; overflow-y:auto; border:1px solid var(--line); border-radius:var(--radius-sm); margin-bottom:16px">
           <table class="data-table" style="margin:0; font-size:12px">
             <thead>
               <tr>
-                <th style="width:140px">屬性鍵名</th>
-                <th style="width:110px">型態</th>
-                <th style="width:50px; text-align:center">必填</th>
-                <th>說明</th>
-                <th style="width:40px; text-align:center">刪除</th>
+                <th style="width:140px">${esc(I18N.t("schemas.col_prop_key"))}</th>
+                <th style="width:110px">${esc(I18N.t("schemas.col_prop_type"))}</th>
+                <th style="width:50px; text-align:center">${esc(I18N.t("schemas.col_prop_req"))}</th>
+                <th>${esc(I18N.t("schemas.col_prop_desc"))}</th>
+                <th style="width:40px; text-align:center">${esc(I18N.t("schemas.col_prop_del"))}</th>
               </tr>
             </thead>
             <tbody id="editSchemaPropsTbody"></tbody>
@@ -1619,8 +1784,8 @@ window.openSchemaEditModal = async function(id) {
         </div>
 
         <div style="display:flex; justify-content:flex-end; gap:8px">
-          <button class="secondary" onclick="closeDrawer()">取消</button>
-          <button class="primary" id="saveSchemaEditBtn">儲存變更</button>
+          <button class="secondary" onclick="closeDrawer()">${esc(I18N.t("common.cancel"))}</button>
+          <button class="primary" id="saveSchemaEditBtn">${esc(I18N.t("schemas.btn_save_changes"))}</button>
         </div>
       </div>
     `;
@@ -1705,10 +1870,10 @@ window.applyNamedSchemaToWorkspace = async function(id) {
           <div class="card" style="border-color:var(--brand); background:var(--panel2); margin-bottom:14px">
             <div style="display:flex; justify-content:space-between; align-items:center">
               <div>
-                <strong>⚖️ 待核對架構：${esc(res.schema.name)} (v${esc(res.schema.version || '1.0')})</strong>
-                <p class="muted" style="margin:4px 0 0 0; font-size:12px">請在上方搜尋或瀏覽資料夾選取筆記，工作室將為該筆記執行四態核對診斷。</p>
+                <strong>${esc(I18N.t("workspace.reconcile_target_schema", { name: res.schema.name, version: res.schema.version || '1.0' }))}</strong>
+                <p class="muted" style="margin:4px 0 0 0; font-size:12px">${esc(I18N.t("workspace.reconcile_instruction"))}</p>
               </div>
-              <button class="ghost" style="font-size:12px" onclick="S.activeReconciliationSchema=null; this.closest('.card').remove();">✕ 取消核對</button>
+              <button class="ghost" style="font-size:12px" onclick="S.activeReconciliationSchema=null; this.closest('.card').remove();">${esc(I18N.t("workspace.cancel_reconcile"))}</button>
             </div>
           </div>
         `;
@@ -1731,14 +1896,14 @@ window.openSchemaMigrationModal = async function(sourceId) {
     const others = all.filter(s => s.id !== sourceId);
     const html = `
       <div>
-        <p class="muted" style="margin-top:0">比對來源架構 <strong>${esc(src.name)}</strong> (v${esc(src.version)}) 與目標架構之差異，並產出安全遷移規劃。</p>
+        <p class="muted" style="margin-top:0">${I18N.t("migration.diff_lead", { src: esc(src.name), src_ver: esc(src.version || "1.0") })}</p>
         <div style="margin-bottom:14px">
-          <label class="form-label">選擇目標架構：</label>
+          <label class="form-label">${esc(I18N.t("migration.target_label"))}</label>
           <select id="migrationTargetSelect" class="form-control" style="width:100%">
             ${others.map(o => `<option value="${esc(o.id)}">${esc(o.name)} (v${esc(o.version)})</option>`).join("")}
           </select>
         </div>
-        <button class="primary" id="calcMigrationBtn" style="margin-bottom:14px">計算遷移差異與變更層級</button>
+        <button class="primary" id="calcMigrationBtn" style="margin-bottom:14px">${esc(I18N.t("migration.calc_btn"))}</button>
         <div id="migrationPlanResult"></div>
       </div>
     `;
@@ -1760,16 +1925,16 @@ window.openSchemaMigrationModal = async function(sourceId) {
             resBox.innerHTML = `
               <div class="card" style="border-left:4px solid ${plan.is_breaking ? 'var(--red)' : 'var(--teal)'}; background:var(--panel2); margin-top:10px">
                 <div style="display:flex; justify-content:space-between; align-items:center">
-                  <strong>建議版本變更：<span class="pill ${plan.is_breaking ? 'alert' : 'ok'}">${esc(plan.suggested_bump.toUpperCase())}</span></strong>
-                  <span class="pill ${plan.is_breaking ? 'alert' : 'ok'}">${plan.is_breaking ? '包含破壞性變更 (Breaking)' : '平滑相容變更 (Non-breaking)'}</span>
+                  <strong>${esc(I18N.t("migration.suggested_bump"))} <span class="pill ${plan.is_breaking ? 'alert' : 'ok'}">${esc(plan.suggested_bump.toUpperCase())}</span></strong>
+                  <span class="pill ${plan.is_breaking ? 'alert' : 'ok'}">${plan.is_breaking ? esc(I18N.t("migration.is_breaking")) : esc(I18N.t("migration.is_non_breaking"))}</span>
                 </div>
                 <div style="margin-top:10px; font-size:12.5px">
-                  <strong>詳細變更清單：</strong>
+                  <strong>${esc(I18N.t("migration.changes_list_title"))}</strong>
                   <ul style="margin:6px 0; padding-left:20px">
                     ${plan.changes.map(c => `<li><span class="pill ${c.is_breaking ? 'alert' : ''}">${esc(c.change_type)}</span> ${esc(c.description)}</li>`).join("")}
                   </ul>
                   ${plan.migration_steps.length ? `
-                    <strong style="display:block; margin-top:10px">建議遷移步驟：</strong>
+                    <strong style="display:block; margin-top:10px">${esc(I18N.t("migration.steps_title"))}</strong>
                     <ol style="margin:6px 0; padding-left:20px">
                       ${plan.migration_steps.map(s => `<li>${esc(s)}</li>`).join("")}
                     </ol>
@@ -1853,23 +2018,30 @@ function setupSchemasHandlers() {
             const cs = valReport.changeset || {};
             const formatCategoryChanges = (catName, catData) => {
               if (!catData) return '';
+              const formatItems = (arr) => {
+                if (!arr || !arr.length) return '';
+                return arr.map(item => {
+                  if (typeof item === 'string') return item;
+                  return item.name || item.canonical_key || item.scope_key || item.id || JSON.stringify(item);
+                }).join(", ");
+              };
               const parts = [];
-              if (catData.add && catData.add.length) parts.push(`<span class="pill ok">+${catData.add.length} 新增 (${esc(catData.add.join(", "))})</span>`);
-              if (catData.update && catData.update.length) parts.push(`<span class="pill warn">~${catData.update.length} 更新 (${esc(catData.update.join(", "))})</span>`);
-              if (catData.conflict && catData.conflict.length) parts.push(`<span class="pill alert">!${catData.conflict.length} 衝突 (${esc(catData.conflict.join(", "))})</span>`);
-              if (catData.unchanged && catData.unchanged.length) parts.push(`<span class="pill muted">=${catData.unchanged.length} 無變更</span>`);
-              if (catData.remove && catData.remove.length) parts.push(`<span class="pill alert">-${catData.remove.length} 移除 (僅replace模式)</span>`);
-              if (!parts.length) return `<div style="font-size:12px; color:var(--muted)">${catName}: 無異動</div>`;
+              if (catData.add && catData.add.length) parts.push(`<span class="pill ok">${esc(I18N.t("profile.stat_add", { count: catData.add.length, items: formatItems(catData.add) }))}</span>`);
+              if (catData.update && catData.update.length) parts.push(`<span class="pill warn">${esc(I18N.t("profile.stat_update", { count: catData.update.length, items: formatItems(catData.update) }))}</span>`);
+              if (catData.conflict && catData.conflict.length) parts.push(`<span class="pill alert">${esc(I18N.t("profile.stat_conflict", { count: catData.conflict.length, items: formatItems(catData.conflict) }))}</span>`);
+              if (catData.unchanged && catData.unchanged.length) parts.push(`<span class="pill muted">${esc(I18N.t("profile.stat_unchanged", { count: catData.unchanged.length }))}</span>`);
+              if (catData.remove && catData.remove.length) parts.push(`<span class="pill alert">${esc(I18N.t("profile.stat_remove", { count: catData.remove.length }))}</span>`);
+              if (!parts.length) return `<div style="font-size:12px; color:var(--muted)">${esc(I18N.t("profile.no_changes", { category: catName }))}</div>`;
               return `<div style="margin-bottom:6px; font-size:12px"><strong>${catName}:</strong> ${parts.join(" ")}</div>`;
             };
 
             let changesetHtml = `
               <div style="margin-top:10px; padding:8px; background:var(--panel); border-radius:var(--radius-sm)">
-                <div style="font-size:12px; font-weight:700; margin-bottom:6px">變更集預覽 (Changeset Breakdown)：</div>
-                ${formatCategoryChanges("架構庫 (Schemas)", cs.schemas)}
-                ${formatCategoryChanges("範圍指派 (Scope Assignments)", cs.scope_assignments)}
-                ${formatCategoryChanges("術語覆寫 (Glossary)", cs.glossary_overrides)}
-                ${formatCategoryChanges("儲存檢查 (Saved Checks)", cs.saved_checks)}
+                <div style="font-size:12px; font-weight:700; margin-bottom:6px">${esc(I18N.t("profile.breakdown_title"))}</div>
+                ${formatCategoryChanges(I18N.t("profile.cat_schemas"), cs.schemas)}
+                ${formatCategoryChanges(I18N.t("profile.cat_scopes"), cs.scope_assignments || cs.assignments)}
+                ${formatCategoryChanges(I18N.t("profile.cat_glossary"), cs.glossary_overrides || cs.glossary)}
+                ${formatCategoryChanges(I18N.t("profile.cat_checks"), cs.saved_checks || cs.checks)}
               </div>
             `;
 
@@ -1985,7 +2157,7 @@ async function loadGlossaryList() {
             label: pkey,
             label_en: pkey,
             source: "observed",
-            guidance: `庫內出現 ${pdata.usage_count || 0} 篇筆記 (主導型態: ${pdata.dominant_type || 'text'})`,
+            guidance: I18N.t("glossary.vault_observed_guidance", { count: pdata.usage_count || 0, type: pdata.dominant_type || 'text' }),
             isOverride: false,
             isObserved: true,
           });
@@ -2063,7 +2235,7 @@ window.openEditGlossaryModal = async function(key = "") {
           </div>
           <div>
             <label style="font-size:12px; color:var(--muted)">${esc(I18N.t("glossary.label_aliases"))}</label>
-            <input type="text" id="editGlossaryAliases" class="form-control" value="${esc(Array.isArray(meta.aliases) ? meta.aliases.join(', ') : (meta.aliases || ''))}" placeholder="e.g. tag, label, 專案標籤" style="width:100%; margin-top:4px" />
+            <input type="text" id="editGlossaryAliases" class="form-control" value="${esc(Array.isArray(meta.aliases) ? meta.aliases.join(', ') : (meta.aliases || ''))}" placeholder="${esc(I18N.t('glossary.aliases_placeholder'))}" style="width:100%; margin-top:4px" />
           </div>
         </div>
         <div>
@@ -2122,7 +2294,7 @@ window.saveGlossaryOverride = async function() {
     });
     toast(I18N.t("toast.override_saved", { key }));
     closeDrawer();
-    await loadGlossaryCatalog(); // 刷新全局 GLOSSARY_CACHE
+    await loadGlossaryCatalog(); // Refresh global GLOSSARY_CACHE
     await loadGlossaryList();
   } catch (e) {
     toast(e.message, true);
@@ -2134,7 +2306,7 @@ window.deleteGlossaryOverride = async function(key) {
     await api("/api/glossary/user/delete", { canonical_key: key });
     toast(I18N.t("toast.override_deleted", { key }));
     closeDrawer();
-    await loadGlossaryCatalog(); // 刷新全局 GLOSSARY_CACHE
+    await loadGlossaryCatalog(); // Refresh global GLOSSARY_CACHE
     await loadGlossaryList();
   } catch (e) {
     toast(e.message, true);
@@ -2177,14 +2349,9 @@ function renderMismatchBanner(backendVer) {
     existing.style.cssText = "background:var(--red); color:#fff; padding:12px 16px; font-weight:700; text-align:center; position:sticky; top:0; z-index:99999; box-shadow:0 2px 8px rgba(0,0,0,0.3)";
     document.body.prepend(existing);
   }
-  const isEn = (localStorage.getItem("ps_locale") || "").startsWith("en");
   const msg = backendVer
-    ? (isEn 
-        ? `⚠️ Server Version Mismatch! The Web UI requires v1.2.0, but the backend server is v${backendVer}. Please stop and restart the server (python -m app)!`
-        : `⚠️ 伺服器版本不相容！前端介面需要 v1.2.0，但後端伺服器版本為 v${backendVer}。請停止並重啟伺服器 (python -m app)！`)
-    : (isEn
-        ? `⚠️ Unable to connect to backend server! Please ensure the local server is running (python -m app)!`
-        : `⚠️ 無法連線至後端伺服器！請確認本機伺服器已啟動 (python -m app)！`);
+    ? I18N.t("server.mismatch_warning", { version: backendVer })
+    : I18N.t("server.offline_warning");
   existing.textContent = msg;
 }
 
@@ -2365,6 +2532,9 @@ function renderAllDynamicViews() {
   updateContextBarLabels();
   renderDesignPresets();
   if (S.scanned) {
+    if ($("scanMsg") && S.lastScanSeconds) {
+      $("scanMsg").innerHTML = `<div class="ok" style="font-weight:600">✓ ${I18N.t("toast.scan_done")} (${S.lastScanSeconds}s)</div>`;
+    }
     loadDiscovery();
     loadHealth();
     loadSavedChecks();
@@ -2372,14 +2542,21 @@ function renderAllDynamicViews() {
     populateRefactorSourceOptions();
     populateRefactorTargetOptions();
   }
+  loadSchemasList();
+  if (typeof populateGlossaryTable === 'function') {
+    populateGlossaryTable();
+  }
   if (S.currentNote && S.currentNote.can_edit && S.currentNote.original_properties) {
     const currentValues = {};
     document.querySelectorAll(".ws-prop-row").forEach(row => {
-      const k = row.querySelector(".ws-prop-key").value.trim();
-      const v = row.querySelector(".ws-prop-val").value;
+      const kInp = row.querySelector(".ws-prop-key");
+      const vInp = row.querySelector(".ws-prop-val");
+      const k = kInp ? kInp.value.trim() : "";
+      const v = vInp ? vInp.value : "";
       if (k) currentValues[k] = v;
     });
-    renderWorkspaceFields(Object.keys(currentValues).length ? currentValues : S.currentNote.original_properties);
+    const propsToRender = Object.keys(currentValues).length ? currentValues : S.currentNote.original_properties;
+    renderWorkspaceFields(propsToRender, true);
     updateWorkspacePreview();
   }
 }
@@ -2400,6 +2577,7 @@ function setupVaultHandlers() {
       const res = await api("/api/scan", { vault_path: path });
       S.vaultPath = path;
       S.scanned = true;
+      S.lastScanSeconds = res.scan_seconds;
       $("currentVaultLabel").textContent = path.split(/[/\\]/).pop() || path;
       $("vaultBadge").className = "chip ok";
 
@@ -2473,7 +2651,7 @@ async function loadScopeFolders() {
       if (asgnRes && asgnRes.assignment) {
         const driftRes = await api("/api/drift/analyze", { scope_key: scopeKey, schema_id: asgnRes.assignment.schema_id });
         if ($("healthDriftSchemaName")) $("healthDriftSchemaName").textContent = driftRes.schema_name;
-        if ($("healthDriftComplianceBadge")) $("healthDriftComplianceBadge").textContent = `${driftRes.compliance_rate}% 符合`;
+        if ($("healthDriftComplianceBadge")) $("healthDriftComplianceBadge").textContent = I18N.t("drift.compliance_badge", { rate: driftRes.compliance_rate });
         if ($("healthDriftCompliant")) $("healthDriftCompliant").textContent = driftRes.compliant_notes;
         if ($("healthDriftMissing")) $("healthDriftMissing").textContent = (driftRes.by_category && driftRes.by_category.missing_required) || 0;
         if ($("healthDriftTypeMismatch")) $("healthDriftTypeMismatch").textContent = ((driftRes.by_category && driftRes.by_category.type_mismatch) || 0) + ((driftRes.by_category && driftRes.by_category.value_drift) || 0);
@@ -2585,7 +2763,7 @@ function getCanonicalScopeKey() {
       // 1. Populate schemas select
       const sList = await api("/api/schemas/list");
       const schemas = sList.schemas || [];
-      select.innerHTML = '<option value="">— 選擇架構 —</option>' + schemas.map(s => `
+      select.innerHTML = `<option value="">— ${esc(I18N.t("schemas.label_name"))} —</option>` + schemas.map(s => `
         <option value="${esc(s.id)}">${esc(s.name)} (v${esc(s.version || '1.0')})</option>
       `).join("");
 
@@ -2962,7 +3140,7 @@ async function inspectNoteInWorkspace(notePath) {
           <tr style="${it.state === 'conflict' ? 'background:var(--red-soft)' : it.state === 'missing' ? 'background:var(--amber-soft)' : ''}">
             <td>${statePill(it.state)}</td>
             <td><strong>${esc(it.name)}</strong> ${it.required ? '<span style="color:var(--red)">*</span>' : ''}</td>
-            <td><code>${esc(it.current_value == null ? '(無)' : (Array.isArray(it.current_value) ? it.current_value.join(", ") : it.current_value))}</code></td>
+            <td><code>${esc(it.current_value == null ? I18N.t("workspace.val_none") : (Array.isArray(it.current_value) ? it.current_value.join(", ") : it.current_value))}</code></td>
             <td><span class="pill" style="font-size:11px">${esc(it.expected_type || '—')}</span></td>
             <td style="font-size:12px; color:var(--muted)">${esc(it.conflict_reason || (it.state === 'outside_schema' ? I18N.t("reconcile.state_preserved") : ''))}</td>
             <td>
@@ -2977,7 +3155,7 @@ async function inspectNoteInWorkspace(notePath) {
             <div style="display:flex; justify-content:space-between; align-items:flex-start">
               <div>
                 <strong style="font-size:14px">⚖️ ${esc(I18N.t("schemas.btn_reconcile"))}：${esc(recRes.schema_name)}</strong>
-                <p class="muted" style="margin:4px 0 0 0; font-size:12px">四態分類逐項診斷：符合、缺漏、衝突與保留。可在下方直接補齊或調整。</p>
+                <p class="muted" style="margin:4px 0 0 0; font-size:12px">${esc(I18N.t("workspace.four_state_lead"))}</p>
               </div>
               <div style="display:flex; gap:6px; font-size:11.5px">
                 <span class="pill ok">${esc(I18N.t("reconcile.state_match"))}: ${recRes.summary.matches}</span>
@@ -3018,8 +3196,10 @@ async function inspectNoteInWorkspace(notePath) {
   }
 }
 
-function renderWorkspaceFields(propsMap) {
-  S.wsTouchedKeys = new Set();
+function renderWorkspaceFields(propsMap, preserveTouched = false) {
+  if (!preserveTouched) {
+    S.wsTouchedKeys = new Set();
+  }
   const container = $("wsPropFields");
   container.innerHTML = Object.entries(propsMap).map(([k, v]) => `
     <div class="ws-prop-row" data-key="${esc(k)}" style="display:grid; grid-template-columns:220px 1fr 36px; gap:8px; align-items:center; margin-bottom:8px; padding:6px 8px; background:var(--panel2); border-radius:var(--radius-sm)">
@@ -3192,7 +3372,7 @@ async function updateWorkspacePreview() {
         : `<li>${esc(I18N.t("workspace.roundtrip_err"))}</li>`;
       $("wsRoundtripStatus").innerHTML = `
         <div class="bad" style="line-height:1.4">
-          <strong>⚠ 屬性規範檢核未通過 (Schema Constraint Mismatch)：</strong>
+          <strong>⚠ ${esc(I18N.t("workspace.schema_constraint_mismatch"))}</strong>
           <ul style="margin:4px 0 0 0; padding-left:18px">${errList}</ul>
         </div>
       `;
@@ -3396,26 +3576,11 @@ function setupDesignHandlers() {
   $("designGoToWorkspace").onclick = () => setTab("workspace");
   $("designGoToFill").onclick = () => setTab("fill");
   if ($("designSaveToNamedSchemas")) {
-    $("designSaveToNamedSchemas").onclick = async () => {
+    $("designSaveToNamedSchemas").onclick = () => {
       if (!S.currentSchema) return;
-      try {
-        const createRes = await api("/api/schemas/create", { schema: S.currentSchema });
-        const savedId = (createRes && createRes.schema) ? createRes.schema.id : null;
-        if (savedId) {
-          const readback = await api("/api/schemas/get", { id: savedId });
-          if (!readback || !readback.schema) {
-            throw new Error("Readback verification failed for newly created schema.");
-          }
-        }
-        await loadSchemasList();
-        if (typeof updateScopeSchemaAssignmentUI === 'function') {
-          await updateScopeSchemaAssignmentUI();
-        }
-        toast(I18N.t("toast.schema_saved", { name: S.currentSchema.name }));
+      openSaveNamedSchemaModal(S.currentSchema, (savedId) => {
         setTab("schemas");
-      } catch (e) {
-        toast(e.message, true);
-      }
+      });
     };
   }
 }
@@ -3473,7 +3638,7 @@ function renderFillForm() {
     if (p.allowed_values && p.allowed_values.length) {
       controlHtml = `
         <select class="fill-prop-input" data-name="${esc(p.name)}" data-type="${esc(p.storage_type)}">
-          <option value="">-- 選擇 --</option>
+          <option value="">${esc(I18N.t("common.select_placeholder"))}</option>
           ${p.allowed_values.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join("")}
         </select>
       `;
@@ -3484,7 +3649,7 @@ function renderFillForm() {
     } else if (p.storage_type === "date") {
       controlHtml = `<input type="date" class="fill-prop-input" data-name="${esc(p.name)}" data-type="${esc(p.storage_type)}" />`;
     } else {
-      controlHtml = `<input type="text" class="fill-prop-input" data-name="${esc(p.name)}" data-type="${esc(p.storage_type)}" placeholder="${p.ui_control === 'note_link' ? '[[Note Name]]' : '輸入屬性值...'}" />`;
+      controlHtml = `<input type="text" class="fill-prop-input" data-name="${esc(p.name)}" data-type="${esc(p.storage_type)}" placeholder="${p.ui_control === 'note_link' ? '[[Note Name]]' : esc(I18N.t('fill.prop_val_placeholder'))}" />`;
     }
 
     return `
@@ -3821,7 +3986,7 @@ async function loadHealth() {
         const driftRes = await api("/api/drift/analyze", { scope_key: scopeKey, schema_id: asgnRes.assignment.schema_id });
         S.lastDriftReport = driftRes;
         if ($("healthDriftSchemaName")) $("healthDriftSchemaName").textContent = driftRes.schema_name;
-        if ($("healthDriftComplianceBadge")) $("healthDriftComplianceBadge").textContent = `${driftRes.compliance_rate}% 符合`;
+        if ($("healthDriftComplianceBadge")) $("healthDriftComplianceBadge").textContent = I18N.t("drift.compliance_badge", { rate: driftRes.compliance_rate });
         if ($("healthDriftCompliant")) $("healthDriftCompliant").textContent = driftRes.compliant_notes;
         if ($("healthDriftMissing")) $("healthDriftMissing").textContent = (driftRes.by_category && driftRes.by_category.missing_required) || 0;
         if ($("healthDriftTypeMismatch")) $("healthDriftTypeMismatch").textContent = ((driftRes.by_category && driftRes.by_category.type_mismatch) || 0) + ((driftRes.by_category && driftRes.by_category.value_drift) || 0);
@@ -3846,50 +4011,58 @@ window.openDriftDetailsDrawer = function() {
 
   const findings = rep.findings || [];
   if (!findings.length) {
-    openDrawer(I18N.t("drift.drawer_title"), `<div style="padding:20px; text-align:center" class="muted">🎉 目前範圍完全符合架構「${esc(rep.schema_name)}」，未發現任何漂移事項！</div>`);
+    openDrawer(I18N.t("drift.drawer_title"), `<div style="padding:20px; text-align:center" class="muted">${esc(I18N.t("drift.empty_title", { name: rep.schema_name }))}</div>`);
     return;
   }
 
   const categoryLabel = (cat) => {
-    if (cat === "missing_required") return '<span class="pill alert">必填缺漏</span>';
-    if (cat === "type_mismatch") return '<span class="pill warn">型態衝突</span>';
-    if (cat === "value_drift") return '<span class="pill warn">數值漂移</span>';
-    return '<span class="pill">自訂屬性</span>';
+    if (cat === "missing_required" || cat === "missing_required_relationship") return `<span class="pill alert">${esc(I18N.t("drift.category_missing"))}</span>`;
+    if (cat === "type_mismatch" || cat === "schema_version_mismatch") return `<span class="pill warn">${esc(I18N.t("drift.category_type"))}</span>`;
+    if (cat === "value_drift") return `<span class="pill warn">${esc(I18N.t("drift.category_value"))}</span>`;
+    return `<span class="pill">${esc(I18N.t("drift.category_unexpected"))}</span>`;
   };
 
-  const rows = findings.map(f => `
-    <tr>
-      <td>${categoryLabel(f.category)}</td>
-      <td><strong>${esc(f.property_key)}</strong></td>
-      <td><code>${esc(f.note_path)}</code></td>
-      <td style="font-size:12px">${esc(f.detail || '')}</td>
-      <td style="text-align:right">
+  const rows = findings.map(f => {
+    let actionColHtml = "";
+    if (f.navigation_available === false) {
+      actionColHtml = `<span class="pill muted" title="${esc(f.navigation_reason || '')}">🚫 ${esc(I18N.t("drift.not_navigable"))}</span>`;
+    } else {
+      actionColHtml = `
         <button class="primary" style="font-size:11px; padding:2px 7px" onclick="drilldownToNoteWorkspace('${esc(f.note_path)}', null, '${esc(f.property_key)}', 'drift_finding', '${esc(rep.schema_id)}')">
-          核對筆記 ↗
+          ${esc(I18N.t("drift.btn_reconcile"))} ↗
         </button>
-      </td>
-    </tr>
-  `).join("");
+      `;
+    }
+    return `
+      <tr>
+        <td>${categoryLabel(f.category)}</td>
+        <td><strong>${esc(f.property_key)}</strong></td>
+        <td><code>${esc(f.note_path)}</code></td>
+        <td style="font-size:12px">${esc(f.detail || '')}</td>
+        <td style="text-align:right">${actionColHtml}</td>
+      </tr>
+    `;
+  }).join("");
 
   const html = `
     <div>
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
         <div>
-          <strong style="font-size:14px">架構：${esc(rep.schema_name)}</strong>
-          <span class="muted" style="font-size:12px; margin-left:8px">共 ${findings.length} 個漂移項目</span>
+          <strong style="font-size:14px">${esc(I18N.t("drift.schema_prefix"))}${esc(rep.schema_name)}</strong>
+          <span class="muted" style="font-size:12px; margin-left:8px">${esc(I18N.t("drift.items_count", { count: findings.length }))}</span>
         </div>
-        <span class="pill ok">${rep.compliance_rate}% 符合率</span>
+        <span class="pill ok">${esc(I18N.t("drift.compliance_rate", { rate: rep.compliance_rate }))}</span>
       </div>
 
       <div style="max-height:480px; overflow-y:auto; border:1px solid var(--line); border-radius:var(--radius-sm)">
         <table class="data-table" style="margin:0; font-size:12px">
           <thead>
             <tr>
-              <th style="width:90px">類別</th>
-              <th style="width:120px">屬性鍵</th>
-              <th>受影響筆記</th>
-              <th>差異說明</th>
-              <th style="width:90px; text-align:right">操作</th>
+              <th style="width:90px">${esc(I18N.t("drift.col_category"))}</th>
+              <th style="width:120px">${esc(I18N.t("drift.col_prop_key"))}</th>
+              <th>${esc(I18N.t("drift.col_note_path"))}</th>
+              <th>${esc(I18N.t("drift.col_diff_desc"))}</th>
+              <th style="width:120px; text-align:right">${esc(I18N.t("drift.col_action"))}</th>
             </tr>
           </thead>
           <tbody>${rows}</tbody>
@@ -4200,7 +4373,7 @@ function setupRefactorHandlers() {
               ${esc(I18N.t("refactor.normalize_summary", { groups: changes.length, notes: summary.notes_to_change || 0, untouched: untouched.length }))}
             </div>
             <table style="font-size:12.5px">
-              <thead><tr><th>原值 (Variants)</th><th style="width:30px; text-align:center">→</th><th>目標標準值</th><th style="width:80px; text-align:right">影響篇數</th></tr></thead>
+              <thead><tr><th>${esc(I18N.t("refactor.variants_col"))}</th><th style="width:30px; text-align:center">→</th><th>${esc(I18N.t("refactor.target_canonical_col"))}</th><th style="width:80px; text-align:right">${esc(I18N.t("refactor.affected_notes_count_col"))}</th></tr></thead>
               <tbody>
                 ${changes.map(ch => `
                   <tr>
@@ -4313,20 +4486,20 @@ function setupProposalHandlers() {
           <tr>
             <td>
               <strong>${esc(item.name)}</strong>
-              ${item.proposed_required ? '<span style="color:var(--red); font-weight:bold" title="必填屬性">*</span>' : ''}
+              ${item.proposed_required ? `<span style="color:var(--red); font-weight:bold" title="${esc(I18N.t("proposal.cand_req_tooltip"))}">*</span>` : ''}
             </td>
             <td><span class="pill">${esc(item.proposed_storage_type)}</span></td>
             <td><code>${esc(item.proposed_ui_control || 'plain')}</code></td>
             <td>${compatBadge}</td>
             <td style="font-size:12px">
-              <div>範圍: <strong>${item.scope_usage_count || 0}</strong></div>
-              <div class="muted" style="font-size:11px">全庫: ${item.vault_usage_count || 0}</div>
+              <div>${esc(I18N.t("proposal.scope_prefix"))} <strong>${item.scope_usage_count || 0}</strong></div>
+              <div class="muted" style="font-size:11px">${esc(I18N.t("proposal.vault_prefix"))} ${item.vault_usage_count || 0}</div>
             </td>
             <td style="font-size:12px">
-              ${glo ? `<span class="pill ok" title="${esc(glo.canonical_key)}">${esc(glo.label_zh || glo.label_en || '收錄')}</span>` : '<span class="muted">—</span>'}
+              ${glo ? `<span class="pill ok" title="${esc(glo.canonical_key)}">${esc(glo.label_zh || glo.label_en || I18N.t("proposal.included"))}</span>` : '<span class="muted">—</span>'}
             </td>
             <td style="font-size:12px">
-              ${schMatches.length > 0 ? `<span class="pill" title="${esc(schMatches.map(s => s.name).join(', '))}">${schMatches.length} 個架構</span>` : '<span class="muted">—</span>'}
+              ${schMatches.length > 0 ? `<span class="pill" title="${esc(schMatches.map(s => s.name).join(', '))}">${schMatches.length} ${esc(I18N.t("proposal.schemas_count_pill"))}</span>` : '<span class="muted">—</span>'}
             </td>
             <td style="font-size:12px; color:var(--muted)">${esc(item.reason || item.compatibility_detail || '—')}</td>
           </tr>
@@ -4363,10 +4536,10 @@ function setupProposalHandlers() {
                 <th style="width:90px">${esc(I18N.t("proposal.col_type"))}</th>
                 <th style="width:90px">${esc(I18N.t("proposal.col_control"))}</th>
                 <th style="width:110px">${esc(I18N.t("proposal.col_usage"))}</th>
-                <th style="width:110px">Scope / Vault</th>
-                <th style="width:90px">Glossary</th>
-                <th style="width:90px">Schema</th>
-                <th>Reason / Guidance</th>
+                <th style="width:110px">${esc(I18N.t("proposal.scope_label"))}</th>
+                <th style="width:90px">${esc(I18N.t("proposal.glossary_label"))}</th>
+                <th style="width:90px">${esc(I18N.t("proposal.schema_label"))}</th>
+                <th>${esc(I18N.t("proposal.reason_label"))}</th>
               </tr>
             </thead>
             <tbody>${rowsHtml}</tbody>
@@ -4374,7 +4547,7 @@ function setupProposalHandlers() {
         </div>
 
         <details style="margin-top:14px; border-top:1px solid var(--line); padding-top:10px">
-          <summary style="cursor:pointer; font-size:12.5px; color:var(--muted)">檢視原始比對與校驗 JSON (Four-way JSON Output)</summary>
+          <summary style="cursor:pointer; font-size:12.5px; color:var(--muted)">${esc(I18N.t("proposal.four_way_json_summary"))}</summary>
           <pre style="max-height:220px; font-size:12px">${esc(JSON.stringify(res, null, 2))}</pre>
         </details>
       `;
@@ -4384,25 +4557,10 @@ function setupProposalHandlers() {
       // Bind action buttons
       const saveBtn = document.getElementById("proposalSaveAsNamedBtn");
       if (saveBtn) {
-        saveBtn.onclick = async () => {
-          try {
-            const createRes = await api("/api/schemas/create", { schema: sch });
-            const savedId = (createRes && createRes.schema) ? createRes.schema.id : null;
-            if (savedId) {
-              const readback = await api("/api/schemas/get", { id: savedId });
-              if (!readback || !readback.schema) {
-                throw new Error("Readback verification failed for newly created schema.");
-              }
-            }
-            await loadSchemasList();
-            if (typeof updateScopeSchemaAssignmentUI === 'function') {
-              await updateScopeSchemaAssignmentUI();
-            }
-            toast(I18N.t("toast.schema_saved", { name: sch.schema_name || sch.name }));
+        saveBtn.onclick = () => {
+          openSaveNamedSchemaModal(sch, (savedId) => {
             setTab("schemas");
-          } catch (err) {
-            toast(err.message, true);
-          }
+          });
         };
       }
 
@@ -4464,7 +4622,7 @@ window.openProposalCandidateEditor = function(schema, proposalVersion) {
         <td style="text-align:center">
           <input type="checkbox" class="cand-prop-req" data-idx="${idx}" ${p.required ? 'checked' : ''}>
         </td>
-        <td><input type="text" class="form-control cand-prop-reason" data-idx="${idx}" value="${esc(p.reason || p.description || '')}" placeholder="理由..." style="font-size:12px; padding:4px 6px"></td>
+        <td><input type="text" class="form-control cand-prop-reason" data-idx="${idx}" value="${esc(p.reason || p.description || '')}" placeholder="${esc(I18N.t("proposal.cand_reason_placeholder"))}" style="font-size:12px; padding:4px 6px"></td>
         <td style="text-align:center">
           <button type="button" class="ghost cand-prop-del" data-idx="${idx}" style="color:var(--red); font-weight:bold; padding:2px 6px">✕</button>
         </td>
@@ -4495,28 +4653,28 @@ window.openProposalCandidateEditor = function(schema, proposalVersion) {
   const html = `
     <div>
       <div style="margin-bottom:12px">
-        <label class="form-label" style="font-size:12px">架構名稱：</label>
+        <label class="form-label" style="font-size:12px">${esc(I18N.t("proposal.cand_schema_name"))}</label>
         <input type="text" id="candSchemaNameInput" class="form-control" value="${esc(schema.schema_name || schema.name || '')}" style="font-size:13px">
       </div>
       <div style="margin-bottom:14px">
-        <label class="form-label" style="font-size:12px">架構說明：</label>
+        <label class="form-label" style="font-size:12px">${esc(I18N.t("proposal.cand_schema_desc"))}</label>
         <input type="text" id="candSchemaDescInput" class="form-control" value="${esc(schema.description || '')}" style="font-size:13px">
       </div>
 
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
-        <label class="form-label" style="margin:0; font-size:12px; font-weight:600">候選屬性清單：</label>
-        <button type="button" class="secondary" id="candAddPropBtn" style="font-size:11px; padding:2px 8px">+ 新增屬性</button>
+        <label class="form-label" style="margin:0; font-size:12px; font-weight:600">${esc(I18N.t("proposal.cand_props_list"))}</label>
+        <button type="button" class="secondary" id="candAddPropBtn" style="font-size:11px; padding:2px 8px">${esc(I18N.t("proposal.cand_add_prop_btn"))}</button>
       </div>
 
       <div style="max-height:300px; overflow-y:auto; border:1px solid var(--line); border-radius:var(--radius-sm); margin-bottom:16px">
         <table class="data-table" style="margin:0; font-size:12px">
           <thead>
             <tr>
-              <th style="width:140px">屬性鍵名</th>
-              <th style="width:100px">型態</th>
-              <th style="width:50px; text-align:center">必填</th>
-              <th>理由 / 說明</th>
-              <th style="width:40px; text-align:center">刪除</th>
+              <th style="width:140px">${esc(I18N.t("proposal.cand_col_key"))}</th>
+              <th style="width:100px">${esc(I18N.t("proposal.cand_col_type"))}</th>
+              <th style="width:50px; text-align:center">${esc(I18N.t("proposal.cand_col_req"))}</th>
+              <th>${esc(I18N.t("proposal.cand_col_reason_desc"))}</th>
+              <th style="width:40px; text-align:center">${esc(I18N.t("proposal.cand_col_del"))}</th>
             </tr>
           </thead>
           <tbody id="propCandidateTbody"></tbody>
@@ -4525,7 +4683,7 @@ window.openProposalCandidateEditor = function(schema, proposalVersion) {
 
       <div style="display:flex; justify-content:flex-end; gap:8px">
         <button class="secondary" onclick="closeDrawer()">${esc(I18N.t("common.cancel"))}</button>
-        <button class="primary" id="applyCandidateEditBtn">套用並重新校驗</button>
+        <button class="primary" id="applyCandidateEditBtn">${esc(I18N.t("proposal.cand_apply_btn"))}</button>
       </div>
     </div>
   `;

@@ -768,10 +768,9 @@ def api_reconcile_inspect(body: dict[str, Any]) -> dict[str, Any]:
     if schema_id:
         sch = named_schemas.NAMED_SCHEMA_LIBRARY.get_schema(str(schema_id))
         if sch:
-            if not schema_props:
-                schema_props = [p.to_dict() for p in sch.properties]
-            if not schema_name or schema_name == "adopted-schema":
-                schema_name = sch.name
+            # Canonical Schema ID authority (HA-F09 / HA-F11): always use canonical schema properties and name
+            schema_props = [p.to_dict() if hasattr(p, "to_dict") else (dict(p) if isinstance(p, dict) else p) for p in sch.properties]
+            schema_name = sch.name
 
     if not schema_name:
         schema_name = "Unnamed Schema"

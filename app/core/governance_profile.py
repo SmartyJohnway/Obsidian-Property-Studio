@@ -149,49 +149,57 @@ def validate_governance_profile(profile_data: dict[str, Any]) -> dict[str, Any]:
 
     # 2. Scope Assignments
     current_assignments = SCOPE_GOVERNANCE_STORE.storage.load().get("data") or {}
-    assignments_changeset = {"add": [], "update": [], "unchanged": [], "remove": []}
+    assignments_changeset = {"add": [], "update": [], "unchanged": [], "conflict": [], "remove": []}
     for k, v in assignments.items():
+        sid = v.get("schema_id") if isinstance(v, dict) else str(v)
         if k not in current_assignments:
-            assignments_changeset["add"].append({"scope_key": k, "schema_id": v.get("schema_id")})
-        elif current_assignments[k].get("schema_id") == v.get("schema_id"):
-            assignments_changeset["unchanged"].append({"scope_key": k, "schema_id": v.get("schema_id")})
+            assignments_changeset["add"].append({"scope_key": k, "schema_id": sid})
         else:
-            assignments_changeset["update"].append({"scope_key": k, "from": current_assignments[k].get("schema_id"), "to": v.get("schema_id")})
+            cur_v = current_assignments[k]
+            cur_sid = cur_v.get("schema_id") if isinstance(cur_v, dict) else str(cur_v)
+            if cur_sid == sid:
+                assignments_changeset["unchanged"].append({"scope_key": k, "schema_id": sid})
+            else:
+                assignments_changeset["update"].append({"scope_key": k, "from": cur_sid, "to": sid, "schema_id": sid})
     for k, v in current_assignments.items():
         if k not in assignments:
-            assignments_changeset["remove"].append({"scope_key": k, "schema_id": v.get("schema_id")})
+            cur_sid = v.get("schema_id") if isinstance(v, dict) else str(v)
+            assignments_changeset["remove"].append({"scope_key": k, "schema_id": cur_sid})
 
     # 3. User Glossary
     current_glossary = USER_GLOSSARY_STORE.storage.load().get("data") or {}
-    glossary_changeset = {"add": [], "update": [], "unchanged": [], "remove": []}
+    glossary_changeset = {"add": [], "update": [], "unchanged": [], "conflict": [], "remove": []}
     for k, v in glossary.items():
-        ckey = v.get("canonical_key") or k
+        ckey = v.get("canonical_key") if isinstance(v, dict) else k
+        clabel = v.get("label_zh") or v.get("label_en") or ckey if isinstance(v, dict) else str(v)
         if ckey not in current_glossary:
-            glossary_changeset["add"].append({"canonical_key": ckey, "label": v.get("label_zh") or v.get("label_en") or ckey})
+            glossary_changeset["add"].append({"canonical_key": ckey, "label": clabel})
         elif current_glossary[ckey] == v:
-            glossary_changeset["unchanged"].append({"canonical_key": ckey, "label": v.get("label_zh") or v.get("label_en") or ckey})
+            glossary_changeset["unchanged"].append({"canonical_key": ckey, "label": clabel})
         else:
-            glossary_changeset["update"].append({"canonical_key": ckey, "label": v.get("label_zh") or v.get("label_en") or ckey})
+            glossary_changeset["update"].append({"canonical_key": ckey, "label": clabel})
     for k, v in current_glossary.items():
         if k not in glossary:
-            glossary_changeset["remove"].append({"canonical_key": k, "label": v.get("label_zh") or v.get("label_en") or k})
+            clabel = v.get("label_zh") or v.get("label_en") or k if isinstance(v, dict) else str(v)
+            glossary_changeset["remove"].append({"canonical_key": k, "label": clabel})
 
     # 4. Saved Checks
     current_checks_storage = EntityStorage("saved_checks", "saved_checks/saved_relationship_checks.json")
     cur_checks_data = current_checks_storage.load().get("data") or []
     current_checks_map = {c.get("id"): c for c in cur_checks_data if isinstance(c, dict) and c.get("id")}
-    checks_changeset = {"add": [], "update": [], "unchanged": [], "remove": []}
+    checks_changeset = {"add": [], "update": [], "unchanged": [], "conflict": [], "remove": []}
     for c in saved_checks:
-        cid = c.get("id")
+        cid = c.get("id") if isinstance(c, dict) else None
+        cname = c.get("name") if isinstance(c, dict) else str(c)
         if cid not in current_checks_map:
-            checks_changeset["add"].append({"id": cid, "name": c.get("name")})
+            checks_changeset["add"].append({"id": cid, "name": cname})
         elif current_checks_map[cid] == c:
-            checks_changeset["unchanged"].append({"id": cid, "name": c.get("name")})
+            checks_changeset["unchanged"].append({"id": cid, "name": cname})
         else:
-            checks_changeset["update"].append({"id": cid, "name": c.get("name")})
+            checks_changeset["update"].append({"id": cid, "name": cname})
     for cid, c in current_checks_map.items():
-        if not any(sc.get("id") == cid for sc in saved_checks):
-            checks_changeset["remove"].append({"id": cid, "name": c.get("name")})
+        if not any(isinstance(sc, dict) and sc.get("id") == cid for sc in saved_checks):
+            checks_changeset["remove"].append({"id": cid, "name": c.get("name") if isinstance(c, dict) else str(c)})
 
     return {
         "valid": True,
@@ -205,8 +213,11 @@ def validate_governance_profile(profile_data: dict[str, Any]) -> dict[str, Any]:
         "changeset": {
             "schemas": schemas_changeset,
             "assignments": assignments_changeset,
+            "scope_assignments": assignments_changeset,
             "glossary": glossary_changeset,
+            "glossary_overrides": glossary_changeset,
             "checks": checks_changeset,
+            "saved_checks": checks_changeset,
         },
         "exported_at": meta.get("exported_at"),
     }

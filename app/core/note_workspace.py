@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from app.core.fill import render_frontmatter, roundtrip_check
-from app.core.model import FAILED_PARSE_STATUSES, Note, ParseStatus, Schema, SchemaProperty, VaultScan
+from app.core.model import FAILED_PARSE_STATUSES, Note, ParseStatus, Schema, SchemaProperty, StorageType, VaultScan
 from app.core.scope import ScopeSpec, is_note_in_scope
 
 
@@ -165,43 +165,56 @@ def inspect_note_for_workspace(scan: VaultScan, note_path: str) -> NoteWorkspace
     )
 
 
-def are_semantically_equal(val1: Any, val2: Any) -> bool:
-    """Compare two property values for semantic equality ignoring display formatting differences (HA-F10)."""
+def are_semantically_equal(val1: Any, val2: Any, storage_type: str | StorageType | None = None) -> bool:
+    """Compare two property values for semantic equality based on canonical StorageType (HA-F10)."""
     if val1 == val2:
         return True
     if val1 is None or val2 is None:
         return False
-    # Boolean equality (e.g. True vs "true", "True")
-    if isinstance(val1, bool) or isinstance(val2, bool):
+
+    st = None
+    if isinstance(storage_type, StorageType):
+        st = storage_type.value.lower()
+    elif isinstance(storage_type, str):
+        st = storage_type.strip().lower()
+
+    # 1. Checkbox / Boolean type
+    if st == "checkbox" or (st is None and (isinstance(val1, bool) or isinstance(val2, bool))):
         s1 = str(val1).strip().lower()
         s2 = str(val2).strip().lower()
         if s1 in ("true", "false") and s2 in ("true", "false"):
             return s1 == s2
-    # Number equality (e.g. 100 vs 100.0 vs "100")
-    try:
-        if isinstance(val1, (int, float, str)) and isinstance(val2, (int, float, str)):
+        if st == "checkbox":
+            return False
+
+    # 2. Number type
+    if st == "number" or (st is None and (isinstance(val1, (int, float)) or isinstance(val2, (int, float)))):
+        try:
             f1 = float(str(val1).strip())
             f2 = float(str(val2).strip())
-            if f1 == f2:
-                return True
-    except (ValueError, TypeError):
-        pass
-    # List / Tags / Note-link list equality (e.g. ['a', 'b'] vs "a, b" vs "a,b")
-    items1 = None
-    items2 = None
-    if isinstance(val1, list):
-        items1 = [str(x).strip() for x in val1 if str(x).strip()]
-    elif isinstance(val1, str) and ("," in val1 or val1.strip()):
-        items1 = [x.strip() for x in val1.split(",") if x.strip()]
+            return f1 == f2
+        except (ValueError, TypeError):
+            if st == "number":
+                return False
 
-    if isinstance(val2, list):
-        items2 = [str(x).strip() for x in val2 if str(x).strip()]
-    elif isinstance(val2, str) and ("," in val2 or val2.strip()):
-        items2 = [x.strip() for x in val2.split(",") if x.strip()]
+    # 3. List / Tags / Note-link list
+    if st in ("list", "tags", "note_link_list") or (st is None and (isinstance(val1, list) or isinstance(val2, list))):
+        items1 = None
+        items2 = None
+        if isinstance(val1, list):
+            items1 = [str(x).strip() for x in val1 if str(x).strip()]
+        elif isinstance(val1, str):
+            items1 = [x.strip() for x in val1.split(",") if x.strip()]
 
-    if items1 is not None and items2 is not None:
-        return items1 == items2
+        if isinstance(val2, list):
+            items2 = [str(x).strip() for x in val2 if str(x).strip()]
+        elif isinstance(val2, str):
+            items2 = [x.strip() for x in val2.split(",") if x.strip()]
 
+        if items1 is not None and items2 is not None:
+            return items1 == items2
+
+    # 4. Text / Date / Datetime / Unknown: exact string equality (preserve leading zeroes, comma sentences, etc.)
     return str(val1).strip() == str(val2).strip()
 
 
@@ -286,12 +299,20 @@ def compute_workspace_diff_and_frontmatter(
 
             # Determine untouched status consistently across both schema & outside-schema properties (HA-F10)
             is_untouched = False
+            prop_storage_type = None
+            if schema and key in schema_prop_names:
+                sp_match = next((p for p in schema.properties if p.name == key), None)
+                if sp_match:
+                    prop_storage_type = sp_match.storage_type
+            elif pv is not None:
+                prop_storage_type = pv.storage_type
+
             if touched_set is not None:
                 is_untouched = (key not in touched_set)
             else:
                 if key not in updated_values:
                     is_untouched = True
-                elif are_semantically_equal(old_val, user_raw):
+                elif are_semantically_equal(old_val, user_raw, prop_storage_type):
                     is_untouched = True
 
             if is_untouched:
@@ -313,7 +334,7 @@ def compute_workspace_diff_and_frontmatter(
             else:
                 new_val = user_raw
 
-            if are_semantically_equal(old_val, new_val):
+            if are_semantically_equal(old_val, new_val, storage_type=prop_storage_type):
                 diffs.append(PropertyDiff(key=key, change_type="preserved", old_value=old_val, new_value=old_val))
                 merged[key] = old_val
             else:
