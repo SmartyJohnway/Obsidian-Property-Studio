@@ -1125,14 +1125,14 @@
               <select id="refactorTargetPropSelect" class="form-control"></select>
               <input type="text" id="refactorTargetNewNameInput" style="display:none; margin-top:8px" data-i18n-placeholder="refactor.new_name_placeholder" placeholder="請輸入全新屬性名稱..." />
               <select id="refactorTargetTypeSelect" style="display:none">
-                <option value="text">Text (文字)</option>
-                <option value="number">Number (數字)</option>
-                <option value="date">Date (日期)</option>
-                <option value="checkbox">Checkbox (核取方塊)</option>
-                <option value="list">List (清單)</option>
-                <option value="tags">Tags (標籤清單)</option>
-                <option value="note_link">Note Link (筆記連結 [[...]])</option>
-                <option value="note_link_list">Note Link List (筆記連結清單)</option>
+                <option value="text" data-i18n="st.text">Text (文字)</option>
+                <option value="number" data-i18n="st.number">Number (數字)</option>
+                <option value="date" data-i18n="st.date">Date (日期)</option>
+                <option value="checkbox" data-i18n="st.checkbox">Checkbox (核取方塊)</option>
+                <option value="list" data-i18n="st.list">List (清單)</option>
+                <option value="tags" data-i18n="st.tags">Tags (標籤清單)</option>
+                <option value="note_link" data-i18n="st.note_link">Note Link (筆記連結 [[...]])</option>
+                <option value="note_link_list" data-i18n="st.note_link_list">Note Link List (筆記連結清單)</option>
               </select>
             </div>
           </div>
@@ -1274,7 +1274,8 @@ function setTab(tabId) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-function openDrawer(title, html) {
+function openDrawer(title, html, drawerType = null) {
+  S.currentDrawerType = drawerType;
   $("drawerTitle").textContent = title;
   $("drawerBody").innerHTML = html;
   $("drawerOverlay").classList.add("active");
@@ -1282,6 +1283,7 @@ function openDrawer(title, html) {
 }
 
 function closeDrawer() {
+  S.currentDrawerType = null;
   $("drawerOverlay").classList.remove("active");
   $("drawerPanel").classList.remove("active");
 }
@@ -1528,24 +1530,52 @@ window.assignSchemaToScope = async function(id) {
   }
 };
 
+function compareSchemaVersions(a, b) {
+  const vA = String(a || "1.0").trim();
+  const vB = String(b || "1.0").trim();
+  const partsA = vA.split(".").map(p => { const n = parseInt(p, 10); return isNaN(n) ? p : n; });
+  const partsB = vB.split(".").map(p => { const n = parseInt(p, 10); return isNaN(n) ? p : n; });
+  const maxLen = Math.max(partsA.length, partsB.length);
+  for (let i = 0; i < maxLen; i++) {
+    const pA = i < partsA.length ? partsA[i] : 0;
+    const pB = i < partsB.length ? partsB[i] : 0;
+    if (typeof pA === "number" && typeof pB === "number") {
+      if (pA !== pB) return pA - pB;
+    } else {
+      const cmp = String(pA).localeCompare(String(pB), undefined, { numeric: true, sensitivity: "base" });
+      if (cmp !== 0) return cmp;
+    }
+  }
+  return 0;
+}
+
 function bumpSemVer(v) {
   if (!v || typeof v !== 'string') return "1.1.0";
   const trimmed = v.trim();
-  const parts = trimmed.split('.');
+  const parts = trimmed.split('.').map(p => p.trim()).filter(Boolean);
+  if (parts.length === 0) return "1.1.0";
   if (parts.length === 1) {
     const n = parseInt(parts[0], 10);
-    return isNaN(n) ? "1.1" : `${n + 1}`;
+    return isNaN(n) ? `${parts[0]}.1` : `${n + 1}`;
   }
   if (parts.length === 2) {
-    const major = parseInt(parts[0], 10) || 1;
-    const minor = parseInt(parts[1], 10) || 0;
+    const major = parseInt(parts[0], 10);
+    const minor = parseInt(parts[1], 10);
+    if (isNaN(major) || isNaN(minor)) {
+      return `${parts[0]}.${isNaN(minor) ? '1' : minor + 1}`;
+    }
     return `${major}.${minor + 1}`;
   }
-  const major = parseInt(parts[0], 10) || 1;
-  const minor = parseInt(parts[1], 10) || 0;
-  const patch = parseInt(parts[2], 10) || 0;
+  const major = parseInt(parts[0], 10);
+  const minor = parseInt(parts[1], 10);
+  if (isNaN(major) || isNaN(minor)) {
+    return `${parts.slice(0, -1).join('.')}.1`;
+  }
   return `${major}.${minor + 1}.0`;
 }
+
+window.compareSchemaVersions = compareSchemaVersions;
+window.bumpSemVer = bumpSemVer;
 
 window.openSaveNamedSchemaModal = async function(schemaToSave, onSavedCallback) {
   if (!schemaToSave) return;
@@ -1570,7 +1600,7 @@ window.openSaveNamedSchemaModal = async function(schemaToSave, onSavedCallback) 
       let actionOptionsHtml = "";
       if (matches.length > 0) {
         // Sort matches descending by version
-        matches.sort((a, b) => strnatcmp(b.version || "1.0", a.version || "1.0"));
+        matches.sort((a, b) => compareSchemaVersions(b.version || "1.0", a.version || "1.0"));
         const latestMatch = matches[0];
 
         const targetVersionSelectHtml = matches.length > 1 ? `
@@ -1628,7 +1658,7 @@ window.openSaveNamedSchemaModal = async function(schemaToSave, onSavedCallback) 
       `;
     };
 
-    openDrawer(I18N.t("schemas.save_drawer_title"), renderFormHtml());
+    openDrawer(I18N.t("schemas.save_drawer_title"), renderFormHtml(), "save_schema");
 
     const updateActionUI = () => {
       const nameInp = document.getElementById("saveSchemaNameInput");
@@ -1638,7 +1668,7 @@ window.openSaveNamedSchemaModal = async function(schemaToSave, onSavedCallback) 
       if (!actionArea) return;
 
       if (matches.length > 0) {
-        matches.sort((a, b) => strnatcmp(b.version || "1.0", a.version || "1.0"));
+        matches.sort((a, b) => compareSchemaVersions(b.version || "1.0", a.version || "1.0"));
         const latestMatch = matches[0];
         const targetVersionSelectHtml = matches.length > 1 ? `
           <div style="margin-top:6px">
@@ -1707,7 +1737,7 @@ window.openSaveNamedSchemaModal = async function(schemaToSave, onSavedCallback) 
             });
             savedId = targetId;
           } else if (matches.length > 0 && actionVal === "new_version") {
-            matches.sort((a, b) => strnatcmp(b.version || "1.0", a.version || "1.0"));
+            matches.sort((a, b) => compareSchemaVersions(b.version || "1.0", a.version || "1.0"));
             const highestVer = matches[0].version || "1.0";
             let nextVer = ver;
             if (ver === highestVer || matches.some(m => m.version === ver)) {
@@ -2031,6 +2061,104 @@ function setupSchemasHandlers() {
     $("schemaCreateNewBtn").onclick = () => setTab("design");
   }
 
+window.renderProfilePreviewArea = function(valReport, parsed) {
+  if (!valReport) return;
+  const previewArea = document.getElementById("profilePreviewArea");
+  if (!previewArea) return;
+  previewArea.style.display = "block";
+
+  const prefPrev = valReport.preferences_preview;
+  let prefChangeHtml = "";
+  if (prefPrev && prefPrev.has_changes) {
+    const details = [];
+    if (prefPrev.locale) details.push(`Locale: <code>${esc(prefPrev.locale.from || 'none')}</code> → <strong>${esc(prefPrev.locale.to)}</strong>`);
+    if (prefPrev.theme) details.push(`Theme: <code>${esc(prefPrev.theme.from || 'none')}</code> → <strong>${esc(prefPrev.theme.to)}</strong>`);
+    prefChangeHtml = `<div style="margin-top:8px; font-size:12px; padding:6px 8px; background:var(--panel); border-radius:var(--radius-sm)"><strong>${esc(I18N.t("profile.preview_prefs_change"))}</strong> ${details.join(", ")}</div>`;
+  } else {
+    prefChangeHtml = `<div style="margin-top:8px; font-size:12px; color:var(--muted)">✓ ${esc(I18N.t("profile.preview_no_prefs_change"))}</div>`;
+  }
+
+  const cs = valReport.changeset || {};
+  const formatCategoryChanges = (catName, catData) => {
+    if (!catData) return '';
+    const formatItems = (arr) => {
+      if (!arr || !arr.length) return '';
+      return arr.map(item => {
+        if (typeof item === 'string') return item;
+        return item.name || item.canonical_key || item.scope_key || item.id || JSON.stringify(item);
+      }).join(", ");
+    };
+    const parts = [];
+    if (catData.add && catData.add.length) parts.push(`<span class="pill ok">${esc(I18N.t("profile.stat_add", { count: catData.add.length, items: formatItems(catData.add) }))}</span>`);
+    if (catData.update && catData.update.length) parts.push(`<span class="pill warn">${esc(I18N.t("profile.stat_update", { count: catData.update.length, items: formatItems(catData.update) }))}</span>`);
+    if (catData.conflict && catData.conflict.length) parts.push(`<span class="pill alert">${esc(I18N.t("profile.stat_conflict", { count: catData.conflict.length, items: formatItems(catData.conflict) }))}</span>`);
+    if (catData.unchanged && catData.unchanged.length) parts.push(`<span class="pill muted">${esc(I18N.t("profile.stat_unchanged", { count: catData.unchanged.length }))}</span>`);
+    if (catData.remove && catData.remove.length) parts.push(`<span class="pill alert">${esc(I18N.t("profile.stat_remove", { count: catData.remove.length }))}</span>`);
+    if (!parts.length) return `<div style="font-size:12px; color:var(--muted)">${esc(I18N.t("profile.no_changes", { category: catName }))}</div>`;
+    return `<div style="margin-bottom:6px; font-size:12px"><strong>${catName}:</strong> ${parts.join(" ")}</div>`;
+  };
+
+  let changesetHtml = `
+    <div style="margin-top:10px; padding:8px; background:var(--panel); border-radius:var(--radius-sm)">
+      <div style="font-size:12px; font-weight:700; margin-bottom:6px">${esc(I18N.t("profile.breakdown_title"))}</div>
+      ${formatCategoryChanges(I18N.t("profile.cat_schemas"), cs.schemas)}
+      ${formatCategoryChanges(I18N.t("profile.cat_scopes"), cs.scope_assignments || cs.assignments)}
+      ${formatCategoryChanges(I18N.t("profile.cat_glossary"), cs.glossary_overrides || cs.glossary)}
+      ${formatCategoryChanges(I18N.t("profile.cat_checks"), cs.saved_checks || cs.checks)}
+    </div>
+  `;
+
+  previewArea.innerHTML = `
+    <div class="card" style="background:var(--panel2); margin-bottom:12px">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
+        <h4 style="margin:0">${esc(I18N.t("profile.preview_validated_title"))}</h4>
+        <span class="pill ok">v${esc(valReport.format_version || '1.0')}</span>
+      </div>
+      <div class="grid cols2" style="gap:8px; font-size:12.5px; margin-bottom:10px">
+        <div>${esc(I18N.t("profile.preview_schemas_count"))}<strong>${valReport.schema_count}</strong></div>
+        <div>${esc(I18N.t("profile.preview_scopes_count"))}<strong>${valReport.assignment_count}</strong></div>
+        <div>${esc(I18N.t("profile.preview_glossary_count"))}<strong>${valReport.glossary_count}</strong></div>
+        <div>${esc(I18N.t("profile.preview_checks_count"))}<strong>${valReport.saved_checks_count}</strong></div>
+      </div>
+      ${prefChangeHtml}
+      ${changesetHtml}
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center">
+      <div style="flex:1; max-width:200px">
+        <label style="font-size:12px; font-weight:600">${esc(I18N.t("profile.mode_label"))}</label>
+        <select id="profileImportModeSelect" class="form-control" style="width:100%; margin-top:4px">
+          <option value="merge">${esc(I18N.t("profile.mode_merge"))}</option>
+          <option value="replace">${esc(I18N.t("profile.mode_replace"))}</option>
+        </select>
+      </div>
+      <button class="primary" id="confirmApplyProfileBtn" style="background:var(--teal)">${esc(I18N.t("profile.confirm_apply"))}</button>
+    </div>
+  `;
+
+  const confirmBtn = document.getElementById("confirmApplyProfileBtn");
+  if (confirmBtn) {
+    confirmBtn.onclick = async () => {
+      const modeSel = document.getElementById("profileImportModeSelect");
+      const mode = modeSel ? modeSel.value : "merge";
+      try {
+        const res = await api("/api/governance/profile/import", { profile: parsed, mode });
+        const gCount = typeof res.imported.user_glossary === 'number' ? res.imported.user_glossary : Object.keys(res.imported.user_glossary || {}).length;
+        toast(I18N.t("profile.imported_toast", { mode, schemas: res.imported.schemas, scopes: res.imported.scope_assignments, glossary: gCount }));
+        closeDrawer();
+        loadSchemasList();
+        loadGlossaryList();
+        loadSavedChecks();
+        if (typeof updateScopeSchemaAssignmentUI === 'function') {
+          await updateScopeSchemaAssignmentUI();
+        }
+      } catch (e) {
+        toast(e.message, true);
+      }
+    };
+  }
+};
+
   if ($("govProfileExportBtn")) {
     $("govProfileExportBtn").onclick = async () => {
       try {
@@ -2058,7 +2186,7 @@ function setupSchemasHandlers() {
           <div id="profilePreviewArea" style="display:none; margin-top:16px; border-top:1px solid var(--line); padding-top:14px"></div>
         </div>
       `;
-      openDrawer(I18N.t("profile.import_drawer_title"), html);
+      openDrawer(I18N.t("profile.import_drawer_title"), html, "profile_import");
 
       const valBtn = document.getElementById("validateProfileBtn");
       if (valBtn) {
@@ -2642,7 +2770,7 @@ function renderAllDynamicViews() {
   loadSchemasList();
   loadGlossaryList();
 
-  // If workspace is active with a note, re-render fields preserving active inputs and dirty state
+  // 1. Workspace: if note loaded, re-render fields preserving active inputs and dirty state
   if (S.currentNote && S.currentNote.can_edit && S.currentNote.original_properties) {
     const currentValues = {};
     document.querySelectorAll(".ws-prop-row").forEach(row => {
@@ -2657,9 +2785,23 @@ function renderAllDynamicViews() {
     updateWorkspacePreview();
   }
 
-  // If a proposal review result is active, re-render it to update bilingual labels
-  if (S.proposalReviewResult && typeof renderProposalReview === 'function') {
-    renderProposalReview(S.proposalReviewResult);
+  // 2. Proposal Review: if active, re-render result card
+  if (S.lastImportedProposal && $("proposalResultCard") && $("proposalResultCard").style.display !== "none") {
+    renderProposalReviewResult(S.lastImportedProposal);
+  }
+
+  // 3. Refactor Plan: if active, re-render summary
+  if (S.lastRefactorPlan && $("refactorHumanSummary") && $("refactorHumanSummary").innerHTML.trim() !== "") {
+    renderRefactorPlanResult(S.lastRefactorPlan);
+  }
+
+  // 4. Drawers: if drawer is open, re-render its content
+  if ($("drawerPanel") && $("drawerPanel").classList.contains("active")) {
+    if (S.currentDrawerType === "drift" && typeof openDriftDetailsDrawer === "function") {
+      openDriftDetailsDrawer();
+    } else if (S.currentDrawerType === "profile_import" && S.lastProfileValidation && typeof renderProfilePreviewArea === "function") {
+      renderProfilePreviewArea(S.lastProfileValidation.valReport, S.lastProfileValidation.parsed);
+    }
   }
 }
 
@@ -4180,7 +4322,7 @@ window.openDriftDetailsDrawer = function() {
     </div>
   `;
 
-  openDrawer(I18N.t("drift.drawer_title"), html);
+  openDrawer(I18N.t("drift.drawer_title"), html, "drift");
 };
 
 function setupHealthHandlers() {
@@ -4464,62 +4606,8 @@ function setupRefactorHandlers() {
       }
 
       const res = await api("/api/refactor/plan", payload);
-
-      // Render Human-Readable Summary
-      const summary = res.summary || {};
-      const affectedNotes = res.in_scope_notes_to_change || res.affected_notes || [];
-      const conflicts = res.conflicts || [];
-      const excluded = res.excluded || [];
-      const changes = res.changes || [];
-      const untouched = res.untouched_values || [];
-
-      let detailsHtml = "";
-      if (op === "normalize" && changes.length > 0) {
-        detailsHtml = `
-          <div class="card" style="background:var(--panel2); margin-bottom:12px">
-            <h4 style="margin-top:0">${esc(I18N.t("refactor.normalize_mapping_title"))} (${changes.length})</h4>
-            <div style="font-size:12.5px; color:var(--muted); margin-bottom:8px">
-              ${esc(I18N.t("refactor.normalize_summary", { groups: changes.length, notes: summary.notes_to_change || 0, untouched: untouched.length }))}
-            </div>
-            <table style="font-size:12.5px">
-              <thead><tr><th>${esc(I18N.t("refactor.variants_col"))}</th><th style="width:30px; text-align:center">→</th><th>${esc(I18N.t("refactor.target_canonical_col"))}</th><th style="width:80px; text-align:right">${esc(I18N.t("refactor.affected_notes_count_col"))}</th></tr></thead>
-              <tbody>
-                ${changes.map(ch => `
-                  <tr>
-                    <td>${ch.variants.map(v => `<code>${esc(v.value)}</code> <span class="muted">(${v.count})</span>`).join(", ")}</td>
-                    <td style="color:var(--teal); font-weight:bold; text-align:center">→</td>
-                    <td><strong style="color:var(--teal)"><code>${esc(ch.canonical_value)}</code></strong></td>
-                    <td style="text-align:right; font-weight:600">${ch.notes_to_change_count}</td>
-                  </tr>
-                `).join("")}
-              </tbody>
-            </table>
-          </div>
-        `;
-      }
-
-      $("refactorHumanSummary").innerHTML = `
-        <div class="grid cols3" style="margin-bottom:14px">
-          <div class="stat ok"><div class="n">${summary.notes_to_change != null ? summary.notes_to_change : (Array.isArray(affectedNotes) ? affectedNotes.length : affectedNotes)}</div><div class="l">${I18N.t("refactor.in_scope_notes")}</div></div>
-          <div class="stat"><div class="n">${summary.out_of_scope_notes_to_change || res.out_of_scope_notes_count || 0}</div><div class="l">${I18N.t("refactor.out_of_scope_notes")}</div></div>
-          <div class="stat ${(conflicts.length + excluded.length) ? 'alert' : ''}"><div class="n">${conflicts.length + excluded.length}</div><div class="l">${I18N.t("refactor.conflicts_count")}</div></div>
-        </div>
-
-        ${res.target_already_exists ? `
-          <div class="card" style="border-left:4px solid var(--amber); background:var(--amber-soft); margin-bottom:12px">
-            <strong>⚠ ${esc(I18N.t("refactor.rename_target_conflict_warn", { target: payload.target, count: res.target_existing_usage_count || 0 }))}</strong>
-          </div>
-        ` : ''}
-
-        ${detailsHtml}
-
-        <div class="card" style="background:var(--panel2)">
-          <h4 style="margin-top:0">${I18N.t("refactor.affected_notes_view")} (${Array.isArray(affectedNotes) ? affectedNotes.length : (summary.notes_to_change || 0)})</h4>
-          <ul style="max-height:160px; overflow-y:auto; padding-left:20px; font-size:12.5px; margin:0">
-            ${(Array.isArray(affectedNotes) ? affectedNotes : []).slice(0, 100).map(n => `<li><code>${esc(n.note || n)}</code></li>`).join("")}
-          </ul>
-        </div>
-      `;
+      S.lastRefactorPlan = { res, payload, op };
+      renderRefactorPlanResult(S.lastRefactorPlan);
 
       $("refactorPlanOutput").innerHTML = `<pre style="font-size:12px">${esc(JSON.stringify(res, null, 2))}</pre>`;
       $("refactorPlanResultCard").style.display = "block";
@@ -4553,159 +4641,165 @@ function setupProposalHandlers() {
     };
   }
 
+  window.renderProposalReviewResult = function(res) {
+    if (!res) return;
+    if (!res.valid) {
+      $("proposalResultOutput").innerHTML = `
+        <div class="card" style="border-color:var(--red); background:var(--red-soft); color:var(--red)">
+          <strong>${esc(I18N.t("proposal.validation_failed"))}：</strong>
+          <ul style="margin:8px 0 0 0; padding-left:20px">
+            ${(res.errors || []).map(e => `<li>${esc(e)}</li>`).join("")}
+          </ul>
+        </div>
+      `;
+      $("proposalResultCard").style.display = "block";
+      return;
+    }
+
+    const sch = res.schema || {};
+    const fourWay = res.four_way_comparison || res.comparison || [];
+
+    const rowsHtml = fourWay.map(item => {
+      let compatBadge = `<span class="pill ok">${esc(I18N.t("proposal.comp_compatible"))}</span>`;
+      if (item.compatibility_state === "new_property") {
+        compatBadge = `<span class="pill brand">${esc(I18N.t("proposal.comp_new"))}</span>`;
+      } else if (item.compatibility_state === "type_conflict") {
+        compatBadge = `<span class="pill alert" title="${esc(item.compatibility_detail)}">${esc(I18N.t("proposal.comp_type_conflict"))} (${esc(item.dominant_type || '')})</span>`;
+      } else if (item.compatibility_state === "value_vocabulary_conflict") {
+        compatBadge = `<span class="pill warn" title="${esc(item.compatibility_detail)}">${esc(I18N.t("proposal.comp_val_conflict"))}</span>`;
+      } else if (item.compatibility_state === "potential_alias") {
+        compatBadge = `<span class="pill warn" title="${esc(item.compatibility_detail)}">${esc(I18N.t("proposal.comp_alias"))}</span>`;
+      }
+
+      const glo = item.glossary_entry;
+      const schMatches = item.schema_library_matches || [];
+
+      return `
+        <tr>
+          <td>
+            <strong>${esc(item.name)}</strong>
+            ${item.proposed_required ? `<span style="color:var(--red); font-weight:bold" title="${esc(I18N.t("proposal.cand_req_tooltip"))}">*</span>` : ''}
+          </td>
+          <td><span class="pill">${esc(item.proposed_storage_type)}</span></td>
+          <td><code>${esc(item.proposed_ui_control || 'plain')}</code></td>
+          <td>${compatBadge}</td>
+          <td style="font-size:12px">
+            <div>${esc(I18N.t("proposal.scope_prefix"))} <strong>${item.scope_usage_count || 0}</strong></div>
+            <div class="muted" style="font-size:11px">${esc(I18N.t("proposal.vault_prefix"))} ${item.vault_usage_count || 0}</div>
+          </td>
+          <td style="font-size:12px">
+            ${glo ? `<span class="pill ok" title="${esc(glo.canonical_key)}">${esc(glo.label_zh || glo.label_en || I18N.t("proposal.included"))}</span>` : '<span class="muted">—</span>'}
+          </td>
+          <td style="font-size:12px">
+            ${schMatches.length > 0 ? `<span class="pill" title="${esc(schMatches.map(s => s.name).join(', '))}">${schMatches.length} ${esc(I18N.t("proposal.schemas_count_pill"))}</span>` : '<span class="muted">—</span>'}
+          </td>
+          <td style="font-size:12px; color:var(--muted)">${esc(item.reason || item.compatibility_detail || '—')}</td>
+        </tr>
+      `;
+    }).join("");
+
+    $("proposalResultOutput").innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; flex-wrap:wrap; gap:10px">
+        <div>
+          <div style="display:flex; align-items:center; gap:8px">
+            <h3 style="margin:0">${esc(sch.schema_name || sch.name || 'unnamed')}</h3>
+            <span class="pill ok">Proposal Contract v${esc(res.proposal_version || '1.1')}</span>
+            ${res.target_note_kind ? `<span class="pill brand">${esc(res.target_note_kind)}</span>` : ''}
+          </div>
+          <p class="muted" style="margin:4px 0 0 0; font-size:13px">${esc(sch.description || '—')}</p>
+          ${res.management_purpose ? `<p style="font-size:12.5px; color:var(--teal); margin:4px 0 0 0">🎯 <strong>${esc(I18N.t("proposal.meta_purpose"))}：</strong> ${esc(res.management_purpose)}</p>` : ''}
+          ${res.source_context ? `<p style="font-size:12px; color:var(--muted); margin:2px 0 0 0">📂 <strong>${esc(I18N.t("proposal.meta_context"))}：</strong> ${esc(res.source_context)}</p>` : ''}
+          ${res.schema_target ? `<p style="font-size:12px; color:var(--muted); margin:2px 0 0 0">🎯 <strong>${esc(I18N.t("proposal.meta_target_schema"))}：</strong> <code>${esc(res.schema_target)}</code></p>` : ''}
+          ${res.proposal_notes ? `<p style="font-size:12px; color:var(--muted); margin:2px 0 0 0">📝 <strong>${esc(I18N.t("proposal.meta_notes"))}：</strong> ${esc(res.proposal_notes)}</p>` : ''}
+        </div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap">
+          <button class="primary" id="proposalSaveAsNamedBtn">${esc(I18N.t("design.next_save_named"))}</button>
+          <button class="secondary" id="proposalReconcileBtn">${esc(I18N.t("schemas.btn_reconcile"))}</button>
+          <button class="secondary" id="proposalEditCandidateBtn">${esc(I18N.t("proposal.edit_btn"))}</button>
+          <button class="ghost" id="proposalRejectBtn" style="color:var(--red)">${esc(I18N.t("proposal.reject_btn"))}</button>
+        </div>
+      </div>
+
+      <div style="overflow-x:auto; margin-bottom:14px; border:1px solid var(--line); border-radius:var(--radius-sm)">
+        <table class="data-table" style="margin:0; font-size:12px">
+          <thead>
+            <tr>
+              <th style="width:130px">${esc(I18N.t("proposal.col_prop_name"))}</th>
+              <th style="width:90px">${esc(I18N.t("proposal.col_type"))}</th>
+              <th style="width:90px">${esc(I18N.t("proposal.col_control"))}</th>
+              <th style="width:110px">${esc(I18N.t("proposal.col_usage"))}</th>
+              <th style="width:110px">${esc(I18N.t("proposal.scope_label"))}</th>
+              <th style="width:90px">${esc(I18N.t("proposal.glossary_label"))}</th>
+              <th style="width:90px">${esc(I18N.t("proposal.schema_label"))}</th>
+              <th>${esc(I18N.t("proposal.reason_label"))}</th>
+            </tr>
+          </thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      </div>
+
+      <details style="margin-top:14px; border-top:1px solid var(--line); padding-top:10px">
+        <summary style="cursor:pointer; font-size:12.5px; color:var(--muted)">${esc(I18N.t("proposal.four_way_json_summary"))}</summary>
+        <pre style="max-height:220px; font-size:12px">${esc(JSON.stringify(res, null, 2))}</pre>
+      </details>
+    `;
+
+    $("proposalResultCard").style.display = "block";
+
+    // Bind action buttons
+    const saveBtn = document.getElementById("proposalSaveAsNamedBtn");
+    if (saveBtn) {
+      saveBtn.onclick = () => {
+        openSaveNamedSchemaModal(sch, (savedId) => {
+          setTab("schemas");
+        });
+      };
+    }
+
+    const recBtn = document.getElementById("proposalReconcileBtn");
+    if (recBtn) {
+      recBtn.onclick = () => {
+        S.activeReconciliationSchema = sch;
+        if (typeof StateTransfer !== 'undefined') {
+          StateTransfer.setPending("workspace", {
+            schema: sch,
+            note_path: res.target_note || ""
+          }, "reconcile");
+        }
+        setTab("workspace");
+        if (res.target_note) {
+          inspectNoteInWorkspace(res.target_note);
+        }
+      };
+    }
+
+    const editBtn = document.getElementById("proposalEditCandidateBtn");
+    if (editBtn) {
+      editBtn.onclick = () => {
+        openProposalCandidateEditor(sch, res.proposal_version);
+      };
+    }
+
+    const rejectBtn = document.getElementById("proposalRejectBtn");
+    if (rejectBtn) {
+      rejectBtn.onclick = () => {
+        if (!confirm(I18N.t("toast.proposal_reject_confirm"))) return;
+        $("proposalTextInput").value = "";
+        $("proposalResultCard").style.display = "none";
+        S.lastImportedProposal = null;
+        toast(I18N.t("toast.proposal_rejected"));
+      };
+    }
+  };
+
   $("validateProposalBtn").onclick = async () => {
     const text = $("proposalTextInput").value.trim();
     if (!text) return toast(I18N.t("proposal.paste_warn"), true);
     try {
       const res = await api("/api/proposal/import", { text: text });
       lastImportedProposal = res;
-
-      if (!res.valid) {
-        $("proposalResultOutput").innerHTML = `
-          <div class="card" style="border-color:var(--red); background:var(--red-soft); color:var(--red)">
-            <strong>${esc(I18N.t("proposal.validation_failed"))}：</strong>
-            <ul style="margin:8px 0 0 0; padding-left:20px">
-              ${(res.errors || []).map(e => `<li>${esc(e)}</li>`).join("")}
-            </ul>
-          </div>
-        `;
-        $("proposalResultCard").style.display = "block";
-        return;
-      }
-
-      const sch = res.schema || {};
-      const fourWay = res.four_way_comparison || res.comparison || [];
-
-      const rowsHtml = fourWay.map(item => {
-        let compatBadge = `<span class="pill ok">${esc(I18N.t("proposal.comp_compatible"))}</span>`;
-        if (item.compatibility_state === "new_property") {
-          compatBadge = `<span class="pill brand">${esc(I18N.t("proposal.comp_new"))}</span>`;
-        } else if (item.compatibility_state === "type_conflict") {
-          compatBadge = `<span class="pill alert" title="${esc(item.compatibility_detail)}">${esc(I18N.t("proposal.comp_type_conflict"))} (${esc(item.dominant_type || '')})</span>`;
-        } else if (item.compatibility_state === "value_vocabulary_conflict") {
-          compatBadge = `<span class="pill warn" title="${esc(item.compatibility_detail)}">${esc(I18N.t("proposal.comp_val_conflict"))}</span>`;
-        } else if (item.compatibility_state === "potential_alias") {
-          compatBadge = `<span class="pill warn" title="${esc(item.compatibility_detail)}">${esc(I18N.t("proposal.comp_alias"))}</span>`;
-        }
-
-        const glo = item.glossary_entry;
-        const schMatches = item.schema_library_matches || [];
-
-        return `
-          <tr>
-            <td>
-              <strong>${esc(item.name)}</strong>
-              ${item.proposed_required ? `<span style="color:var(--red); font-weight:bold" title="${esc(I18N.t("proposal.cand_req_tooltip"))}">*</span>` : ''}
-            </td>
-            <td><span class="pill">${esc(item.proposed_storage_type)}</span></td>
-            <td><code>${esc(item.proposed_ui_control || 'plain')}</code></td>
-            <td>${compatBadge}</td>
-            <td style="font-size:12px">
-              <div>${esc(I18N.t("proposal.scope_prefix"))} <strong>${item.scope_usage_count || 0}</strong></div>
-              <div class="muted" style="font-size:11px">${esc(I18N.t("proposal.vault_prefix"))} ${item.vault_usage_count || 0}</div>
-            </td>
-            <td style="font-size:12px">
-              ${glo ? `<span class="pill ok" title="${esc(glo.canonical_key)}">${esc(glo.label_zh || glo.label_en || I18N.t("proposal.included"))}</span>` : '<span class="muted">—</span>'}
-            </td>
-            <td style="font-size:12px">
-              ${schMatches.length > 0 ? `<span class="pill" title="${esc(schMatches.map(s => s.name).join(', '))}">${schMatches.length} ${esc(I18N.t("proposal.schemas_count_pill"))}</span>` : '<span class="muted">—</span>'}
-            </td>
-            <td style="font-size:12px; color:var(--muted)">${esc(item.reason || item.compatibility_detail || '—')}</td>
-          </tr>
-        `;
-      }).join("");
-
-      $("proposalResultOutput").innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; flex-wrap:wrap; gap:10px">
-          <div>
-            <div style="display:flex; align-items:center; gap:8px">
-              <h3 style="margin:0">${esc(sch.schema_name || sch.name || 'unnamed')}</h3>
-              <span class="pill ok">Proposal Contract v${esc(res.proposal_version || '1.1')}</span>
-              ${res.target_note_kind ? `<span class="pill brand">${esc(res.target_note_kind)}</span>` : ''}
-            </div>
-            <p class="muted" style="margin:4px 0 0 0; font-size:13px">${esc(sch.description || '—')}</p>
-            ${res.management_purpose ? `<p style="font-size:12.5px; color:var(--teal); margin:4px 0 0 0">🎯 <strong>${esc(I18N.t("proposal.meta_purpose"))}：</strong> ${esc(res.management_purpose)}</p>` : ''}
-            ${res.source_context ? `<p style="font-size:12px; color:var(--muted); margin:2px 0 0 0">📂 <strong>${esc(I18N.t("proposal.meta_context"))}：</strong> ${esc(res.source_context)}</p>` : ''}
-            ${res.schema_target ? `<p style="font-size:12px; color:var(--muted); margin:2px 0 0 0">🎯 <strong>${esc(I18N.t("proposal.meta_target_schema"))}：</strong> <code>${esc(res.schema_target)}</code></p>` : ''}
-            ${res.proposal_notes ? `<p style="font-size:12px; color:var(--muted); margin:2px 0 0 0">📝 <strong>${esc(I18N.t("proposal.meta_notes"))}：</strong> ${esc(res.proposal_notes)}</p>` : ''}
-          </div>
-          <div style="display:flex; gap:6px; flex-wrap:wrap">
-            <button class="primary" id="proposalSaveAsNamedBtn">${esc(I18N.t("design.next_save_named"))}</button>
-            <button class="secondary" id="proposalReconcileBtn">${esc(I18N.t("schemas.btn_reconcile"))}</button>
-            <button class="secondary" id="proposalEditCandidateBtn">${esc(I18N.t("proposal.edit_btn"))}</button>
-            <button class="ghost" id="proposalRejectBtn" style="color:var(--red)">${esc(I18N.t("proposal.reject_btn"))}</button>
-          </div>
-        </div>
-
-        <div style="overflow-x:auto; margin-bottom:14px; border:1px solid var(--line); border-radius:var(--radius-sm)">
-          <table class="data-table" style="margin:0; font-size:12px">
-            <thead>
-              <tr>
-                <th style="width:130px">${esc(I18N.t("proposal.col_prop_name"))}</th>
-                <th style="width:90px">${esc(I18N.t("proposal.col_type"))}</th>
-                <th style="width:90px">${esc(I18N.t("proposal.col_control"))}</th>
-                <th style="width:110px">${esc(I18N.t("proposal.col_usage"))}</th>
-                <th style="width:110px">${esc(I18N.t("proposal.scope_label"))}</th>
-                <th style="width:90px">${esc(I18N.t("proposal.glossary_label"))}</th>
-                <th style="width:90px">${esc(I18N.t("proposal.schema_label"))}</th>
-                <th>${esc(I18N.t("proposal.reason_label"))}</th>
-              </tr>
-            </thead>
-            <tbody>${rowsHtml}</tbody>
-          </table>
-        </div>
-
-        <details style="margin-top:14px; border-top:1px solid var(--line); padding-top:10px">
-          <summary style="cursor:pointer; font-size:12.5px; color:var(--muted)">${esc(I18N.t("proposal.four_way_json_summary"))}</summary>
-          <pre style="max-height:220px; font-size:12px">${esc(JSON.stringify(res, null, 2))}</pre>
-        </details>
-      `;
-
-      $("proposalResultCard").style.display = "block";
-
-      // Bind action buttons
-      const saveBtn = document.getElementById("proposalSaveAsNamedBtn");
-      if (saveBtn) {
-        saveBtn.onclick = () => {
-          openSaveNamedSchemaModal(sch, (savedId) => {
-            setTab("schemas");
-          });
-        };
-      }
-
-      const recBtn = document.getElementById("proposalReconcileBtn");
-      if (recBtn) {
-        recBtn.onclick = () => {
-          S.currentSchema = sch;
-          if (typeof StateTransfer !== 'undefined') {
-            StateTransfer.setPending("workspace", {
-              schema: sch,
-              note_path: res.target_note || ""
-            }, "reconcile");
-          }
-          setTab("workspace");
-          if (res.target_note) {
-            inspectNoteInWorkspace(res.target_note);
-          }
-        };
-      }
-
-      const editBtn = document.getElementById("proposalEditCandidateBtn");
-      if (editBtn) {
-        editBtn.onclick = () => {
-          openProposalCandidateEditor(sch, res.proposal_version);
-        };
-      }
-
-      const rejectBtn = document.getElementById("proposalRejectBtn");
-      if (rejectBtn) {
-        rejectBtn.onclick = () => {
-          if (!confirm(I18N.t("toast.proposal_reject_confirm"))) return;
-          $("proposalTextInput").value = "";
-          $("proposalResultCard").style.display = "none";
-          toast(I18N.t("toast.proposal_rejected"));
-        };
-      }
+      S.lastImportedProposal = res;
+      renderProposalReviewResult(res);
     } catch (e) {
       toast(e.message, true);
     }

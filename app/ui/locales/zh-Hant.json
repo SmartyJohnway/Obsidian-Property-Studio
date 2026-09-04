@@ -535,5 +535,13 @@
   "nav.theme_toggle": "切換深淺色主題 (Theme)",
   "vault.path_placeholder": "D:\\Notes\\MyVault 或 /home/user/vault",
   "scope.single_note_placeholder": "例如：Projects/Alpha.md",
-  "drift.compliance_full": "100% 符合"
+  "drift.compliance_full": "100% 符合",
+  "st.text": "Text (文字)",
+  "st.number": "Number (數字)",
+  "st.date": "Date (日期)",
+  "st.checkbox": "Checkbox (核取方塊)",
+  "st.list": "List (清單)",
+  "st.tags": "Tags (標籤清單)",
+  "st.note_link": "Note Link (筆記連結 [[...]])",
+  "st.note_link_list": "Note Link List (筆記連結清單)"
 }

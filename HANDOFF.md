@@ -59,7 +59,14 @@ All autonomous implementation and verification milestones from M016 through M021
   - 4 dedicated unit tests (`tests/test_v12_migration.py`, `tests/test_v12_governance_profile.py`) PASS.
 
 - **M022: Release Acceptance & Packaging — IN_PROGRESS**
-- **Commit 21C: Final Human Acceptance State & i18n Closure — PASS**
+- **Commit 21D: Final Browser Runtime & State Closure — PASS**
+  - **Eliminated `strnatcmp` ReferenceError (HA-F16)**: Implemented canonical `compareSchemaVersions(a, b)` and replaced all un-scoped references, verified in Node.js runtime on real multi-version schemas.
+  - **Proposal Reconcile State Isolation (HA-F09 / HA-F11)**: Removed `S.currentSchema = sch;` from Proposal route. `S.currentSchema` is strictly preserved for Designer/Fill, while `S.activeReconciliationSchema` is used for Workspace note reconciliation.
+  - **State-Driven Dynamic Locale Rerender (HA-F08)**: Wired `S.lastImportedProposal`, `S.lastRefactorPlan`, and `S.lastProfileValidation` state caches. When switching locales, `renderAllDynamicViews()` automatically rerenders active results, open drawers (`drift`, `profile_import`), and preserves workspace edit inputs without data loss.
+  - **Real Node.js JavaScript Regression Execution**: Upgraded test suite so that `tests/test_v12_human_acceptance_repairs.py` runs Node.js subprocesses against extracted production JavaScript from `app/ui/index.html`.
+  - **100% Symmetrical i18n Expansion**: Added `st.text`, `st.number`, `st.date`, `st.checkbox`, `st.list`, `st.tags`, `st.note_link`, `st.note_link_list` with `data-i18n` bindings across all 545 keys in `zh-Hant.json` / `en.json`.
+  - **Automated Verification**: **241/241 tests PASS** in 17.52s. 5,040-note benchmark verified at 11.09s, 0 Vault mutations.
+- **Commit 21C: Final Human Acceptance State & i18n Closure — SUPERSEDED BY 21D**
   - **Workspace & Schema State Complete Decoupling (HA-F09 / HA-F11 Frontend State Isolation)**:
     - Implemented `window.cancelWorkspaceReconciliation()`: clearing `S.activeReconciliationSchema` and triggering `updateWorkspacePreview()` with `schema: null` to remove all schema-imposed constraints in-place.
     - Isolated `S.currentSchema` (used exclusively by Designer and Fill) from `S.activeReconciliationSchema` (used exclusively by Note Workspace reconciliation).

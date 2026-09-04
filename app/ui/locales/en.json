@@ -535,5 +535,13 @@
   "nav.theme_toggle": "Toggle Light/Dark Theme",
   "vault.path_placeholder": "D:\\Notes\\MyVault or /home/user/vault",
   "scope.single_note_placeholder": "e.g. Projects/Alpha.md",
-  "drift.compliance_full": "100% Compliant"
+  "drift.compliance_full": "100% Compliant",
+  "st.text": "Text",
+  "st.number": "Number",
+  "st.date": "Date",
+  "st.checkbox": "Checkbox",
+  "st.list": "List",
+  "st.tags": "Tags",
+  "st.note_link": "Note Link ([[...]])",
+  "st.note_link_list": "Note Link List"
 }
