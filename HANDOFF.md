@@ -11,7 +11,7 @@ Active Milestone: `M022`
 Active Milestone Status: `IN_PROGRESS`  
 Current Task: `M022-T04` (Human Owner Windows 10 Production UI Walkthrough Acceptance Retest)  
 Last Verified Gate: `M021 — Schema Naming, Versioning, Migration & Governance Profile PASS`  
-Last Verified Implementation Commit: `fce680d` (Commit 21F — Workspace Dynamic i18n & Immutable Evidence Closure)  
+Last Verified Implementation Commit: `22743ff` (Commit 21G — Drift Canonical Path Authority Closure)  
 GitHub PR: `PR #2 (Draft, feat(v1.2): Personal Property Governance System)`  
 Authoritative Specification: `docs/specs/Obsidian_Property_Studio_v1.2.0_Spec.md`  
 Archived v1.1 Roadmap: `docs/archive/ROADMAP_v1.1.0.md`  
@@ -59,7 +59,13 @@ All autonomous implementation and verification milestones from M016 through M021
   - 4 dedicated unit tests (`tests/test_v12_migration.py`, `tests/test_v12_governance_profile.py`) PASS.
 
 - **M022: Release Acceptance & Packaging — IN_PROGRESS**
-- **Commit 21F: Workspace Dynamic i18n & Immutable Evidence Closure — CURRENT HEAD**
+- **Commit 21G: Drift Canonical Path Authority Closure (HA-F12) — CURRENT HEAD**
+  - **Bound Drift Path Authority to Active VaultScan**: Repaired `is_canonical_navigable_path` in `app/core/drift.py` by removing ad-hoc filename string heuristics (which previously rejected filenames starting with `·`, `![[`, `*`, `-`, `+`). Canonical note identity is bound to membership in active `VaultScan` (scanned filesystem notes) while enforcing `.md` extension and blocking path traversal / non-relative paths fail-closed.
+  - **CASE A Verified**: Scanned notes with unusual but legitimate filenames (such as `· ![[台灣_美國通用採購流程使用手冊_v1.0.docx.md`) now evaluate to `navigation_available: True` and enable direct one-click Reconcile Note navigation.
+  - **CASE B Preserved**: Truly unresolvable or unscanned paths (or malformed non-markdown inputs) fail closed (`navigation_available: False`) while preserving the raw string in findings for transparent diagnosis.
+  - **Regression Coverage (TESTS A-D)**: Updated `test_ha_f12_drift_canonical_navigable_path_guard` in `tests/test_v12_human_acceptance_repairs.py` to assert: (A) unusual real filename is recognized and navigable; (B) phantom/traversal path fails closed; (C) ordinary `.md` file is navigable; (D) duplicate file names in different folders maintain distinct identities without collision.
+  - **Automated Verification**: **242/242 tests PASS** in 16.72s. Vault 100% byte-for-byte read-only.
+- **Commit 21F: Workspace Dynamic i18n & Immutable Evidence Closure — SUPERSEDED BY 21G**
   - **window.renderWorkspaceStatusBanner state-driven renderer (HA-F08)**: Extracted workspace reconciliation banner rendering (note loaded card, diagnostic focus, four-state reconciliation table with Fill/Focus buttons, cancel button) from inline `inspectNoteInWorkspace()` into a dedicated `window.renderWorkspaceStatusBanner(statusData)` function. First API call caches result in `S.lastWorkspaceStatus = { noteResponse, pendingContext, reconciliationResult, reconciliationSchemaName }`. Locale switch calls `renderAllDynamicViews()` → `renderWorkspaceStatusBanner(S.lastWorkspaceStatus)`, re-rendering all i18n labels from cached data without re-calling the API or losing workspace edit state (`wsTouchedKeys`, input values, search selection, active reconciliation schema).
   - **cancelWorkspaceReconciliation upgraded**: Clears `S.lastWorkspaceStatus.reconciliationResult` and calls `renderWorkspaceStatusBanner()` to show only the note loaded card (without reconciliation table). Previously cleared the entire banner innerHTML.
   - **test_ha_f08_workspace_reconciliation_banner_locale_rerender_in_js**: New Node.js test verifying: (a) first render contains note loaded card, reconciliation table with 4 states, Fill/Focus buttons, column headers, cancel button; (b) locale switch re-renders same content from cache; (c) cache integrity preserved; (d) cancel clears reconciliation but preserves note loaded card.
