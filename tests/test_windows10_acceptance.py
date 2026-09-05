@@ -8,7 +8,7 @@ REQ-025 / REQ-026 / DEC-028:
 4. Native execution test of run_windows.bat launcher.
 5. Simulated browser DOM i18n and fail-closed validation.
 6. Vault remains byte-for-byte read-only across all end-to-end HTTP interactions.
-7. Writes structured evidence to evidence/integration/m012_v110_windows10_native_acceptance.json.
+7. Writes structured evidence to evidence/integration/m022_v120_windows10_native_acceptance.json.
 """
 
 from __future__ import annotations
@@ -64,7 +64,8 @@ def test_m012_windows10_native_launcher_and_http_walkthrough(live_server: str, m
     root_dir = Path(__file__).parent.parent
     evidence_dir = root_dir / "evidence" / "integration"
     evidence_dir.mkdir(parents=True, exist_ok=True)
-    evidence_file = evidence_dir / "m012_v110_windows10_native_acceptance.json"
+    # NOTE: Do NOT overwrite m012_v110_windows10_native_acceptance.json — immutable v1.1.0 historical evidence
+    evidence_file = evidence_dir / "m022_v120_windows10_native_acceptance.json"
 
     # 1. Platform verification
     platform_info = {

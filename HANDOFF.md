@@ -1,6 +1,6 @@
 # Handoff
 
-Updated: `2026-09-04`  
+Updated: `2026-09-05`  
 From: `Antigravity — v1.2.0 Autonomous Implementation Agent`  
 To / Intended Next Executor: `Dr. J (Human Owner) / Verification Auditor`  
 Formal Project Root: `D:\Antigravity-Workspace\Obsidian-Property-Studio\Obsidian-Property-Studio-v1.0.0`  
@@ -11,7 +11,7 @@ Active Milestone: `M022`
 Active Milestone Status: `IN_PROGRESS`  
 Current Task: `M022-T04` (Human Owner Windows 10 Production UI Walkthrough Acceptance Retest)  
 Last Verified Gate: `M021 — Schema Naming, Versioning, Migration & Governance Profile PASS`  
-Last Verified Implementation Commit: `ee9bcf7` (Commit 21E — Refactor Runtime, Profile State & Evidence Closure)  
+Last Verified Implementation Commit: `Commit 21F — Workspace Dynamic i18n & Immutable Evidence Closure (SHA to be updated after push)`  
 GitHub PR: `PR #2 (Draft, feat(v1.2): Personal Property Governance System)`  
 Authoritative Specification: `docs/specs/Obsidian_Property_Studio_v1.2.0_Spec.md`  
 Archived v1.1 Roadmap: `docs/archive/ROADMAP_v1.1.0.md`  
@@ -59,16 +59,14 @@ All autonomous implementation and verification milestones from M016 through M021
   - 4 dedicated unit tests (`tests/test_v12_migration.py`, `tests/test_v12_governance_profile.py`) PASS.
 
 - **M022: Release Acceptance & Packaging — IN_PROGRESS**
-- **Commit 21E: Refactor Runtime, Profile State & Evidence Closure — CURRENT HEAD**
-  - **window.renderRefactorPlanResult canonical global (HA-F08)**: Extracted `window.renderRefactorPlanResult(planData)` as a fully implemented standalone global function rendering Refactor Plan stats, normalize mapping table, affected notes, and JSON output. Called from both `/api/refactor/plan` success callback and `renderAllDynamicViews()`. Previously existed as a shell inside `setupRefactorHandlers`; now wired for actual locale re-render.
-  - **window.renderProfilePreviewArea canonical global (HA-F08)**: Extracted `window.renderProfilePreviewArea(valReport, parsed)` from inside `setupSchemasHandlers()` body into a proper standalone global function placed before `setupSchemasHandlers()`. Eliminates `ReferenceError: renderProfilePreviewArea is not defined` when `renderAllDynamicViews()` calls it via locale switch.
-  - **setupSchemasHandlers structural repair**: `setupSchemasHandlers()` was previously left open (missing closing `}`), causing `renderProfilePreviewArea` to be scoped inside the function rather than as a global. Now correctly closed; `govProfileExportBtn`/`govProfileImportBtn`/`validateProfileBtn` handlers properly consolidated inside the function.
-  - **Profile mode (merge/replace) preserved across locale rerender**: `renderProfilePreviewArea` reads `document.getElementById("profileImportModeSelect").value` or `S.lastProfileValidation.mode` as fallback to restore mode selection on re-render. `modeSel.onchange` writes back to `S.lastProfileValidation.mode` immediately.
-  - **updateContextBarLabels null-guarded**: All `$("currentVaultLabel")` and similar DOM accesses wrapped in `if (...) ...` defensive check, preventing TypeError in Node.js test environment.
-  - **Node.js test harness upgraded to realistic per-element DOM mock**: `_get_node_harness_prefix()` now uses `elements = {}` registry with per-id independent `innerHTML` getter/setter (parsing child id attributes), `classList` Set, and `onchange` handler support. `ensureEl(id)` creates-and-caches elements on demand.
-  - **test_ha_f08_dynamic_locale_refactor_and_profile_in_js**: New Node.js test verifying: (a) `renderRefactorPlanResult({...})` populates `refactorPlanOutput.innerHTML` with plan data; (b) `renderAllDynamicViews()` calls `renderRefactorPlanResult` and `renderProfilePreviewArea`; (c) Profile mode from `S.lastProfileValidation.mode` is preserved after locale re-render.
-  - **test_ha_f16 upgraded with real fetch mock**: Validates that `openSaveNamedSchemaModal` renders `saveSchemaTargetSelect` dropdown via real `fetch` interception returning a multi-version schema list, and that `v1.10.0` sorts before `v1.9.0` (semantic version order).
-  - **Automated Verification**: **241/241 tests PASS** in 16.36s. 5,040-note benchmark: 5.844s analysis / 5.667s scan. Vault 100% byte-for-byte read-only.
+- **Commit 21F: Workspace Dynamic i18n & Immutable Evidence Closure — CURRENT HEAD**
+  - **window.renderWorkspaceStatusBanner state-driven renderer (HA-F08)**: Extracted workspace reconciliation banner rendering (note loaded card, diagnostic focus, four-state reconciliation table with Fill/Focus buttons, cancel button) from inline `inspectNoteInWorkspace()` into a dedicated `window.renderWorkspaceStatusBanner(statusData)` function. First API call caches result in `S.lastWorkspaceStatus = { noteResponse, pendingContext, reconciliationResult, reconciliationSchemaName }`. Locale switch calls `renderAllDynamicViews()` → `renderWorkspaceStatusBanner(S.lastWorkspaceStatus)`, re-rendering all i18n labels from cached data without re-calling the API or losing workspace edit state (`wsTouchedKeys`, input values, search selection, active reconciliation schema).
+  - **cancelWorkspaceReconciliation upgraded**: Clears `S.lastWorkspaceStatus.reconciliationResult` and calls `renderWorkspaceStatusBanner()` to show only the note loaded card (without reconciliation table). Previously cleared the entire banner innerHTML.
+  - **test_ha_f08_workspace_reconciliation_banner_locale_rerender_in_js**: New Node.js test verifying: (a) first render contains note loaded card, reconciliation table with 4 states, Fill/Focus buttons, column headers, cancel button; (b) locale switch re-renders same content from cache; (c) cache integrity preserved; (d) cancel clears reconciliation but preserves note loaded card.
+  - **Historical evidence immutability**: Restored `evidence/integration/m009_benchmark.json` and `evidence/integration/m012_v110_windows10_native_acceptance.json` to their `main` branch baseline. `test_benchmark.py` now writes to `evidence/integration/m022_v120_benchmark.json` (not m009). `test_windows10_acceptance.py` now writes to `evidence/integration/m022_v120_windows10_native_acceptance.json` (not m012).
+  - **ROADMAP evidence authority clarified**: `evidence/integration/m022_v120_benchmark.json` is the authoritative M022 benchmark (5.844s analysis / 5.667s scan). `evidence/benchmark.json` is explicitly marked as non-authoritative latest local benchmark.
+  - **Automated Verification**: **242/242 tests PASS** in 17.43s. 5,040-note benchmark: 5.844s analysis / 5.667s scan. Vault 100% byte-for-byte read-only.
+- **Commit 21E: Refactor Runtime, Profile State & Evidence Closure — SUPERSEDED BY 21F**
 - **Commit 21D: Final Browser Runtime & State Closure — SUPERSEDED BY 21E**
 - **Commit 21C: Final Human Acceptance State & i18n Closure — SUPERSEDED BY 21D**
   - **Workspace & Schema State Complete Decoupling (HA-F09 / HA-F11 Frontend State Isolation)**:

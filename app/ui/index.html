@@ -1231,7 +1231,8 @@ const S = {
   lastRefactorPlan: null,
   lastProfileValidation: null,
   lastDriftReport: null,
-  currentDrawerType: null
+  currentDrawerType: null,
+  lastWorkspaceStatus: null
 };
 window.S = S;
 
@@ -1949,8 +1950,14 @@ window.deleteNamedSchema = async function(id) {
 
 window.cancelWorkspaceReconciliation = function() {
   S.activeReconciliationSchema = null;
-  const banner = document.getElementById("wsNoteStatusBanner");
-  if (banner) banner.innerHTML = "";
+  if (S.lastWorkspaceStatus) {
+    S.lastWorkspaceStatus.reconciliationResult = null;
+    S.lastWorkspaceStatus.reconciliationSchemaName = "";
+    renderWorkspaceStatusBanner(S.lastWorkspaceStatus);
+  } else {
+    const banner = document.getElementById("wsNoteStatusBanner");
+    if (banner) banner.innerHTML = "";
+  }
   if (S.currentNote) {
     updateWorkspacePreview();
   }
@@ -2707,6 +2714,10 @@ function renderAllDynamicViews() {
     const propsToRender = Object.keys(currentValues).length ? currentValues : S.currentNote.original_properties;
     renderWorkspaceFields(propsToRender, true);
     updateWorkspacePreview();
+    // Re-render workspace status banner (reconciliation result, diagnostic, note loaded card)
+    if (S.lastWorkspaceStatus) {
+      renderWorkspaceStatusBanner(S.lastWorkspaceStatus);
+    }
   }
 
   // 2. Proposal Review: if active, re-render result card
@@ -3238,6 +3249,99 @@ function setupWorkspaceHandlers() {
 }
 
 
+
+window.renderWorkspaceStatusBanner = function(statusData) {
+  if (!statusData) return;
+  const banner = $("wsNoteStatusBanner");
+  if (!banner) return;
+
+  const res = statusData.noteResponse;
+  const pending = statusData.pendingContext;
+  const recRes = statusData.reconciliationResult;
+  const recSchemaName = statusData.reconciliationSchemaName;
+
+  if (!res || !res.can_edit) return;
+
+  let bannerHtml = `
+    <div class="card" style="border-color:var(--teal); background:var(--teal-soft); color:var(--teal); margin-bottom:14px">
+      <strong>${I18N.t("workspace.note_loaded")}</strong> <code>${esc(res.note_path)}</code> (${Object.keys(res.original_properties).length} ${I18N.t("workspace.existing_props_count")})
+    </div>
+  `;
+
+  if (pending && (pending.finding_id || pending.property_key || pending.finding_type)) {
+    const pKey = pending.property_key || '';
+    const fType = pending.finding_type || pending.finding_id || 'Drift Finding';
+    const targetStr = pKey ? I18N.t("workspace.diagnostic_target_prop", { prop: esc(pKey) }) : '';
+    bannerHtml += `
+      <div class="card" style="border-color:var(--amber); background:var(--amber-soft); color:var(--text); margin-bottom:14px">
+        <strong>${esc(I18N.t("workspace.diagnostic_focus_title"))}</strong> ${I18N.t("workspace.diagnostic_focus_body", { type: esc(fType), target: targetStr })}
+      </div>
+    `;
+  }
+
+  if (recRes) {
+    const items = recRes.items || [];
+    const statePill = (st) => {
+      if (st === "matches") return `<span class="pill ok">${esc(I18N.t("reconcile.state_match"))}</span>`;
+      if (st === "missing") return `<span class="pill warn">${esc(I18N.t("reconcile.state_missing"))}</span>`;
+      if (st === "conflict") return `<span class="pill alert">${esc(I18N.t("reconcile.state_conflict"))}</span>`;
+      return `<span class="pill">${esc(I18N.t("reconcile.state_preserved"))}</span>`;
+    };
+
+    const rowsHtml = items.map(it => `
+      <tr style="${it.state === 'conflict' ? 'background:var(--red-soft)' : it.state === 'missing' ? 'background:var(--amber-soft)' : ''}">
+        <td>${statePill(it.state)}</td>
+        <td><strong>${esc(it.name)}</strong> ${it.required ? '<span style="color:var(--red)">*</span>' : ''}</td>
+        <td><code>${esc(it.current_value == null ? I18N.t("workspace.val_none") : (Array.isArray(it.current_value) ? it.current_value.join(", ") : it.current_value))}</code></td>
+        <td><span class="pill" style="font-size:11px">${esc(it.expected_type || '\u2014')}</span></td>
+        <td style="font-size:12px; color:var(--muted)">${esc(it.conflict_reason || (it.state === 'outside_schema' ? I18N.t("reconcile.state_preserved") : ''))}</td>
+        <td>
+          ${it.state === 'missing' ? `<button type="button" class="primary" style="font-size:11px; padding:2px 8px" onclick="addMissingPropertyToWorkspace('${esc(it.name)}', '${esc(it.suggested_value || '')}')">${esc(I18N.t("reconcile.btn_fill"))}</button>` : ''}
+          ${it.state === 'conflict' ? `<button type="button" class="secondary" style="font-size:11px; padding:2px 8px" onclick="focusPropertyInWorkspace('${esc(it.name)}')">${esc(I18N.t("reconcile.btn_focus"))}</button>` : ''}
+        </td>
+      </tr>
+    `).join("");
+
+    bannerHtml += `
+      <div class="card" style="border-color:var(--brand); background:var(--panel2); margin-bottom:14px">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start">
+          <div>
+            <strong style="font-size:14px">\u2696\uFE0F ${esc(I18N.t("schemas.btn_reconcile"))}\uFF1A${esc(recSchemaName)}</strong>
+            <p class="muted" style="margin:4px 0 0 0; font-size:12px">${esc(I18N.t("workspace.four_state_lead"))}</p>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; font-size:11.5px">
+            <div style="display:flex; gap:6px">
+              <span class="pill ok">${esc(I18N.t("reconcile.state_match"))}: ${recRes.summary.matches}</span>
+              <span class="pill warn">${esc(I18N.t("reconcile.state_missing"))}: ${recRes.summary.missing}</span>
+              <span class="pill alert">${esc(I18N.t("reconcile.state_conflict"))}: ${recRes.summary.conflict}</span>
+              <span class="pill">${esc(I18N.t("reconcile.state_preserved"))}: ${recRes.summary.outside_schema}</span>
+            </div>
+            <button class="ghost" style="font-size:11.5px; padding:2px 6px" onclick="cancelWorkspaceReconciliation()">${esc(I18N.t("workspace.cancel_reconcile"))}</button>
+          </div>
+        </div>
+
+        <div style="max-height:260px; overflow-y:auto; margin-top:10px; border:1px solid var(--line); border-radius:var(--radius-sm)">
+          <table class="data-table" style="margin:0; font-size:12px">
+            <thead>
+              <tr>
+                <th style="width:130px">${esc(I18N.t("reconcile.col_state"))}</th>
+                <th style="width:140px">${esc(I18N.t("reconcile.col_prop"))}</th>
+                <th>${esc(I18N.t("reconcile.col_current"))}</th>
+                <th style="width:90px">${esc(I18N.t("reconcile.col_expected"))}</th>
+                <th>${esc(I18N.t("reconcile.col_diagnosis"))}</th>
+                <th style="width:100px">${esc(I18N.t("reconcile.col_action"))}</th>
+              </tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  banner.innerHTML = bannerHtml;
+};
+
 async function inspectNoteInWorkspace(notePath) {
   try {
     const res = await api("/api/workspace/inspect", { note_path: notePath });
@@ -3256,28 +3360,14 @@ async function inspectNoteInWorkspace(notePath) {
       return;
     }
 
-    let bannerHtml = `
-      <div class="card" style="border-color:var(--teal); background:var(--teal-soft); color:var(--teal); margin-bottom:14px">
-        <strong>${I18N.t("workspace.note_loaded")}</strong> <code>${esc(res.note_path)}</code> (${Object.keys(res.original_properties).length} ${I18N.t("workspace.existing_props_count")})
-      </div>
-    `;
-
     const pending = (typeof StateTransfer !== 'undefined' && StateTransfer.hasPending("workspace")) 
       ? StateTransfer.consumePending("workspace") 
       : null;
 
     if (pending && (pending.finding_id || pending.property_key || pending.finding_type)) {
-      const pKey = pending.property_key || '';
-      const fType = pending.finding_type || pending.finding_id || 'Drift Finding';
-      const targetStr = pKey ? I18N.t("workspace.diagnostic_target_prop", { prop: esc(pKey) }) : '';
-      bannerHtml += `
-        <div class="card" style="border-color:var(--amber); background:var(--amber-soft); color:var(--text); margin-bottom:14px">
-          <strong>${esc(I18N.t("workspace.diagnostic_focus_title"))}</strong> ${I18N.t("workspace.diagnostic_focus_body", { type: esc(fType), target: targetStr })}
-        </div>
-      `;
-      if (pKey) {
+      if (pending.property_key) {
         setTimeout(() => {
-          const row = document.querySelector(`.ws-prop-row[data-key="${pKey}"]`);
+          const row = document.querySelector(`.ws-prop-row[data-key="${pending.property_key}"]`);
           if (row) {
             row.style.outline = "2px solid var(--amber)";
             row.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -3291,6 +3381,8 @@ async function inspectNoteInWorkspace(notePath) {
     }
     const targetRecSchema = (pending && (pending.schema || pending.schema_id)) ? (pending.schema || S.activeReconciliationSchema) : S.activeReconciliationSchema;
     const targetSchemaId = (pending && pending.schema_id) ? pending.schema_id : (targetRecSchema ? targetRecSchema.id : null);
+    let reconciliationResult = null;
+    let reconciliationSchemaName = "";
     if (targetRecSchema || targetSchemaId || (pending && pending.intent === "reconcile")) {
       try {
         const recRes = await api("/api/reconcile/inspect", {
@@ -3299,69 +3391,20 @@ async function inspectNoteInWorkspace(notePath) {
           schema_name: targetRecSchema ? targetRecSchema.name : undefined,
           schema_properties: targetRecSchema ? targetRecSchema.properties : (S.currentSchema ? S.currentSchema.properties : [])
         });
-        const items = recRes.items || [];
-        const statePill = (st) => {
-          if (st === "matches") return `<span class="pill ok">${esc(I18N.t("reconcile.state_match"))}</span>`;
-          if (st === "missing") return `<span class="pill warn">${esc(I18N.t("reconcile.state_missing"))}</span>`;
-          if (st === "conflict") return `<span class="pill alert">${esc(I18N.t("reconcile.state_conflict"))}</span>`;
-          return `<span class="pill">${esc(I18N.t("reconcile.state_preserved"))}</span>`;
-        };
-
-        const rowsHtml = items.map(it => `
-          <tr style="${it.state === 'conflict' ? 'background:var(--red-soft)' : it.state === 'missing' ? 'background:var(--amber-soft)' : ''}">
-            <td>${statePill(it.state)}</td>
-            <td><strong>${esc(it.name)}</strong> ${it.required ? '<span style="color:var(--red)">*</span>' : ''}</td>
-            <td><code>${esc(it.current_value == null ? I18N.t("workspace.val_none") : (Array.isArray(it.current_value) ? it.current_value.join(", ") : it.current_value))}</code></td>
-            <td><span class="pill" style="font-size:11px">${esc(it.expected_type || '—')}</span></td>
-            <td style="font-size:12px; color:var(--muted)">${esc(it.conflict_reason || (it.state === 'outside_schema' ? I18N.t("reconcile.state_preserved") : ''))}</td>
-            <td>
-              ${it.state === 'missing' ? `<button type="button" class="primary" style="font-size:11px; padding:2px 8px" onclick="addMissingPropertyToWorkspace('${esc(it.name)}', '${esc(it.suggested_value || '')}')">${esc(I18N.t("reconcile.btn_fill"))}</button>` : ''}
-              ${it.state === 'conflict' ? `<button type="button" class="secondary" style="font-size:11px; padding:2px 8px" onclick="focusPropertyInWorkspace('${esc(it.name)}')">${esc(I18N.t("reconcile.btn_focus"))}</button>` : ''}
-            </td>
-          </tr>
-        `).join("");
-
-        bannerHtml += `
-          <div class="card" style="border-color:var(--brand); background:var(--panel2); margin-bottom:14px">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start">
-              <div>
-                <strong style="font-size:14px">⚖️ ${esc(I18N.t("schemas.btn_reconcile"))}：${esc(recRes.schema_name)}</strong>
-                <p class="muted" style="margin:4px 0 0 0; font-size:12px">${esc(I18N.t("workspace.four_state_lead"))}</p>
-              </div>
-              <div style="display:flex; align-items:center; gap:8px; font-size:11.5px">
-                <div style="display:flex; gap:6px">
-                  <span class="pill ok">${esc(I18N.t("reconcile.state_match"))}: ${recRes.summary.matches}</span>
-                  <span class="pill warn">${esc(I18N.t("reconcile.state_missing"))}: ${recRes.summary.missing}</span>
-                  <span class="pill alert">${esc(I18N.t("reconcile.state_conflict"))}: ${recRes.summary.conflict}</span>
-                  <span class="pill">${esc(I18N.t("reconcile.state_preserved"))}: ${recRes.summary.outside_schema}</span>
-                </div>
-                <button class="ghost" style="font-size:11.5px; padding:2px 6px" onclick="cancelWorkspaceReconciliation()">${esc(I18N.t("workspace.cancel_reconcile"))}</button>
-              </div>
-            </div>
-
-            <div style="max-height:260px; overflow-y:auto; margin-top:10px; border:1px solid var(--line); border-radius:var(--radius-sm)">
-              <table class="data-table" style="margin:0; font-size:12px">
-                <thead>
-                  <tr>
-                    <th style="width:130px">${esc(I18N.t("reconcile.col_state"))}</th>
-                    <th style="width:140px">${esc(I18N.t("reconcile.col_prop"))}</th>
-                    <th>${esc(I18N.t("reconcile.col_current"))}</th>
-                    <th style="width:90px">${esc(I18N.t("reconcile.col_expected"))}</th>
-                    <th>${esc(I18N.t("reconcile.col_diagnosis"))}</th>
-                    <th style="width:100px">${esc(I18N.t("reconcile.col_action"))}</th>
-                  </tr>
-                </thead>
-                <tbody>${rowsHtml}</tbody>
-              </table>
-            </div>
-          </div>
-        `;
+        reconciliationResult = recRes;
+        reconciliationSchemaName = recRes.schema_name;
       } catch (err) {
         console.error("Reconciliation inspection error:", err);
       }
     }
 
-    banner.innerHTML = bannerHtml;
+    S.lastWorkspaceStatus = {
+      noteResponse: res,
+      pendingContext: pending,
+      reconciliationResult: reconciliationResult,
+      reconciliationSchemaName: reconciliationSchemaName
+    };
+    renderWorkspaceStatusBanner(S.lastWorkspaceStatus);
     renderWorkspaceFields(res.original_properties);
     $("wsEditorArea").style.display = "block";
     updateWorkspacePreview();

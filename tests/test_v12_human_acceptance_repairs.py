@@ -893,6 +893,20 @@ ensureEl("refactorPlanResultCard");
 ensureEl("proposalResultOutput");
 ensureEl("proposalResultCard");
 ensureEl("profilePreviewArea");
+ensureEl("wsNoteStatusBanner");
+ensureEl("wsEditorArea");
+ensureEl("wsPropFields");
+ensureEl("currentNoteLabel");
+ensureEl("noteBadge");
+ensureEl("wsAddPropBtn");
+ensureEl("wsDiffView");
+ensureEl("wsYamlPreview");
+ensureEl("wsRoundtripStatus");
+ensureEl("wsCopyBtn");
+ensureEl("wsNoteSearch");
+ensureEl("wsNoteCandidates");
+ensureEl("wsDropdownToggleBtn");
+ensureEl("wsSearchBtn");
 """
 
 
@@ -1209,3 +1223,132 @@ def test_ha_i18n_symmetric_keys_and_storage_type_bindings():
     html_content = Path("app/ui/index.html").read_text(encoding="utf-8")
     for k in st_keys:
         assert f'data-i18n="{k}"' in html_content, f"Missing data-i18n binding for {k} in index.html"
+
+
+def test_ha_f08_workspace_reconciliation_banner_locale_rerender_in_js():
+    """Verify in Node.js runtime that workspace reconciliation banner re-renders
+    from cached S.lastWorkspaceStatus on locale switch via renderAllDynamicViews,
+    without re-calling inspectNoteInWorkspace or losing edit state."""
+    import subprocess
+    import json
+
+    html_content = Path("app/ui/index.html").read_text(encoding="utf-8")
+    js_start = html_content.find("<script>") + len("<script>")
+    js_end = html_content.find("</script>", js_start)
+    full_js = html_content[js_start:js_end]
+
+    node_script = f"""
+    {_get_node_harness_prefix()}
+
+    {full_js}
+
+    async function runTests() {{
+      const results = {{}};
+
+      // 1. Simulate a loaded note with reconciliation result in cache
+      S.currentNote = {{
+        name: "TestNote.md",
+        note_path: "Projects/TestNote.md",
+        can_edit: true,
+        original_properties: {{ status: "draft", priority: "high" }}
+      }};
+
+      const mockRecResult = {{
+        schema_name: "ProjectSchema",
+        items: [
+          {{ state: "matches", name: "status", current_value: "draft", expected_type: "text", required: true, conflict_reason: "" }},
+          {{ state: "missing", name: "due_date", current_value: null, expected_type: "date", required: true, suggested_value: "2026-01-01", conflict_reason: "" }},
+          {{ state: "conflict", name: "priority", current_value: "high", expected_type: "number", required: false, conflict_reason: "Type mismatch" }},
+          {{ state: "outside_schema", name: "tags", current_value: "project", expected_type: null, required: false, conflict_reason: "" }}
+        ],
+        summary: {{ matches: 1, missing: 1, conflict: 1, outside_schema: 1 }}
+      }};
+
+      S.lastWorkspaceStatus = {{
+        noteResponse: S.currentNote,
+        pendingContext: null,
+        reconciliationResult: mockRecResult,
+        reconciliationSchemaName: "ProjectSchema"
+      }};
+
+      // 2. Call renderWorkspaceStatusBanner (first render, simulating zh-Hant)
+      renderWorkspaceStatusBanner(S.lastWorkspaceStatus);
+      const bannerHtml1 = ensureEl("wsNoteStatusBanner").innerHTML;
+
+      results.firstRenderHasNoteLoaded = bannerHtml1.includes("workspace.note_loaded");
+      results.firstRenderHasReconcileTitle = bannerHtml1.includes("schemas.btn_reconcile");
+      results.firstRenderHasSchemaName = bannerHtml1.includes("ProjectSchema");
+      results.firstRenderHasMatchCount = bannerHtml1.includes(": 1");
+      results.firstRenderHasMissingBtn = bannerHtml1.includes("reconcile.btn_fill");
+      results.firstRenderHasConflictBtn = bannerHtml1.includes("reconcile.btn_focus");
+      results.firstRenderHasColumnHeaders = bannerHtml1.includes("reconcile.col_state") && bannerHtml1.includes("reconcile.col_prop");
+      results.firstRenderHasCancelBtn = bannerHtml1.includes("workspace.cancel_reconcile");
+
+      // 3. Simulate locale switch → renderAllDynamicViews re-renders banner from cache
+      // Clear banner first to verify it gets re-rendered
+      ensureEl("wsNoteStatusBanner").innerHTML = "";
+
+      // renderAllDynamicViews needs workspace fields to exist; simulate minimal setup
+      renderAllDynamicViews();
+
+      const bannerHtml2 = ensureEl("wsNoteStatusBanner").innerHTML;
+      results.rerenderHasNoteLoaded = bannerHtml2.includes("workspace.note_loaded");
+      results.rerenderHasReconcileTitle = bannerHtml2.includes("schemas.btn_reconcile");
+      results.rerenderHasSchemaName = bannerHtml2.includes("ProjectSchema");
+      results.rerenderHasMissingBtn = bannerHtml2.includes("reconcile.btn_fill");
+      results.rerenderHasConflictBtn = bannerHtml2.includes("reconcile.btn_focus");
+      results.rerenderHasColumnHeaders = bannerHtml2.includes("reconcile.col_state");
+      results.rerenderHasCancelBtn = bannerHtml2.includes("workspace.cancel_reconcile");
+
+      // 4. Verify that S.lastWorkspaceStatus is unchanged (not re-fetched)
+      results.cacheNotCleared = S.lastWorkspaceStatus !== null;
+      results.cacheStillHasRecResult = S.lastWorkspaceStatus.reconciliationResult !== null;
+      results.cacheSchemaNamePreserved = S.lastWorkspaceStatus.reconciliationSchemaName === "ProjectSchema";
+
+      // 5. Simulate cancelWorkspaceReconciliation → reconciliation cleared but note loaded card remains
+      cancelWorkspaceReconciliation();
+      const bannerHtml3 = ensureEl("wsNoteStatusBanner").innerHTML;
+      results.afterCancelHasNoteLoaded = bannerHtml3.includes("workspace.note_loaded");
+      results.afterCancelNoReconcile = !bannerHtml3.includes("schemas.btn_reconcile");
+      results.afterCancelRecResultCleared = S.lastWorkspaceStatus.reconciliationResult === null;
+
+      console.log(JSON.stringify(results));
+    }}
+
+    runTests().catch(err => {{
+      console.error(err);
+      process.exit(1);
+    }});
+    """
+
+    proc = subprocess.run(["node"], input=node_script, capture_output=True, text=True, check=True, encoding="utf-8")
+    res = json.loads(proc.stdout.strip())
+
+    # First render assertions
+    assert res["firstRenderHasNoteLoaded"] is True
+    assert res["firstRenderHasReconcileTitle"] is True
+    assert res["firstRenderHasSchemaName"] is True
+    assert res["firstRenderHasMatchCount"] is True
+    assert res["firstRenderHasMissingBtn"] is True
+    assert res["firstRenderHasConflictBtn"] is True
+    assert res["firstRenderHasColumnHeaders"] is True
+    assert res["firstRenderHasCancelBtn"] is True
+
+    # Locale switch re-render assertions
+    assert res["rerenderHasNoteLoaded"] is True
+    assert res["rerenderHasReconcileTitle"] is True
+    assert res["rerenderHasSchemaName"] is True
+    assert res["rerenderHasMissingBtn"] is True
+    assert res["rerenderHasConflictBtn"] is True
+    assert res["rerenderHasColumnHeaders"] is True
+    assert res["rerenderHasCancelBtn"] is True
+
+    # Cache integrity assertions
+    assert res["cacheNotCleared"] is True
+    assert res["cacheStillHasRecResult"] is True
+    assert res["cacheSchemaNamePreserved"] is True
+
+    # Cancel reconciliation assertions
+    assert res["afterCancelHasNoteLoaded"] is True
+    assert res["afterCancelNoReconcile"] is True
+    assert res["afterCancelRecResultCleared"] is True

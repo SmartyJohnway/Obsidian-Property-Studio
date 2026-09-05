@@ -20,12 +20,12 @@ Current Task: `M022-T04`
 Last Verified Gate: `M021 — Schema Naming, Versioning, Migration & Governance Profile PASS`  
 Current Blocker: `NONE`  
 Next Action: `Await Human Owner (Dr. J) Windows 10 production UI walkthrough retest and formal Human Acceptance verdict (M022-T04 / M022-AC04).`  
-Implementation: `COMPLETE (Commit 21E Refactor Runtime, Profile State & Evidence Closure: (1) Extracted window.renderRefactorPlanResult as canonical global function called by /api/refactor/plan and renderAllDynamicViews; (2) Extracted window.renderProfilePreviewArea as canonical global function called by Validate flow and renderAllDynamicViews; (3) Restructured setupSchemasHandlers to be syntactically correct without breaking renderProfilePreviewArea scope; (4) Profile mode (merge/replace) preserved correctly in S.lastProfileValidation.mode and restored on locale rerender; (5) Upgraded Node.js regression tests to use realistic per-element DOM mock with innerHTML tracking and ensureEl(); (6) test_ha_f08_dynamic_locale_refactor_and_profile_in_js tests true Refactor rendering, Profile mode save-and-restore via renderAllDynamicViews; (7) test_ha_f16 now validates modal renders with v1.10.0 as first option via real fetch mock; (8) updateContextBarLabels made defensive for null DOM elements (Node.js test safety))`  
-Automated Verification: `PASS (241/241 tests pass, 5,040-note benchmark verified, Vault 100% byte-for-byte read-only and zero mutation)`  
+Implementation: `COMPLETE (Commit 21F Workspace Dynamic i18n & Immutable Evidence Closure: (1) Extracted window.renderWorkspaceStatusBanner as state-driven renderer from cached S.lastWorkspaceStatus — workspace reconciliation banner (note loaded card, diagnostic focus, four-state reconciliation table) now re-renders on locale switch without re-calling inspectNoteInWorkspace or losing edit state; (2) cancelWorkspaceReconciliation uses renderWorkspaceStatusBanner to clear reconciliation while preserving note loaded card; (3) Node.js test test_ha_f08_workspace_reconciliation_banner_locale_rerender_in_js verifies first render, locale rerender from cache, cache integrity, and cancel behavior; (4) Historical evidence immutability: restored m009_benchmark.json and m012_v110_windows10_native_acceptance.json to main baseline, benchmark test now writes to m022_v120_benchmark.json, Windows10 acceptance test writes to m022_v120_windows10_native_acceptance.json; (5) ROADMAP evidence authority clarified: m022_v120_benchmark.json is authoritative, evidence/benchmark.json is non-authoritative local)`  
+Automated Verification: `PASS (242/242 tests pass, 5,040-note benchmark verified, Vault 100% byte-for-byte read-only and zero mutation)`  
 Human Verified Acceptance: `NOT YET VERIFIED`  
 Release Readiness: `READY_FOR_HUMAN_RETEST` (Human Owner UI Walkthrough: `NOT YET VERIFIED`)  
 Accepted Limitation: `Windows 11 AMD64 native verification recorded as NOT YET VERIFIED due to test host unavailability (accepted non-blocking release limitation per human approved contract).`  
-Last Updated: `2026-09-04`
+Last Updated: `2026-09-05`
 
 
 ---
@@ -306,8 +306,8 @@ Status: `IN_PROGRESS`
 Execute complete Workflow Closure Matrix validation, run full regression suite and 5,000-note benchmark, verify Vault byte-for-byte read-only integrity, conduct human walkthrough on Windows 10 production UI, verify P0 completion and P1 implementation, and package v1.2.0 release artifacts.
 
 ### Tasks
-- [x] `M022-T01` Execute complete Workflow Closure Matrix automated test suite (241/241 tests PASS, includes `tests/test_v12_human_acceptance_repairs.py` validating 19 regression tests across HA-F01 ~ HA-F18, real JS Node.js execution of SemVer bumper and compareSchemaVersions, Save Modal multi-version sort, state isolation, and storage closure invariants).
-- [x] `M022-T02` Run 5,000-note performance benchmark and record in `evidence/benchmark.json` (5.844s analysis / 5.667s scan over 5,040 notes).
+- [x] `M022-T01` Execute complete Workflow Closure Matrix automated test suite (242/242 tests PASS, includes `tests/test_v12_human_acceptance_repairs.py` validating 20 regression tests across HA-F01 ~ HA-F18, real JS Node.js execution of SemVer bumper and compareSchemaVersions, Save Modal multi-version sort, state isolation, workspace reconciliation banner locale rerender, and storage closure invariants).
+- [x] `M022-T02` Run 5,000-note performance benchmark and record in `evidence/integration/m022_v120_benchmark.json` (authoritative: 5.844s analysis / 5.667s scan over 5,040 notes). `evidence/benchmark.json` is the latest local benchmark (non-authoritative, overwritten each run).
 - [x] `M022-T03` Verify Vault byte-for-byte read-only integrity across all v1.2 workflows (`evidence/integration/m022_v120_vault_readonly.json`).
 - [ ] `M022-T04` Conduct Windows 10 production UI walkthrough acceptance with Human Owner (Dr. J).
 - [x] `M022-T05` Verify P0 requirements complete and P1 status (P1 M021 fully implemented).
@@ -315,14 +315,15 @@ Execute complete Workflow Closure Matrix validation, run full regression suite a
 - [x] `M022-T07` Generate release packaging and record formal release verdict (`scripts/package_v120_release.py`).
 
 ### Acceptance Criteria
-- [x] `M022-AC01` All automated regression and closure tests PASS (241/241).
-- [x] `M022-AC02` 5,000-note benchmark recorded (5.844s analysis / 5.667s scan over 5,040 notes).
+- [x] `M022-AC01` All automated regression and closure tests PASS (242/242).
+- [x] `M022-AC02` 5,000-note benchmark recorded (authoritative: `evidence/integration/m022_v120_benchmark.json` — 5.844s analysis / 5.667s scan over 5,040 notes).
 - [x] `M022-AC03` Vault remains byte-for-byte untouched and zero directory created on violation.
 - [ ] `M022-AC04` Human Owner walkthrough PASS (Reserved for Human Owner Dr. J).
 - [x] `M022-AC05` Four-file consistency gate PASS.
 
 ### Required Evidence
-- Release manifest, benchmark JSON (`evidence/benchmark.json`, `evidence/integration/m022_v120_benchmark.json`), and Vault readonly record (`evidence/integration/m022_v120_vault_readonly.json`).
+- Release manifest, authoritative benchmark (`evidence/integration/m022_v120_benchmark.json`), latest local benchmark (`evidence/benchmark.json`, non-authoritative), and Vault readonly record (`evidence/integration/m022_v120_vault_readonly.json`).
+- Historical v1.1.0 evidence (`evidence/integration/m009_benchmark.json`, `evidence/integration/m012_v110_windows10_native_acceptance.json`) is immutable and must not be overwritten by v1.2.0 test runs.
 
 ### Result
 `NOT YET VERIFIED`
