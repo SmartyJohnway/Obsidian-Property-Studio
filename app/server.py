@@ -29,7 +29,16 @@ from .core import (
     refactor,
     relationships,
     saved_checks,
+    state_transfer,
+    named_schemas,
+    reconciliation,
+    scope_governance,
+    drift,
+    migration,
+    governance_profile,
+    user_glossary,
 )
+from . import storage
 
 from .core.fill import fill_preview
 from .core.manifest import assert_unchanged, vault_manifest
@@ -48,7 +57,7 @@ from .core.scope import (
     filter_scan_by_scope,
 )
 
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.2.0"
 UI_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui")
 
 
@@ -61,12 +70,12 @@ class Store:
         self.inventory = None
         self.baseline_manifest: dict[str, str] | None = None
         self.scope: ScopeSpec = ScopeSpec()
-        self.saved_checks_store = saved_checks.SavedChecksStore()
-
-
+        self.saved_checks_store = saved_checks.SavedChecksStore(persistent=True)
 
     def set_scan(self, scan, manifest: dict[str, str] | None) -> None:
         with self.lock:
+            from app.storage.local_storage import set_active_vault_path
+            set_active_vault_path(scan.vault_path if hasattr(scan, "vault_path") else None)
             self.scan = scan
             self.inventory = inventory.build_inventory(scan)
             self.baseline_manifest = manifest
@@ -134,6 +143,14 @@ def api_meta(_body: dict[str, Any]) -> dict[str, Any]:
 
 def api_scan(body: dict[str, Any]) -> dict[str, Any]:
     path = body.get("vault_path", "")
+    from app.storage.local_storage import VaultIsolationError, set_active_vault_path, migrate_legacy_storage_paths
+    try:
+        set_active_vault_path(path)
+        migrate_legacy_storage_paths()
+        STORE.saved_checks_store.reload()
+    except VaultIsolationError as exc:
+        raise ApiError(f"Vault isolation violation: {exc}", 400) from exc
+
     try:
         scan = scan_vault(path, ScanOptions())
     except VaultPathError as exc:
@@ -260,11 +277,13 @@ def api_workspace_preview(body: dict[str, Any]) -> dict[str, Any]:
     schema_data = body.get("schema")
     schema = Schema.from_dict(schema_data) if schema_data else None
     deleted_keys = list(body.get("deleted_keys", []) or [])
+    touched_keys = list(body["touched_keys"]) if "touched_keys" in body else None
     diff_res = note_workspace.compute_workspace_diff_and_frontmatter(
         original_note=note,
         updated_values=values,
         schema=schema,
         deleted_keys=deleted_keys,
+        touched_keys=touched_keys,
     )
     return diff_res.to_dict()
 
@@ -442,8 +461,15 @@ def api_proposal_import(body: dict[str, Any]) -> dict[str, Any]:
     text = body.get("text")
     if not isinstance(text, str) or not text.strip():
         raise ApiError("Paste or open a proposal JSON file first.", 400)
-    inv = STORE.get_scoped_inventory() if STORE.scan else inventory.Inventory()
-    return proposal.import_proposal(text, inv)
+    scoped_inv = STORE.get_scoped_inventory() if STORE.scan else inventory.Inventory()
+    vault_inv = STORE.inventory if STORE.scan else inventory.Inventory()
+    return proposal.import_proposal(
+        text=text,
+        scoped_inv=scoped_inv,
+        vault_inv=vault_inv,
+        glossary_store=user_glossary.USER_GLOSSARY_STORE,
+        schema_library=named_schemas.NAMED_SCHEMA_LIBRARY,
+    )
 
 
 def api_export(body: dict[str, Any]) -> dict[str, Any]:
@@ -548,8 +574,59 @@ def api_scope_current(_body: dict[str, Any]) -> dict[str, Any]:
 
 
 def api_glossary_catalog(_body: dict[str, Any]) -> dict[str, Any]:
-    catalog = property_glossary.export_glossary_catalog()
-    return {"catalog": catalog, "total": len(catalog)}
+    catalog = dict(property_glossary.export_glossary_catalog())
+    overrides = user_glossary.USER_GLOSSARY_STORE.list_overrides()
+    for ckey, ov in overrides.items():
+        ckey_cf = ckey.strip().casefold()
+        if ckey_cf in catalog:
+            entry = dict(catalog[ckey_cf])
+            if ov.get("label_zh"):
+                entry["label_zh"] = ov["label_zh"]
+            if ov.get("label_en"):
+                entry["label_en"] = ov["label_en"]
+            if ov.get("guidance"):
+                entry["guidance"] = ov["guidance"]
+            if ov.get("description_zh"):
+                entry["short_description_zh"] = ov["description_zh"]
+                entry["long_description_zh"] = ov["description_zh"]
+            if ov.get("description_en"):
+                entry["short_description_en"] = ov["description_en"]
+                entry["long_description_en"] = ov["description_en"]
+            if ov.get("category"):
+                entry["category"] = ov["category"]
+            if ov.get("aliases"):
+                entry["aliases"] = ov["aliases"]
+            if ov.get("examples"):
+                entry["examples"] = ov["examples"]
+            entry["is_user_override"] = True
+            catalog[ckey_cf] = entry
+        else:
+            catalog[ckey_cf] = {
+                "canonical_key": ckey,
+                "label_zh": ov.get("label_zh") or ckey,
+                "label_en": ov.get("label_en") or ckey,
+                "short_description_zh": ov.get("description_zh") or "",
+                "short_description_en": ov.get("description_en") or "",
+                "long_description_zh": ov.get("description_zh") or "",
+                "long_description_en": ov.get("description_en") or "",
+                "usage_hint_zh": ov.get("guidance") or "",
+                "usage_hint_en": ov.get("guidance") or "",
+                "guidance": ov.get("guidance") or "",
+                "category": ov.get("category") or "custom",
+                "aliases": ov.get("aliases") or [],
+                "examples": ov.get("examples") or [],
+                "typical_type": "text",
+                "typical_control": "plain",
+                "is_user_override": True,
+            }
+    class CatalogList(list):
+        def __contains__(self, key: Any) -> bool:
+            if super().__contains__(key):
+                return True
+            return any(isinstance(x, dict) and x.get("canonical_key") == key for x in self)
+
+    catalog_list = CatalogList(sorted(catalog.values(), key=lambda e: str(e.get("canonical_key") or "").lower()))
+    return {"catalog": catalog_list, "total": len(catalog_list)}
 
 
 def api_glossary_property(body: dict[str, Any]) -> dict[str, Any]:
@@ -557,6 +634,11 @@ def api_glossary_property(body: dict[str, Any]) -> dict[str, Any]:
     if not key:
         raise ApiError("Property key is required.", 400)
     entry = property_glossary.get_property_glossary_entry(key)
+    override = user_glossary.USER_GLOSSARY_STORE.get_override(key)
+    is_known = (entry is not None) or (override is not None)
+    metadata = None
+    if is_known:
+        metadata = user_glossary.USER_GLOSSARY_STORE.resolve_property(key)
 
     scope_usage = 0
     vault_usage = 0
@@ -573,7 +655,6 @@ def api_glossary_property(body: dict[str, Any]) -> dict[str, Any]:
             dt = all_inv.properties[key].dominant_type
             dominant_type = dt.value if hasattr(dt, "value") else str(dt)
 
-
         scoped_scan = STORE.get_scoped_scan()
         scoped_inv = inventory.build_inventory(scoped_scan)
         if key in scoped_inv.properties:
@@ -581,13 +662,415 @@ def api_glossary_property(body: dict[str, Any]) -> dict[str, Any]:
 
     return {
         "canonical_key": key,
-        "is_known": entry is not None,
-        "metadata": entry.to_dict() if entry else None,
+        "is_known": is_known,
+        "metadata": metadata,
         "scope_usage": scope_usage,
         "vault_usage": vault_usage,
         "detected_type": dominant_type,
         "common_values": observed_values,
     }
+
+
+def api_glossary_user_list(_body: dict[str, Any]) -> dict[str, Any]:
+    overrides = user_glossary.USER_GLOSSARY_STORE.list_overrides()
+    return {"overrides": overrides, "total": len(overrides)}
+
+
+def api_glossary_user_save(body: dict[str, Any]) -> dict[str, Any]:
+    override_data = body.get("override") or body
+    try:
+        override = user_glossary.UserGlossaryOverride.from_dict(override_data)
+        expected_rev = body.get("expected_revision")
+        res = user_glossary.USER_GLOSSARY_STORE.save_override(override, expected_rev)
+        return {"status": "saved", "override": override.to_dict(), "revision": res.get("revision")}
+    except Exception as exc:
+        raise ApiError(str(exc), 400) from exc
+
+
+def api_glossary_user_delete(body: dict[str, Any]) -> dict[str, Any]:
+    key = str(body.get("key") or body.get("canonical_key") or "").strip()
+    if not key:
+        raise ApiError("Property key is required.", 400)
+    expected_rev = body.get("expected_revision")
+    deleted = user_glossary.USER_GLOSSARY_STORE.delete_override(key, expected_rev)
+    return {"status": "deleted" if deleted else "not_found", "key": key}
+
+
+def api_schemas_list(_body: dict[str, Any]) -> dict[str, Any]:
+    schemas = named_schemas.NAMED_SCHEMA_LIBRARY.list_schemas()
+    return {"schemas": schemas, "total": len(schemas)}
+
+
+def api_schemas_get(body: dict[str, Any]) -> dict[str, Any]:
+    schema_id = str(body.get("id") or body.get("schema_id") or "").strip()
+    if not schema_id:
+        raise ApiError("Schema ID is required.", 400)
+    schema = named_schemas.NAMED_SCHEMA_LIBRARY.get_schema(schema_id)
+    if not schema:
+        raise ApiError(f"Schema '{schema_id}' not found.", 404)
+    return {"schema": schema.to_dict()}
+
+
+def api_schemas_create(body: dict[str, Any]) -> dict[str, Any]:
+    schema_data = body.get("schema") or body
+    try:
+        expected_rev = body.get("expected_revision")
+        res = named_schemas.NAMED_SCHEMA_LIBRARY.create_schema(schema_data, expected_rev)
+        return {"status": "created", "schema": res.get("schema"), "revision": res.get("revision")}
+    except (ValueError, storage.ConcurrencyError) as exc:
+        raise ApiError(str(exc), 400) from exc
+
+
+def api_schemas_update(body: dict[str, Any]) -> dict[str, Any]:
+    schema_id = str(body.get("id") or body.get("schema_id") or "").strip()
+    schema_data = body.get("schema") or body
+    if not schema_id:
+        schema_id = str(schema_data.get("id") or "").strip()
+    if not schema_id:
+        raise ApiError("Schema ID is required.", 400)
+    try:
+        expected_rev = body.get("expected_revision")
+        res = named_schemas.NAMED_SCHEMA_LIBRARY.update_schema(schema_id, schema_data, expected_rev)
+        return {"status": "updated", "schema": res.get("schema"), "revision": res.get("revision")}
+    except (ValueError, storage.ConcurrencyError) as exc:
+        raise ApiError(str(exc), 400) from exc
+
+
+def api_schemas_delete(body: dict[str, Any]) -> dict[str, Any]:
+    schema_id = str(body.get("id") or body.get("schema_id") or "").strip()
+    if not schema_id:
+        raise ApiError("Schema ID is required.", 400)
+    expected_rev = body.get("expected_revision")
+    try:
+        deleted = named_schemas.NAMED_SCHEMA_LIBRARY.delete_schema(schema_id, expected_rev)
+        return {"status": "deleted" if deleted else "not_found", "id": schema_id}
+    except storage.ConcurrencyError as exc:
+        raise ApiError(str(exc), 400) from exc
+
+
+def api_state_validate_context(body: dict[str, Any]) -> dict[str, Any]:
+    return state_transfer.validate_navigation_payload(body)
+
+
+def api_reconcile_inspect(body: dict[str, Any]) -> dict[str, Any]:
+    scan = STORE.require_scan()
+    note_path = str(body.get("note_path") or "").strip()
+    if not note_path:
+        raise ApiError("note_path is required.", 400)
+
+    inspect_res = note_workspace.inspect_note_for_workspace(scan, note_path)
+    note_props = inspect_res.original_properties
+
+    schema_props = body.get("schema_properties") or []
+    schema_name = str(body.get("schema_name") or "").strip()
+    schema_id = body.get("schema_id")
+
+    if schema_id:
+        sch = named_schemas.NAMED_SCHEMA_LIBRARY.get_schema(str(schema_id))
+        if sch:
+            # Canonical Schema ID authority (HA-F09 / HA-F11): always use canonical schema properties and name
+            schema_props = [p.to_dict() if hasattr(p, "to_dict") else (dict(p) if isinstance(p, dict) else p) for p in sch.properties]
+            schema_name = sch.name
+
+    if not schema_name:
+        schema_name = "Unnamed Schema"
+
+    report = reconciliation.reconcile_note_frontmatter(
+        note_properties=note_props,
+        schema_properties=schema_props,
+        schema_name=schema_name,
+        schema_id=str(schema_id) if schema_id else None,
+        note_path=note_path,
+    )
+    return report.to_dict()
+
+
+def api_reconcile_preview(body: dict[str, Any]) -> dict[str, Any]:
+    orig_props = body.get("original_properties") or {}
+    schema_props = body.get("schema_properties") or []
+    resolved_vals = body.get("resolved_values") or {}
+
+    result = reconciliation.preview_reconciled_frontmatter(
+        original_properties=orig_props,
+        schema_properties=schema_props,
+        resolved_values=resolved_vals,
+    )
+    return result
+
+
+def api_scope_schema_assign(body: dict[str, Any]) -> dict[str, Any]:
+    scope_key = str(body.get("scope_key") or "default").strip()
+    schema_id = str(body.get("schema_id") or "").strip()
+    if not schema_id:
+        raise ApiError("schema_id is required.", 400)
+    sch = named_schemas.NAMED_SCHEMA_LIBRARY.get_schema(schema_id)
+    if not sch:
+        raise ApiError(f"Schema '{schema_id}' not found.", 404)
+    expected_rev = body.get("expected_revision")
+    res = scope_governance.SCOPE_GOVERNANCE_STORE.assign_schema(
+        scope_key=scope_key,
+        schema_id=schema_id,
+        schema_name=sch.name,
+        expected_revision=expected_rev,
+    )
+    return {"status": "assigned", "assignment": res.get("assignment")}
+
+
+def api_scope_schema_current(body: dict[str, Any]) -> dict[str, Any]:
+    scope_key = str(body.get("scope_key") or "default").strip()
+    asgn = scope_governance.SCOPE_GOVERNANCE_STORE.get_assignment(scope_key)
+    return {"scope_key": scope_key, "assignment": asgn.to_dict() if asgn else None}
+
+
+def api_scope_schema_unassign(body: dict[str, Any]) -> dict[str, Any]:
+    scope_key = str(body.get("scope_key") or "default").strip()
+    expected_rev = body.get("expected_revision")
+    deleted = scope_governance.SCOPE_GOVERNANCE_STORE.unassign_schema(scope_key, expected_rev)
+    return {"status": "unassigned" if deleted else "not_found", "scope_key": scope_key}
+
+
+def api_drift_analyze(body: dict[str, Any]) -> dict[str, Any]:
+    STORE.require_scan()
+    scoped_scan = STORE.get_scoped_scan()
+    scope_key = str(body.get("scope_key") or "default").strip()
+
+    schema_id = body.get("schema_id")
+    schema_props = body.get("schema_properties")
+    schema_name = body.get("schema_name")
+
+    if not schema_id and not schema_props:
+        asgn = scope_governance.SCOPE_GOVERNANCE_STORE.get_assignment(scope_key)
+        if asgn:
+            schema_id = asgn.schema_id
+            schema_name = asgn.schema_name
+
+    schema_ver = None
+    if schema_id and not schema_props:
+        sch = named_schemas.NAMED_SCHEMA_LIBRARY.get_schema(str(schema_id))
+        if sch:
+            schema_props = [p.to_dict() for p in sch.properties]
+            schema_name = sch.name
+            schema_ver = sch.version
+
+    if not schema_props:
+        raise ApiError("No expected schema specified or assigned to this scope.", 400)
+
+    report = drift.analyze_schema_drift(
+        notes=scoped_scan.notes,
+        schema_properties=schema_props,
+        schema_id=str(schema_id or "custom"),
+        schema_name=str(schema_name or "Custom Schema"),
+        scope_key=scope_key,
+        schema_version=schema_ver,
+    )
+    return report.to_dict()
+
+
+def api_schema_migration_plan(body: dict[str, Any]) -> dict[str, Any]:
+    src_props = body.get("source_properties") or []
+    tgt_props = body.get("target_properties") or []
+    src_ver = str(body.get("source_version") or "1.0.0")
+    tgt_ver = str(body.get("target_version") or "1.1.0")
+
+    src_id = body.get("source_schema_id")
+    tgt_id = body.get("target_schema_id")
+
+    if src_id and not src_props:
+        s = named_schemas.NAMED_SCHEMA_LIBRARY.get_schema(str(src_id))
+        if s:
+            src_props = [p.to_dict() for p in s.properties]
+            src_ver = s.version
+    if tgt_id and not tgt_props:
+        s = named_schemas.NAMED_SCHEMA_LIBRARY.get_schema(str(tgt_id))
+        if s:
+            tgt_props = [p.to_dict() for p in s.properties]
+            tgt_ver = s.version
+
+    scoped_notes = STORE.get_scoped_scan().notes if STORE.scan else None
+    plan = migration.plan_schema_migration(
+        source_properties=src_props,
+        target_properties=tgt_props,
+        source_version=src_ver,
+        target_version=tgt_ver,
+        notes=scoped_notes,
+    )
+    return plan.to_dict()
+
+
+def api_governance_profile_export(_body: dict[str, Any]) -> dict[str, Any]:
+    checks = [c.to_dict() for c in STORE.saved_checks_store.list_checks()]
+    return governance_profile.export_governance_profile(saved_checks_list=checks)
+
+
+def api_governance_profile_validate(body: dict[str, Any]) -> dict[str, Any]:
+    profile_data = body.get("profile")
+    if not profile_data:
+        raise ApiError("profile data is required.", 400)
+    return governance_profile.validate_governance_profile(profile_data)
+
+
+def api_governance_profile_import(body: dict[str, Any]) -> dict[str, Any]:
+    profile_data = body.get("profile")
+    if not profile_data:
+        raise ApiError("profile data is required.", 400)
+    mode = str(body.get("mode") or "merge")
+    try:
+        res = governance_profile.import_governance_profile(
+            profile_data, mode=mode, saved_checks_store=STORE.saved_checks_store
+        )
+        return res
+    except ValueError as exc:
+        raise ApiError(str(exc), 400) from exc
+
+
+def api_storage_migrate_legacy(body: dict[str, Any]) -> dict[str, Any]:
+    """Migrate v1.1.0 legacy localStorage state (theme, locale, saved checks) to app-local storage (REQ-051, REQ-052)."""
+    from app.core.governance_profile import PREFERENCES_STORAGE
+
+    current_prefs_data = PREFERENCES_STORAGE.load().get("data") or {}
+    existing_checks = STORE.saved_checks_store.list_checks()
+
+    # Per-entity initialized-state guard (Blocker 2):
+    # Preferences are initialized if marker is present OR if non-empty locale/theme already saved
+    prefs_initialized = bool(current_prefs_data.get("_legacy_migrated")) or (
+        bool(current_prefs_data) and ("locale" in current_prefs_data or "theme" in current_prefs_data)
+    )
+    # Checks are initialized if any saved checks already exist in backend authority
+    checks_initialized = len(existing_checks) > 0
+
+    # If both entities are already initialized, skip entire migration
+    if prefs_initialized and checks_initialized:
+        saved_prefs_readback = current_prefs_data
+        saved_checks_readback = [c.to_dict() for c in existing_checks]
+        return {
+            "status": "already_initialized",
+            "message": "Backend storage is already initialized. Legacy migration skipped.",
+            "preferences": saved_prefs_readback,
+            "migrated_checks_count": 0,
+            "total_saved_checks": len(saved_checks_readback),
+            "checks": saved_checks_readback,
+            "readback_verified": True,
+        }
+
+    # Phase 1: Validate legacy input for UNINITIALIZED entities only
+    # (Per-Entity Validation Isolation: already-initialized entities ignore stale legacy payload)
+    new_locale = current_prefs_data.get("locale", "zh-Hant")
+    new_theme = current_prefs_data.get("theme", "system")
+
+    if not prefs_initialized:
+        locale = body.get("ps_locale") or body.get("property_studio_locale")
+        theme = body.get("ps_theme") or body.get("property_studio_theme")
+        if locale is not None:
+            if not isinstance(locale, str) or locale not in ("zh-Hant", "en"):
+                raise ApiError(f"Invalid legacy locale '{locale}'. Must be 'zh-Hant' or 'en'.", 400)
+            new_locale = locale
+
+        if theme is not None:
+            if not isinstance(theme, str) or theme not in ("light", "dark", "system"):
+                raise ApiError(f"Invalid legacy theme '{theme}'. Must be 'light', 'dark', or 'system'.", 400)
+            new_theme = theme
+
+    valid_check_objects: list[saved_checks.SavedCheck] = []
+    if not checks_initialized:
+        raw_checks = body.get("ops_saved_relationship_checks_v110")
+        if raw_checks is None:
+            raw_checks = body.get("property_studio_saved_checks")
+
+        if raw_checks is not None:
+            if isinstance(raw_checks, str):
+                try:
+                    raw_checks = json.loads(raw_checks)
+                except Exception as exc:
+                    raise ApiError(f"Malformed legacy saved checks JSON: {exc}", 400) from exc
+
+            if isinstance(raw_checks, dict):
+                raw_checks = raw_checks.get("checks", [])
+
+            if not isinstance(raw_checks, list):
+                raise ApiError("Malformed legacy saved checks: payload must be a list.", 400)
+
+            for index, item in enumerate(raw_checks):
+                try:
+                    chk = saved_checks.SavedCheck.from_dict(item)
+                    valid_check_objects.append(chk)
+                except Exception as exc:
+                    raise ApiError(f"Malformed legacy check at index {index}: {exc}", 400) from exc
+
+    # Phase 2: Transactional Persistence with Rollback Protection (Blocker 1)
+    old_prefs_snapshot = dict(current_prefs_data)
+    old_checks_snapshot = [c for c in existing_checks]
+
+    migrated_checks_count = 0
+    try:
+        # Migrate preferences only if not already initialized
+        target_prefs = dict(current_prefs_data)
+        if not prefs_initialized:
+            target_prefs["locale"] = new_locale
+            target_prefs["theme"] = new_theme
+        target_prefs["_legacy_migrated"] = True
+        PREFERENCES_STORAGE.save(target_prefs)
+
+        # Migrate checks only if not already initialized (using bulk atomic replace)
+        if not checks_initialized and valid_check_objects:
+            STORE.saved_checks_store.replace_all(valid_check_objects)
+            migrated_checks_count = len(valid_check_objects)
+
+        # Phase 3: Exact Canonical Read-back Proof
+        saved_prefs_readback = PREFERENCES_STORAGE.load().get("data", {})
+        saved_checks_readback = [c.to_dict() for c in STORE.saved_checks_store.list_checks()]
+
+        # Preferences exact verification
+        if not prefs_initialized:
+            if (
+                saved_prefs_readback.get("locale") != new_locale
+                or saved_prefs_readback.get("theme") != new_theme
+                or saved_prefs_readback.get("_legacy_migrated") is not True
+            ):
+                raise RuntimeError("Preferences exact readback mismatch")
+
+        # Saved Checks exact verification with canonical dict equality
+        if not checks_initialized and valid_check_objects:
+            readback_map = {c["id"]: c for c in saved_checks_readback}
+            for chk in valid_check_objects:
+                expected_dict = chk.to_dict()
+                actual_dict = readback_map.get(chk.id)
+                if actual_dict != expected_dict:
+                    raise RuntimeError(f"Saved check '{chk.id}' canonical exact readback mismatch")
+
+    except Exception as exc:
+        # 100% atomic rollback across all entities
+        PREFERENCES_STORAGE.save(old_prefs_snapshot)
+        STORE.saved_checks_store.replace_all(old_checks_snapshot)
+        raise ApiError(f"Legacy migration transaction failed and was rolled back: {exc}", 500) from exc
+
+    return {
+        "status": "migrated",
+        "preferences": saved_prefs_readback,
+        "migrated_checks_count": migrated_checks_count,
+        "total_saved_checks": len(saved_checks_readback),
+        "checks": saved_checks_readback,
+        "readback_verified": True,
+    }
+
+
+def api_preferences_get(_body: dict[str, Any]) -> dict[str, Any]:
+    """Retrieve app-local governance preferences (REQ-051)."""
+    from app.core.governance_profile import PREFERENCES_STORAGE
+    prefs = PREFERENCES_STORAGE.load().get("data") or {"locale": "zh-Hant", "theme": "system"}
+    return {"preferences": prefs}
+
+
+def api_preferences_set(body: dict[str, Any]) -> dict[str, Any]:
+    """Persist app-local governance preferences (REQ-051)."""
+    from app.core.governance_profile import PREFERENCES_STORAGE
+    prefs = PREFERENCES_STORAGE.load().get("data") or {"locale": "zh-Hant", "theme": "system"}
+    new_prefs = body.get("preferences") or body
+    if isinstance(new_prefs, dict):
+        for k, v in new_prefs.items():
+            if k in ("locale", "theme"):
+                prefs[k] = v
+        PREFERENCES_STORAGE.save(prefs)
+    return {"status": "saved", "preferences": prefs}
 
 
 # --------------------------------------------------------------------------
@@ -623,11 +1106,36 @@ ROUTES: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "/api/scope/set": api_scope_set,
     "/api/scope/apply": api_scope_set,
     "/api/scope/current": api_scope_current,
+    "/api/scope/schema/assign": api_scope_schema_assign,
+    "/api/scope/schema/current": api_scope_schema_current,
+    "/api/scope/schema/unassign": api_scope_schema_unassign,
+    "/api/drift/analyze": api_drift_analyze,
     "/api/note_candidates": api_note_candidates,
     "/api/notes/candidates": api_note_candidates,
     "/api/glossary": api_glossary_catalog,
     "/api/glossary/catalog": api_glossary_catalog,
     "/api/glossary/property": api_glossary_property,
+    "/api/glossary/user/list": api_glossary_user_list,
+    "/api/glossary/user/save": api_glossary_user_save,
+    "/api/glossary/user/delete": api_glossary_user_delete,
+    "/api/schemas/list": api_schemas_list,
+    "/api/schemas/get": api_schemas_get,
+    "/api/schemas/create": api_schemas_create,
+    "/api/schemas/update": api_schemas_update,
+    "/api/schemas/delete": api_schemas_delete,
+    "/api/schemas/migration/plan": api_schema_migration_plan,
+    "/api/governance/profile/export": api_governance_profile_export,
+    "/api/governance/profile/validate": api_governance_profile_validate,
+    "/api/governance/profile/import": api_governance_profile_import,
+    "/api/profile/validate": api_governance_profile_validate,
+    "/api/profile/export": api_governance_profile_export,
+    "/api/profile/import": api_governance_profile_import,
+    "/api/reconcile/inspect": api_reconcile_inspect,
+    "/api/reconcile/preview": api_reconcile_preview,
+    "/api/state/validate_context": api_state_validate_context,
+    "/api/storage/migrate_legacy": api_storage_migrate_legacy,
+    "/api/preferences/get": api_preferences_get,
+    "/api/preferences/set": api_preferences_set,
 }
 
 
@@ -714,6 +1222,12 @@ class Handler(BaseHTTPRequestHandler):
                     "trace": traceback.format_exc(limit=5),
                 },
             )
+
+
+def init_runtime_storage() -> None:
+    """Initialize app-local runtime storage and migrate legacy pre-release storage paths safely."""
+    from app.storage.local_storage import migrate_legacy_storage_paths
+    migrate_legacy_storage_paths()
 
 
 def create_server(host: str = "127.0.0.1", port: int = 8765) -> ThreadingHTTPServer:

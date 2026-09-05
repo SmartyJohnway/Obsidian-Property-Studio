@@ -130,10 +130,13 @@ def test_ops_ac_028_large_vault_benchmark(tmp_path):
     if os.environ.get("PROPERTY_STUDIO_WRITE_BENCHMARK_EVIDENCE") == "1":
         os.makedirs(EVIDENCE, exist_ok=True)
         os.makedirs(os.path.join(EVIDENCE, "integration"), exist_ok=True)
+        # Write latest local benchmark (non-authoritative, overwritten each run)
         with open(os.path.join(EVIDENCE, "benchmark.json"), "w", encoding="utf-8", newline="\n") as fh:
             json.dump(record, fh, indent=2, ensure_ascii=False)
             fh.write("\n")
-        with open(os.path.join(EVIDENCE, "integration", "m009_benchmark.json"), "w", encoding="utf-8", newline="\n") as fh:
+        # Write v1.2.0 milestone benchmark (authoritative for M022)
+        # NOTE: Do NOT overwrite m009_benchmark.json — that is immutable v1.1.0 historical evidence
+        with open(os.path.join(EVIDENCE, "integration", "m022_v120_benchmark.json"), "w", encoding="utf-8", newline="\n") as fh:
             json.dump(record, fh, indent=2, ensure_ascii=False)
             fh.write("\n")
     else:

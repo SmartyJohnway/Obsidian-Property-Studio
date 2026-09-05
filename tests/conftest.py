@@ -18,6 +18,19 @@ EMPTY_VAULT = os.path.join(FIXTURE_ROOT, "vaults", "empty_vault")
 PROPOSALS = os.path.join(FIXTURE_ROOT, "proposals")
 
 
+@pytest.fixture(scope="session", autouse=True)
+def isolate_test_storage(tmp_path_factory):
+    """Ensure all tests run with an isolated temporary app-local storage directory."""
+    test_dir = str(tmp_path_factory.mktemp("test_app_storage"))
+    old_env = os.environ.get("PROPERTY_STUDIO_STORAGE_DIR")
+    os.environ["PROPERTY_STUDIO_STORAGE_DIR"] = test_dir
+    yield test_dir
+    if old_env is not None:
+        os.environ["PROPERTY_STUDIO_STORAGE_DIR"] = old_env
+    else:
+        os.environ.pop("PROPERTY_STUDIO_STORAGE_DIR", None)
+
+
 @pytest.fixture(scope="session")
 def oracle() -> dict:
     with open(os.path.join(FIXTURE_ROOT, "vaults", "oracle.json"), encoding="utf-8") as fh:

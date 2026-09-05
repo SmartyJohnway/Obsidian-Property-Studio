@@ -1,48 +1,49 @@
 # Roadmap
 
 > Project: `Obsidian Property Studio`  
-> Target Release: `v1.1.0`  
+> Target Release: `v1.2.0`  
 > Governance Standard: `Project Four-File Governance v2.1`  
-> Roadmap Type: `v1.1.0 Product & UI/UX vNext Execution Roadmap`  
-> Baseline: `v1.0.0 Formal Mainline (95/95 tests PASS)`  
-> UX/Visual Donors: `index_areaagentB.html (UX donor)`, `index_areaagentD.html (Visual donor)`
+> Roadmap Type: `v1.2.0 Personal Property Governance Execution Roadmap`  
+> Baseline: `v1.1.0 Formal Mainline (176/176 tests PASS, published release cca408c)`  
+> Active Target Specification: `docs/specs/Obsidian_Property_Studio_v1.2.0_Spec.md` (SHA-256: `8760e592381685c4a31ae5eac2b8692fd8fa80ebc6a8ad7044fcb4c037f7187b`)  
+> Archived Roadmap: `docs/archive/ROADMAP_v1.1.0.md` (SHA-256: `d68f8ac57411896dd1b2b10b0716629f2d12c46b1e0bb6a2a1368c961ee7ac2a`)
 
 ---
 
 ##### Current State
 
-Project State: `COMPLETE`  
-Current Milestone: `NONE`  
-Current Milestone Status: `PASS`  
-Current Task: `NONE`  
-Last Verified Gate: `M014 — Human UI/UX Walkthrough Closure PASS`  
+Project State: `ACTIVE`  
+Current Target: `v1.2.0`  
+Current Milestone: `M022`  
+Current Milestone Status: `IN_PROGRESS`  
+Current Task: `M022-T04`  
+Last Verified Gate: `M021 — Schema Naming, Versioning, Migration & Governance Profile PASS`  
 Current Blocker: `NONE`  
-Next Action: `v1.1.0 release successfully merged into main (PR #1). Awaiting v1.1.1 planning or Dr. J next directives.`  
-Automated Verification: `PASS (176/176 tests PASS)`  
-Human Verified Acceptance: `PASS — Human Verified (Dr. J verified on Windows 10 production UI)`  
+Next Action: `Await Human Owner (Dr. J) Windows 10 production UI walkthrough retest and formal Human Acceptance verdict (M022-T04 / M022-AC04).`  
+Implementation: `COMPLETE (Commit 21G Drift Canonical Path Authority Closure: (1) In app/core/drift.py, repaired is_canonical_navigable_path to remove ad-hoc filename heuristics that rejected valid scanned notes starting with punctuation/markers like · or ![[; canonical note identity is bound to exact membership in active VaultScan; (2) In tests/test_v12_human_acceptance_repairs.py, test_ha_f12_drift_canonical_navigable_path_guard covers TESTS A-D: unusual real filenames like · ![[台灣_美國通用採購流程使用手冊_v1.0.docx.md are scanned, recognized, and navigable (CASE A); fake/unscanned/traversal paths fail closed while preserving raw string for diagnosis (CASE B); ordinary .md notes remain navigable (CASE C); duplicate note names across different folders maintain exact identity without false collision (CASE D))`  
+Automated Verification: `PASS (242/242 tests pass, 5,040-note benchmark verified, Vault 100% byte-for-byte read-only and zero mutation)`  
+Human Verified Acceptance: `NOT YET VERIFIED`  
+Release Readiness: `READY_FOR_HUMAN_RETEST` (Human Owner UI Walkthrough: `NOT YET VERIFIED`)  
 Accepted Limitation: `Windows 11 AMD64 native verification recorded as NOT YET VERIFIED due to test host unavailability (accepted non-blocking release limitation per human approved contract).`  
-Last Updated: `2026-09-02`
-
-
-
-
-
-
+Last Updated: `2026-09-05`
 
 
 ---
 
 # 1. Authority & Governance Boundaries
 
-This ROADMAP is the sole active authoritative execution plan for `Obsidian Property Studio v1.1.0`.
+This ROADMAP is the sole active authoritative execution plan for `Obsidian Property Studio v1.2.0`.
 
-- `PROJECT.md` defines accepted v1.1.0 Product Truth, Scope, and Non-goals.
+- `PROJECT.md` defines accepted v1.2.0 Product Truth, Scope, and Non-goals.
 - `ROADMAP.md` (this file) defines milestone execution, acceptance criteria, and evidence.
 - `HANDOFF.md` tracks the latest runtime recovery context.
 - `AGENTS.md` governs agent operating behavior.
-- `docs/archive/ROADMAP_v1.0.0.md` is an immutable historical snapshot and no longer tracks current progress.
-- `docs/specs/Obsidian_Property_Studio_v1.1.0_UIUX_vNext_Design_Spec.md` is the formal product and UI/UX design specification for v1.1.0.
-- `index_areaagentB.html` and `index_areaagentD.html` are visual/UX donors only; neither has functional or architectural authority.
+- `docs/specs/Obsidian_Property_Studio_v1.2.0_Spec.md` is the formal product and workflow specification for v1.2.0 (SHA-256: `8760e592381685c4a31ae5eac2b8692fd8fa80ebc6a8ad7044fcb4c037f7187b`).
+- `docs/specs/v1.2.0_App_Local_Governance_Storage.md` is the approved architecture specification for app-local persistence outside Vault (SHA-256: `d0acd3a28a3597d3aacff1119fa78628df1c450c50c9f75060fb36cbb9e5b573`).
+- `docs/specs/v1.2.0_Workflow_Closure_Matrix.md` is the approved architecture specification for CTA closure and verification (SHA-256: `380f243e7b480768700611f79aaba0bfc6e60a005e1b4afc590c969968441dc9`).
+- `docs/specs/v1.2.0_Proposal_Contract_Compatibility.md` is the approved architecture specification for AI proposal contracts and skill interoperability (SHA-256: `fc9cc011cf43dc2000f37bd5e700f4a743a708255d69eb05b958e2c36881c43a`).
+- `docs/archive/ROADMAP_v1.1.0.md` is an immutable historical snapshot of the published v1.1.0 release (SHA-256: `d68f8ac57411896dd1b2b10b0716629f2d12c46b1e0bb6a2a1368c961ee7ac2a`).
+- `docs/archive/ROADMAP_v1.0.0.md` is an immutable historical snapshot of the published v1.0.0 release.
 
 ---
 
@@ -74,462 +75,284 @@ COMPLETE
 
 ---
 
-# 3. v1.1.0 Engineering Regression Contracts
+# 3. v1.2.0 Engineering Regression & Governance Contracts
 
-All 95 v1.0.0 regression tests are permanently retained. v1.1.0 introduces 18 new regression contracts:
+All 176 retained regression tests (95 v1.0.0 tests + 18 v1.1.0 tests `V11-001` ~ `V11-018` + M014 human walkthrough tests + 14 glossary tests) remain permanently active and must pass.
 
-- `V11-001` i18n zh-Hant / English seamless switch with deterministic local key resolution (no CDN, localStorage preference).
-- `V11-002` Multi-folder Scope correctly calculates union of selected folders and deduplicates overlapping notes.
-- `V11-003` Nested folder `include_subfolders` true/false filter semantics correctly enforced.
-- `V11-004` Scope filtering operates in-memory and does not trigger full Vault disk rescan.
-- `V11-005` Note selector handles duplicate base names across folders without auto-guessing (requires explicit path).
-- `V11-006` Existing Note Property Workspace preserves unrelated frontmatter properties across edits and diffs.
-- `V11-007` Existing Note Property Workspace fails closed on notes with duplicate keys or malformed frontmatter.
-- `V11-008` Note Property Workspace disables Copy action when frontmatter preview/validation is invalid.
-- `V11-009` Relationship Source Scope correctly accepts multiple folder roots.
-- `V11-010` Relationship Target Scope correctly accepts multiple folder roots.
-- `V11-011` Relationship analysis marks resolved links outside selected Target Scope as `OUTSIDE SELECTED TARGET`.
-- `V11-012` Property Links and Body Wikilinks analysis results are strictly separated in models and API.
-- `V11-013` Body Wikilink analysis is strictly read-only and never modifies Markdown note bodies.
-- `V11-014` System starts with zero default relationship rules or ontology assumptions.
-- `V11-015` Saved Relationship Checks persist correctly to external storage/JSON (outside Vault) and reload accurately.
-- `V11-016` Scope-aware Property Health calculates scores and findings strictly from Scope notes without cross-contamination.
-- `V11-017` Scope-aware Refactor Planner strictly limits migration plans to Scope notes without silent expansion.
-- `V11-018` Vault remains byte-for-byte read-only across all v1.1.0 product workflows (pre/post hash equality).
+v1.2.0 establishes the following regression and contract test families:
+
+- `V12-WFC-*` Workflow Closure Contract & cross-module state transfer.
+- `V12-GLO-*` User-editable Property Glossary CRUD, persistence & 3-level precedence hierarchy.
+- `V12-SCH-*` Named Schema Library CRUD, metadata, and out-of-vault persistence.
+- `V12-REC-*` Schema to Existing Note Reconciliation (4 states: Matches, Missing, Conflict, Outside-schema preserved).
+- `V12-SCP-*` Scope to Expected Schema assignment association & persistence.
+- `V12-DRIFT-*` Desired vs Actual Schema Drift diagnostics in Property Health.
+- `V12-HLT-*` Health diagnostic finding to exact Note Workspace drilldown with preserved context.
+- `V12-AIP-*` External AI Proposal Review workspace (compatibility analysis, Accept, Edit, Reject).
+- `V12-SKL-*` Companion Skill contract adherence, fixtures validation & decoupled execution.
+- `V12-MIG-*` Schema Versioning diffing & Scope-aware Migration Planning [P1].
+- `V12-PROF-*` Governance Profile JSON import/export round-trip & fail-closed validation [P1].
+- `V12-RO-*` Vault strict byte-for-byte read-only guarantee across all v1.2 workflows.
+- `V12-I18N-*` 100% zh-Hant / English bilingual parity across all v1.2 UI modules.
 
 ---
 
-# M001 — v1.1.0 Governance Transition & Baseline Freeze
+# M015 — v1.2 Governance Transition & Architecture Freeze
 
 Status: `PASS`
 
 ### Objective
-Establish the formal v1.1.0 governance baseline, archive the v1.0.0 roadmap, update PROJECT.md, AGENTS.md, ROADMAP.md, and verify existing 95-test baseline before modifying code.
+Establish the formal v1.2.0 governance baseline, archive the v1.1.0 roadmap, update PROJECT.md, AGENTS.md, ROADMAP.md, freeze app-local persistence architecture (`docs/specs/v1.2.0_App_Local_Governance_Storage.md`), freeze Workflow Closure Matrix (`docs/specs/v1.2.0_Workflow_Closure_Matrix.md`), and freeze Proposal Contract compatibility strategy (`docs/specs/v1.2.0_Proposal_Contract_Compatibility.md`) before starting implementation.
 
 ### Tasks
-- [x] `M001-T01` Re-enter project following mandatory order: PROJECT → ROADMAP → AGENTS → HANDOFF → git status/log → test suite.
-- [x] `M001-T02` Archive `ROADMAP.md` (v1.0.0) to `docs/archive/ROADMAP_v1.0.0.md`.
-- [x] `M001-T03` Update `PROJECT.md` with v1.1.0 Scope, Core Capabilities, Success Criteria, and Non-Goals.
-- [x] `M001-T04` Update `AGENTS.md` with v1.1.0 donor isolation, supported platforms, and regression IDs.
-- [x] `M001-T05` Author new v1.1.0 `ROADMAP.md` with milestones M001 ~ M012.
-- [x] `M001-T06` Run baseline test suite (confirm 95/95 pass).
-- [x] `M001-T07` Create initial git commit for governance transition.
+- [x] `M015-T01` Re-enter project following mandatory order: PROJECT → ROADMAP → AGENTS → HANDOFF → git status/log → test suite.
+- [x] `M015-T02` Install approved `docs/specs/Obsidian_Property_Studio_v1.2.0_Spec.md` and verify SHA-256 (`8760e592381685c4a31ae5eac2b8692fd8fa80ebc6a8ad7044fcb4c037f7187b`).
+- [x] `M015-T03` Archive `ROADMAP.md` (v1.1.0) to `docs/archive/ROADMAP_v1.1.0.md` and record SHA-256 (`d68f8ac57411896dd1b2b10b0716629f2d12c46b1e0bb6a2a1368c961ee7ac2a`).
+- [x] `M015-T04` Update `PROJECT.md` with v1.2.0 position, requirements REQ-040 ~ REQ-052, Success Criteria SC-23 ~ SC-34, P0/P1 scope fidelity, and Non-Goals.
+- [x] `M015-T05` Update `AGENTS.md` with durable v1.2 project-specific operating rules and P0/P1 release gate logic.
+- [x] `M015-T06` Author active v1.2.0 `ROADMAP.md` with milestones M015 ~ M022.
+- [x] `M015-T07` Freeze App-local Governance Storage Architecture in `docs/specs/v1.2.0_App_Local_Governance_Storage.md`.
+- [x] `M015-T08` Freeze Workflow Closure Matrix and baseline CTA coverage in `docs/specs/v1.2.0_Workflow_Closure_Matrix.md`.
+- [x] `M015-T09` Freeze Proposal Contract Compatibility Strategy in `docs/specs/v1.2.0_Proposal_Contract_Compatibility.md`.
+- [x] `M015-T10` Run final M015 baseline verification (176 tests) and complete architecture freeze governance commit.
 
 ### Acceptance Criteria
-- [x] `M001-AC01` Clean read-order re-entry completed.
-- [x] `M001-AC02` Four governance files updated and mutually consistent.
-- [x] `M001-AC03` Baseline test suite passes (95/95).
-- [x] `M001-AC04` Initial commit completed on `feature/v1.1.0-release`.
+- [x] `M015-AC01` Clean read-order re-entry completed.
+- [x] `M015-AC02` Four governance files updated, consistent, and active target set to v1.2.0 with P0/P1 scope fidelity.
+- [x] `M015-AC03` v1.1.0 Roadmap archived with recorded SHA-256.
+- [x] `M015-AC04` Storage architecture frozen in `docs/specs/v1.2.0_App_Local_Governance_Storage.md`.
+- [x] `M015-AC05` Workflow Closure Matrix frozen in `docs/specs/v1.2.0_Workflow_Closure_Matrix.md`.
+- [x] `M015-AC06` Proposal Contract compatibility frozen in `docs/specs/v1.2.0_Proposal_Contract_Compatibility.md`.
+- [x] `M015-AC07` 176 retained tests PASS.
+- [x] `M015-AC08` M015 governance transition & architecture freeze commit completed.
+
+### Required Evidence
+- `git status` clean on `feature/v1.2.0`.
+- Pytest baseline run output: `176/176 tests PASS`.
+- Frozen architecture specifications in `docs/specs/`.
+- Governance transition commit hash recorded in HANDOFF.md.
 
 ### Result
-`PASS` (95/95 baseline tests pass, git commit verified)
+`PASS` (All 10 tasks completed, 176/176 baseline tests pass, 3 architecture freeze specifications authored and frozen)
 
 ---
 
-# M002 — Lightweight Local-First Bilingual i18n Engine
+# M016 — Workflow Closure Foundation & State Transfer
 
 Status: `PASS`
 
 ### Objective
-Implement a local-first, zero-CDN, offline bilingual (Traditional Chinese zh-Hant / English en) i18n architecture.
+Implement reusable cross-module context/state transfer engine and CTA closure testing framework to ensure zero dead-end CTAs.
 
 ### Tasks
-- [x] `M002-T01` Define regression test `tests/test_v11_i18n.py` covering V11-001.
-- [x] `M002-T02` Create structured locale dictionaries `app/ui/locales/zh-Hant.json` and `app/ui/locales/en.json`.
-- [x] `M002-T03` Implement client-side translation loader `app/ui/i18n.js` with `localStorage` language preference.
-- [x] `M002-T04` Implement top navigation bar language toggle (繁中 / EN) with DOM text replacement.
-- [x] `M002-T05` Execute and verify i18n test suite.
+- [x] `M016-T01` Define regression tests `tests/test_v12_state_transfer.py` covering V12-WFC-*.
+- [x] `M016-T02` Implement client-side explicit state manager `app/ui/state_transfer.js` preserving navigation intent, schema_id, finding_id, note_path, and proposal candidates.
+- [x] `M016-T03` Expose state serialization / validation endpoints where required (`/api/state/validate_context`).
+- [x] `M016-T04` Build automated CTA closure verification suite and wire into index.html navigation.
 
 ### Acceptance Criteria
-- [x] `M002-AC01` `V11-001` test passes.
-- [x] `M002-AC02` Zero external network calls or CDN dependencies.
-- [x] `M002-AC03` Full coverage of UI navigation and labels in both locales without side-by-side hardcoded strings.
-
-### Result
-`PASS` (4/4 i18n tests pass, offline verified)
-
----
-
-# M003 — Context-Aware Multi-Folder & Single-Note Scope Filter Engine
-
-Status: `PASS`
-
-### Objective
-Implement the multi-folder union, single-note, and subfolder inclusion scope engine with in-memory filtering.
-
-### Tasks
-- [x] `M003-T01` Define regression tests `tests/test_v11_scope.py` covering V11-002, V11-003, V11-004.
-- [x] `M003-T02` Implement `app/core/scope.py` (`ScopeMode`, `ScopeSpec`, `filter_scan_by_scope`, `extract_vault_folders`, `ScopeValidationError`).
-- [x] `M003-T03` Expose API endpoints `/api/scope/folders`, `/api/scope/apply`, `/api/scope/current`.
-- [x] `M003-T04` Build UI Scope Selection view in `app/ui/index.html` with folder multi-select and subfolder checkboxes.
-- [x] `M003-T05` Wire Scope context chip into topbar header with live note counts.
-- [x] `M003-T06` Execute and verify scope test suite.
-
-### Acceptance Criteria
-- [x] `M003-AC01` `V11-002`, `V11-003`, `V11-004` tests pass.
-- [x] `M003-AC02` Scope filtering executes in-memory without disk rescanning.
-- [x] `M003-AC03` UI correctly updates active scope and note count.
-
-### Result
-`PASS` (5/5 scope tests pass)
-
----
-
-# M004 — Beginner-Friendly Schema Builder with Recipe Suggestions
-
-Status: `PASS`
-
-### Objective
-Enhance schema design with goal-driven suggestion recipes, natural language query matching, and property reuse reviews.
-
-### Tasks
-- [x] `M004-T01` Define regression tests `tests/test_v11_design.py`.
-- [x] `M004-T02` Implement recipes (Reading, Lab Equipment, Projects, Journal, Courses) in `app/core/design.py`.
-- [x] `M004-T03` Expose API endpoints `/api/design/suggest`, `/api/design/build`, `/api/design/review`.
-- [x] `M004-T04` Build UI Schema Designer with goal input, suggestion cards, and reuse badges.
-- [x] `M004-T05` Execute and verify design test suite.
-
-### Acceptance Criteria
-- [x] `M004-AC01` Design tests pass.
-- [x] `M004-AC02` Natural language goals route to appropriate recipes.
-- [x] `M004-AC03` Storage types and UI controls remain cleanly separated.
-
-### Result
-`PASS` (Design test suite pass)
-
----
-
-# M005 — Blank Note Property Fill & Copy Engine
-
-Status: `PASS`
-
-### Objective
-Implement schema-based form filling and real-time YAML frontmatter generation with copy functionality for blank notes.
-
-### Tasks
-- [x] `M005-T01` Define regression tests `tests/test_v11_fill.py`.
-- [x] `M005-T02` Implement `fill_preview`, `render_frontmatter`, and `roundtrip_check` in `app/core/fill.py`.
-- [x] `M005-T03` Expose API endpoint `/api/fill/preview`.
-- [x] `M005-T04` Build UI Blank Note Form in `app/ui/index.html` with preview and copy buttons.
-- [x] `M005-T05` Execute and verify fill test suite.
-
-### Acceptance Criteria
-- [x] `M005-AC01` Fill tests pass.
-- [x] `M005-AC02` Copy button disables fail-closed when frontmatter is invalid.
-- [x] `M005-AC03` Form values serialize to valid Obsidian YAML.
-
-### Result
-`PASS` (Fill test suite pass)
-
----
-
-# M006 — Note Properties Workspace (Inspect, Edit & Semantic Diff)
-
-Status: `PASS`
-
-### Objective
-Implement the single-note workspace for inspecting existing frontmatter, editing properties with live semantic diffs, and preserving unrelated properties without mutating files.
-
-### Tasks
-- [x] `M006-T01` Define regression tests `tests/test_v11_note_workspace.py` covering V11-005 ~ V11-008.
-- [x] `M006-T02` Implement `app/core/note_workspace.py` (`inspect_note_for_workspace`, `compute_workspace_diff_and_frontmatter`, `find_candidate_notes`).
-- [x] `M006-T03` Expose API endpoints `/api/workspace/notes`, `/api/workspace/inspect`, `/api/workspace/preview`.
-- [x] `M006-T04` Build UI Note Workspace view with candidate search, property table, diff view, and YAML preview.
-- [x] `M006-T05` Execute and verify note workspace test suite.
-
-### Acceptance Criteria
-- [x] `M006-AC01` `V11-005`, `V11-006`, `V11-007`, `V11-008` tests pass.
-- [x] `M006-AC02` Unrelated frontmatter properties are preserved across edits.
-- [x] `M006-AC03` Notes with duplicate keys or corrupt YAML fail closed.
-- [x] `M006-AC04` Copy button is disabled on invalid states.
-
-### Result
-`PASS` (4/4 note workspace tests pass)
-
----
-
-# M007 — Scope-Aware Property Relationship Inbox & 4-State Analysis
-
-Status: `PASS`
-
-### Objective
-Implement multi-folder Source Scope and Target Scope analysis for property links with 4-state classification (`VALID`, `BROKEN`, `AMBIGUOUS`, `OUTSIDE SELECTED TARGET`).
-
-### Tasks
-- [x] `M007-T01` Define regression tests `tests/test_v11_relationships.py` covering V11-009 ~ V11-011.
-- [x] `M007-T02` Update `app/core/relationships.py` with multi-folder source and target scope filtering.
-- [x] `M007-T03` Expose API endpoint `/api/relationships` with source/target scopes and 4-state reporting.
-- [x] `M007-T04` Build UI Relationship view with multi-folder Source/Target selectors, 4-state metric cards, and item breakdown.
-- [x] `M007-T05` Execute and verify relationship test suite.
-
-### Acceptance Criteria
-- [x] `M007-AC01` `V11-009`, `V11-010`, `V11-011` tests pass.
-- [x] `M007-AC02` Links to notes outside target scope are classified as `OUTSIDE SELECTED TARGET`.
-- [x] `M007-AC03` Source and Target scopes support multi-folder selections.
-
-### Result
-`PASS` (3/3 relationship tests pass)
-
----
-
-# M008 — Read-Only Body Wikilink Relationship Analysis Engine
-
-Status: `PASS`
-
-### Objective
-Implement note body `[[Wikilink]]` extraction and analysis across source and target scopes with strict read-only safety guarantees.
-
-### Tasks
-- [x] `M008-T01` Define regression tests `tests/test_v11_body_links.py` covering V11-012, V11-013.
-- [x] `M008-T02` Implement `app/core/body_links.py` (`extract_body_wikilinks_from_text`, `analyze_body_wikilinks`).
-- [x] `M008-T03` Expose API endpoint `/api/relationships/body`.
-- [x] `M008-T04` Build UI Body Wikilinks tab in Relationships view.
-- [x] `M008-T05` Execute and verify body links test suite.
-
-### Acceptance Criteria
-- [x] `M008-AC01` `V11-012`, `V11-013` tests pass.
-- [x] `M008-AC02` Property links and body wikilinks data models and UI remain strictly separated.
-- [x] `M008-AC03` Body wikilink engine is strictly read-only and never modifies note files.
-
-### Result
-`PASS` (3/3 body links tests pass)
-
----
-
-# M009 — User-Initiated Saved Relationship Checks
-
-Status: `PASS`
-
-### Objective
-Implement user-initiated saved relationship checks persisted to external storage outside the vault, with zero default assumptions.
-
-### Tasks
-- [x] `M009-T01` Define regression tests `tests/test_v11_saved_checks.py` covering V11-014, V11-015.
-- [x] `M009-T02` Implement `app/core/saved_checks.py` (`SavedCheck`, `SavedChecksStore`).
-- [x] `M009-T03` Expose API endpoints `/api/relationships/saved/list`, `save`, `delete`, `execute`.
-- [x] `M009-T04` Build Saved Checks management UI with body_wikilink support and localStorage persistence.
-- [x] `M009-T05` Execute and verify saved checks test suite.
-
-### Acceptance Criteria
-- [x] `M009-AC01` `V11-014`, `V11-015` tests pass.
-- [x] `M009-AC02` System starts with zero default relationship rules.
-- [x] `M009-AC03` Saved checks persist outside vault directory.
-
-### Result
-`PASS` (2/2 saved checks tests pass)
-
----
-
-# M010 — Scope-Aware Property Health & Refactor Planner Isolation
-
-Status: `PASS`
-
-### Objective
-Ensure Property Health diagnostics, scoring, and Refactor migration planning operate strictly within active Scope.
-
-### Tasks
-- [x] `M010-T01` Define regression tests `tests/test_v11_discover_health.py` and `tests/test_v11_refactor.py` covering V11-016, V11-017.
-- [x] `M010-T02` Update `app/core/refactor.py` to accept and enforce `ScopeSpec`.
-- [x] `M010-T03` Update `app/server.py` `/api/health` and `/api/refactor/plan` to bind to active `STORE.scope`.
-- [x] `M010-T04` Update Health and Refactor UI views to display active scope indicator and out-of-scope counts.
-- [x] `M010-T05` Execute and verify health and refactor test suites.
-
-### Acceptance Criteria
-- [x] `M010-AC01` `V11-016`, `V11-017` tests pass.
-- [x] `M010-AC02` Health score and findings reflect only scoped notes.
-- [x] `M010-AC03` Refactor plans never include out-of-scope notes.
-
-### Result
-`PASS` (Health & Refactor scope isolation tests pass)
-
----
-
-# M011 — 5,000-Note Performance Benchmark & Full Suite Verification
-
-Status: `PASS`
-
-### Objective
-Execute full regression test suite (all 140 tests) and record formal >=5,000-note benchmark evidence with byte-for-byte read-only validation.
-
-### Tasks
-- [x] `M011-T01` Run 5,000-note synthetic vault benchmark generator and recorder (`scripts/benchmark.py`).
-- [x] `M011-T02` Record timing, memory, and performance observations in `evidence/benchmark.json`.
-- [x] `M011-T03` Execute comprehensive Vault read-only test `tests/test_v11_vault_readonly.py` covering V11-018.
-- [x] `M011-T04` Run full pytest suite across all modules.
-
-### Acceptance Criteria
-- [x] `M011-AC01` All 140 tests PASS without failures.
-- [x] `M011-AC02` Benchmark on 5,040 notes recorded (4.399s scan, 4.546s full analysis).
-- [x] `M011-AC03` `V11-018` Vault byte-for-byte read-only verified.
-
-### Result
-`PASS` (140/140 tests pass, benchmark recorded in `evidence/benchmark.json`: 4.399s scan / 4.546s total analysis)
-
----
-
-# M012 — Windows 10 / 11 Native Acceptance & v1.1.0 Release Packaging
-
-Status: `PASS`
-
-### Objective
-Validate v1.1.0 native execution on Windows 10 (Build 19045+), execute full live HTTP walkthrough acceptance, update documentation, conduct four-file consistency check, package release artifacts, and record formal release verdict.
-
-### Tasks
-- [x] `M012-T01` Test `run_windows.bat` launcher natively on Windows environment with returncode 0 verification.
-- [x] `M012-T02` Execute live local HTTP server walkthrough acceptance (Scope selection, Note Workspace editing, Multi-Folder Relationships, Saved Checks, i18n toggle, Light/Dark toggle).
-- [x] `M012-T03` Verify Traditional Chinese paths, spaces in folder names, and Unicode property values.
-- [x] `M012-T04` Update `README.md` and user documentation for v1.1.0 features.
-- [x] `M012-T05` Freeze version string `1.1.0` in `app/__init__.py`, `server.py`, and UI metadata.
-- [x] `M012-T06` Run four-file consistency check (PROJECT, ROADMAP, HANDOFF, AGENTS).
-- [x] `M012-T07` Generate external release manifest and packaging bundles (`Obsidian-Property-Studio-v1.1.0-source.zip`, git bundle).
-- [x] `M012-T08` Update ROADMAP final state to COMPLETE and record release verdict.
-- [x] `M012-T09` Update HANDOFF.md last.
-
-### Acceptance Criteria
-- [x] `M012-AC01` Windows 10 (Build 19045+) native launcher execution and live HTTP server walkthrough verified (`evidence/integration/m012_v110_windows10_native_acceptance.json`).
-- [x] `M012-AC02` Windows 11 (64-bit AMD64) recorded accurately as `NOT YET VERIFIED` (accepted non-blocking release limitation per human approved contract).
-- [x] `M012-AC03` Traditional Chinese and English UI verified end-to-end with 100% key parity and zero hardcoded labels.
-- [x] `M012-AC04` Documentation matches implementation.
-- [x] `M012-AC05` Four-file consistency gate PASS.
-- [x] `M012-AC06` Release manifest and bundles verified via clean clone, extraction, git fsck, and pytest.
-- [x] `M012-AC07` Formal release verdict recorded (`PROPERTY_STUDIO_V1_1_0_RELEASE_PASS_WITH_LIMITATIONS`).
-
-### Result
-`PASS` (Evidence: `evidence/integration/m012_v110_windows10_native_acceptance.json`, external `dist/RELEASE_MANIFEST.json`)
-
----
-
-# M013 — Release Closure Final In-Place Repair (R01~R12)
-
-Status: `PASS`
-
-### Objective
-Systematically address and verify all 12 repair contracts (R01~R12) from the PR #1 independent closure audit: UI-backend API contract parity, true zh-Hant/en bilingual rendering, 4-state Relationships with Multi-Folder selectors, Body Wikilinks & Saved Checks persistence, fail-closed Scope validation, Single Note Scope & whole-Vault Note Workspace search, Scope-aware export consistency, Design dual context, YAML round-trip semantic gate, fresh Windows 10 live HTTP acceptance evidence, non-hardcoded release packaging gate with bundle verification, 4-file governance coherence, and self-contained Design Spec.
-
-### Tasks
-- [x] `M013-T01` [R01] Reconcile UI JavaScript API calls with backend server response shapes (`/api/scan`, `/api/discovery`, `/api/property`, `/api/design/*`, `/api/workspace/*`, `/api/refactor/plan`, `/api/relationships/*`, `/api/health`, `/api/export`, `/api/scope/*`).
-- [x] `M013-T02` [R02] Refactor UI to eliminate bilingual side-by-side labels; route 100% of user-visible strings through `app/ui/i18n.js` and `locales/{zh-Hant,en}.json`.
-- [x] `M013-T03` [R03] Expose 4-state classification (`VALID`, `BROKEN`, `AMBIGUOUS`, `OUTSIDE SELECTED TARGET`), multi-folder Source/Target selectors, Body Wikilinks, and Saved Checks UI management in Relationships view.
-- [x] `M013-T04` [R04] Enforce fail-closed Scope validation (unknown mode, empty folders, missing note fail closed with explicit errors; never fallback to Entire Vault).
-- [x] `M013-T05` [R05] Add Single Note Scope UI selector and ensure Note Workspace searches whole Vault with relative paths and duplicate-basename ambiguity warnings.
-- [x] `M013-T06` [R06] Align Scope-aware export payload with active UI view context.
-- [x] `M013-T07` [R07] Support dual context (Scope inventory vs Whole-Vault inventory) in Design suggestion and review.
-- [x] `M013-T08` [R08] Implement strict YAML serialization round-trip verification gate in Note Workspace.
-- [x] `M013-T09` [R09] Generate fresh Windows 10 Build 19045+ live HTTP native acceptance evidence artifact.
-- [x] `M013-T10` [R10] Upgrade `scripts/package_v110_release.py` to verify git clean status, test execution, fresh zip extraction, bundle verification, and git fsck.
-- [x] `M013-T11` [R11] Reconcile HANDOFF.md and eliminate stale residue across all 4 governance files.
-- [x] `M013-T12` [R12] Ensure `docs/specs/Obsidian_Property_Studio_v1.1.0_UIUX_vNext_Design_Spec.md` is committed and self-contained.
-- [x] `M013-T13` Author comprehensive `tests/test_ui_api_contracts.py` and `tests/test_v11_repairs.py`.
-
-### Result
-`PASS` (Verified across 140 test cases in `tests/`, Windows 10 live HTTP native acceptance test, Refactor Merge operation contract, and automated release packaging verification)
-
----
-
-# M014 — Human UI/UX Walkthrough Closure
-
-Status: `PASS`
-
-### Objective
-Resolve usability, discoverability, and workflow gaps identified during the Human Owner walkthrough on Windows 10 production UI: Search + Hierarchical Folder Tree in Note Workspace; structured multi-select management objects and needs in Schema Design with clear Adopt CTA and routing; i18n localization of schema review statuses; dynamic empty-state and form generation for New Frontmatter / Blank Note; controlled vocabulary dropdowns/multi-selects and human-readable primary summary view in Refactor Planner; and final release evidence closure.
-
-### Human Verified Acceptance
-- Windows 10 actual browser/UI rendering: `PASS — Human Verified`
-- Traditional Chinese UI: `PASS — Human Verified`
-- English UI: `PASS — Human Verified`
-- zh-Hant ↔ English switching: `PASS — Human Verified`
-- Dark theme: `PASS — Human Verified`
-- Light theme: `PASS — Human Verified`
-- Dark ↔ Light switching: `PASS — Human Verified`
-- Vault scan / Scope UI basic operation: `PASS — Human Verified`
-- Note Properties Workspace & Folder Tree: `PASS — Human Verified`
-- Property Vocabulary Layer & Help Drawer: `PASS — Human Verified`
-- Refactor Normalize Observed Value Mapping: `PASS — Human Verified`
-
-### Tasks
-- [x] `M014-T01` [Note Workspace] Implement Search + Hierarchical Folder Tree with Scope preference, folder hierarchy, whole-Vault navigation, and duplicate-basename path disambiguation.
-- [x] `M014-T02` [Schema Design] Replace vague free-text primary input with deterministic multi-select presets for Management Objects and Management Needs; relegate free-text to optional secondary context.
-- [x] `M014-T03` [Schema Design] Enable per-property retain/exclude checkboxes and implement `[Adopt Schema]` CTA establishing `Current Schema` in session state.
-- [x] `M014-T04` [Schema Design] Provide explicit Next Actions after adoption (`[Apply to Existing Note]` and `[Create New Frontmatter]`).
-- [x] `M014-T05` [i18n] Localize all schema recommendation explanation strings and enums (`exact_existing`, `elsewhere`, `new`, `overlap`).
-- [x] `M014-T06` [New Frontmatter] Implement informative empty state when no schema is adopted, and dynamic form control generation with live YAML preview when Current Schema exists.
-- [x] `M014-T07` [Refactor Planner] Implement controlled vocabulary UI: Scope inventory dropdown for Rename, multi-select for Merge, observed value mapping for Normalize, and controlled target types for Convert Type.
-- [x] `M014-T08` [Refactor Planner] Add conflict warning on existing target property, enforce fail-closed on empty target, and provide human-readable primary view with collapsible raw JSON.
-- [x] `M014-T09` [Automated Tests] Author `tests/test_m014_human_walkthrough.py` covering regression contracts M014-001 ~ M014-015.
-- [x] `M014-T10` [Final Evidence Closure] Execute final authoritative benchmark, synchronize all evidence documents, perform clean commit workflow, and generate external release packaging.
-- [x] `M014-T11` [Walkthrough Failure In-Place Repair] Restore missing frontend handlers (`setupDiscoverHandlers`, `setupHealthHandlers`), enforce actionable selection validation on Schema Designer, convert Relationships property filter to controlled dropdown with loading state, replace Refactor generic target with controlled combobox and new-name input, and add headless browser startup regression tests.
-- [x] `M014-T12` [Human Production Walkthrough Re-Verification] Human Owner re-verifies repaired workflows in Windows 10 production browser.
-
-### Acceptance Criteria
-- [x] `M014-AC01` Note Workspace supports both Search and Hierarchical Folder Tree with clear path disambiguation for duplicate basenames.
-
-- [x] `M014-AC02` Schema Design generates suggestions from deterministic multi-select inputs with optional free-text and actionable validation.
-- [x] `M014-AC03` `[Adopt Schema]` persists session schema and routes cleanly to Existing Note or New Frontmatter.
-- [x] `M014-AC04` New Frontmatter displays empty-state guidance when unconfigured and renders dynamic controls when configured.
-- [x] `M014-AC05` Refactor Planner uses controlled dropdowns/multi-selects, target collision warning, and displays human-readable summary by default.
-- [x] `M014-AC06` 100% of new UI strings are localized in `zh-Hant.json` and `en.json`.
-- [x] `M014-AC07` All automated tests pass (140 existing + 22 M014 walkthrough & integrity + 14 property glossary regression contracts = 176/176 tests PASS).
-- [x] `M014-AC08` Vault remains byte-for-byte read-only across all new workflows.
-- [x] `M014-AC09` Human Owner re-verifies repaired UI in real Windows 10 browser without uncaught errors or workflow dead-ends.
+- [x] `M016-AC01` State transfer survives cross-module navigation without accidental loss.
+- [x] `M016-AC02` CTA closure test suite verifies all primary navigation paths.
+
+### Required Evidence
+- `tests/test_v12_state_transfer.py` execution results (6 tests PASS).
 
 ### Result
 `PASS`
-- Automated Verification: `PASS` (176/176 automated unit & integration tests pass, `pytest -v`, 13.55s).
-- Headless Browser DOM Startup Smoke: `PASS` (Zero uncaught JS errors, presets populated, CTAs wired).
-- Property Human-Readable Vocabulary Layer: `PASS` (49 built-in entries, Presentation Layer format, safe fallback, help drawer).
-- Refactor Normalize Mapping (REQ-038): `PASS` (Scope observed values table, target selection/custom input, structured summary).
-- Note Workspace Properties & Diff: `PASS` (Property badges, ⓘ guidance drawer, dynamic custom key detection, localized).
-- 5,000-note benchmark verified: scan 4.272s, total analysis 4.413s, vault unchanged (`evidence/benchmark.json`).
-- Human Verification: `PASS` (Dr. J verified on Windows 10 production UI walkthrough).
-
-
-
-
-
-
 
 ---
 
+# M017 — Personal Glossary & Named Schema Library
 
-# 4. Final v1.1.0 Integration Summary
+Status: `PASS`
 
-The v1.1.0 release evolves Obsidian Property Studio from a Whole-Vault Property Tool into a **Context-Aware Bilingual Property Governance Workspace**:
+### Objective
+Implement user-editable Property Glossary with precedence hierarchy and Named Schema Library with CRUD operations persisted outside Vault.
+
+### Tasks
+- [x] `M017-T01` Define regression tests `tests/test_v12_glossary.py` and `tests/test_v12_named_schemas.py` covering V12-GLO-* and V12-SCH-*.
+- [x] `M017-T02` Implement `app/core/user_glossary.py` with precedence `System Built-in → User Override → Observed Vault Facts` and canonical key immutability.
+- [x] `M017-T03` Implement `app/core/named_schemas.py` with Schema CRUD and metadata.
+- [x] `M017-T04` Implement app-local persistence layer in `app/storage/local_storage.py` outside Vault.
+- [x] `M017-T05` Build UI for Glossary Manager and Named Schema Library with zh-Hant / English i18n.
+- [x] `M017-T06` Connect Schema Designer `[Adopt Schema]` to Save to Named Schema Library.
+
+### Acceptance Criteria
+- [x] `M017-AC01` User glossary allows overriding labels/descriptions while canonical keys remain untouched.
+- [x] `M017-AC02` Named Schemas persist across app restarts outside Vault.
+- [x] `M017-AC03` Precedence hierarchy verified with zero Vault mutation.
+
+### Required Evidence
+- Automated test suite results (`tests/test_v12_glossary.py`, `tests/test_v12_named_schemas.py` PASS).
+- Storage persistence and bilingual alignment (299/299 keys aligned PASS).
+
+### Result
+`PASS`
+
+---
+
+# M018 — Existing Note Reconciliation & Health Drilldown
+
+Status: `PASS`
+
+### Objective
+Implement Schema → Existing Note Reconciliation in Note Workspace (4 states: Matches, Missing, Conflict, Outside-schema) and Health Finding → Note Workspace one-click drilldown.
+
+### Tasks
+- [x] `M018-T01` Define regression tests `tests/test_v12_reconciliation.py` and `tests/test_v12_health_drilldown.py` covering V12-REC-* and V12-HLT-*.
+- [x] `M018-T02` Implement reconciliation algorithm in `app/core/reconciliation.py` computing 4 distinct property states against target note.
+- [x] `M018-T03` Expose API endpoints `/api/reconcile/inspect`, `/api/reconcile/preview`.
+- [x] `M018-T04` Build Note Workspace Reconciliation UI with 4-state badges, non-schema property preservation, semantic diff, and validated frontmatter copy.
+- [x] `M018-T05` Wire Health Finding list items to drilldown directly into Note Workspace with finding highlight.
+
+### Acceptance Criteria
+- [x] `M018-AC01` REQ-043 full workflow closed (Schema -> Existing Note -> 4-state reconciliation -> diff -> copy).
+- [x] `M018-AC02` REQ-048 health drilldown opens exact note with preserved finding context.
+- [x] `M018-AC03` Vault remains strictly read-only.
+
+### Required Evidence
+- Reconciliation unit & integration test results (`tests/test_v12_reconciliation.py` PASS).
+- Health drilldown navigation test results (`tests/test_v12_health_drilldown.py` PASS).
+
+### Result
+`PASS`
+
+---
+
+# M019 — Scope Governance & Schema Drift
+
+Status: `PASS`
+
+### Objective
+Implement Scope → Expected Named Schema assignment and Property Health Desired vs Actual schema drift diagnostics.
+
+### Tasks
+- [x] `M019-T01` Define regression tests `tests/test_v12_scope_governance.py` and `tests/test_v12_drift.py` covering V12-SCP-* and V12-DRIFT-*.
+- [x] `M019-T02` Implement Scope Expected Schema association in `app/core/scope_governance.py`.
+- [x] `M019-T03` Implement Schema Drift diagnostic engine in `app/core/drift.py` (missing expected, type mismatch, value drift, unexpected properties).
+- [x] `M019-T04` Update Property Health UI with Desired vs Actual drift summary and breakdown cards.
+
+### Acceptance Criteria
+- [x] `M019-AC01` Scope can be assigned an Expected Schema without writing to Vault.
+- [x] `M019-AC02` Health diagnostics accurately report Desired vs Actual drift.
+
+### Required Evidence
+- Automated test results (`tests/test_v12_scope_governance.py`, `tests/test_v12_drift.py` PASS).
+
+### Result
+`PASS`
+
+---
+
+# M020 — External AI Proposal Workflow & Companion Skill
+
+Status: `PASS`
+
+### Objective
+Implement External AI Proposal Review Workspace (replacing raw JSON endpoint) and deliver the independent `obsidian-property-advisor` Companion Skill.
+
+### Tasks
+- [x] `M020-T01` Define regression tests `tests/test_v12_proposal_workflow.py` covering V12-PRP-* and Contract 1.0/1.1 compatibility.
+- [x] `M020-T02` Update Proposal import engine in `app/core/proposal.py` to support Proposal Contract 1.1 additions while retaining 100% backward compatibility with Proposal Contract 1.0.
+- [x] `M020-T03` Build UI Proposal Review Workspace with Accept as Named Schema and Reconcile with Note actions.
+- [x] `M020-T04` Implement and package `skills/obsidian-property-advisor/` (SKILL.md, storage types, UI controls, example fixtures).
+- [x] `M020-T05` Author test fixtures validating Skill proposal outputs against Property Studio contract validator.
+
+### Acceptance Criteria
+- [x] `M020-AC01` REQ-046 full proposal review workflow closed (paste/open -> validate -> compare -> review -> accept/reconcile).
+- [x] `M020-AC02` Companion Skill outputs validate seamlessly against Proposal Contract without Core App runtime dependency.
+
+### Required Evidence
+- Proposal review test suite (`tests/test_v12_proposal_workflow.py` PASS) and companion skill artifact `skills/obsidian-property-advisor/SKILL.md`.
+
+### Result
+`PASS`
+
+---
+
+# M021 — Schema Versioning, Migration Planning & Governance Profile [P1 — Should Ship]
+
+Status: `PASS`
+
+> **P1 Scope Notice:** Full implementation delivered for v1.2.0.
+
+### Objective
+Implement Schema versioning (v1 -> v2), read-only Migration Planner, and complete Governance Profile JSON export/import with change preview and fail-closed safety.
+
+### Tasks
+- [x] `M021-T01` Define regression tests `tests/test_v12_migration.py` and `tests/test_v12_governance_profile.py` covering V12-MIG-* and V12-GOV-*.
+- [x] `M021-T02` Implement schema version diffing and migration impact evaluator in `app/core/migration.py`.
+- [x] `M021-T03` Build Migration Planner UI displaying affected notes and impact summary (strictly planning-only).
+- [x] `M021-T04` Implement Governance Profile export and import engine with SHA-256 validation in `app/core/governance_profile.py`.
+- [x] `M021-T05` Build Profile Import/Export UI with change preview and fail-closed error reporting.
+
+### Acceptance Criteria
+- [x] `M021-AC01` Schema migration planner outputs human-readable impact plan without writing to Vault.
+- [x] `M021-AC02` Governance Profile exports and imports round-trip cleanly with full validation.
+
+### Required Evidence
+- Migration planner test output (`tests/test_v12_migration.py` PASS) and Profile round-trip validation evidence (`tests/test_v12_governance_profile.py` PASS).
+
+### Result
+`PASS`
+
+---
+
+# M022 — Full Workflow Closure, Human Acceptance & Release Gate
+
+Status: `IN_PROGRESS`
+
+### Objective
+Execute complete Workflow Closure Matrix validation, run full regression suite and 5,000-note benchmark, verify Vault byte-for-byte read-only integrity, conduct human walkthrough on Windows 10 production UI, verify P0 completion and P1 implementation, and package v1.2.0 release artifacts.
+
+### Tasks
+- [x] `M022-T01` Execute complete Workflow Closure Matrix automated test suite (242/242 tests PASS, includes `tests/test_v12_human_acceptance_repairs.py` validating 20 regression tests across HA-F01 ~ HA-F18, real JS Node.js execution of SemVer bumper and compareSchemaVersions, Save Modal multi-version sort, state isolation, workspace reconciliation banner locale rerender, and storage closure invariants).
+- [x] `M022-T02` Run 5,000-note performance benchmark and record in `evidence/integration/m022_v120_benchmark.json` (authoritative: 5.844s analysis / 5.667s scan over 5,040 notes). `evidence/benchmark.json` is the latest local benchmark (non-authoritative, overwritten each run).
+- [x] `M022-T03` Verify Vault byte-for-byte read-only integrity across all v1.2 workflows (`evidence/integration/m022_v120_vault_readonly.json`).
+- [ ] `M022-T04` Conduct Windows 10 production UI walkthrough acceptance with Human Owner (Dr. J).
+- [x] `M022-T05` Verify P0 requirements complete and P1 status (P1 M021 fully implemented).
+- [x] `M022-T06` Run four-file consistency check (PROJECT, ROADMAP, HANDOFF, AGENTS).
+- [x] `M022-T07` Generate release packaging and record formal release verdict (`scripts/package_v120_release.py`).
+
+### Acceptance Criteria
+- [x] `M022-AC01` All automated regression and closure tests PASS (242/242).
+- [x] `M022-AC02` 5,000-note benchmark recorded (authoritative: `evidence/integration/m022_v120_benchmark.json` — 5.844s analysis / 5.667s scan over 5,040 notes).
+- [x] `M022-AC03` Vault remains byte-for-byte untouched and zero directory created on violation.
+- [ ] `M022-AC04` Human Owner walkthrough PASS (Reserved for Human Owner Dr. J).
+- [x] `M022-AC05` Four-file consistency gate PASS.
+
+### Required Evidence
+- Release manifest, authoritative benchmark (`evidence/integration/m022_v120_benchmark.json`), latest local benchmark (`evidence/benchmark.json`, non-authoritative), and Vault readonly record (`evidence/integration/m022_v120_vault_readonly.json`).
+- Historical v1.1.0 evidence (`evidence/integration/m009_benchmark.json`, `evidence/integration/m012_v110_windows10_native_acceptance.json`) is immutable and must not be overwritten by v1.2.0 test runs.
+
+### Result
+`NOT YET VERIFIED`
+
+---
+
+# 4. Final v1.2.0 Integration Summary
+
+The v1.2.0 release evolves Obsidian Property Studio into a **Personal Property Governance System**:
 
 ```text
-Vault
+Vault (Strict Read-Only Input)
   │
-  ├─ Scope (Entire Vault, One Folder, Multi-Folder, Single Note)
+  ├─ User Property Glossary (Built-in → User Override → Vault Facts) [P0]
   │
-  ├─ Note Properties Workspace (Existing Note Inspect/Edit/Diff + Blank Fill)
+  ├─ Named Schema Library (Reusable, Versioned, Outside Vault) [P0]
+  │    │
+  │    ├─ Schema → Existing Note Reconciliation (Matches, Missing, Conflict, Preserved) [P0]
+  │    │
+  │    ├─ Scope Expected Schema Assignment & Drift Diagnostics (Health Desired vs Actual) [P0]
+  │    │
+  │    └─ Schema Versioning & Migration Planning (Scope Impact, Planning-only) [P1]
   │
-  ├─ Refactor Planner (Rename, Merge, Normalize, Convert Type)
+  ├─ External AI Proposal Review Workspace (Contract Validation, Compare, Accept/Edit/Reject) [P0]
   │
-  └─ Relationships
-       │
-       ├─ Property Links (Source Scope Multi-Folder → Target Scope Multi-Folder)
-       ├─ Body Wikilinks (Analysis-only, Strict Read-only)
-       │
-       └─ Saved Relationship Checks (User-initiated, Reusable, Outside Vault)
+  ├─ Companion AI Skill (obsidian-property-advisor, Independent, Decoupled) [P0]
+  │
+  └─ App-Local Persistence & Governance Profile I/O (Export/Import, Backup, Outside Vault) [P0 / P1]
 ```
 
 No evidence, no PASS.  
 No contradictory evidence, no PASS.
-
----
-
-# Post-Merge Release Publication Closure
-
-- Target Version: `v1.1.0`
-- Release Publication Status: `PUBLISHED`
-- Annotated Git Tag: `v1.1.0`
-- Release Commit HEAD: `cca408c0456e1fe94e8224bd6550cf30c7274926`
-- GitHub Release URL: `https://github.com/SmartyJohnway/Obsidian-Property-Studio/releases/tag/v1.1.0`
-- Source ZIP: `Obsidian-Property-Studio-v1.1.0-source.zip` (`318,338` bytes, SHA-256: `0e48539ff142402acb6fdac5631537d39bead7bdebd38b0d5f2597a8f54fb1b7`, verified)
-- Git Bundle: `Obsidian-Property-Studio-v1.1.0.bundle` (`475,790` bytes, SHA-256: `1392bceab25ad9af11443f70709553df5a07623f6f96eecd324ec8e2f5fb0af2`, verified)
-- Release Manifest: `RELEASE_MANIFEST.json` (`1,422` bytes, SHA-256: `08e91ae46e629dd86b006b1b5a5aad721864ae120045e0e28d797fbcb491de2a`, verified)
-- Automated Test Suite: `176/176 PASS` (14.06s)
-- 5,040-Note Benchmark: `scan: 4.272s`, `total_analysis: 4.413s`, `vault_unchanged: true`
-- Windows 10 Human Acceptance: `PASS — Human Verified`
-- Accepted Release Limitation: Windows 11 AMD64 recorded as `NOT YET VERIFIED` (non-blocking)
-- Post-Release Governance Evidence: `evidence/release/v1.1.0_github_release_publication.json`
-
