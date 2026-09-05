@@ -26,17 +26,21 @@ class DriftCategory(str, enum.Enum):
     MISSING_REQUIRED_RELATIONSHIP = "missing_required_relationship"
 
 
-def is_canonical_navigable_path(path: str) -> tuple[bool, str | None]:
-    """Validate if a note path is a safe, canonical relative Vault Markdown path (HA-F12)."""
+def is_canonical_navigable_path(path: str, canonical_paths: set[str] | None = None) -> tuple[bool, str | None]:
+    """Validate if a note path is a safe, canonical relative Vault Markdown path (HA-F12).
+    
+    Canonical note identity is exact membership in active VaultScan, NOT filename heuristics.
+    """
     if not path or not isinstance(path, str):
         return False, "Empty or non-string note path."
     p = path.strip()
-    if p.startswith("![[") or p.startswith("[[") or "·" in p or p.startswith("*") or p.startswith("-") or p.startswith("+"):
-        return False, "Path contains wikilink or list formatting marker."
     if not p.endswith(".md"):
         return False, "Target is not a Markdown file (.md)."
     if p.startswith("/") or p.startswith("\\") or ".." in p or (len(p) > 1 and p[1] == ":"):
         return False, "Path traversal or non-relative path rejected."
+    if canonical_paths is not None:
+        if p not in canonical_paths:
+            return False, f"Note '{p}' does not exist in active VaultScan."
     return True, None
 
 

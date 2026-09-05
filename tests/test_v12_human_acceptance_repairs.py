@@ -36,6 +36,7 @@ from app.core import (
     scope_governance,
     user_glossary,
 )
+from app.core.scanner import scan_vault
 from app.core.drift import DriftCategory, NoteDriftFinding, is_canonical_navigable_path
 from app.core.governance_profile import (
     PREFERENCES_STORAGE,
@@ -350,65 +351,131 @@ def test_ha_f10_workspace_untouched_property_preserves_native_value():
 # ==============================================================================
 # HA-F12: Drift Findings Canonical Navigable Path Guard & Link Defense
 # ==============================================================================
-def test_ha_f12_drift_canonical_navigable_path_guard():
-    """Verify is_canonical_navigable_path and NoteDriftFinding navigation safety."""
-    # Valid canonical relative md paths
-    ok, reason = is_canonical_navigable_path("Notes/Meeting.md")
-    assert ok is True and reason is None
+def test_ha_f12_drift_canonical_navigable_path_guard(tmp_path):
+    """Verify HA-F12 canonical path authority bound to active VaultScan (TESTS A-D)."""
+    # --------------------------------------------------------------------------
+    # TEST A — unusual but REAL filename is canonical & navigable
+    # --------------------------------------------------------------------------
+    vdir = tmp_path / "Vault_Special_Names"
+    vdir.mkdir()
+    unusual_name = "· ![[台灣_美國通用採購流程使用手冊_v1.0.docx.md"
+    special_file = vdir / unusual_name
+    special_file.write_text("---\nstatus: pending\n---\nContent", encoding="utf-8")
 
-    ok, reason = is_canonical_navigable_path("daily/2026-09-04.md")
-    assert ok is True and reason is None
+    scan_a = scan_vault(str(vdir))
+    canonical_paths_a = {n.path for n in scan_a.notes}
+    assert unusual_name in canonical_paths_a
+    assert scan_a.note_by_path(unusual_name) is not None
 
-    # Invalid paths: wikilinks, list markers, absolute paths, missing .md
-    ok, reason = is_canonical_navigable_path("![[image.png]]")
-    assert ok is False and "wikilink" in reason
+    ok, reason = is_canonical_navigable_path(unusual_name, canonical_paths_a)
+    assert ok is True
+    assert reason is None
 
-    ok, reason = is_canonical_navigable_path("[[Meeting Note]]")
-    assert ok is False and "wikilink" in reason
-
-    ok, reason = is_canonical_navigable_path("· item 1")
-    assert ok is False and "marker" in reason
-
-    ok, reason = is_canonical_navigable_path("* bullet item")
-    assert ok is False and "marker" in reason
-
-    ok, reason = is_canonical_navigable_path("C:/Users/file.md")
-    assert ok is False and ("non-relative" in reason or "traversal" in reason)
-
-    ok, reason = is_canonical_navigable_path("file.pdf")
-    assert ok is False and ".md" in reason
-
-    ok, reason = is_canonical_navigable_path("")
-    assert ok is False and "empty" in reason.lower()
-
-    # NoteDriftFinding dataclass auto-detection
-    valid_f = NoteDriftFinding(
-        note_path="Projects/Alpha.md",
-        category=DriftCategory.TYPE_MISMATCH,
-        property_key="status",
-        detail="Type mismatch",
+    # Finding generated for this real note
+    special_finding = NoteDriftFinding(
+        note_path=unusual_name,
+        category=DriftCategory.MISSING_REQUIRED,
+        property_key="vendor",
+        detail="Missing required vendor",
         expected="text",
-        actual="list",
+        actual=None,
     )
-    assert valid_f.navigation_available is True
-    assert valid_f.navigation_reason is None
-    d_valid = valid_f.to_dict()
-    assert d_valid["navigation_available"] is True
-    assert d_valid["navigation_reason"] is None
+    assert special_finding.navigation_available is True
+    assert special_finding.navigation_reason is None
+    d_special = special_finding.to_dict()
+    assert d_special["navigation_available"] is True
 
-    invalid_f = NoteDriftFinding(
-        note_path="![[Attached Doc]]",
+    # --------------------------------------------------------------------------
+    # TEST B — fake / unscanned path fails closed
+    # --------------------------------------------------------------------------
+    fake_path = "NonExistent/Phantom.md"
+    ok, reason = is_canonical_navigable_path(fake_path, canonical_paths_a)
+    assert ok is False
+    assert "active VaultScan" in reason
+
+    # Invalid characters / malformed paths fail closed regardless of canonical_paths
+    ok, reason = is_canonical_navigable_path("file.pdf", canonical_paths_a)
+    assert ok is False
+    assert ".md" in reason
+
+    ok, reason = is_canonical_navigable_path("C:/Users/outside.md", canonical_paths_a)
+    assert ok is False
+    assert "traversal" in reason or "non-relative" in reason
+
+    ok, reason = is_canonical_navigable_path("", canonical_paths_a)
+    assert ok is False
+    assert "Empty" in reason
+
+    # Finding with navigation_available=False preserves raw reference for diagnosis
+    unresolvable_finding = NoteDriftFinding(
+        note_path="![[Broken Note Link]]",
         category=DriftCategory.VALUE_DRIFT,
         property_key="ref",
-        detail="Embedded link",
+        detail="Unresolvable reference",
         expected="text",
-        actual="unknown",
+        actual="![[Broken Note Link]]",
     )
-    assert invalid_f.navigation_available is False
-    assert "wikilink" in invalid_f.navigation_reason
-    d_invalid = invalid_f.to_dict()
-    assert d_invalid["navigation_available"] is False
-    assert "wikilink" in d_invalid["navigation_reason"]
+    assert unresolvable_finding.navigation_available is False
+    assert unresolvable_finding.note_path == "![[Broken Note Link]]"
+    assert unresolvable_finding.navigation_reason is not None
+    d_unres = unresolvable_finding.to_dict()
+    assert d_unres["navigation_available"] is False
+    assert d_unres["note_path"] == "![[Broken Note Link]]"
+
+    # --------------------------------------------------------------------------
+    # TEST C — ordinary .md note remains navigable
+    # --------------------------------------------------------------------------
+    home_dir = vdir / "00_Home"
+    home_dir.mkdir()
+    home_file = home_dir / "HOME.md"
+    home_file.write_text("---\ntitle: Home\n---\nWelcome", encoding="utf-8")
+
+    scan_c = scan_vault(str(vdir))
+    canonical_paths_c = {n.path for n in scan_c.notes}
+    assert "00_Home/HOME.md" in canonical_paths_c
+
+    ok, reason = is_canonical_navigable_path("00_Home/HOME.md", canonical_paths_c)
+    assert ok is True
+    assert reason is None
+
+    home_finding = NoteDriftFinding(
+        note_path="00_Home/HOME.md",
+        category=DriftCategory.TYPE_MISMATCH,
+        property_key="title",
+        detail="Storage type mismatch",
+        expected="number",
+        actual="text",
+    )
+    assert home_finding.navigation_available is True
+    assert home_finding.navigation_reason is None
+
+    # --------------------------------------------------------------------------
+    # TEST D — exact path identity (two notes with same name in different folders)
+    # --------------------------------------------------------------------------
+    fld_a = vdir / "FolderA"
+    fld_b = vdir / "FolderB"
+    fld_a.mkdir()
+    fld_b.mkdir()
+    (fld_a / "Item.md").write_text("---\nid: A\n---\nItem A", encoding="utf-8")
+    (fld_b / "Item.md").write_text("---\nid: B\n---\nItem B", encoding="utf-8")
+
+    scan_d = scan_vault(str(vdir))
+    assert scan_d.note_by_path("FolderA/Item.md") is not None
+    assert scan_d.note_by_path("FolderB/Item.md") is not None
+    assert scan_d.note_by_path("FolderA/Item.md").properties["id"].raw == "A"
+    assert scan_d.note_by_path("FolderB/Item.md").properties["id"].raw == "B"
+
+    # Drift navigation points to exact note_path and never resolves to the other
+    finding_a = NoteDriftFinding(
+        note_path="FolderA/Item.md",
+        category=DriftCategory.UNEXPECTED_PROPERTY,
+        property_key="id",
+        detail="Unexpected id",
+        actual="A",
+    )
+    assert finding_a.note_path == "FolderA/Item.md"
+    assert scan_d.note_by_path(finding_a.note_path).path == "FolderA/Item.md"
+    assert scan_d.note_by_path(finding_a.note_path).properties["id"].raw == "A"
 
 
 # ==============================================================================
