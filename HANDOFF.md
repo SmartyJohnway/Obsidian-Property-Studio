@@ -11,7 +11,7 @@ Active Milestone: `M022`
 Active Milestone Status: `IN_PROGRESS`  
 Current Task: `M022-T04` (Human Owner Windows 10 Production UI Walkthrough Acceptance Retest)  
 Last Verified Gate: `M021 — Schema Naming, Versioning, Migration & Governance Profile PASS`  
-Last Verified Implementation Commit: `feb9cf8` (Commit 21K — HA-F22 Scan-Dependent UI Rehydration Closure)  
+Last Verified Implementation Commit: `95de866` (Commit 21L – HA-F21 & HA-F23 Schema Context & Version Identity Closure)  
 GitHub PR: `PR #2 (Draft, feat(v1.2): Personal Property Governance System)`  
 Authoritative Specification: `docs/specs/Obsidian_Property_Studio_v1.2.0_Spec.md`  
 Archived v1.1 Roadmap: `docs/archive/ROADMAP_v1.1.0.md`  
@@ -59,7 +59,18 @@ All autonomous implementation and verification milestones from M016 through M021
   - 4 dedicated unit tests (`tests/test_v12_migration.py`, `tests/test_v12_governance_profile.py`) PASS.
 
 - **M022: Release Acceptance & Packaging — IN_PROGRESS**
-- **Commit 21K: HA-F22 Scan-Dependent UI Rehydration Closure — CURRENT HEAD**
+- **Commit 21L: HA-F21 & HA-F23 Schema Context & Version Identity Closure — CURRENT HEAD**
+  - **HA-F23 Blank Note Schema Authority**: Decoupled `S.blankNoteSchema` (Blank Note authority) from `S.currentSchema` (Designer transient authority).
+    - Mode 1 (Designer handoff): Clicking `designGoToFill` explicitly sets `S.blankNoteSchema = S.currentSchema` and `S.blankNoteEntrySource = "designer"`, navigating to `fill`.
+    - Mode 2 (Direct Blank Note Navigation): Sidebar click or direct navigation sets `S.blankNoteEntrySource = "direct"`. In `setTab("fill")`, `resolveBlankNoteSchemaForScope()` resolves active Scope expected schema via `getCanonicalScopeKey()` -> `/api/scope/schema/current` -> `assignment.schema_id` -> `/api/schemas/get` -> sets `S.blankNoteSchema = exact Named Schema`.
+    - Fail-Closed: If active scope has no schema assignment, `S.blankNoteSchema = null` and empty state card is displayed. Never falls back to `S.currentSchema`.
+    - UI Projection: Blank Note header displays `Name (vVersion)` if version present, or `Name` if unversioned. All Fill inputs and `/api/fill/preview` payload consume `S.blankNoteSchema`.
+  - **HA-F21 Workspace Reconciliation Exact Version Identity**:
+    - Backend: Added `schema_version: str | None = None` to `ReconciliationReport` in `app/core/reconciliation.py`. In `app/server.py` (`api_reconcile_inspect`), resolved `sch.version` for Named Schema and passed to `reconciliation.reconcile_note_frontmatter()`.
+    - Frontend State: Captured `reconciliationSchemaVersion` in `S.lastWorkspaceStatus`.
+    - Banner Display: `renderWorkspaceStatusBanner()` renders `⚖️ 核對筆記：${recSchemaName} (v${recSchemaVersion})` / `⚖️ Reconcile Note: ${recSchemaName} (v${recSchemaVersion})`. Dynamic locale switch preserves exact version identity without downgrade. Cancel clears version.
+  - **Automated Verification**: Added 3 automated tests in `tests/test_v12_human_acceptance_repairs.py` (`test_ha_f21_reconciliation_exact_version_identity`, `test_ha_f21_server_api_reconcile_inspect`, `test_ha_f23_and_f21_frontend_in_node`). **249/249 tests PASS** in 21.28s. Vault 100% byte-for-byte read-only.
+- **Commit 21K: HA-F22 Scan-Dependent UI Rehydration Closure — COMPLETED**
   - **Backend Context Authority Enrichment**: In `app/server.py`, enriched `/api/runtime/context` with `summary`, `unique_property_count`, and `scan_seconds` directly from in-memory `STORE.scan` and `STORE.inventory` authority with strictly zero disk rescan.
   - **Scan-Dependent UI Projection Restoration**: In `app/ui/index.html`, updated `rehydrateRuntimeContext()` to rehydrate `S.vaultSummary`, `S.uniquePropertyCount`, and `S.lastScanSeconds`. Created `restoreActiveScanUI()` and invoked it at the end of `init()` when `S.scanned` is true:
     - Overview Module: Hides `overviewNotScanned` and displays `overviewScanned`. Rehydrates `ovNotesCount`, `ovPropsCount`, `vaultPathInput`, and all note statistics cards (`statNotesTotal`, `statNotesWithProps`, `statNotesNoProps`, `statNotesFailed`).
