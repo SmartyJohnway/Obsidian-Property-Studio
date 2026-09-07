@@ -11,7 +11,7 @@ Active Milestone: `M022`
 Active Milestone Status: `IN_PROGRESS`  
 Current Task: `M022-T04` (Human Owner Windows 10 Production UI Walkthrough Acceptance Retest)  
 Last Verified Gate: `M021 — Schema Naming, Versioning, Migration & Governance Profile PASS`  
-Last Verified Implementation Commit: `0b00658` (Commit 21M – HA-F14 Complex / Nested YAML Value Rendering Closure)  
+Last Verified Implementation Commit: `ae86b8c` (Commit 21N – HA-F18 Governance Profile Concrete Change-Set Preview Closure)  
 GitHub PR: `PR #2 (Draft, feat(v1.2): Personal Property Governance System)`  
 Authoritative Specification: `docs/specs/Obsidian_Property_Studio_v1.2.0_Spec.md`  
 Archived v1.1 Roadmap: `docs/archive/ROADMAP_v1.1.0.md`  
@@ -59,7 +59,17 @@ All autonomous implementation and verification milestones from M016 through M021
   - 4 dedicated unit tests (`tests/test_v12_migration.py`, `tests/test_v12_governance_profile.py`) PASS.
 
 - **M022: Release Acceptance & Packaging — IN_PROGRESS**
-- **Commit 21M: HA-F14 Complex / Nested YAML Value Rendering Closure — CURRENT HEAD**
+- **Commit 21N: HA-F18 Governance Profile Concrete Change-Set Preview Closure — CURRENT HEAD**
+  - **Backend Deterministic Per-Entity Plan Engine**: In `app/core/governance_profile.py`, implemented `compute_concrete_changeset(profile_data, mode="merge")`. Generates deterministic per-entity change records across all 5 profile categories (`schemas`, `scope_assignments`, `glossary`, `saved_checks`, and `preferences`). Each entity record defines `action` (`add`, `update`, `conflict`, `unchanged`, `remove`, `retained`), `identity`, `display_name`, `before`, `after`, and human-readable `reason`.
+  - **Dual Mode Pre-calculation in Validation Report**: In `validate_governance_profile()`, pre-calculates and embeds concrete plans for both modes under `plans: {"merge": ..., "replace": ...}` without mutating storage or disk.
+  - **Dynamic UI Projection with Monospace Keys & Action Pills**: In `app/ui/index.html`, added concrete per-entity change-set rendering in `renderProfilePreviewArea()`. Visualizes items with color-coded status badges (`新增`, `更新`, `衝突`, `移除`, `保留`, `無變更`), monospace identifier codes, clear before $\to$ after details, and localized rationale strings.
+  - **Instant Client-Side Mode Toggle**: In `renderProfilePreviewArea()`, added dynamic `onchange` listener to `#profileImportModeSelect` that updates `S.lastProfileValidation.mode` and immediately re-renders the preview from precomputed plans with zero network request, zero re-parsing, and zero re-validation.
+  - **Bilingual i18n Symmetry**: Added 11 symmetric keys (`profile.action_unchanged`, `action_add`, `action_update`, `action_conflict`, `action_remove`, `action_retained`, `label_before`, `label_after`, `concrete_changeset_title`, `cat_preferences`, `empty_category`) to both `app/ui/locales/zh-Hant.json` and `app/ui/locales/en.json` (557 symmetric keys).
+  - **Automated Verification**: Added 2 automated tests in `tests/test_v12_human_acceptance_repairs.py`:
+    - `test_ha_f18_concrete_changeset_tests_a_to_j`: Covers tests A through J (schema update with before/after props, schema retained in merge, schema remove in replace, scope add, glossary add, check add, unchanged preference, replace vs merge differentiation, empty category graceful display, deterministic ordering).
+    - `test_ha_f18_production_javascript_rendering_in_node`: Real Node.js execution of production JS verifying title, action badges, dropdown toggle from merge to replace and back to merge, and zero raw i18n key leakage.
+    - **253/253 tests PASS** in 18.91s. Vault 100% byte-for-byte read-only.
+- **Commit 21M: HA-F14 Complex / Nested YAML Value Rendering Closure — COMPLETED**
   - **Canonical Display Formatter (`formatPropertyValueForDisplay`)**: In `app/ui/index.html`, added a reusable, pure-display formatter handling null, boolean, number, string, flat array, nested array, plain object / mapping, and array of objects. Produces deterministic, safely escaped string representations with zero `[object Object]` and zero `[object Array]`.
   - **Property Editor Fail-Safe Rendering**: In `renderWorkspaceFields()`, complex objects/mappings are formatted with `formatPropertyValueForDisplay()` into a read-only input, tagged with `data-is-complex="true"`, and displayed with a localized badge (`workspace.complex_val_preserved`).
   - **Zero Object-to-String Coercion on Untouched Properties**: In `updateWorkspacePreview()`, harvesting inputs checks `data-is-complex="true"`: if the key is not in `S.wsTouchedKeys`, the 100% native dict/array is drawn directly from `S.currentNote.original_properties[k]`, completely avoiding `.value` stringification.

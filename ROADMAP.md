@@ -20,8 +20,8 @@ Current Task: `M022-T04`
 Last Verified Gate: `M021 — Schema Naming, Versioning, Migration & Governance Profile PASS`  
 Current Blocker: `NONE`  
 Next Action: `Await Human Owner (Dr. J) Windows 10 production UI walkthrough retest and formal Human Acceptance verdict (M022-T04 / M022-AC04).`  
-Implementation: `COMPLETE (Commit 21M HA-F14 Complex / Nested YAML Value Rendering Closure: (1) In app/ui/index.html, introduced formatPropertyValueForDisplay() handling null, boolean, number, string, flat array, nested array, plain object/mapping, and array of objects with zero [object Object] or [object Array]; (2) In renderWorkspaceFields, marked complex objects with data-is-complex="true", rendered compact JSON in read-only input, and added localized badge; in updateWorkspacePreview, preserved untouched complex objects directly from original_properties without string coercion and formatted Semantic Diff cleanly; (3) Added symmetrical i18n key workspace.complex_val_preserved in zh-Hant.json and en.json; (4) Added test_ha_f14_complex_yaml_diff_and_serialization_tests_a_to_f and test_ha_f14_production_javascript_rendering_in_node)`  
-Automated Verification: `PASS (251/251 tests pass, 5,040-note benchmark verified, Vault 100% byte-for-byte read-only and zero mutation)`  
+Implementation: `COMPLETE (Commit 21N HA-F18 Governance Profile Concrete Change-Set Preview Closure: (1) In app/core/governance_profile.py, implemented compute_concrete_changeset(profile_data, mode="merge") calculating per-entity action, display_name, before/after details, and reasons across schemas, scope_assignments, glossary, saved_checks, and preferences; validate_governance_profile now returns plans with both merge and replace concrete plans; (2) In app/ui/index.html, added concrete per-entity changeset card with action pills (新增/更新/衝突/移除/保留/無變更), monospace keys, before->after details, reasons, and dynamic instant re-render on mode select change without re-validation; (3) Added 11 symmetric i18n keys to zh-Hant.json and en.json (557 symmetric keys); (4) Added test_ha_f18_concrete_changeset_tests_a_to_j and test_ha_f18_production_javascript_rendering_in_node in tests/test_v12_human_acceptance_repairs.py)`  
+Automated Verification: `PASS (253/253 tests pass, 5,040-note benchmark verified, Vault 100% byte-for-byte read-only and zero mutation)`  
 Human Verified Acceptance: `NOT YET VERIFIED`  
 Release Readiness: `READY_FOR_HUMAN_RETEST` (Human Owner UI Walkthrough: `NOT YET VERIFIED`)  
 Accepted Limitation: `Windows 11 AMD64 native verification recorded as NOT YET VERIFIED due to test host unavailability (accepted non-blocking release limitation per human approved contract).`  
@@ -306,7 +306,7 @@ Status: `IN_PROGRESS`
 Execute complete Workflow Closure Matrix validation, run full regression suite and 5,000-note benchmark, verify Vault byte-for-byte read-only integrity, conduct human walkthrough on Windows 10 production UI, verify P0 completion and P1 implementation, and package v1.2.0 release artifacts.
 
 ### Tasks
-- [x] `M022-T01` Execute complete Workflow Closure Matrix automated test suite (246/246 tests PASS, includes `tests/test_v12_human_acceptance_repairs.py` validating 29 regression tests across HA-F01 ~ HA-F23 (including HA-F14 complex YAML rendering), real JS Node.js execution of SemVer bumper and compareSchemaVersions, Save Modal multi-version sort, state isolation, workspace reconciliation banner locale rerender, drift exact-path click navigation, personal glossary observed key identity, active vault runtime context rehydration, and storage closure invariants).
+- [x] `M022-T01` Execute complete Workflow Closure Matrix automated test suite (253/253 tests PASS, includes `tests/test_v12_human_acceptance_repairs.py` validating 31 regression tests across HA-F01 ~ HA-F23 (including HA-F14 complex YAML rendering and HA-F18 concrete governance profile change-set preview), real JS Node.js execution of SemVer bumper and compareSchemaVersions, Save Modal multi-version sort, state isolation, workspace reconciliation banner locale rerender, drift exact-path click navigation, personal glossary observed key identity, active vault runtime context rehydration, and storage closure invariants).
 - [x] `M022-T02` Run 5,000-note performance benchmark and record in `evidence/integration/m022_v120_benchmark.json` (authoritative: 5.844s analysis / 5.667s scan over 5,040 notes). `evidence/benchmark.json` is the latest local benchmark (non-authoritative, overwritten each run).
 - [x] `M022-T03` Verify Vault byte-for-byte read-only integrity across all v1.2 workflows (`evidence/integration/m022_v120_vault_readonly.json`).
 - [ ] `M022-T04` Conduct Windows 10 production UI walkthrough acceptance with Human Owner (Dr. J).
@@ -315,7 +315,7 @@ Execute complete Workflow Closure Matrix validation, run full regression suite a
 - [x] `M022-T07` Generate release packaging and record formal release verdict (`scripts/package_v120_release.py`).
 
 ### Acceptance Criteria
-- [x] `M022-AC01` All automated regression and closure tests PASS (246/246).
+- [x] `M022-AC01` All automated regression and closure tests PASS (253/253).
 - [x] `M022-AC02` 5,000-note benchmark recorded (authoritative: `evidence/integration/m022_v120_benchmark.json` — 5.844s analysis / 5.667s scan over 5,040 notes).
 - [x] `M022-AC03` Vault remains byte-for-byte untouched and zero directory created on violation.
 - [ ] `M022-AC04` Human Owner walkthrough PASS (Reserved for Human Owner Dr. J).
