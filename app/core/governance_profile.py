@@ -71,6 +71,367 @@ def export_governance_profile(
     }
 
 
+def compute_concrete_changeset(profile_data: dict[str, Any], mode: str = "merge") -> dict[str, list[dict[str, Any]]]:
+    """Compute deterministic, per-entity change-set plan for merge or replace mode (HA-F18)."""
+    data = profile_data.get("data") or {}
+    schemas = data.get("named_schemas") or []
+    assignments = data.get("scope_assignments") or {}
+    glossary = data.get("user_glossary") or {}
+    saved_checks = data.get("saved_checks") or []
+    prefs = data.get("governance_preferences") or {}
+
+    # 1. Named Schemas
+    # Authority: schema_id, or name + version
+    current_schemas = NAMED_SCHEMA_LIBRARY.storage.load().get("data") or {}
+    schema_entries: list[dict[str, Any]] = []
+    seen_cur_schema_ids = set()
+
+    for s in schemas:
+        if not isinstance(s, dict):
+            continue
+        sid = s.get("id")
+        sname = s.get("name") or "Unnamed"
+        sver = str(s.get("version") or "1.0")
+        props = s.get("properties") or []
+        desc = s.get("description") or ""
+
+        target_cur = None
+        if sid and sid in current_schemas:
+            target_cur = current_schemas[sid]
+            seen_cur_schema_ids.add(sid)
+        else:
+            for cid, cur in current_schemas.items():
+                if cur.get("name") == sname and str(cur.get("version") or "1.0") == sver:
+                    target_cur = cur
+                    seen_cur_schema_ids.add(cid)
+                    break
+
+        disp = f"{sname} v{sver}"
+        if not target_cur:
+            schema_entries.append({
+                "action": "add",
+                "identity": sid or f"{sname}:{sver}",
+                "display_name": disp,
+                "before": None,
+                "after": f"{len(props)} properties",
+                "reason": "New schema to be created",
+            })
+        else:
+            cur_props = target_cur.get("properties") or []
+            cur_desc = target_cur.get("description") or ""
+            if cur_props == props and cur_desc == desc:
+                schema_entries.append({
+                    "action": "unchanged",
+                    "identity": sid or target_cur.get("id"),
+                    "display_name": disp,
+                    "before": f"{len(cur_props)} properties",
+                    "after": f"{len(props)} properties",
+                    "reason": "Identical schema content",
+                })
+            else:
+                schema_entries.append({
+                    "action": "update",
+                    "identity": sid or target_cur.get("id"),
+                    "display_name": disp,
+                    "before": f"{len(cur_props)} properties",
+                    "after": f"{len(props)} properties",
+                    "reason": "Schema properties or description modified",
+                })
+
+    for cid, cur in current_schemas.items():
+        if cid not in seen_cur_schema_ids:
+            cname = cur.get("name") or "Unnamed"
+            cver = str(cur.get("version") or "1.0")
+            cprops = cur.get("properties") or []
+            disp = f"{cname} v{cver}"
+            if mode == "replace":
+                schema_entries.append({
+                    "action": "remove",
+                    "identity": cid,
+                    "display_name": disp,
+                    "before": f"{len(cprops)} properties",
+                    "after": None,
+                    "reason": "Existing schema omitted from profile (replace mode)",
+                })
+            else:
+                schema_entries.append({
+                    "action": "retained",
+                    "identity": cid,
+                    "display_name": disp,
+                    "before": f"{len(cprops)} properties",
+                    "after": f"{len(cprops)} properties",
+                    "reason": "Existing local schema retained (merge mode)",
+                })
+
+    schema_entries.sort(key=lambda x: (x["display_name"], x["action"]))
+
+    # 2. Scope Assignments
+    current_assignments = SCOPE_GOVERNANCE_STORE.storage.load().get("data") or {}
+    scope_entries: list[dict[str, Any]] = []
+    seen_cur_scopes = set()
+
+    for k, v in assignments.items():
+        sid = v.get("schema_id") if isinstance(v, dict) else str(v)
+        sname = v.get("schema_name") if isinstance(v, dict) else ""
+        after_disp = f"{sname} ({sid})" if sname else sid
+        disp_key = "Entire Vault" if k == "entire_vault" else k
+
+        if k not in current_assignments:
+            scope_entries.append({
+                "action": "add",
+                "identity": k,
+                "display_name": disp_key,
+                "before": None,
+                "after": after_disp,
+                "reason": "New scope assignment",
+            })
+        else:
+            seen_cur_scopes.add(k)
+            cur_v = current_assignments[k]
+            cur_sid = cur_v.get("schema_id") if isinstance(cur_v, dict) else str(cur_v)
+            cur_sname = cur_v.get("schema_name") if isinstance(cur_v, dict) else ""
+            before_disp = f"{cur_sname} ({cur_sid})" if cur_sname else cur_sid
+            if cur_sid == sid:
+                scope_entries.append({
+                    "action": "unchanged",
+                    "identity": k,
+                    "display_name": disp_key,
+                    "before": before_disp,
+                    "after": after_disp,
+                    "reason": "Identical scope assignment",
+                })
+            else:
+                scope_entries.append({
+                    "action": "update",
+                    "identity": k,
+                    "display_name": disp_key,
+                    "before": before_disp,
+                    "after": after_disp,
+                    "reason": "Scope assignment target changed",
+                })
+
+    for k, v in current_assignments.items():
+        if k not in seen_cur_scopes:
+            cur_sid = v.get("schema_id") if isinstance(v, dict) else str(v)
+            cur_sname = v.get("schema_name") if isinstance(v, dict) else ""
+            disp_key = "Entire Vault" if k == "entire_vault" else k
+            before_disp = f"{cur_sname} ({cur_sid})" if cur_sname else cur_sid
+            if mode == "replace":
+                scope_entries.append({
+                    "action": "remove",
+                    "identity": k,
+                    "display_name": disp_key,
+                    "before": before_disp,
+                    "after": None,
+                    "reason": "Existing assignment removed (replace mode)",
+                })
+            else:
+                scope_entries.append({
+                    "action": "retained",
+                    "identity": k,
+                    "display_name": disp_key,
+                    "before": before_disp,
+                    "after": before_disp,
+                    "reason": "Existing assignment retained (merge mode)",
+                })
+
+    scope_entries.sort(key=lambda x: (x["display_name"], x["action"]))
+
+    # 3. User Glossary
+    current_glossary = USER_GLOSSARY_STORE.storage.load().get("data") or {}
+    glossary_entries: list[dict[str, Any]] = []
+    seen_cur_glossary = set()
+
+    for k, v in glossary.items():
+        ckey = v.get("canonical_key") if isinstance(v, dict) else k
+        clabel = (v.get("label_zh") or v.get("label_en") or ckey) if isinstance(v, dict) else str(v)
+        if ckey not in current_glossary:
+            glossary_entries.append({
+                "action": "add",
+                "identity": ckey,
+                "display_name": ckey,
+                "before": None,
+                "after": clabel,
+                "reason": "New glossary override",
+            })
+        else:
+            seen_cur_glossary.add(ckey)
+            cur_raw = current_glossary[ckey]
+            cur_label = (cur_raw.get("label_zh") or cur_raw.get("label_en") or ckey) if isinstance(cur_raw, dict) else str(cur_raw)
+            if cur_raw == v:
+                glossary_entries.append({
+                    "action": "unchanged",
+                    "identity": ckey,
+                    "display_name": ckey,
+                    "before": cur_label,
+                    "after": clabel,
+                    "reason": "Identical glossary override",
+                })
+            else:
+                glossary_entries.append({
+                    "action": "update",
+                    "identity": ckey,
+                    "display_name": ckey,
+                    "before": cur_label,
+                    "after": clabel,
+                    "reason": "Glossary override content updated",
+                })
+
+    for k, v in current_glossary.items():
+        if k not in seen_cur_glossary:
+            cur_label = (v.get("label_zh") or v.get("label_en") or k) if isinstance(v, dict) else str(v)
+            if mode == "replace":
+                glossary_entries.append({
+                    "action": "remove",
+                    "identity": k,
+                    "display_name": k,
+                    "before": cur_label,
+                    "after": None,
+                    "reason": "User override removed (replace mode)",
+                })
+            else:
+                glossary_entries.append({
+                    "action": "retained",
+                    "identity": k,
+                    "display_name": k,
+                    "before": cur_label,
+                    "after": cur_label,
+                    "reason": "User override retained (merge mode)",
+                })
+
+    glossary_entries.sort(key=lambda x: (x["display_name"], x["action"]))
+
+    # 4. Saved Checks
+    current_checks_storage = EntityStorage("saved_checks", "saved_checks/saved_relationship_checks.json")
+    cur_checks_data = current_checks_storage.load().get("data") or []
+    current_checks_map = {c.get("id"): c for c in cur_checks_data if isinstance(c, dict) and c.get("id")}
+    check_entries: list[dict[str, Any]] = []
+    seen_cur_checks = set()
+
+    for c in saved_checks:
+        cid = c.get("id") if isinstance(c, dict) else None
+        cname = c.get("name") if isinstance(c, dict) else str(c)
+        if not cid or cid not in current_checks_map:
+            check_entries.append({
+                "action": "add",
+                "identity": cid or cname,
+                "display_name": cname,
+                "before": None,
+                "after": cname,
+                "reason": "New relationship check",
+            })
+        else:
+            seen_cur_checks.add(cid)
+            cur_c = current_checks_map[cid]
+            cur_cname = cur_c.get("name") if isinstance(cur_c, dict) else str(cur_c)
+            if cur_c == c:
+                check_entries.append({
+                    "action": "unchanged",
+                    "identity": cid,
+                    "display_name": cname,
+                    "before": cur_cname,
+                    "after": cname,
+                    "reason": "Identical relationship check",
+                })
+            else:
+                check_entries.append({
+                    "action": "update",
+                    "identity": cid,
+                    "display_name": cname,
+                    "before": cur_cname,
+                    "after": cname,
+                    "reason": "Relationship check query updated",
+                })
+
+    for cid, c in current_checks_map.items():
+        if cid not in seen_cur_checks:
+            cname = c.get("name") if isinstance(c, dict) else str(c)
+            if mode == "replace":
+                check_entries.append({
+                    "action": "remove",
+                    "identity": cid,
+                    "display_name": cname,
+                    "before": cname,
+                    "after": None,
+                    "reason": "Saved check removed (replace mode)",
+                })
+            else:
+                check_entries.append({
+                    "action": "retained",
+                    "identity": cid,
+                    "display_name": cname,
+                    "before": cname,
+                    "after": cname,
+                    "reason": "Saved check retained (merge mode)",
+                })
+
+    check_entries.sort(key=lambda x: (x["display_name"], x["action"]))
+
+    # 5. Governance Preferences (portable keys only: locale, theme; exclude internal _legacy_migrated, HA-F17)
+    current_prefs = PREFERENCES_STORAGE.load().get("data") or {}
+    pref_entries: list[dict[str, Any]] = []
+
+    for pref_key in ("locale", "theme"):
+        cur_val = current_prefs.get(pref_key)
+        incoming_val = prefs.get(pref_key)
+
+        if incoming_val is not None:
+            if cur_val == incoming_val:
+                pref_entries.append({
+                    "action": "unchanged",
+                    "identity": pref_key,
+                    "display_name": pref_key,
+                    "before": cur_val,
+                    "after": incoming_val,
+                    "reason": f"Preference {pref_key} unchanged",
+                })
+            elif cur_val is None:
+                pref_entries.append({
+                    "action": "add",
+                    "identity": pref_key,
+                    "display_name": pref_key,
+                    "before": None,
+                    "after": incoming_val,
+                    "reason": f"Preference {pref_key} set",
+                })
+            else:
+                pref_entries.append({
+                    "action": "update",
+                    "identity": pref_key,
+                    "display_name": pref_key,
+                    "before": cur_val,
+                    "after": incoming_val,
+                    "reason": f"Preference {pref_key} updated",
+                })
+        elif cur_val is not None:
+            if mode == "replace":
+                pref_entries.append({
+                    "action": "remove",
+                    "identity": pref_key,
+                    "display_name": pref_key,
+                    "before": cur_val,
+                    "after": None,
+                    "reason": f"Preference {pref_key} cleared in replace mode",
+                })
+            else:
+                pref_entries.append({
+                    "action": "retained",
+                    "identity": pref_key,
+                    "display_name": pref_key,
+                    "before": cur_val,
+                    "after": cur_val,
+                    "reason": f"Preference {pref_key} retained",
+                })
+
+    return {
+        "schemas": schema_entries,
+        "scope_assignments": scope_entries,
+        "glossary": glossary_entries,
+        "saved_checks": check_entries,
+        "preferences": pref_entries,
+    }
+
+
 def validate_governance_profile(profile_data: dict[str, Any]) -> dict[str, Any]:
     """Validate a profile package structure and checksum before import (REQ-047)."""
     if not isinstance(profile_data, dict):
@@ -111,95 +472,26 @@ def validate_governance_profile(profile_data: dict[str, Any]) -> dict[str, Any]:
         "theme": {"from": current_prefs.get("theme"), "to": prefs.get("theme")} if prefs.get("theme") else None,
     }
 
-    # Compute detailed changeset for all entities (HA-F18)
-    # 1. Named Schemas
-    current_schemas = NAMED_SCHEMA_LIBRARY.storage.load().get("data") or {}
-    schemas_changeset = {"add": [], "update": [], "unchanged": [], "conflict": [], "remove": []}
-    profile_schema_ids = set()
-    for s in schemas:
-        if not isinstance(s, dict):
-            continue
-        sid = s.get("id")
-        sname = s.get("name")
-        sver = str(s.get("version") or "1.0")
-        if sid:
-            profile_schema_ids.add(sid)
-        matching_id = current_schemas.get(sid) if sid else None
-        matching_name_ver = None
-        for cur in current_schemas.values():
-            if cur.get("name") == sname and str(cur.get("version") or "1.0") == sver:
-                matching_name_ver = cur
-                break
-        target = matching_id or matching_name_ver
-        if not target:
-            schemas_changeset["add"].append({"name": sname, "version": sver, "id": sid})
-        else:
-            is_same_props = (target.get("properties") == s.get("properties"))
-            is_same_desc = (target.get("description") == s.get("description"))
-            if is_same_props and is_same_desc:
-                schemas_changeset["unchanged"].append({"name": sname, "version": sver, "id": sid})
-            else:
-                if matching_name_ver and matching_id and matching_name_ver.get("id") != matching_id.get("id"):
-                    schemas_changeset["conflict"].append({"name": sname, "version": sver, "id": sid})
-                else:
-                    schemas_changeset["update"].append({"name": sname, "version": sver, "id": sid})
-    for cid, cur in current_schemas.items():
-        if cid not in profile_schema_ids:
-            schemas_changeset["remove"].append({"name": cur.get("name"), "version": cur.get("version"), "id": cid})
+    # Pre-compute concrete plans for both merge and replace modes (HA-F18)
+    plans = {
+        "merge": compute_concrete_changeset(profile_data, mode="merge"),
+        "replace": compute_concrete_changeset(profile_data, mode="replace"),
+    }
 
-    # 2. Scope Assignments
-    current_assignments = SCOPE_GOVERNANCE_STORE.storage.load().get("data") or {}
-    assignments_changeset = {"add": [], "update": [], "unchanged": [], "conflict": [], "remove": []}
-    for k, v in assignments.items():
-        sid = v.get("schema_id") if isinstance(v, dict) else str(v)
-        if k not in current_assignments:
-            assignments_changeset["add"].append({"scope_key": k, "schema_id": sid})
-        else:
-            cur_v = current_assignments[k]
-            cur_sid = cur_v.get("schema_id") if isinstance(cur_v, dict) else str(cur_v)
-            if cur_sid == sid:
-                assignments_changeset["unchanged"].append({"scope_key": k, "schema_id": sid})
-            else:
-                assignments_changeset["update"].append({"scope_key": k, "from": cur_sid, "to": sid, "schema_id": sid})
-    for k, v in current_assignments.items():
-        if k not in assignments:
-            cur_sid = v.get("schema_id") if isinstance(v, dict) else str(v)
-            assignments_changeset["remove"].append({"scope_key": k, "schema_id": cur_sid})
+    # Aggregate summaries for backward-compatible counts
+    def build_summary(entries: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+        res = {"add": [], "update": [], "unchanged": [], "conflict": [], "remove": []}
+        for e in entries:
+            act = e.get("action")
+            if act in res:
+                res[act].append(e)
+        return res
 
-    # 3. User Glossary
-    current_glossary = USER_GLOSSARY_STORE.storage.load().get("data") or {}
-    glossary_changeset = {"add": [], "update": [], "unchanged": [], "conflict": [], "remove": []}
-    for k, v in glossary.items():
-        ckey = v.get("canonical_key") if isinstance(v, dict) else k
-        clabel = v.get("label_zh") or v.get("label_en") or ckey if isinstance(v, dict) else str(v)
-        if ckey not in current_glossary:
-            glossary_changeset["add"].append({"canonical_key": ckey, "label": clabel})
-        elif current_glossary[ckey] == v:
-            glossary_changeset["unchanged"].append({"canonical_key": ckey, "label": clabel})
-        else:
-            glossary_changeset["update"].append({"canonical_key": ckey, "label": clabel})
-    for k, v in current_glossary.items():
-        if k not in glossary:
-            clabel = v.get("label_zh") or v.get("label_en") or k if isinstance(v, dict) else str(v)
-            glossary_changeset["remove"].append({"canonical_key": k, "label": clabel})
-
-    # 4. Saved Checks
-    current_checks_storage = EntityStorage("saved_checks", "saved_checks/saved_relationship_checks.json")
-    cur_checks_data = current_checks_storage.load().get("data") or []
-    current_checks_map = {c.get("id"): c for c in cur_checks_data if isinstance(c, dict) and c.get("id")}
-    checks_changeset = {"add": [], "update": [], "unchanged": [], "conflict": [], "remove": []}
-    for c in saved_checks:
-        cid = c.get("id") if isinstance(c, dict) else None
-        cname = c.get("name") if isinstance(c, dict) else str(c)
-        if cid not in current_checks_map:
-            checks_changeset["add"].append({"id": cid, "name": cname})
-        elif current_checks_map[cid] == c:
-            checks_changeset["unchanged"].append({"id": cid, "name": cname})
-        else:
-            checks_changeset["update"].append({"id": cid, "name": cname})
-    for cid, c in current_checks_map.items():
-        if not any(isinstance(sc, dict) and sc.get("id") == cid for sc in saved_checks):
-            checks_changeset["remove"].append({"id": cid, "name": c.get("name") if isinstance(c, dict) else str(c)})
+    merge_plan = plans["merge"]
+    schemas_changeset = build_summary(merge_plan["schemas"])
+    assignments_changeset = build_summary(merge_plan["scope_assignments"])
+    glossary_changeset = build_summary(merge_plan["glossary"])
+    checks_changeset = build_summary(merge_plan["saved_checks"])
 
     return {
         "valid": True,
@@ -219,6 +511,7 @@ def validate_governance_profile(profile_data: dict[str, Any]) -> dict[str, Any]:
             "checks": checks_changeset,
             "saved_checks": checks_changeset,
         },
+        "plans": plans,
         "exported_at": meta.get("exported_at"),
     }
 

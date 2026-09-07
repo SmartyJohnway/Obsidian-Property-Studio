@@ -544,5 +544,16 @@
   "st.tags": "Tags",
   "st.note_link": "Note Link ([[...]])",
   "st.note_link_list": "Note Link List",
-  "workspace.complex_val_preserved": "Complex value — preserved"
+  "workspace.complex_val_preserved": "Complex value — preserved",
+  "profile.action_unchanged": "Unchanged",
+  "profile.action_add": "Add",
+  "profile.action_update": "Update",
+  "profile.action_conflict": "Conflict",
+  "profile.action_remove": "Remove",
+  "profile.action_retained": "Retained",
+  "profile.label_before": "Before",
+  "profile.label_after": "After",
+  "profile.concrete_changeset_title": "Entity-Level Changeset:",
+  "profile.cat_preferences": "Preferences",
+  "profile.empty_category": "(No changes or items)"
 }

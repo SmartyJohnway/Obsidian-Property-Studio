@@ -3064,3 +3064,403 @@ runTests().catch(e => { console.error(e); process.exit(1); });
     assert data["captured_location_city"] == "Dayton"
     assert data["diff_has_object_object"] is False
     assert data["diff_has_dayton"] is True
+
+
+# ==============================================================================
+# Commit 21N: HA-F18 Governance Profile Concrete Change-Set Preview Closure Tests
+# ==============================================================================
+
+def test_ha_f18_concrete_changeset_tests_a_to_j(tmp_path, monkeypatch):
+    """TEST A to J: Comprehensive backend tests for compute_concrete_changeset & validate_governance_profile:
+    TEST A: Same-profile validation returns all unchanged across schemas, scopes, checks, preferences
+    TEST B: Merge add/update semantics
+    TEST C: Merge retains local-only (action == 'retained', zero remove)
+    TEST D: Replace marks local-only as remove
+    TEST E: Scope assignment before/after resolution
+    TEST F: Glossary update/add/remove
+    TEST G: Saved checks retain/remove
+    TEST H: Preferences update/unchanged, internal marker _legacy_migrated excluded
+    TEST I: Preview is non-mutating (state before and after validation identical)
+    TEST J: Preview/Import parity for replace scenario
+    """
+    import json
+    from app.core.governance_profile import (
+        export_governance_profile,
+        validate_governance_profile,
+        import_governance_profile,
+        compute_concrete_changeset,
+        compute_profile_checksum,
+        PREFERENCES_STORAGE
+    )
+    from app.core.named_schemas import NAMED_SCHEMA_LIBRARY
+    from app.core.scope_governance import SCOPE_GOVERNANCE_STORE
+    from app.core.user_glossary import USER_GLOSSARY_STORE, UserGlossaryOverride
+    from app.storage.local_storage import EntityStorage
+
+    storage_dir = tmp_path / "gov_data"
+    storage_dir.mkdir()
+    monkeypatch.setenv("PROPERTY_STUDIO_STORAGE_DIR", str(storage_dir))
+
+    # Re-bind storage instances to isolated test directory
+    NAMED_SCHEMA_LIBRARY.storage = EntityStorage("named_schemas", "schemas/named_schemas.json")
+    SCOPE_GOVERNANCE_STORE.storage = EntityStorage("scope_governance", "schemas/scope_assignments.json")
+    USER_GLOSSARY_STORE.storage = EntityStorage("user_glossary", "glossary/user_glossary.json")
+    PREFERENCES_STORAGE.data_file = storage_dir / "config/preferences.json"
+    # Ensure directory exists for preferences
+    PREFERENCES_STORAGE.data_file.parent.mkdir(parents=True, exist_ok=True)
+
+    # Seed baseline local state
+    NAMED_SCHEMA_LIBRARY.create_schema({
+        "id": "schema-a-uuid",
+        "name": "SchemaA",
+        "version": "1.0",
+        "description": "Initial A",
+        "properties": [{"name": "status", "type": "text"}]
+    })
+    SCOPE_GOVERNANCE_STORE.assign_schema("Projects", "schema-a-uuid", "SchemaA")
+    USER_GLOSSARY_STORE.save_override(UserGlossaryOverride(
+        canonical_key="status",
+        label_zh="狀態",
+        guidance="Current status"
+    ))
+    saved_checks_storage = EntityStorage("saved_checks", "saved_checks/saved_relationship_checks.json")
+    saved_checks_storage.save([
+        {"id": "check-1", "name": "Missing Status", "filter_scope": {"type": "folder", "pattern": "Projects"}}
+    ])
+    PREFERENCES_STORAGE.save({
+        "locale": "zh-Hant",
+        "theme": "dark",
+        "_legacy_migrated": True  # Internal marker, must be ignored
+    })
+
+    # --- TEST A: Same-profile validation -> all unchanged ---
+    exported = export_governance_profile(
+        saved_checks_list=saved_checks_storage.load().get("data")
+    )
+
+    report_a = validate_governance_profile(exported)
+    assert report_a["valid"] is True
+    assert "plans" in report_a
+    merge_plan_a = report_a["plans"]["merge"]
+    replace_plan_a = report_a["plans"]["replace"]
+
+    # In both merge & replace, identical profile should have only 'unchanged'
+    for cat in ["schemas", "scope_assignments", "glossary", "saved_checks", "preferences"]:
+        for item in merge_plan_a[cat]:
+            assert item["action"] == "unchanged", f"Expected unchanged in {cat}, got {item}"
+        for item in replace_plan_a[cat]:
+            assert item["action"] == "unchanged", f"Expected unchanged in {cat}, got {item}"
+
+    # Verify no _legacy_migrated in preferences
+    pref_keys = [p["identity"] for p in merge_plan_a["preferences"]]
+    assert "_legacy_migrated" not in pref_keys
+
+    # --- TEST B: Merge add/update semantics ---
+    # Prepare profile with an updated SchemaA and a new SchemaB
+    profile_b = json.loads(json.dumps(exported))
+    profile_b["data"]["named_schemas"].append({
+        "id": "schema-b-uuid",
+        "name": "SchemaB",
+        "description": "Brand new schema",
+        "version": "1.0",
+        "properties": [{"name": "due_date", "type": "date"}]
+    })
+    # Update SchemaA description in profile
+    profile_b["data"]["named_schemas"][0]["description"] = "Updated Description A"
+    profile_b["profile_metadata"]["sha256_checksum"] = compute_profile_checksum(profile_b["data"])
+
+    plan_b = compute_concrete_changeset(profile_b, mode="merge")
+    schema_actions = {s["display_name"]: s for s in plan_b["schemas"]}
+    assert schema_actions["SchemaA v1.0"]["action"] == "update"
+    assert schema_actions["SchemaB v1.0"]["action"] == "add"
+    assert schema_actions["SchemaB v1.0"]["before"] is None
+
+    # --- TEST C: Merge retains local-only (action == 'retained', zero remove) ---
+    # Profile with NO schemas
+    profile_c = json.loads(json.dumps(exported))
+    profile_c["data"]["named_schemas"] = []
+    profile_c["profile_metadata"]["sha256_checksum"] = compute_profile_checksum(profile_c["data"])
+    plan_c = compute_concrete_changeset(profile_c, mode="merge")
+    assert len(plan_c["schemas"]) == 1
+    assert plan_c["schemas"][0]["action"] == "retained"
+    assert plan_c["schemas"][0]["display_name"] == "SchemaA v1.0"
+    # Ensure zero 'remove' actions anywhere in merge
+    for cat in plan_c:
+        for ent in plan_c[cat]:
+            assert ent["action"] != "remove"
+
+    # --- TEST D: Replace marks local-only as remove ---
+    plan_d = compute_concrete_changeset(profile_c, mode="replace")
+    assert len(plan_d["schemas"]) == 1
+    assert plan_d["schemas"][0]["action"] == "remove"
+    assert plan_d["schemas"][0]["display_name"] == "SchemaA v1.0"
+
+    # --- TEST E: Scope assignment before/after resolution ---
+    profile_e = json.loads(json.dumps(exported))
+    # Change scope assignment from SchemaA to SchemaB
+    profile_e["data"]["scope_assignments"]["Projects"] = {
+        "schema_id": "schema-b-uuid",
+        "schema_name": "SchemaB"
+    }
+    plan_e = compute_concrete_changeset(profile_e, mode="merge")
+    scope_items = plan_e["scope_assignments"]
+    assert len(scope_items) == 1
+    assert scope_items[0]["action"] == "update"
+    assert "SchemaA" in scope_items[0]["before"]
+    assert "SchemaB" in scope_items[0]["after"]
+
+    # --- TEST F: Glossary update/add/remove ---
+    profile_f = json.loads(json.dumps(exported))
+    profile_f["data"]["user_glossary"] = {
+        "priority": {"canonical_key": "priority", "label_zh": "優先度"},  # add
+        "status": {"canonical_key": "status", "label_zh": "新狀態", "guidance": "Updated guidance"}  # update
+    }
+    plan_f_replace = compute_concrete_changeset(profile_f, mode="replace")
+    gloss_actions = {g["identity"]: g for g in plan_f_replace["glossary"]}
+    assert gloss_actions["priority"]["action"] == "add"
+    assert gloss_actions["status"]["action"] == "update"
+
+    # --- TEST G: Saved checks retain vs remove ---
+    profile_g = json.loads(json.dumps(exported))
+    profile_g["data"]["saved_checks"] = []
+    plan_g_merge = compute_concrete_changeset(profile_g, mode="merge")
+    assert plan_g_merge["saved_checks"][0]["action"] == "retained"
+
+    plan_g_replace = compute_concrete_changeset(profile_g, mode="replace")
+    assert plan_g_replace["saved_checks"][0]["action"] == "remove"
+
+    # --- TEST H: Preferences update/unchanged, no _legacy_migrated ---
+    profile_h = json.loads(json.dumps(exported))
+    profile_h["data"]["governance_preferences"] = {
+        "locale": "en",
+        "theme": "dark",
+        "_legacy_migrated": False  # Should be ignored completely
+    }
+    plan_h = compute_concrete_changeset(profile_h, mode="merge")
+    pref_actions = {p["identity"]: p for p in plan_h["preferences"]}
+    assert pref_actions["locale"]["action"] == "update"
+    assert pref_actions["locale"]["before"] == "zh-Hant"
+    assert pref_actions["locale"]["after"] == "en"
+    assert pref_actions["theme"]["action"] == "unchanged"
+    assert "_legacy_migrated" not in pref_actions
+
+    # --- TEST I: Preview is non-mutating ---
+    def dir_snapshot():
+        snap = {}
+        for root, _, files in os.walk(storage_dir):
+            for f in files:
+                p = os.path.join(root, f)
+                with open(p, "rb") as fh:
+                    snap[p] = fh.read()
+        return snap
+
+    snap_before = dir_snapshot()
+    # Call validate_governance_profile with multiple modes and complex profiles
+    _ = validate_governance_profile(profile_b)
+    snap_after = dir_snapshot()
+    assert snap_before == snap_after, "validate_governance_profile mutated storage files!"
+
+    # --- TEST J: Preview/Import parity for replace scenario ---
+    import_result = import_governance_profile(profile_c, mode="replace")
+    assert import_result["status"] == "imported"
+    # SchemaA should now be gone
+    assert len(NAMED_SCHEMA_LIBRARY.list_schemas()) == 0
+
+
+def test_ha_f18_production_javascript_rendering_in_node():
+    """TEST K: Production JavaScript rendering test in Node.js for renderProfilePreviewArea:
+    - Renders concrete entity rows
+    - Mode selector switch from merge to replace dynamically displays remove rows
+    - Switching back to merge dynamically removes remove rows and displays retained
+    - Action badges use correct translated labels without raw i18n key leakage
+    """
+    import subprocess
+    import json
+
+    with open("app/ui/index.html", "r", encoding="utf-8") as f:
+        html = f.read()
+
+    js_start = html.find("<script>")
+    js_end = html.rfind("</script>")
+    assert js_start != -1 and js_end != -1
+    full_js = html[js_start + len("<script>"):js_end]
+
+    with open("app/ui/locales/zh-Hant.json", "r", encoding="utf-8") as f:
+        zh_dict = json.load(f)
+
+    harness = """
+const zhLocales = """ + json.dumps(zh_dict) + """;
+
+const elements = {};
+function createMockEl(id) {
+  const el = {
+    id: id,
+    _innerHTML: '',
+    get innerHTML() { return this._innerHTML; },
+    set innerHTML(val) {
+      this._innerHTML = val;
+      const idMatches = [...val.matchAll(/<([a-zA-Z0-9_-]+)[^>]*id=["']([^"']+)["'][^>]*>([\s\S]*?)<\/\1>/g)];
+      for (const m of idMatches) {
+        const childEl = elements[m[2]] || createMockEl(m[2]);
+        childEl.innerHTML = m[3];
+        elements[m[2]] = childEl;
+      }
+      const allIdMatches = val.matchAll(/id=["']([^"']+)["']/g);
+      for (const m of allIdMatches) {
+        if (!elements[m[1]]) {
+          elements[m[1]] = createMockEl(m[1]);
+        }
+      }
+    },
+    value: '',
+    style: {},
+    children: [],
+    attributes: {},
+    setAttribute: function(k, v) { this.attributes[k] = v; },
+    getAttribute: function(k) { return this.attributes[k]; },
+    addEventListener: function(evt, fn) { this['on' + evt] = fn; },
+    querySelectorAll: function(sel) { return []; },
+    querySelector: function(sel) { return null; }
+  };
+  elements[id] = el;
+  return el;
+}
+
+function getEl(id) {
+  if (!elements[id]) elements[id] = createMockEl(id);
+  return elements[id];
+}
+
+global.$ = (id) => getEl(id);
+global.document = {
+  getElementById: (id) => getEl(id),
+  querySelectorAll: (sel) => [],
+  createElement: (tag) => createMockEl("created_" + tag),
+  addEventListener: (evt, fn) => {}
+};
+global.window = {
+  addEventListener: (evt, fn) => {}
+};
+Object.assign(global.window, global);
+
+global.S = {
+  lang: 'zh-Hant',
+  currentSchema: null,
+  activeScan: null,
+  lastProfileValidation: null
+};
+
+global.I18N = {
+  currentLang: 'zh-Hant',
+  dict: zhLocales,
+  t: function(key, params) {
+    let val = this.dict[key] || key;
+    if (params) {
+      Object.keys(params).forEach(k => {
+        val = val.replace(new RegExp("{" + k + "}", "g"), params[k]);
+      });
+    }
+    return val;
+  }
+};
+
+global.esc = (s) => (s ? String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '');
+global.toast = () => {};
+global.api = () => Promise.resolve({});
+"""
+
+    test_driver = """
+async function runTests() {
+  const results = {};
+
+  const valReport = {
+    valid: true,
+    plans: {
+      merge: {
+        schemas: [
+          { action: "update", identity: "s1-uuid", display_name: "ProjectSchema", before: "1 prop", after: "2 props", reason: "Incoming version is newer" },
+          { action: "retained", identity: "s2-uuid", display_name: "OldLocalSchema", before: "1 prop", after: "1 prop", reason: "Local-only entity retained in merge mode" }
+        ],
+        scope_assignments: [],
+        glossary: [
+          { action: "add", identity: "status", display_name: "status", before: null, after: "State", reason: "New canonical term" }
+        ],
+        saved_checks: [],
+        preferences: [
+          { action: "unchanged", identity: "locale", display_name: "locale", before: "zh-Hant", after: "zh-Hant", reason: "Identical value" }
+        ]
+      },
+      replace: {
+        schemas: [
+          { action: "update", identity: "s1-uuid", display_name: "ProjectSchema", before: "1 prop", after: "2 props", reason: "Incoming version is newer" },
+          { action: "remove", identity: "s2-uuid", display_name: "OldLocalSchema", before: "1 prop", after: null, reason: "Local-only entity removed in replace mode" }
+        ],
+        scope_assignments: [],
+        glossary: [
+          { action: "add", identity: "status", display_name: "status", before: null, after: "State", reason: "New canonical term" }
+        ],
+        saved_checks: [],
+        preferences: [
+          { action: "unchanged", identity: "locale", display_name: "locale", before: "zh-Hant", after: "zh-Hant", reason: "Identical value" }
+        ]
+      }
+    },
+    changeset: {
+      schemas: { add: [], update: ["ProjectSchema"], conflict: [], unchanged: [] },
+      scope_assignments: { add: [], update: [], conflict: [], unchanged: [] },
+      glossary: { add: ["status"], update: [], conflict: [], unchanged: [] },
+      saved_checks: { add: [], update: [], conflict: [], unchanged: [] }
+    },
+    preferences_preview: { has_changes: false, diff: {} }
+  };
+
+  S.lastProfileValidation = { valReport: valReport, parsed: {}, mode: "merge" };
+  window.renderProfilePreviewArea(valReport, {});
+
+  const previewEl = getEl("profilePreviewArea");
+
+  const mergeHtml = previewEl.innerHTML;
+  results.merge_has_concrete_title = mergeHtml.includes(I18N.t("profile.concrete_changeset_title"));
+  results.merge_has_project_schema = mergeHtml.includes("ProjectSchema");
+  results.merge_has_old_local_schema = mergeHtml.includes("OldLocalSchema");
+  results.merge_has_retained_badge = mergeHtml.includes(`>${I18N.t("profile.action_retained")}<`);
+  results.merge_has_remove_badge = mergeHtml.includes(`>${I18N.t("profile.action_remove")}<`);
+  results.merge_has_raw_i18n = mergeHtml.includes("profile.action_") || mergeHtml.includes("profile.cat_");
+
+  // Now simulate switching mode select to 'replace'
+  const modeSel = getEl("profileImportModeSelect");
+  modeSel.value = "replace";
+  modeSel.onchange({ target: { value: "replace" } });
+
+  const replaceHtml = previewEl.innerHTML;
+  results.replace_has_remove_badge = replaceHtml.includes(`>${I18N.t("profile.action_remove")}<`);
+  results.replace_has_retained_badge = replaceHtml.includes(`>${I18N.t("profile.action_retained")}<`);
+
+  // Now simulate switching mode select back to 'merge'
+  modeSel.value = "merge";
+  modeSel.onchange({ target: { value: "merge" } });
+  const backToMergeHtml = previewEl.innerHTML;
+  results.back_to_merge_has_remove = backToMergeHtml.includes(`>${I18N.t("profile.action_remove")}<`);
+  results.back_to_merge_has_retained = backToMergeHtml.includes(`>${I18N.t("profile.action_retained")}<`);
+
+  console.log(JSON.stringify(results));
+}
+
+runTests().catch(e => { console.error(e); process.exit(1); });
+"""
+
+    proc = subprocess.run(["node"], input=harness + full_js + test_driver, capture_output=True, text=True, check=True, encoding="utf-8")
+    data = json.loads(proc.stdout.strip())
+
+    assert data["merge_has_concrete_title"] is True
+    assert data["merge_has_project_schema"] is True
+    assert data["merge_has_old_local_schema"] is True
+    assert data["merge_has_retained_badge"] is True
+    assert data["merge_has_remove_badge"] is False
+    assert data["merge_has_raw_i18n"] is False
+
+    assert data["replace_has_remove_badge"] is True
+    assert data["replace_has_retained_badge"] is False
+
+    assert data["back_to_merge_has_remove"] is False
+    assert data["back_to_merge_has_retained"] is True

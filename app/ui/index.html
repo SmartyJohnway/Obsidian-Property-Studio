@@ -2125,12 +2125,20 @@ window.openSchemaMigrationModal = async function(sourceId) {
   }
 };
 
-window.renderProfilePreviewArea = function(valReport, parsed) {
+function renderProfilePreviewArea(valReport, parsed) {
+  window.renderProfilePreviewArea = renderProfilePreviewArea;
   if (!valReport) return;
   const previewArea = document.getElementById("profilePreviewArea");
   if (!previewArea) return;
   previewArea.style.display = "block";
 
+  const selectedMode = (S.lastProfileValidation && S.lastProfileValidation.mode) ? S.lastProfileValidation.mode : (document.getElementById("profileImportModeSelect") ? document.getElementById("profileImportModeSelect").value : "merge");
+
+  // Retrieve concrete entity plan for selected mode (HA-F18)
+  const plans = valReport.plans || {};
+  const currentPlan = plans[selectedMode] || plans["merge"] || {};
+
+  // 1. Preferences Summary & Diff
   const prefPrev = valReport.preferences_preview;
   let prefChangeHtml = "";
   if (prefPrev && prefPrev.has_changes) {
@@ -2142,22 +2150,23 @@ window.renderProfilePreviewArea = function(valReport, parsed) {
     prefChangeHtml = `<div style="margin-top:8px; font-size:12px; color:var(--muted)">✓ ${esc(I18N.t("profile.preview_no_prefs_change"))}</div>`;
   }
 
-  const cs = valReport.changeset || {};
-  const formatCategoryChanges = (catName, catData) => {
-    if (!catData) return '';
-    const formatItems = (arr) => {
-      if (!arr || !arr.length) return '';
-      return arr.map(item => {
-        if (typeof item === 'string') return item;
-        return item.name || item.canonical_key || item.scope_key || item.id || JSON.stringify(item);
-      }).join(", ");
-    };
+  // 2. Changeset Breakdown (Category Summaries)
+  // Derive category counts dynamically from currentPlan
+  const formatCategoryChanges = (catName, entityList) => {
+    const list = entityList || [];
+    const counts = { add: 0, update: 0, conflict: 0, unchanged: 0, remove: 0, retained: 0 };
+    list.forEach(e => {
+      if (counts[e.action] !== undefined) counts[e.action]++;
+    });
+
     const parts = [];
-    if (catData.add && catData.add.length) parts.push(`<span class="pill ok">${esc(I18N.t("profile.stat_add", { count: catData.add.length, items: formatItems(catData.add) }))}</span>`);
-    if (catData.update && catData.update.length) parts.push(`<span class="pill warn">${esc(I18N.t("profile.stat_update", { count: catData.update.length, items: formatItems(catData.update) }))}</span>`);
-    if (catData.conflict && catData.conflict.length) parts.push(`<span class="pill alert">${esc(I18N.t("profile.stat_conflict", { count: catData.conflict.length, items: formatItems(catData.conflict) }))}</span>`);
-    if (catData.unchanged && catData.unchanged.length) parts.push(`<span class="pill muted">${esc(I18N.t("profile.stat_unchanged", { count: catData.unchanged.length }))}</span>`);
-    if (catData.remove && catData.remove.length) parts.push(`<span class="pill alert">${esc(I18N.t("profile.stat_remove", { count: catData.remove.length }))}</span>`);
+    if (counts.add) parts.push(`<span class="pill ok">+${counts.add} ${esc(I18N.t("profile.action_add"))}</span>`);
+    if (counts.update) parts.push(`<span class="pill warn">~${counts.update} ${esc(I18N.t("profile.action_update"))}</span>`);
+    if (counts.conflict) parts.push(`<span class="pill alert">!${counts.conflict} ${esc(I18N.t("profile.action_conflict"))}</span>`);
+    if (counts.unchanged) parts.push(`<span class="pill muted">=${counts.unchanged} ${esc(I18N.t("profile.action_unchanged"))}</span>`);
+    if (counts.remove) parts.push(`<span class="pill alert">-${counts.remove} ${esc(I18N.t("profile.action_remove"))}</span>`);
+    if (counts.retained) parts.push(`<span class="pill muted">${counts.retained} ${esc(I18N.t("profile.action_retained"))}</span>`);
+
     if (!parts.length) return `<div style="font-size:12px; color:var(--muted)">${esc(I18N.t("profile.no_changes", { category: catName }))}</div>`;
     return `<div style="margin-bottom:6px; font-size:12px"><strong>${catName}:</strong> ${parts.join(" ")}</div>`;
   };
@@ -2165,15 +2174,81 @@ window.renderProfilePreviewArea = function(valReport, parsed) {
   let changesetHtml = `
     <div style="margin-top:10px; padding:8px; background:var(--panel); border-radius:var(--radius-sm)">
       <div style="font-size:12px; font-weight:700; margin-bottom:6px">${esc(I18N.t("profile.breakdown_title"))}</div>
-      ${formatCategoryChanges(I18N.t("profile.cat_schemas"), cs.schemas)}
-      ${formatCategoryChanges(I18N.t("profile.cat_scopes"), cs.scope_assignments || cs.assignments)}
-      ${formatCategoryChanges(I18N.t("profile.cat_glossary"), cs.glossary_overrides || cs.glossary)}
-      ${formatCategoryChanges(I18N.t("profile.cat_checks"), cs.saved_checks || cs.checks)}
+      ${formatCategoryChanges(I18N.t("profile.cat_schemas"), currentPlan.schemas)}
+      ${formatCategoryChanges(I18N.t("profile.cat_scopes"), currentPlan.scope_assignments)}
+      ${formatCategoryChanges(I18N.t("profile.cat_glossary"), currentPlan.glossary)}
+      ${formatCategoryChanges(I18N.t("profile.cat_checks"), currentPlan.saved_checks)}
+      ${formatCategoryChanges(I18N.t("profile.cat_preferences"), currentPlan.preferences)}
     </div>
   `;
 
-  const existingModeSel = document.getElementById("profileImportModeSelect");
-  const selectedMode = existingModeSel ? existingModeSel.value : ((S.lastProfileValidation && S.lastProfileValidation.mode) ? S.lastProfileValidation.mode : "merge");
+  // 3. Concrete Per-Entity Changeset Section (HA-F18)
+  const actionBadge = (act) => {
+    if (act === "add") return `<span class="pill ok" style="font-size:10.5px">${esc(I18N.t("profile.action_add"))}</span>`;
+    if (act === "update") return `<span class="pill warn" style="font-size:10.5px">${esc(I18N.t("profile.action_update"))}</span>`;
+    if (act === "conflict") return `<span class="pill alert" style="font-size:10.5px">${esc(I18N.t("profile.action_conflict"))}</span>`;
+    if (act === "remove") return `<span class="pill alert" style="font-size:10.5px">${esc(I18N.t("profile.action_remove"))}</span>`;
+    if (act === "retained") return `<span class="pill muted" style="font-size:10.5px">${esc(I18N.t("profile.action_retained"))}</span>`;
+    return `<span class="pill muted" style="font-size:10.5px">${esc(I18N.t("profile.action_unchanged"))}</span>`;
+  };
+
+  const renderEntityRows = (entityList) => {
+    if (!entityList || !entityList.length) {
+      return `<div style="font-size:11.5px; color:var(--muted); padding:4px 8px">${esc(I18N.t("profile.empty_category"))}</div>`;
+    }
+    return entityList.map(item => {
+      let detail = "";
+      if (item.action === "update" && (item.before !== undefined || item.after !== undefined)) {
+        detail = `<span class="muted" style="margin-left:6px; font-size:11px">${esc(I18N.t("profile.label_before"))}: <code>${esc(item.before)}</code> → ${esc(I18N.t("profile.label_after"))}: <strong>${esc(item.after)}</strong></span>`;
+      } else if (item.before !== undefined && item.after !== undefined && item.before !== item.after) {
+        detail = `<span class="muted" style="margin-left:6px; font-size:11px">${esc(item.before)} → ${esc(item.after)}</span>`;
+      }
+      return `
+        <div class="entity-change-row" data-action="${esc(item.action)}" style="display:flex; justify-content:space-between; align-items:center; padding:4px 8px; border-bottom:1px solid var(--border); font-size:12px">
+          <div style="display:flex; align-items:center; gap:8px; overflow:hidden">
+            ${actionBadge(item.action)}
+            <strong style="font-family:var(--font-mono, monospace)">${esc(item.display_name || item.identity)}</strong>
+            ${detail}
+          </div>
+          <span class="muted" style="font-size:11px; max-width:200px; text-align:right; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${esc(item.reason || '')}</span>
+        </div>
+      `;
+    }).join("");
+  };
+
+  let concreteHtml = `
+    <div id="profileConcreteChangeset" style="margin-top:10px; max-height:280px; overflow-y:auto; padding:8px; background:var(--panel); border:1px solid var(--border); border-radius:var(--radius-sm)">
+      <div style="font-size:12px; font-weight:700; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center">
+        <span>${esc(I18N.t("profile.concrete_changeset_title"))}</span>
+        <span class="pill" style="font-size:10px">${selectedMode.toUpperCase()}</span>
+      </div>
+
+      <div style="margin-bottom:8px">
+        <div style="font-size:11.5px; font-weight:600; color:var(--text-muted); margin-bottom:4px">📚 ${esc(I18N.t("profile.cat_schemas"))}</div>
+        <div style="background:var(--panel2); border-radius:var(--radius-sm)">${renderEntityRows(currentPlan.schemas)}</div>
+      </div>
+
+      <div style="margin-bottom:8px">
+        <div style="font-size:11.5px; font-weight:600; color:var(--text-muted); margin-bottom:4px">🎯 ${esc(I18N.t("profile.cat_scopes"))}</div>
+        <div style="background:var(--panel2); border-radius:var(--radius-sm)">${renderEntityRows(currentPlan.scope_assignments)}</div>
+      </div>
+
+      <div style="margin-bottom:8px">
+        <div style="font-size:11.5px; font-weight:600; color:var(--text-muted); margin-bottom:4px">📖 ${esc(I18N.t("profile.cat_glossary"))}</div>
+        <div style="background:var(--panel2); border-radius:var(--radius-sm)">${renderEntityRows(currentPlan.glossary)}</div>
+      </div>
+
+      <div style="margin-bottom:8px">
+        <div style="font-size:11.5px; font-weight:600; color:var(--text-muted); margin-bottom:4px">🔗 ${esc(I18N.t("profile.cat_checks"))}</div>
+        <div style="background:var(--panel2); border-radius:var(--radius-sm)">${renderEntityRows(currentPlan.saved_checks)}</div>
+      </div>
+
+      <div>
+        <div style="font-size:11.5px; font-weight:600; color:var(--text-muted); margin-bottom:4px">⚙️ ${esc(I18N.t("profile.cat_preferences"))}</div>
+        <div style="background:var(--panel2); border-radius:var(--radius-sm)">${renderEntityRows(currentPlan.preferences)}</div>
+      </div>
+    </div>
+  `;
 
   previewArea.innerHTML = `
     <div class="card" style="background:var(--panel2); margin-bottom:12px">
@@ -2189,6 +2264,7 @@ window.renderProfilePreviewArea = function(valReport, parsed) {
       </div>
       ${prefChangeHtml}
       ${changesetHtml}
+      ${concreteHtml}
     </div>
 
     <div style="display:flex; justify-content:space-between; align-items:center">
@@ -2206,9 +2282,12 @@ window.renderProfilePreviewArea = function(valReport, parsed) {
   const modeSel = document.getElementById("profileImportModeSelect");
   if (modeSel) {
     modeSel.onchange = (e) => {
+      const newMode = e.target.value;
       if (S.lastProfileValidation) {
-        S.lastProfileValidation.mode = e.target.value;
+        S.lastProfileValidation.mode = newMode;
       }
+      // Re-render preview immediately for selected mode without re-parsing or re-validating (HA-F18)
+      renderProfilePreviewArea(valReport, parsed);
     };
   }
 
@@ -2227,8 +2306,8 @@ window.renderProfilePreviewArea = function(valReport, parsed) {
         if (typeof updateScopeSchemaAssignmentUI === 'function') {
           await updateScopeSchemaAssignmentUI();
         }
-      } catch (e) {
-        toast(e.message, true);
+      } catch (err) {
+        toast(err.message, true);
       }
     };
   }

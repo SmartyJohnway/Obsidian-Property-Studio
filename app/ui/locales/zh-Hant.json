@@ -544,5 +544,16 @@
   "st.tags": "Tags (標籤清單)",
   "st.note_link": "Note Link (筆記連結 [[...]])",
   "st.note_link_list": "Note Link List (筆記連結清單)",
-  "workspace.complex_val_preserved": "複合值 — 保留原值"
+  "workspace.complex_val_preserved": "複合值 — 保留原值",
+  "profile.action_unchanged": "無變更",
+  "profile.action_add": "新增",
+  "profile.action_update": "更新",
+  "profile.action_conflict": "衝突",
+  "profile.action_remove": "移除",
+  "profile.action_retained": "保留",
+  "profile.label_before": "變更前",
+  "profile.label_after": "變更後",
+  "profile.concrete_changeset_title": "實體變更清單 (Entity-Level Changeset)：",
+  "profile.cat_preferences": "偏好設定 (Preferences)",
+  "profile.empty_category": "(無任何變更或項目)"
 }
