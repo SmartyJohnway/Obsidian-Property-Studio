@@ -2585,19 +2585,82 @@ async function rehydrateRuntimeContext() {
         S.scope = ctx.scope;
       }
       S.notesInScope = typeof ctx.notes_in_scope === "number" ? ctx.notes_in_scope : 0;
+      S.vaultSummary = ctx.summary || null;
+      S.uniquePropertyCount = typeof ctx.unique_property_count === "number" ? ctx.unique_property_count : 0;
+      S.lastScanSeconds = ctx.scan_seconds;
     } else {
       S.scanned = false;
       S.vaultPath = "";
       S.vaultName = "";
+      S.vaultSummary = null;
+      S.uniquePropertyCount = 0;
     }
   } catch (e) {
     console.warn("Failed to query /api/runtime/context:", e);
     S.scanned = false;
     S.vaultPath = "";
     S.vaultName = "";
+    S.vaultSummary = null;
+    S.uniquePropertyCount = 0;
   }
   updateContextBarLabels();
 }
+
+function renderScopeControlsFromState() {
+  const scope = S.scope || { mode: "entire_vault" };
+  const mode = scope.mode || "entire_vault";
+  if ($("scopeModeSelect")) $("scopeModeSelect").value = mode;
+
+  if (mode === "folders") {
+    if ($("scopeFolderSelector")) $("scopeFolderSelector").style.display = "block";
+    if ($("scopeSingleNoteSelector")) $("scopeSingleNoteSelector").style.display = "none";
+    if ($("scopeIncludeSubfolders")) $("scopeIncludeSubfolders").checked = scope.include_subfolders !== false;
+    const activeFolders = new Set(scope.folders || []);
+    document.querySelectorAll(".scope-folder-cb").forEach(cb => {
+      cb.checked = activeFolders.has(cb.value);
+    });
+  } else if (mode === "single_note") {
+    if ($("scopeFolderSelector")) $("scopeFolderSelector").style.display = "none";
+    if ($("scopeSingleNoteSelector")) $("scopeSingleNoteSelector").style.display = "block";
+    if ($("scopeSingleNoteInput")) $("scopeSingleNoteInput").value = scope.note_path || "";
+  } else {
+    if ($("scopeFolderSelector")) $("scopeFolderSelector").style.display = "none";
+    if ($("scopeSingleNoteSelector")) $("scopeSingleNoteSelector").style.display = "none";
+    document.querySelectorAll(".scope-folder-cb").forEach(cb => {
+      cb.checked = false;
+    });
+  }
+}
+
+async function restoreActiveScanUI() {
+  if (!S.scanned) return;
+  if ($("overviewNotScanned")) $("overviewNotScanned").style.display = "none";
+  if ($("overviewScanned")) $("overviewScanned").style.display = "block";
+
+  if (S.vaultSummary) {
+    if ($("ovNotesCount")) $("ovNotesCount").textContent = S.vaultSummary.note_count || 0;
+    if ($("statNotesTotal")) $("statNotesTotal").textContent = S.vaultSummary.note_count || 0;
+    if ($("statNotesWithProps")) $("statNotesWithProps").textContent = S.vaultSummary.notes_with_properties || 0;
+    if ($("statNotesNoProps")) $("statNotesNoProps").textContent = S.vaultSummary.notes_without_properties || 0;
+    if ($("statNotesFailed")) $("statNotesFailed").textContent = S.vaultSummary.notes_with_parse_failure || 0;
+  }
+  if ($("ovPropsCount")) $("ovPropsCount").textContent = S.uniquePropertyCount || 0;
+  if ($("vaultPathInput") && S.vaultPath) $("vaultPathInput").value = S.vaultPath;
+  if ($("vaultBadge")) $("vaultBadge").className = "chip ok";
+  if ($("vaultStatsCard")) $("vaultStatsCard").style.display = "block";
+
+  await loadScopeFolders();
+  renderScopeControlsFromState();
+  if (typeof updateScopeSchemaAssignmentUI === "function") {
+    await updateScopeSchemaAssignmentUI();
+  }
+  await loadDiscovery();
+  await loadHealth();
+  await loadSavedChecks();
+  populateRefactorSourceOptions();
+}
+window.renderScopeControlsFromState = renderScopeControlsFromState;
+window.restoreActiveScanUI = restoreActiveScanUI;
 window.rehydrateRuntimeContext = rehydrateRuntimeContext;
 
 async function init() {
@@ -2691,6 +2754,10 @@ async function init() {
   setupProposalHandlers();
 
   await loadDesignPresets();
+
+  if (S.scanned) {
+    await restoreActiveScanUI();
+  }
 
   window.addEventListener("ps:localeChanged", () => {
     renderAllDynamicViews();
@@ -2808,6 +2875,9 @@ function setupVaultHandlers() {
       $("statNotesFailed").textContent = res.summary.notes_with_parse_failure;
       $("vaultStatsCard").style.display = "block";
 
+      S.vaultSummary = res.summary;
+      S.uniquePropertyCount = res.inventory ? res.inventory.unique_property_count : 0;
+
       $("ovNotesCount").textContent = res.summary.note_count;
       $("ovPropsCount").textContent = res.inventory ? res.inventory.unique_property_count : 0;
       $("overviewNotScanned").style.display = "none";
@@ -2817,6 +2887,7 @@ function setupVaultHandlers() {
       toast(I18N.t("toast.scan_done"));
 
       await loadScopeFolders();
+      renderScopeControlsFromState();
       await loadDiscovery();
       await loadHealth();
       await loadSavedChecks();

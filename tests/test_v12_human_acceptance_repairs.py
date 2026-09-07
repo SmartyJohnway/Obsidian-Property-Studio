@@ -1922,6 +1922,9 @@ def test_ha_f22_backend_runtime_context_active_and_empty(tmp_path: Path):
         assert res_empty["scope"] is None
         assert res_empty["notes_in_scope"] == 0
         assert res_empty["total_vault_notes"] == 0
+        assert res_empty["summary"] is None
+        assert res_empty["unique_property_count"] == 0
+        assert res_empty["scan_seconds"] is None
 
         # 2. TEST A: Active scan state
         vault_dir = tmp_path / "My Test Vault"
@@ -1951,6 +1954,9 @@ def test_ha_f22_backend_runtime_context_active_and_empty(tmp_path: Path):
         assert res_active["scope"]["mode"] == "entire_vault"
         assert res_active["notes_in_scope"] == 2
         assert res_active["total_vault_notes"] == 2
+        assert res_active["summary"]["note_count"] == 2
+        assert res_active["unique_property_count"] >= 1
+        assert isinstance(res_active["scan_seconds"], (int, float))
 
         # Verify zero disk rescan occurred (mtimes identical, no new files)
         mtimes_after = {p: p.stat().st_mtime_ns for p in vault_dir.glob("*.md")}
@@ -2083,6 +2089,25 @@ ensureEl('scanMsg');
 ensureEl('glossaryTableBody');
 ensureEl('glossarySearchInput');
 ensureEl('schemasListTable');
+ensureEl('overviewNotScanned');
+ensureEl('overviewScanned');
+ensureEl('ovNotesCount');
+ensureEl('ovPropsCount');
+ensureEl('vaultStatsCard');
+ensureEl('statNotesTotal');
+ensureEl('statNotesWithProps');
+ensureEl('statNotesNoProps');
+ensureEl('statNotesFailed');
+ensureEl('vaultPathInput');
+ensureEl('vaultBadge');
+ensureEl('scopeModeSelect');
+ensureEl('scopeFolderSelector');
+ensureEl('scopeSingleNoteSelector');
+ensureEl('scopeIncludeSubfolders');
+ensureEl('scopeSingleNoteInput');
+ensureEl('scopeFolderList');
+ensureEl('scopeSchemaAssignCard');
+ensureEl('scopeSchemaAssignSelect');
 """
 
     test_driver = """
@@ -2095,6 +2120,11 @@ async function runTests() {
   global.populateRefactorTargetOptions = () => {};
   global.loadSchemasList = () => Promise.resolve();
   global.loadGlossaryList = () => Promise.resolve();
+  global.loadScopeFolders = () => {
+    S.folders = ["00_Home", "10_Projects"];
+    return Promise.resolve();
+  };
+  global.updateScopeSchemaAssignmentUI = () => Promise.resolve();
 
   const results = {};
 
@@ -2104,7 +2134,10 @@ async function runTests() {
     vault_path: "C:/Users/test/Obsidian Vault",
     scope: { mode: "entire_vault", folders: [], include_subfolders: true, note_path: null },
     notes_in_scope: 397,
-    total_vault_notes: 397
+    total_vault_notes: 397,
+    summary: { note_count: 397, notes_with_properties: 350, notes_without_properties: 47, notes_with_parse_failure: 0 },
+    unique_property_count: 85,
+    scan_seconds: 0.12
   };
 
   global.api = async function(path, payload) {
@@ -2128,6 +2161,15 @@ async function runTests() {
   results.testC_vaultName = S.vaultName;
   results.testC_vaultLabel = $("currentVaultLabel").textContent;
   results.testC_scopeLabel = $("currentScopeLabel").textContent;
+
+  await restoreActiveScanUI();
+  results.testC_overviewNotScanned_display = $("overviewNotScanned").style.display;
+  results.testC_overviewScanned_display = $("overviewScanned").style.display;
+  results.testC_ovNotesCount = $("ovNotesCount").textContent;
+  results.testC_ovPropsCount = $("ovPropsCount").textContent;
+  results.testC_statNotesTotal = $("statNotesTotal").textContent;
+  results.testC_scopeMode = $("scopeModeSelect").value;
+  results.testC_scopeFolderSelector_display = $("scopeFolderSelector").style.display;
 
   // TEST D: Locale rerender preserves active Vault identity
   currentLocale = "en";
@@ -2176,7 +2218,10 @@ async function runTests() {
     vault_path: "C:/Users/test/Obsidian Vault",
     scope: { mode: "single_note", folders: [], include_subfolders: true, note_path: "00_Home/HOME.md" },
     notes_in_scope: 1,
-    total_vault_notes: 397
+    total_vault_notes: 397,
+    summary: { note_count: 397, notes_with_properties: 350, notes_without_properties: 47, notes_with_parse_failure: 0 },
+    unique_property_count: 85,
+    scan_seconds: 0.12
   };
   currentLocale = "en";
   await rehydrateRuntimeContext();
@@ -2185,6 +2230,28 @@ async function runTests() {
   results.testG_scopeMode = S.scope.mode;
   results.testG_scopePath = S.scope.note_path;
   results.testG_scopeLabel = $("currentScopeLabel").textContent;
+  await restoreActiveScanUI();
+  results.testG_singleNoteSelector_display = $("scopeSingleNoteSelector").style.display;
+  results.testG_singleNoteInputValue = $("scopeSingleNoteInput").value;
+
+  // TEST H: Scope Folders rehydration (Commit 21K)
+  mockRuntimeContext = {
+    scan_loaded: true,
+    vault_name: "Obsidian Vault",
+    vault_path: "C:/Users/test/Obsidian Vault",
+    scope: { mode: "folders", folders: ["00_Home"], include_subfolders: true, note_path: null },
+    notes_in_scope: 42,
+    total_vault_notes: 397,
+    summary: { note_count: 397, notes_with_properties: 350, notes_without_properties: 47, notes_with_parse_failure: 0 },
+    unique_property_count: 85,
+    scan_seconds: 0.12
+  };
+  await rehydrateRuntimeContext();
+  await restoreActiveScanUI();
+  results.testH_scopeMode = $("scopeModeSelect").value;
+  results.testH_folderSelector_display = $("scopeFolderSelector").style.display;
+  results.testH_singleNoteSelector_display = $("scopeSingleNoteSelector").style.display;
+  results.testH_foldersCount = S.folders.length;
 
   console.log(JSON.stringify(results));
 }
@@ -2198,12 +2265,19 @@ runTests().catch(err => {
     proc = subprocess.run(["node"], input=harness + full_js + test_driver, capture_output=True, text=True, check=True, encoding="utf-8")
     res = json.loads(proc.stdout.strip())
 
-    # Assert TEST C
+    # Assert TEST C (Commit 21J + 21K UI rehydration)
     assert res["testC_scanned"] is True
     assert res["testC_vaultPath"] == "C:/Users/test/Obsidian Vault"
     assert res["testC_vaultName"] == "Obsidian Vault"
     assert res["testC_vaultLabel"] == "Obsidian Vault"
     assert res["testC_scopeLabel"] == "整個知識庫"
+    assert res["testC_overviewNotScanned_display"] == "none"
+    assert res["testC_overviewScanned_display"] == "block"
+    assert str(res["testC_ovNotesCount"]) == "397"
+    assert str(res["testC_ovPropsCount"]) == "85"
+    assert str(res["testC_statNotesTotal"]) == "397"
+    assert res["testC_scopeMode"] == "entire_vault"
+    assert res["testC_scopeFolderSelector_display"] == "none"
 
     # Assert TEST D
     assert res["testD_en_vaultLabel"] == "Obsidian Vault"
@@ -2228,3 +2302,11 @@ runTests().catch(err => {
     assert res["testG_scopeMode"] == "single_note"
     assert res["testG_scopePath"] == "00_Home/HOME.md"
     assert res["testG_scopeLabel"] == "Single Note: 00_Home/HOME.md"
+    assert res["testG_singleNoteSelector_display"] == "block"
+    assert res["testG_singleNoteInputValue"] == "00_Home/HOME.md"
+
+    # Assert TEST H (Commit 21K: Folders scope rehydration)
+    assert res["testH_scopeMode"] == "folders"
+    assert res["testH_folderSelector_display"] == "block"
+    assert res["testH_singleNoteSelector_display"] == "none"
+    assert res["testH_foldersCount"] == 2

@@ -152,12 +152,18 @@ def api_runtime_context(_body: dict[str, Any]) -> dict[str, Any]:
                 "scope": None,
                 "notes_in_scope": 0,
                 "total_vault_notes": 0,
+                "summary": None,
+                "unique_property_count": 0,
+                "scan_seconds": None,
             }
         scan = STORE.scan
         vault_path = scan.vault_path if hasattr(scan, "vault_path") else None
         vault_name = os.path.basename(os.path.normpath(vault_path)) if vault_path else None
         scope_dict = STORE.scope.to_dict() if STORE.scope else None
         total_notes = scan.note_count
+        summary = scan.summary() if hasattr(scan, "summary") else None
+        unique_property_count = len(STORE.inventory.properties) if (STORE.inventory and hasattr(STORE.inventory, "properties")) else 0
+        scan_seconds = getattr(scan, "scan_seconds", 0.0)
 
     scoped_scan = STORE.get_scoped_scan()
     return {
@@ -167,7 +173,11 @@ def api_runtime_context(_body: dict[str, Any]) -> dict[str, Any]:
         "scope": scope_dict,
         "notes_in_scope": scoped_scan.note_count,
         "total_vault_notes": total_notes,
+        "summary": summary,
+        "unique_property_count": unique_property_count,
+        "scan_seconds": scan_seconds,
     }
+
 
 
 def api_scan(body: dict[str, Any]) -> dict[str, Any]:
