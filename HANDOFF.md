@@ -11,7 +11,7 @@ Active Milestone: `M022`
 Active Milestone Status: `IN_PROGRESS`  
 Current Task: `M022-T04` (Human Owner Windows 10 Production UI Walkthrough Acceptance Retest)  
 Last Verified Gate: `M021 — Schema Naming, Versioning, Migration & Governance Profile PASS`  
-Last Verified Implementation Commit: `88e91e7` (Commit 21J — Active Vault Runtime Context Rehydration Closure)  
+Last Verified Implementation Commit: `feb9cf8` (Commit 21K — HA-F22 Scan-Dependent UI Rehydration Closure)  
 GitHub PR: `PR #2 (Draft, feat(v1.2): Personal Property Governance System)`  
 Authoritative Specification: `docs/specs/Obsidian_Property_Studio_v1.2.0_Spec.md`  
 Archived v1.1 Roadmap: `docs/archive/ROADMAP_v1.1.0.md`  
@@ -59,14 +59,19 @@ All autonomous implementation and verification milestones from M016 through M021
   - 4 dedicated unit tests (`tests/test_v12_migration.py`, `tests/test_v12_governance_profile.py`) PASS.
 
 - **M022: Release Acceptance & Packaging — IN_PROGRESS**
-- **Commit 21J: Active Vault Runtime Context Rehydration Closure (HA-F22) — CURRENT HEAD**
+- **Commit 21K: HA-F22 Scan-Dependent UI Rehydration Closure — CURRENT HEAD**
+  - **Backend Context Authority Enrichment**: In `app/server.py`, enriched `/api/runtime/context` with `summary`, `unique_property_count`, and `scan_seconds` directly from in-memory `STORE.scan` and `STORE.inventory` authority with strictly zero disk rescan.
+  - **Scan-Dependent UI Projection Restoration**: In `app/ui/index.html`, updated `rehydrateRuntimeContext()` to rehydrate `S.vaultSummary`, `S.uniquePropertyCount`, and `S.lastScanSeconds`. Created `restoreActiveScanUI()` and invoked it at the end of `init()` when `S.scanned` is true:
+    - Overview Module: Hides `overviewNotScanned` and displays `overviewScanned`. Rehydrates `ovNotesCount`, `ovPropsCount`, `vaultPathInput`, and all note statistics cards (`statNotesTotal`, `statNotesWithProps`, `statNotesNoProps`, `statNotesFailed`).
+    - Scope Module: Automatically invokes `loadScopeFolders()` without requiring manual user re-scan. Added `renderScopeControlsFromState()` to sync `scopeModeSelect`, project active scope into folder checkboxes or single-note selector, and update scope badges.
+    - Dependent Caches & Views: Rebuilds `loadDiscovery()`, `loadHealth()`, `loadSavedChecks()`, `populateRefactorSourceOptions()`, and `updateScopeSchemaAssignmentUI()`.
+  - **Zero Disk Rescan Guarantee**: Verified zero disk rescan on F5 rehydration (`/api/scan` is never called, file `mtime` unchanged).
+  - **Automated Verification (TESTS A-H)**: Updated `test_ha_f22_backend_runtime_context_active_and_empty` and extended `test_ha_f22_frontend_runtime_context_rehydration_in_node` with comprehensive tests (TESTS C-H) covering Overview un-hiding, note/prop counts rehydration, Folders mode selector display, and active folder counts.
+  - **Automated Verification**: **246/246 tests PASS** in 15.21s. Vault 100% byte-for-byte read-only.
+- **Commit 21J: Active Vault Runtime Context Rehydration Closure (HA-F22) — SUPERSEDED BY 21K**
   - **Backend Runtime Context Endpoint (/api/runtime/context)**: In `app/server.py`, added `api_runtime_context(_body)` reporting `{ "scan_loaded": bool, "vault_path": str|None, "vault_name": str|None, "scope": dict|None, "notes_in_scope": int, "total_vault_notes": int }` directly from in-memory `STORE.scan` and `STORE.scope` authority with zero disk rescan. Added route `/api/runtime/context` to `ROUTES`.
   - **Frontend State Rehydration on Browser Load/F5**: In `app/ui/index.html`, added `vaultName: ""` to state `S` and implemented `rehydrateRuntimeContext()` called during `init()`. Rehydrates `S.scanned`, `S.vaultPath`, `S.vaultName`, `S.scope`, and `S.notesInScope` when active backend scan exists, or cleanly resets when backend has no active scan.
   - **State-Driven Context Bar Rendering**: In `updateContextBarLabels()`, updated vault label resolution to set `$("currentVaultLabel").textContent` from `S.vaultName || S.vaultPath.split(/[/\]/).pop()` whenever `S.scanned` is true, preventing the context bar from falling back to `"No vault loaded"` during dynamic view rerenders or locale switching. In `setupVaultHandlers()`, populated `S.vaultName` on scan completion and routed UI updates through `updateContextBarLabels()`.
-  - **Automated Verification (TESTS A-G)**: Added 2 tests in `tests/test_v12_human_acceptance_repairs.py`:
-    - `test_ha_f22_backend_runtime_context_active_and_empty`: Verifies (TEST A) active scan returns loaded state, vault name, scope, and counts with 0 disk rescan (verified via file mtimes); (TEST B) empty store returns `scan_loaded: False` and null fields.
-    - `test_ha_f22_frontend_runtime_context_rehydration_in_node`: Real Node.js execution with production HTML/JS verifying (TEST C) fresh browser F5 rehydration of active vault name and scope; (TEST D) locale rerenders (en <-> zh-Hant) strictly preserve active vault identity; (TEST E) loaded note (`currentNote`) and active vault coexist without colliding in the context bar; (TEST F) server restart / no scan cleanly resets to `"No vault loaded"`; (TEST G) non-default scope authority (`single_note`) is preserved and displayed accurately.
-  - **Automated Verification**: **246/246 tests PASS** in 15.81s. Vault 100% byte-for-byte read-only.
 - **Commit 21I: Observed Property Canonical Key Identity Closure (HA-F19) — SUPERSEDED BY 21J**
   - **Iterate Real Inventory Records (pdata.key)**: In `app/ui/index.html` (`loadGlossaryList`), repaired observed vault property iteration from `S.inventory.properties`. Because `inventory.properties` is canonically a JSON array of `PropertyEntry` objects, replaced `Object.entries(S.inventory.properties)` (which produced numeric array indexes `"0"`, `"1"`, `"2"` as keys) with direct array iteration extracting `pdata.key`.
   - **Fail Closed on Malformed Records**: Records missing a non-empty string `key` are skipped immediately without generating fallback index keys, "undefined", or empty rows.
