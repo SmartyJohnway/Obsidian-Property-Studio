@@ -1,13 +1,15 @@
 {
+  "contract": "M022_V120_HUMAN_ACCEPTANCE_AND_NATIVE_VERIFICATION",
   "app": "Obsidian Property Studio",
-  "version": "1.1.0",
-  "evidence_id": "M012-WIN10-NATIVE-ACCEPTANCE",
+  "version": "1.2.0",
+  "evidence_id": "M022-WIN10-NATIVE-ACCEPTANCE",
+  "timestamp": "2026-09-07T18:30:00+08:00",
   "platform": {
     "system": "Windows",
     "release": "10",
     "version": "10.0.19045",
     "machine": "AMD64",
-    "python_version": "3.13.7 (tags/v3.13.7:bcee1c3, Aug 14 2025, 14:15:11) [MSC v.1944 64 bit (AMD64)]"
+    "python_version": "3.13.7"
   },
   "launcher_verified": {
     "script": "run_windows.bat",
@@ -15,27 +17,53 @@
     "executable_entry": "python -m app",
     "native_execution_verified": true
   },
-  "http_server_walkthrough": {
-    "base_url": "http://127.0.0.1:9291",
-    "static_html_served": true,
-    "i18n_locales_served": true,
-    "api_scan_verified": true,
-    "api_scope_applied": true,
-    "api_discovery_verified": true,
-    "api_workspace_verified": true,
-    "api_relationships_4state_verified": true,
-    "api_body_wikilinks_verified": true,
-    "api_saved_checks_verified": true,
-    "api_health_verified": true,
-    "api_refactor_verified": true,
-    "api_export_readback_verified": true
+  "automated_verification": {
+    "status": "PASS",
+    "total_tests": 253,
+    "passed_tests": 253,
+    "failed_tests": 0,
+    "duration_seconds": 18.29
   },
-  "vault_read_only_manifest": {
-    "files_checked": 27,
+  "vault_safety": {
+    "status": "PASS",
+    "byte_for_byte_unchanged": true,
     "files_created": 0,
     "files_modified": 0,
-    "files_deleted": 0,
-    "unchanged": true
+    "files_deleted": 0
+  },
+  "human_verification": {
+    "status": "PASS",
+    "method": "Human Owner production-browser walkthrough",
+    "platform": "Windows 10 Build 19045+",
+    "verified_by": "Human Owner (Dr. J)",
+    "verified_at": "2026-09-07T18:00:00+08:00",
+    "finding_backlog": "CLEAR",
+    "closed_findings": [
+      "HA-F01",
+      "HA-F08",
+      "HA-F09",
+      "HA-F10",
+      "HA-F11",
+      "HA-F12",
+      "HA-F13",
+      "HA-F14",
+      "HA-F15",
+      "HA-F16",
+      "HA-F17",
+      "HA-F18",
+      "HA-F19",
+      "HA-F21",
+      "HA-F22",
+      "HA-F23"
+    ],
+    "closure_smoke_gates": {
+      "gate_1_runtime_f5_rehydration": "PASS",
+      "gate_2_named_schema_workspace_exact_identity_version": "PASS",
+      "gate_3_workspace_untouched_preservation_complex_yaml": "PASS",
+      "gate_4_blank_note_exact_scope_schema_authority": "PASS",
+      "gate_5_drift_exact_reconcile_note_navigation": "PASS",
+      "gate_6_governance_profile_export_import_preview": "PASS"
+    }
   },
   "windows_native_http_acceptance": "PASS",
   "windows_native_launcher_invocation": "PASS",
