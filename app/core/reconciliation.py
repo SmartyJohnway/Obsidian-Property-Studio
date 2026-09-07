@@ -59,12 +59,14 @@ class ReconciliationReport:
     schema_id: str | None
     items: list[PropertyReconcileItem] = field(default_factory=list)
     summary: dict[str, int] = field(default_factory=dict)
+    schema_version: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "note_path": self.note_path,
             "schema_name": self.schema_name,
             "schema_id": self.schema_id,
+            "schema_version": self.schema_version,
             "items": [item.to_dict() for item in self.items],
             "summary": self.summary,
         }
@@ -76,6 +78,7 @@ def reconcile_note_frontmatter(
     schema_name: str = "adopted-schema",
     schema_id: str | None = None,
     note_path: str = "",
+    schema_version: str | None = None,
 ) -> ReconciliationReport:
     """Analyze note properties against schema properties, classifying into 4 states."""
     schema_props_map: dict[str, dict[str, Any]] = {
@@ -176,6 +179,7 @@ def reconcile_note_frontmatter(
         note_path=note_path,
         schema_name=schema_name,
         schema_id=schema_id,
+        schema_version=schema_version,
         items=items,
         summary=summary,
     )

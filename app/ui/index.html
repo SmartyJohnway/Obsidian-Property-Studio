@@ -1219,6 +1219,8 @@ const S = {
   notesInScope: 0,
   currentNote: null,
   currentSchema: null,
+  blankNoteSchema: null,
+  blankNoteEntrySource: "direct",
   activeReconciliationSchema: null,
   designPresets: null,
   lastReviewResult: null,
@@ -1264,6 +1266,27 @@ function toast(msg, isErr = false) {
   setTimeout(() => { el.style.display = "none"; }, 3500);
 }
 
+// Resolve Blank Note Expected Schema for Active Scope (HA-F23)
+async function resolveBlankNoteSchemaForScope() {
+  try {
+    const scopeKey = (typeof getCanonicalScopeKey === 'function') 
+      ? getCanonicalScopeKey() 
+      : (!S.scope || S.scope.mode === 'entire_vault' ? 'entire_vault' : (S.scope.mode === 'single_note' ? `note:${(S.scope.note_path||'').trim().replace(/\\/g, '/').replace(/^\/+/, '')}` : ((S.scope.folders||[]).length ? `folders:${(S.scope.folders||[]).map(f=>f.trim().replace(/\\/g, '/').replace(/^\/+/, '')).filter(Boolean).sort().join(',')}` : 'default')));
+    const asgnRes = await api("/api/scope/schema/current", { scope_key: scopeKey });
+    if (asgnRes && asgnRes.assignment && asgnRes.assignment.schema_id) {
+      const schemaRes = await api("/api/schemas/get", { id: asgnRes.assignment.schema_id });
+      if (schemaRes && schemaRes.schema) {
+        S.blankNoteSchema = schemaRes.schema;
+        return;
+      }
+    }
+  } catch (e) {
+    console.warn("Failed to resolve blank note schema for scope:", e);
+  }
+  // Fail-closed: no assignment means no schema for Blank Note
+  S.blankNoteSchema = null;
+}
+
 function setTab(tabId) {
   document.querySelectorAll("nav.sidebar-nav button.nav-btn").forEach(btn => {
     btn.classList.toggle("active", btn.getAttribute("data-tab") === tabId);
@@ -1274,7 +1297,16 @@ function setTab(tabId) {
   if (tabId === "refactor") {
     populateRefactorSourceOptions();
   } else if (tabId === "fill") {
-    renderFillForm();
+    if (S.blankNoteEntrySource === "direct") {
+      resolveBlankNoteSchemaForScope().then(() => {
+        renderFillForm();
+      });
+    } else {
+      // Designer handoff: S.blankNoteSchema is already set
+      renderFillForm();
+      // Reset back to direct for subsequent navigations
+      S.blankNoteEntrySource = "direct";
+    }
   } else if (tabId === "schemas") {
     loadSchemasList();
   } else if (tabId === "glossary") {
@@ -1954,6 +1986,7 @@ window.cancelWorkspaceReconciliation = function() {
   if (S.lastWorkspaceStatus) {
     S.lastWorkspaceStatus.reconciliationResult = null;
     S.lastWorkspaceStatus.reconciliationSchemaName = "";
+    S.lastWorkspaceStatus.reconciliationSchemaVersion = null;
     renderWorkspaceStatusBanner(S.lastWorkspaceStatus);
   } else {
     const banner = document.getElementById("wsNoteStatusBanner");
@@ -2692,6 +2725,9 @@ async function init() {
       if (btn.hasAttribute("data-needs-scan") && !S.scanned) {
         return toast(I18N.t("overview.not_scanned_desc"), true);
       }
+      if (tab === "fill") {
+        S.blankNoteEntrySource = "direct";
+      }
       setTab(tab);
     };
   });
@@ -3372,6 +3408,7 @@ window.renderWorkspaceStatusBanner = function(statusData) {
   const pending = statusData.pendingContext;
   const recRes = statusData.reconciliationResult;
   const recSchemaName = statusData.reconciliationSchemaName;
+  const recSchemaVersion = statusData.reconciliationSchemaVersion || (recRes ? recRes.schema_version : null);
 
   if (!res || !res.can_edit) return;
 
@@ -3419,7 +3456,7 @@ window.renderWorkspaceStatusBanner = function(statusData) {
       <div class="card" style="border-color:var(--brand); background:var(--panel2); margin-bottom:14px">
         <div style="display:flex; justify-content:space-between; align-items:flex-start">
           <div>
-            <strong style="font-size:14px">\u2696\uFE0F ${esc(I18N.t("schemas.btn_reconcile"))}\uFF1A${esc(recSchemaName)}</strong>
+            <strong style="font-size:14px">\u2696\uFE0F ${esc(I18N.t("schemas.btn_reconcile"))}\uFF1A${esc(recSchemaName)}${recSchemaVersion ? ` (v${esc(recSchemaVersion)})` : ''}</strong>
             <p class="muted" style="margin:4px 0 0 0; font-size:12px">${esc(I18N.t("workspace.four_state_lead"))}</p>
           </div>
           <div style="display:flex; align-items:center; gap:8px; font-size:11.5px">
@@ -3496,6 +3533,7 @@ async function inspectNoteInWorkspace(notePath) {
     const targetSchemaId = (pending && pending.schema_id) ? pending.schema_id : (targetRecSchema ? targetRecSchema.id : null);
     let reconciliationResult = null;
     let reconciliationSchemaName = "";
+    let reconciliationSchemaVersion = null;
     if (targetRecSchema || targetSchemaId || (pending && pending.intent === "reconcile")) {
       try {
         const recRes = await api("/api/reconcile/inspect", {
@@ -3506,6 +3544,7 @@ async function inspectNoteInWorkspace(notePath) {
         });
         reconciliationResult = recRes;
         reconciliationSchemaName = recRes.schema_name;
+        reconciliationSchemaVersion = recRes.schema_version || (targetRecSchema ? targetRecSchema.version : null);
       } catch (err) {
         console.error("Reconciliation inspection error:", err);
       }
@@ -3515,7 +3554,8 @@ async function inspectNoteInWorkspace(notePath) {
       noteResponse: res,
       pendingContext: pending,
       reconciliationResult: reconciliationResult,
-      reconciliationSchemaName: reconciliationSchemaName
+      reconciliationSchemaName: reconciliationSchemaName,
+      reconciliationSchemaVersion: reconciliationSchemaVersion
     };
     renderWorkspaceStatusBanner(S.lastWorkspaceStatus);
     renderWorkspaceFields(res.original_properties);
@@ -3905,7 +3945,11 @@ function setupDesignHandlers() {
   };
 
   $("designGoToWorkspace").onclick = () => setTab("workspace");
-  $("designGoToFill").onclick = () => setTab("fill");
+  $("designGoToFill").onclick = () => {
+    S.blankNoteSchema = S.currentSchema;
+    S.blankNoteEntrySource = "designer";
+    setTab("fill");
+  };
   if ($("designSaveToNamedSchemas")) {
     $("designSaveToNamedSchemas").onclick = () => {
       if (!S.currentSchema) return;
@@ -3952,7 +3996,7 @@ function renderFillForm() {
   const activeArea = $("fillActiveFormArea");
   if (!emptyState || !activeArea) return;
 
-  if (!S.currentSchema || !S.currentSchema.properties || !S.currentSchema.properties.length) {
+  if (!S.blankNoteSchema || !S.blankNoteSchema.properties || !S.blankNoteSchema.properties.length) {
     emptyState.style.display = "block";
     activeArea.style.display = "none";
     return;
@@ -3960,11 +4004,12 @@ function renderFillForm() {
 
   emptyState.style.display = "none";
   activeArea.style.display = "block";
-  $("fillCurrentSchemaName").textContent = S.currentSchema.name;
-  $("fillCurrentSchemaPropsCount").textContent = `(${S.currentSchema.properties.length} ${I18N.t("workspace.existing_props_count")})`;
+  const schemaVerStr = S.blankNoteSchema.version ? ` (v${S.blankNoteSchema.version})` : "";
+  $("fillCurrentSchemaName").textContent = `${S.blankNoteSchema.name}${schemaVerStr}`;
+  $("fillCurrentSchemaPropsCount").textContent = `(${S.blankNoteSchema.properties.length} ${I18N.t("workspace.existing_props_count")})`;
 
   const formEl = $("fillFormFields");
-  formEl.innerHTML = S.currentSchema.properties.map(p => {
+  formEl.innerHTML = S.blankNoteSchema.properties.map(p => {
     let controlHtml = "";
     if (p.allowed_values && p.allowed_values.length) {
       controlHtml = `
@@ -4007,7 +4052,7 @@ function renderFillForm() {
 }
 
 async function updateFillPreview() {
-  if (!S.currentSchema) return;
+  if (!S.blankNoteSchema) return;
   const values = {};
 
   document.querySelectorAll(".fill-prop-input").forEach(input => {
@@ -4022,7 +4067,7 @@ async function updateFillPreview() {
 
   try {
     const res = await api("/api/fill/preview", {
-      schema: S.currentSchema,
+      schema: S.blankNoteSchema,
       values: values
     });
 

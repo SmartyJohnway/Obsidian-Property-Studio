@@ -804,12 +804,19 @@ def api_reconcile_inspect(body: dict[str, Any]) -> dict[str, Any]:
     schema_name = str(body.get("schema_name") or "").strip()
     schema_id = body.get("schema_id")
 
+    schema_version = None
     if schema_id:
         sch = named_schemas.NAMED_SCHEMA_LIBRARY.get_schema(str(schema_id))
         if sch:
-            # Canonical Schema ID authority (HA-F09 / HA-F11): always use canonical schema properties and name
+            # Canonical Schema ID authority (HA-F09 / HA-F11 / HA-F21): always use canonical schema properties, name, and exact version
             schema_props = [p.to_dict() if hasattr(p, "to_dict") else (dict(p) if isinstance(p, dict) else p) for p in sch.properties]
             schema_name = sch.name
+            schema_version = sch.version
+    else:
+        # Check transient schema version if provided
+        raw_ver = body.get("schema_version") or (body.get("schema") or {}).get("version")
+        if raw_ver:
+            schema_version = str(raw_ver).strip()
 
     if not schema_name:
         schema_name = "Unnamed Schema"
@@ -820,6 +827,7 @@ def api_reconcile_inspect(body: dict[str, Any]) -> dict[str, Any]:
         schema_name=schema_name,
         schema_id=str(schema_id) if schema_id else None,
         note_path=note_path,
+        schema_version=schema_version,
     )
     return report.to_dict()
 

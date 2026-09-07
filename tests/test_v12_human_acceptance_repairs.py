@@ -2310,3 +2310,374 @@ runTests().catch(err => {
     assert res["testH_folderSelector_display"] == "block"
     assert res["testH_singleNoteSelector_display"] == "none"
     assert res["testH_foldersCount"] == 2
+
+# ==============================================================================
+# Commit 21L: HA-F21 & HA-F23 Schema Context & Version Identity Closure Tests
+# ==============================================================================
+
+def test_ha_f21_reconciliation_exact_version_identity():
+    """HA-F21: Workspace reconciliation banner preserves exact Named Schema version identity."""
+    from app.core import reconciliation
+    from app.core.named_schemas import NamedSchemaProperty, NamedSchema
+
+    prop = NamedSchemaProperty(name="status", storage_type="text", ui_control="plain")
+    s11 = NamedSchema(id="sch-11", name="book-tracker", description="v1.1 schema", properties=[prop], version="1.1")
+    s20 = NamedSchema(id="sch-20", name="book-tracker", description="v2.0 schema", properties=[prop], version="2.0")
+
+    # Test A: ReconciliationReport includes schema_version field
+    note_props = {"status": "read", "rating": 5}
+    rep11 = reconciliation.reconcile_note_frontmatter(
+        note_properties=note_props,
+        schema_properties=[p.to_dict() for p in s11.properties],
+        schema_name=s11.name,
+        schema_id=s11.id,
+        schema_version=s11.version,
+        note_path="Books/Sample.md"
+    )
+    dict11 = rep11.to_dict()
+    assert dict11["schema_name"] == "book-tracker"
+    assert dict11["schema_id"] == "sch-11"
+    assert dict11["schema_version"] == "1.1"
+
+    rep20 = reconciliation.reconcile_note_frontmatter(
+        note_properties=note_props,
+        schema_properties=[p.to_dict() for p in s20.properties],
+        schema_name=s20.name,
+        schema_id=s20.id,
+        schema_version=s20.version,
+        note_path="Books/Sample.md"
+    )
+    dict20 = rep20.to_dict()
+    assert dict20["schema_name"] == "book-tracker"
+    assert dict20["schema_id"] == "sch-20"
+    assert dict20["schema_version"] == "2.0"
+
+    # Test B: Transient schema with no version returns schema_version=None (no fake version)
+    rep_transient = reconciliation.reconcile_note_frontmatter(
+        note_properties=note_props,
+        schema_properties=[p.to_dict() for p in s11.properties],
+        schema_name="transient-schema",
+        schema_id=None,
+        note_path="Books/Sample.md"
+    )
+    assert rep_transient.schema_version is None
+    assert rep_transient.to_dict()["schema_version"] is None
+
+
+def test_ha_f21_server_api_reconcile_inspect():
+    """HA-F21: /api/reconcile/inspect returns exact canonical schema_version."""
+    from unittest.mock import patch
+    from app import server
+    from app.core import named_schemas
+    from app.core.named_schemas import NamedSchemaProperty, NamedSchema
+    from app.core.model import VaultScan, Note, PropertyValue, StorageType, ParseStatus
+
+    note_obj = Note(
+        path="Note.md",
+        parse_status=ParseStatus.OK,
+        properties={
+            "title": PropertyValue("title", "Hello", StorageType.TEXT, ("Hello",), "Hello"),
+        },
+    )
+    mock_scan = VaultScan(vault_path=".", notes=[note_obj])
+
+    prop = NamedSchemaProperty(name="title", storage_type="text", ui_control="plain")
+    sch = NamedSchema(id="sch-life-11", name="ha-lifecycle-test", description="desc", properties=[prop], version="1.1")
+
+    with patch.object(server.STORE, "require_scan", return_value=mock_scan):
+        with patch.object(named_schemas.NAMED_SCHEMA_LIBRARY, "get_schema", return_value=sch):
+                # Call api_reconcile_inspect with schema_id
+                res = server.api_reconcile_inspect({
+                    "note_path": "Note.md",
+                    "schema_id": "sch-life-11"
+                })
+                assert res["schema_name"] == "ha-lifecycle-test"
+                assert res["schema_id"] == "sch-life-11"
+                assert res["schema_version"] == "1.1"
+
+                # Call with transient schema without version
+                res2 = server.api_reconcile_inspect({
+                    "note_path": "Note.md",
+                    "schema_properties": [{"name": "title", "storage_type": "text"}]
+                })
+                assert res2["schema_version"] is None
+
+
+def test_ha_f23_and_f21_frontend_in_node():
+    """TESTS HA-F23 & HA-F21 in Node.js harness:
+    - HA-F23: Blank Note schema authority separation (S.currentSchema vs S.blankNoteSchema).
+    - HA-F23: Mode 1 (Designer handoff) sets S.blankNoteSchema = S.currentSchema.
+    - HA-F23: Mode 2 (Direct entry) resolves active scope expected schema via /api/scope/schema/current.
+    - HA-F23: Mode 2 fail-closed when scope has no assigned schema (null, empty state card).
+    - HA-F23: Blank Note header displays Name (vVersion).
+    - HA-F21: Workspace reconciliation banner displays Name (vVersion) and retains exact version on locale switch.
+    """
+    import subprocess
+    import json
+    from pathlib import Path
+
+    html_content = Path("app/ui/index.html").read_text(encoding="utf-8")
+    js_start = html_content.find("<script>") + len("<script>")
+    js_end = html_content.find("</script>", js_start)
+    full_js = html_content[js_start:js_end]
+
+    harness = """
+const elements = {};
+function createMockEl(id) {
+  const classes = new Set();
+  const listeners = {};
+  const el = {
+    id: id,
+    style: {},
+    dataset: {},
+    classList: {
+      add: (c) => classes.add(c),
+      remove: (c) => classes.delete(c),
+      contains: (c) => classes.has(c),
+      toggle: (c, force) => {
+        if (force !== undefined) {
+          if (force) classes.add(c); else classes.delete(c);
+          return force;
+        }
+        if (classes.has(c)) { classes.delete(c); return false; }
+        classes.add(c); return true;
+      }
+    },
+    addEventListener: (evt, fn) => {
+      listeners[evt] = listeners[evt] || [];
+      listeners[evt].push(fn);
+    },
+    dispatchEvent: (evt) => {
+      const fns = listeners[evt.type || evt] || [];
+      const evObj = typeof evt === 'string' ? { target: el, type: evt } : evt;
+      fns.forEach(fn => fn(evObj));
+    },
+    appendChild: () => {},
+    removeChild: () => {},
+    setAttribute: (k, v) => { el[k] = v; },
+    getAttribute: (k) => el[k] || '',
+    _innerHTML: '',
+    get innerHTML() { return this._innerHTML; },
+    set innerHTML(val) {
+      this._innerHTML = val;
+      const idMatches = val.matchAll(/id=["']([^"']+)["']/g);
+      for (const m of idMatches) {
+        if (!elements[m[1]]) {
+          elements[m[1]] = createMockEl(m[1]);
+        }
+      }
+    },
+    textContent: '',
+    value: '',
+    focus: () => {}
+  };
+  return el;
+}
+function getEl(id) { return elements[id] || null; }
+function ensureEl(id) {
+  if (!elements[id]) elements[id] = createMockEl(id);
+  return elements[id];
+}
+const noop = () => {};
+global.window = global;
+global.window.addEventListener = noop;
+global.window.scrollTo = noop;
+global.document = {
+  getElementById: (id) => getEl(id),
+  querySelectorAll: (sel) => [],
+  querySelector: (sel) => getEl(sel.replace('#', '')),
+  createElement: (tag) => createMockEl(tag),
+  addEventListener: noop,
+  documentElement: ensureEl('html'),
+  body: ensureEl('body')
+};
+
+let currentLocale = "zh-Hant";
+global.localStorage = {
+  getItem: (k) => k === "ps_locale" ? currentLocale : null,
+  setItem: (k, v) => { if (k === "ps_locale") currentLocale = v; }
+};
+global.navigator = { clipboard: { writeText: () => Promise.resolve() } };
+
+global.esc = (s) => String(s);
+global.renderPropertyBadge = (name) => `<span>${name}</span>`;
+global.I18N = {
+  t: (k, p) => {
+    if (k === "schemas.btn_reconcile") return currentLocale.startsWith("en") ? "Reconcile" : "核對";
+    if (k === "workspace.existing_props_count") return "屬性";
+    if (k === "workspace.reconcile_target_schema") return `目標架構：${p.name} (v${p.version})`;
+    if (k === "workspace.four_state_lead") return "四態差異對齊";
+    let s = k;
+    if (p) { Object.entries(p).forEach(([pk, pv]) => { s += ` [${pk}:${pv}]`; }); }
+    return s;
+  },
+  init: noop,
+  setLocale: (l) => { currentLocale = l; },
+  applyLocale: noop
+};
+global.StateTransfer = { setPending: noop, hasPending: () => false, consumePending: () => null };
+global.toast = noop;
+
+// Mock elements needed for fill and workspace
+ensureEl('fillEmptyStateCard');
+ensureEl('fillActiveFormArea');
+ensureEl('fillCurrentSchemaName');
+ensureEl('fillCurrentSchemaPropsCount');
+ensureEl('fillFormFields');
+ensureEl('fillYamlPreview');
+ensureEl('fillStatusMsg');
+ensureEl('copyFmBtn');
+ensureEl('copyYamlBtn');
+ensureEl('wsNoteStatusBanner');
+"""
+
+    test_driver = """
+async function runTests() {
+  const results = {};
+
+  // Setup mock api responses
+  const mockScopeAssignments = {
+    "entire_vault": { assignment: { scope_key: "entire_vault", schema_id: "sch-123" } },
+    "folders:Archive": { assignment: null }
+  };
+  const mockSchemas = {
+    "sch-123": {
+      schema: {
+        id: "sch-123",
+        name: "ha-lifecycle-test",
+        version: "1.1",
+        properties: [{ name: "rating", storage_type: "number", ui_control: "plain" }]
+      }
+    }
+  };
+
+  global.api = async (endpoint, payload) => {
+    if (endpoint === "/api/scope/schema/current") {
+      return mockScopeAssignments[payload.scope_key] || { assignment: null };
+    }
+    if (endpoint === "/api/schemas/get") {
+      return mockSchemas[payload.id] || { schema: null };
+    }
+    if (endpoint === "/api/fill/preview") {
+      return { frontmatter_preview: "---\\nrating: 5\\n---\\n", valid: true, has_ambiguities: false, errors: [] };
+    }
+    return {};
+  };
+
+  // TEST 1: Initial state separation
+  results.init_blankNoteSchema = S.blankNoteSchema; // should be null
+  results.init_blankNoteEntrySource = S.blankNoteEntrySource; // should be 'direct'
+
+  // TEST 2: Mode 1 - Designer handoff
+  S.currentSchema = {
+    name: "transient-designer-schema",
+    version: null,
+    properties: [{ name: "tag", storage_type: "text", ui_control: "plain" }]
+  };
+  // Simulate clicking designGoToFill
+  S.blankNoteSchema = S.currentSchema;
+  S.blankNoteEntrySource = "designer";
+  setTab("fill");
+  
+  results.mode1_blankNoteSchema_name = S.blankNoteSchema ? S.blankNoteSchema.name : null;
+  results.mode1_fill_header = getEl('fillCurrentSchemaName').textContent; // "transient-designer-schema"
+  results.mode1_active_visible = getEl('fillActiveFormArea').style.display; // "block"
+
+  // TEST 3: Mode 2 - Direct Blank Note navigation with active scope assignment (sch-123, v1.1)
+  S.scope = { mode: "entire_vault" };
+  S.blankNoteEntrySource = "direct";
+  setTab("fill");
+  // wait for async resolve
+  await new Promise(r => setTimeout(r, 50));
+
+  results.mode2_blankNoteSchema_name = S.blankNoteSchema ? S.blankNoteSchema.name : null;
+  results.mode2_blankNoteSchema_version = S.blankNoteSchema ? S.blankNoteSchema.version : null;
+  results.mode2_fill_header = getEl('fillCurrentSchemaName').textContent; // "ha-lifecycle-test (v1.1)"
+  results.mode2_active_visible = getEl('fillActiveFormArea').style.display; // "block"
+
+  // TEST 4: Mode 2 - Direct Blank Note navigation with NO scope assignment (fail-closed)
+  S.scope = { mode: "folders", folders: ["Archive"] };
+  S.blankNoteEntrySource = "direct";
+  setTab("fill");
+  await new Promise(r => setTimeout(r, 50));
+
+  results.mode2_unassigned_blankNoteSchema = S.blankNoteSchema; // null
+  results.mode2_unassigned_empty_visible = getEl('fillEmptyStateCard').style.display; // "block"
+  results.mode2_unassigned_active_visible = getEl('fillActiveFormArea').style.display; // "none"
+
+  // TEST 5: HA-F21 - Workspace reconciliation banner exact version identity
+  const mockStatusData = {
+    noteResponse: { can_edit: true, note_path: "Notes/Test.md", original_properties: {} },
+    pendingContext: null,
+    reconciliationResult: {
+      schema_name: "ha-lifecycle-test",
+      schema_id: "sch-123",
+      schema_version: "1.1",
+      items: [],
+      summary: { matches: 0, missing: 1, conflict: 0, outside_schema: 0, total: 1 }
+    },
+    reconciliationSchemaName: "ha-lifecycle-test",
+    reconciliationSchemaVersion: "1.1"
+  };
+
+  renderWorkspaceStatusBanner(mockStatusData);
+  const bannerHtmlZh = getEl('wsNoteStatusBanner').innerHTML;
+  results.banner_contains_v11_zh = bannerHtmlZh.includes("ha-lifecycle-test (v1.1)");
+
+  // Change locale to en and re-render
+  currentLocale = "en";
+  renderWorkspaceStatusBanner(mockStatusData);
+  const bannerHtmlEn = getEl('wsNoteStatusBanner').innerHTML;
+  results.banner_contains_v11_en = bannerHtmlEn.includes("ha-lifecycle-test (v1.1)");
+
+  // TEST 6: Transient reconciliation without version does not show (vNone) or (vundefined)
+  const mockTransientStatus = {
+    noteResponse: { can_edit: true, note_path: "Notes/Test.md", original_properties: {} },
+    pendingContext: null,
+    reconciliationResult: {
+      schema_name: "adhoc-schema",
+      schema_id: null,
+      schema_version: null,
+      items: [],
+      summary: { matches: 0, missing: 0, conflict: 0, outside_schema: 0, total: 0 }
+    },
+    reconciliationSchemaName: "adhoc-schema",
+    reconciliationSchemaVersion: null
+  };
+  renderWorkspaceStatusBanner(mockTransientStatus);
+  const bannerTransient = getEl('wsNoteStatusBanner').innerHTML;
+  results.transient_no_v_prefix = !bannerTransient.includes("(v") && bannerTransient.includes("adhoc-schema");
+
+  console.log(JSON.stringify(results));
+}
+
+runTests().catch(e => { console.error(e); process.exit(1); });
+"""
+
+    proc = subprocess.run(["node"], input=harness + full_js + test_driver, capture_output=True, text=True, check=True, encoding="utf-8")
+    data = json.loads(proc.stdout.strip())
+
+    # Assertions
+    assert data["init_blankNoteSchema"] is None
+    assert data["init_blankNoteEntrySource"] == "direct"
+
+    # Mode 1
+    assert data["mode1_blankNoteSchema_name"] == "transient-designer-schema"
+    assert data["mode1_fill_header"] == "transient-designer-schema"
+    assert data["mode1_active_visible"] == "block"
+
+    # Mode 2 assigned
+    assert data["mode2_blankNoteSchema_name"] == "ha-lifecycle-test"
+    assert data["mode2_blankNoteSchema_version"] == "1.1"
+    assert data["mode2_fill_header"] == "ha-lifecycle-test (v1.1)"
+    assert data["mode2_active_visible"] == "block"
+
+    # Mode 2 unassigned (fail-closed)
+    assert data["mode2_unassigned_blankNoteSchema"] is None
+    assert data["mode2_unassigned_empty_visible"] == "block"
+    assert data["mode2_unassigned_active_visible"] == "none"
+
+    # HA-F21
+    assert data["banner_contains_v11_zh"] is True
+    assert data["banner_contains_v11_en"] is True
+    assert data["transient_no_v_prefix"] is True
