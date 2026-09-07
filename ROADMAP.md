@@ -20,8 +20,8 @@ Current Task: `M022-T04`
 Last Verified Gate: `M021 — Schema Naming, Versioning, Migration & Governance Profile PASS`  
 Current Blocker: `NONE`  
 Next Action: `Await Human Owner (Dr. J) Windows 10 production UI walkthrough retest and formal Human Acceptance verdict (M022-T04 / M022-AC04).`  
-Implementation: `COMPLETE (Commit 21I Observed Property Canonical Key Identity Closure: (1) In app/ui/index.html, repaired loadGlossaryList to iterate real inventory property records from S.inventory.properties array using pdata.key rather than numeric array indexes produced by Object.entries(array); fails closed on missing/empty canonical keys; preserves deduplication precedence with builtin catalog and user overrides; retains real usage_count and dominant_type metadata; and maintains raw canonical YAML key identity across locales; (2) In tests/test_v12_human_acceptance_repairs.py, added test_ha_f19_observed_property_canonical_key_identity_in_node covering TESTS A-F in real Node.js: real inventory array records custom_alpha and custom_beta rendered without numeric index fallback; metadata correctly attached without cross-wiring; builtin status and override shared_override_key deduplicated; malformed entries ignored fail-closed; and locale switch preserves canonical key identity)`  
-Automated Verification: `PASS (244/244 tests pass, 5,040-note benchmark verified, Vault 100% byte-for-byte read-only and zero mutation)`  
+Implementation: `COMPLETE (Commit 21J Active Vault Runtime Context Rehydration Closure: (1) In app/server.py, added /api/runtime/context endpoint exposing active in-memory scan status, vault_path, vault_name, scope, notes_in_scope, and total_vault_notes from STORE authority without disk rescan; (2) In app/ui/index.html, added rehydrateRuntimeContext() called during init() to rehydrate S.scanned, S.vaultPath, S.vaultName, S.scope, and S.notesInScope on browser load/refresh; updated updateContextBarLabels() to drive vault label from S.vaultName/S.vaultPath rather than wiping to 'No vault loaded'; (3) In tests/test_v12_human_acceptance_repairs.py, added test_ha_f22_backend_runtime_context_active_and_empty and test_ha_f22_frontend_runtime_context_rehydration_in_node covering TESTS A-G across backend state, browser F5 rehydration, locale switch identity retention, note/vault coexistence, server restart empty state, and non-default scope authority)`  
+Automated Verification: `PASS (246/246 tests pass, 5,040-note benchmark verified, Vault 100% byte-for-byte read-only and zero mutation)`  
 Human Verified Acceptance: `NOT YET VERIFIED`  
 Release Readiness: `READY_FOR_HUMAN_RETEST` (Human Owner UI Walkthrough: `NOT YET VERIFIED`)  
 Accepted Limitation: `Windows 11 AMD64 native verification recorded as NOT YET VERIFIED due to test host unavailability (accepted non-blocking release limitation per human approved contract).`  
@@ -306,7 +306,7 @@ Status: `IN_PROGRESS`
 Execute complete Workflow Closure Matrix validation, run full regression suite and 5,000-note benchmark, verify Vault byte-for-byte read-only integrity, conduct human walkthrough on Windows 10 production UI, verify P0 completion and P1 implementation, and package v1.2.0 release artifacts.
 
 ### Tasks
-- [x] `M022-T01` Execute complete Workflow Closure Matrix automated test suite (244/244 tests PASS, includes `tests/test_v12_human_acceptance_repairs.py` validating 22 regression tests across HA-F01 ~ HA-F19, real JS Node.js execution of SemVer bumper and compareSchemaVersions, Save Modal multi-version sort, state isolation, workspace reconciliation banner locale rerender, drift exact-path click navigation, personal glossary observed key identity, and storage closure invariants).
+- [x] `M022-T01` Execute complete Workflow Closure Matrix automated test suite (246/246 tests PASS, includes `tests/test_v12_human_acceptance_repairs.py` validating 24 regression tests across HA-F01 ~ HA-F22, real JS Node.js execution of SemVer bumper and compareSchemaVersions, Save Modal multi-version sort, state isolation, workspace reconciliation banner locale rerender, drift exact-path click navigation, personal glossary observed key identity, active vault runtime context rehydration, and storage closure invariants).
 - [x] `M022-T02` Run 5,000-note performance benchmark and record in `evidence/integration/m022_v120_benchmark.json` (authoritative: 5.844s analysis / 5.667s scan over 5,040 notes). `evidence/benchmark.json` is the latest local benchmark (non-authoritative, overwritten each run).
 - [x] `M022-T03` Verify Vault byte-for-byte read-only integrity across all v1.2 workflows (`evidence/integration/m022_v120_vault_readonly.json`).
 - [ ] `M022-T04` Conduct Windows 10 production UI walkthrough acceptance with Human Owner (Dr. J).
@@ -315,7 +315,7 @@ Execute complete Workflow Closure Matrix validation, run full regression suite a
 - [x] `M022-T07` Generate release packaging and record formal release verdict (`scripts/package_v120_release.py`).
 
 ### Acceptance Criteria
-- [x] `M022-AC01` All automated regression and closure tests PASS (244/244).
+- [x] `M022-AC01` All automated regression and closure tests PASS (246/246).
 - [x] `M022-AC02` 5,000-note benchmark recorded (authoritative: `evidence/integration/m022_v120_benchmark.json` — 5.844s analysis / 5.667s scan over 5,040 notes).
 - [x] `M022-AC03` Vault remains byte-for-byte untouched and zero directory created on violation.
 - [ ] `M022-AC04` Human Owner walkthrough PASS (Reserved for Human Owner Dr. J).
