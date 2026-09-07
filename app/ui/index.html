@@ -2291,7 +2291,16 @@ async function loadGlossaryList() {
 
     // Also include observed vault properties from active inventory (REQ-041 Tier 3: Observed Vault Facts)
     if (S.inventory && S.inventory.properties) {
-      Object.entries(S.inventory.properties).forEach(([pkey, pdata]) => {
+      const rawProps = S.inventory.properties;
+      const propList = Array.isArray(rawProps)
+        ? rawProps
+        : (rawProps && typeof rawProps === "object" ? Object.values(rawProps) : []);
+
+      propList.forEach(pdata => {
+        if (!pdata || typeof pdata !== "object") return;
+        const pkey = typeof pdata.key === "string" ? pdata.key.trim() : "";
+        if (!pkey) return;
+
         if (!seenKeys.has(pkey)) {
           seenKeys.add(pkey);
           merged.push({

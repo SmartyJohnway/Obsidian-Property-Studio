@@ -998,6 +998,8 @@ ensureEl("wsNoteSearch");
 ensureEl("wsNoteCandidates");
 ensureEl("wsDropdownToggleBtn");
 ensureEl("wsSearchBtn");
+ensureEl("glossaryTableBody");
+ensureEl("glossarySearchInput");
 """
 
 
@@ -1615,3 +1617,281 @@ def test_ha_f12_actual_js_drift_click_navigation_in_node():
     assert calls[3]["propKey"] == "extra"
     assert calls[3]["mode"] == "drift_finding"
     assert calls[3]["schemaId"] == "schema-procurement-v1"
+
+
+# ==============================================================================
+# HA-F19: Personal Glossary Observed Property Canonical Key Identity (TESTS A-F)
+# ==============================================================================
+def test_ha_f19_observed_property_canonical_key_identity_in_node():
+    """Verify in Node.js runtime that loadGlossaryList extracts canonical property keys
+    from inventory property records (pdata.key) rather than using numeric array indexes (0, 1, 2...),
+    fails closed on malformed records, preserves deduplication with builtin and user overrides,
+    maintains correct metadata association, and preserves canonical key identity across locales (TESTS A-F).
+    """
+    import subprocess
+    import json
+    from pathlib import Path
+
+    html_content = Path("app/ui/index.html").read_text(encoding="utf-8")
+    js_start = html_content.find("<script>") + len("<script>")
+    js_end = html_content.find("</script>", js_start)
+    full_js = html_content[js_start:js_end]
+
+    node_script = f"""
+    {_get_node_harness_prefix()}
+
+    let currentLocale = "zh-Hant";
+    global.localStorage = {{
+      getItem: (k) => k === "ps_locale" ? currentLocale : null,
+      setItem: (k, v) => {{ if (k === "ps_locale") currentLocale = v; }}
+    }};
+
+    global.I18N = {{
+      t: (k, p) => {{
+        if (k === "glossary.vault_observed_guidance") {{
+          const c = p ? p.count : 0;
+          const t = p ? p.type : "text";
+          return currentLocale.startsWith("en")
+            ? `Observed in ${{c}} vault notes (dominant type: ${{t}})`
+            : `觀察於 ${{c}} 篇筆記（主要類型: ${{t}}）`;
+        }}
+        if (k === "glossary.source_builtin") return currentLocale.startsWith("en") ? "Built-in" : "內建標準";
+        if (k === "glossary.source_override") return currentLocale.startsWith("en") ? "User Override" : "自訂覆寫";
+        if (k === "glossary.source_observed") return currentLocale.startsWith("en") ? "Observed" : "庫內觀察";
+        if (k === "glossary.btn_create") return currentLocale.startsWith("en") ? "Create Definition" : "建立定義";
+        if (k === "glossary.btn_edit") return currentLocale.startsWith("en") ? "Edit Definition" : "編輯定義";
+        let s = k;
+        if (p) {{ Object.entries(p).forEach(([pk, pv]) => {{ s += ` [${{pk}}:${{pv}}]`; }}); }}
+        return s;
+      }},
+      init: () => {{}},
+      setLocale: (l) => {{ currentLocale = l; }},
+      applyLocale: () => {{}}
+    }};
+
+    {full_js}
+
+    async function runGlossaryTests() {{
+      const results = {{
+        uncaughtErrors: []
+      }};
+
+      // Mock api responses for catalog and user overrides
+      global.api = async function(path, payload) {{
+        if (path === "/api/glossary/catalog") {{
+          return {{
+            catalog: [
+              {{
+                canonical_key: "status",
+                label_zh: "狀態",
+                label_en: "Status",
+                short_description_zh: "筆記狀態說明",
+                short_description_en: "Note status guidance"
+              }},
+              {{
+                canonical_key: "title",
+                label_zh: "標題",
+                label_en: "Title",
+                short_description_zh: "筆記標題說明",
+                short_description_en: "Note title guidance"
+              }}
+            ],
+            total: 2
+          }};
+        }}
+        if (path === "/api/glossary/user/list") {{
+          return {{
+            overrides: {{
+              "custom_user_prop": {{
+                canonical_key: "custom_user_prop",
+                label_zh: "使用者屬性",
+                label_en: "User Prop",
+                guidance_zh: "使用者定義說明",
+                guidance_en: "User defined guidance"
+              }},
+              "shared_override_key": {{
+                canonical_key: "shared_override_key",
+                label_zh: "共用覆寫屬性",
+                label_en: "Shared Override Prop",
+                guidance_zh: "覆寫說明",
+                guidance_en: "Override guidance"
+              }}
+            }}
+          }};
+        }}
+        return {{}};
+      }};
+
+      // Setup Inventory with production array shape:
+      // - TEST A & B: custom_alpha (397, text), custom_beta (12, date)
+      // - TEST C: status (should deduplicate with builtin catalog)
+      // - TEST D: shared_override_key (should deduplicate with user overrides)
+      // - TEST E: malformed entries (empty object, empty key, null key, whitespace key, null)
+      S.inventory = {{
+        note_count: 5040,
+        unique_property_count: 5,
+        properties: [
+          {{
+            key: "custom_alpha",
+            usage_count: 397,
+            dominant_type: "text",
+            distinct_value_count: 40
+          }},
+          {{
+            key: "custom_beta",
+            usage_count: 12,
+            dominant_type: "date",
+            distinct_value_count: 5
+          }},
+          {{
+            key: "status",
+            usage_count: 5000,
+            dominant_type: "text"
+          }},
+          {{
+            key: "shared_override_key",
+            usage_count: 88,
+            dominant_type: "number"
+          }},
+          // TEST E malformed records:
+          {{}},
+          {{ key: "" }},
+          {{ key: null }},
+          {{ key: "   " }},
+          null
+        ]
+      }};
+
+      // 1. Execute loadGlossaryList in zh-Hant
+      try {{
+        currentLocale = "zh-Hant";
+        await loadGlossaryList();
+      }} catch (err) {{
+        results.uncaughtErrors.push("zh load error: " + err.message);
+      }}
+
+      const tbody = elements["glossaryTableBody"];
+      const htmlZh = tbody ? tbody.innerHTML : "";
+      results.htmlZh = htmlZh;
+
+      const rowsZh = [];
+      const trBlocksZh = htmlZh.split("<tr").slice(1);
+      for (const tr of trBlocksZh) {{
+        const codeM = /<code>(.*?)<[/]code>/.exec(tr);
+        const strongM = /<strong>(.*?)<[/]strong>/.exec(tr);
+        const pillM = /<span class="pill[^"]*">(.*?)<[/]span>/.exec(tr);
+        const tdParts = tr.split("<td");
+        let guidance = "";
+        if (tdParts[4]) {{
+          const endTd = tdParts[4].indexOf("</td>");
+          guidance = tdParts[4].substring(tdParts[4].indexOf(">") + 1, endTd).trim();
+        }}
+        if (codeM) {{
+          rowsZh.push({{
+            key: codeM[1],
+            label: strongM ? strongM[1] : "",
+            source: pillM ? pillM[1] : "",
+            guidance: guidance
+          }});
+        }}
+      }}
+      results.rowsZh = rowsZh;
+
+      // 2. Execute loadGlossaryList in en for TEST F
+      try {{
+        currentLocale = "en";
+        await loadGlossaryList();
+      }} catch (err) {{
+        results.uncaughtErrors.push("en load error: " + err.message);
+      }}
+
+      const htmlEn = tbody ? tbody.innerHTML : "";
+      results.htmlEn = htmlEn;
+
+      const rowsEn = [];
+      const trBlocksEn = htmlEn.split("<tr").slice(1);
+      for (const tr of trBlocksEn) {{
+        const codeM = /<code>(.*?)<[/]code>/.exec(tr);
+        const strongM = /<strong>(.*?)<[/]strong>/.exec(tr);
+        const pillM = /<span class="pill[^"]*">(.*?)<[/]span>/.exec(tr);
+        const tdParts = tr.split("<td");
+        let guidance = "";
+        if (tdParts[4]) {{
+          const endTd = tdParts[4].indexOf("</td>");
+          guidance = tdParts[4].substring(tdParts[4].indexOf(">") + 1, endTd).trim();
+        }}
+        if (codeM) {{
+          rowsEn.push({{
+            key: codeM[1],
+            label: strongM ? strongM[1] : "",
+            source: pillM ? pillM[1] : "",
+            guidance: guidance
+          }});
+        }}
+      }}
+      results.rowsEn = rowsEn;
+
+      console.log(JSON.stringify(results));
+    }}
+
+    runGlossaryTests().catch(err => {{
+      console.error(err);
+      process.exit(1);
+    }});
+    """
+
+    proc = subprocess.run(["node"], input=node_script, capture_output=True, text=True, check=True, encoding="utf-8")
+    res = json.loads(proc.stdout.strip())
+
+    assert res["uncaughtErrors"] == [], f"Uncaught errors: {res['uncaughtErrors']}"
+
+    rows_zh = res["rowsZh"]
+    keys_zh = [r["key"] for r in rows_zh]
+
+    # TEST A: real inventory array identity (custom_alpha, custom_beta rendered; numeric indexes NOT rendered)
+    assert "custom_alpha" in keys_zh, "custom_alpha must be rendered as canonical key"
+    assert "custom_beta" in keys_zh, "custom_beta must be rendered as canonical key"
+    assert "0" not in keys_zh, "Numeric array index '0' must NOT be rendered as property key"
+    assert "1" not in keys_zh, "Numeric array index '1' must NOT be rendered as property key"
+    assert "2" not in keys_zh, "Numeric array index '2' must NOT be rendered as property key"
+    assert "3" not in keys_zh, "Numeric array index '3' must NOT be rendered as property key"
+    assert "4" not in keys_zh, "Numeric array index '4' must NOT be rendered as property key"
+
+    # TEST B: metadata remains attached to correct key without cross-wiring
+    alpha_row = next(r for r in rows_zh if r["key"] == "custom_alpha")
+    assert "397" in alpha_row["guidance"], f"custom_alpha must carry its usage count 397: {alpha_row['guidance']}"
+    assert "text" in alpha_row["guidance"], f"custom_alpha must carry its dominant type text: {alpha_row['guidance']}"
+
+    beta_row = next(r for r in rows_zh if r["key"] == "custom_beta")
+    assert "12" in beta_row["guidance"], f"custom_beta must carry its usage count 12: {beta_row['guidance']}"
+    assert "date" in beta_row["guidance"], f"custom_beta must carry its dominant type date: {beta_row['guidance']}"
+
+    # TEST C: built-in deduplication (status exists in catalog and inventory -> exactly one canonical row, source builtin)
+    status_rows = [r for r in rows_zh if r["key"] == "status"]
+    assert len(status_rows) == 1, f"Expected exactly 1 status row, got {len(status_rows)}"
+    assert status_rows[0]["source"] == "內建標準", f"status row must retain builtin source: {status_rows[0]['source']}"
+
+    # TEST D: user override deduplication (shared_override_key exists in overrides and inventory -> exactly one canonical row, source user override)
+    shared_rows = [r for r in rows_zh if r["key"] == "shared_override_key"]
+    assert len(shared_rows) == 1, f"Expected exactly 1 shared_override_key row, got {len(shared_rows)}"
+    assert shared_rows[0]["source"] == "自訂覆寫", f"shared_override_key must retain user override source: {shared_rows[0]['source']}"
+
+    # TEST E: malformed inventory records fail closed (no undefined, no empty key, valid records still render)
+    assert "undefined" not in keys_zh, "'undefined' must not appear in rendered keys"
+    assert "" not in keys_zh, "Empty string must not appear in rendered keys"
+    assert "null" not in keys_zh, "'null' must not appear in rendered keys"
+    # Total rows: status (builtin), title (builtin), custom_user_prop (override), shared_override_key (override), custom_alpha (observed), custom_beta (observed) = 6
+    assert len(rows_zh) == 6, f"Expected exactly 6 valid deduplicated rows, got {len(rows_zh)}"
+
+    # TEST F: locale switch identity stability (key remains 'custom_alpha' while UI strings localize)
+    rows_en = res["rowsEn"]
+    alpha_en = next(r for r in rows_en if r["key"] == "custom_alpha")
+    assert alpha_en["key"] == "custom_alpha", "Canonical key must remain 'custom_alpha' in English"
+    assert alpha_en["label"] == "custom_alpha", "Primary label for observed property must remain 'custom_alpha'"
+    assert alpha_en["source"] == "Observed", f"Source pill must localize to 'Observed': {alpha_en['source']}"
+    assert alpha_en["guidance"] == "Observed in 397 vault notes (dominant type: text)", f"Guidance must localize to English: {alpha_en['guidance']}"
+
+    beta_en = next(r for r in rows_en if r["key"] == "custom_beta")
+    assert beta_en["key"] == "custom_beta", "Canonical key must remain 'custom_beta' in English"
+    assert beta_en["source"] == "Observed"
+    assert beta_en["guidance"] == "Observed in 12 vault notes (dominant type: date)"
