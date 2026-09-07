@@ -11,7 +11,7 @@ Active Milestone: `M022`
 Active Milestone Status: `IN_PROGRESS`  
 Current Task: `M022-T04` (Human Owner Windows 10 Production UI Walkthrough Acceptance Retest)  
 Last Verified Gate: `M021 — Schema Naming, Versioning, Migration & Governance Profile PASS`  
-Last Verified Implementation Commit: `49217dc` (Commit 21H — Drift Exact-Path Click Navigation Closure)  
+Last Verified Implementation Commit: `3340ff6` (Commit 21I — Observed Property Canonical Key Identity Closure)  
 GitHub PR: `PR #2 (Draft, feat(v1.2): Personal Property Governance System)`  
 Authoritative Specification: `docs/specs/Obsidian_Property_Studio_v1.2.0_Spec.md`  
 Archived v1.1 Roadmap: `docs/archive/ROADMAP_v1.1.0.md`  
@@ -59,7 +59,15 @@ All autonomous implementation and verification milestones from M016 through M021
   - 4 dedicated unit tests (`tests/test_v12_migration.py`, `tests/test_v12_governance_profile.py`) PASS.
 
 - **M022: Release Acceptance & Packaging — IN_PROGRESS**
-- **Commit 21H: Drift Exact-Path Click Navigation Closure (HA-F12) — CURRENT HEAD**
+- **Commit 21I: Observed Property Canonical Key Identity Closure (HA-F19) — CURRENT HEAD**
+  - **Iterate Real Inventory Records (pdata.key)**: In `app/ui/index.html` (`loadGlossaryList`), repaired observed vault property iteration from `S.inventory.properties`. Because `inventory.properties` is canonically a JSON array of `PropertyEntry` objects, replaced `Object.entries(S.inventory.properties)` (which produced numeric array indexes `"0"`, `"1"`, `"2"` as keys) with direct array iteration extracting `pdata.key`.
+  - **Fail Closed on Malformed Records**: Records missing a non-empty string `key` are skipped immediately without generating fallback index keys, "undefined", or empty rows.
+  - **Deduplication Precedence**: Retained canonical 3-tier precedence (`user override > builtin catalog > observed-only property`). Observed inventory entries only add keys not already in `seenKeys`.
+  - **Metadata Association Intact**: Preserved `pdata.usage_count` and `pdata.dominant_type` correctly bound to each canonical property key.
+  - **Locale-Invariant Identity**: Raw YAML property keys remain strictly immutable across zh-Hant and English views, while labels/sources/guidance localize properly.
+  - **Automated Node.js Test Coverage (TESTS A-F)**: In `tests/test_v12_human_acceptance_repairs.py`, added `test_ha_f19_observed_property_canonical_key_identity_in_node()` validating: (A) real array identity renders `custom_alpha` and `custom_beta`, 0 numeric index rows; (B) metadata attached without cross-wiring; (C) builtin `status` deduplication; (D) user override `shared_override_key` deduplication; (E) malformed records fail-closed; (F) locale switch identity stability.
+  - **Automated Verification**: **244/244 tests PASS** in 15.36s. Vault 100% byte-for-byte read-only.
+- **Commit 21H: Drift Exact-Path Click Navigation Closure (HA-F12) — SUPERSEDED BY 21I**
   - **DOM Event Binding & Zero Inline JS Injection**: In `app/ui/index.html` (`window.openDriftDetailsDrawer`), removed untrusted/canonical `note_path` strings from inline `onclick="drilldownToNoteWorkspace('${esc(f.note_path)}', ...)"`. Rendered buttons with class `.drift-reconcile-btn` and `data-finding-index="${idx}"`, and attached DOM event listeners via `drawerBody.querySelectorAll(".drift-reconcile-btn")` after drawer rendering.
   - **Exact Path Preserved**: Clicking "Reconcile Note" retrieves `findings[idx].note_path` directly from state, passing the exact canonical string (including apostrophes `'`, double quotes `"`, ampersands `&`, square brackets `[[`, and Chinese Unicode characters) to `drilldownToNoteWorkspace`. Completely eliminated browser `SyntaxError` / silent handler failures on paths like `·'![[台灣_美國通用採購流程使用手冊_v1.0.docx.md`.
   - **Automated Node.js Test Coverage (TESTS A-D)**: In `tests/test_v12_human_acceptance_repairs.py`, added `test_ha_f12_actual_js_drift_click_navigation_in_node()`:

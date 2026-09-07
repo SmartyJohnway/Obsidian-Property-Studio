@@ -20,8 +20,8 @@ Current Task: `M022-T04`
 Last Verified Gate: `M021 — Schema Naming, Versioning, Migration & Governance Profile PASS`  
 Current Blocker: `NONE`  
 Next Action: `Await Human Owner (Dr. J) Windows 10 production UI walkthrough retest and formal Human Acceptance verdict (M022-T04 / M022-AC04).`  
-Implementation: `COMPLETE (Commit 21H Drift Exact-Path Click Navigation Closure: (1) In app/ui/index.html, repaired openDriftDetailsDrawer to remove unescaped/untrusted path strings from inline onclick attributes; render buttons with class drift-reconcile-btn and data-finding-index, binding DOM event listeners to retrieve exact finding.note_path from runtime state, completely eliminating syntax errors/broken click handlers on paths with apostrophes, double quotes, or special characters; (2) In tests/test_v12_human_acceptance_repairs.py, added test_ha_f12_actual_js_drift_click_navigation_in_node covering TESTS A-D in real Node.js: apostrophe path ·'![[台灣_美國通用採購流程使用手冊_v1.0.docx.md executes without error and passes exact string to drilldownToNoteWorkspace; double quotes/ampersand path 工程 "A&B" Review.md; normal path regression 00_Home/HOME.md; and distinct duplicate basename FolderB/Item.md; zero inline onclick injection verified)`  
-Automated Verification: `PASS (243/243 tests pass, 5,040-note benchmark verified, Vault 100% byte-for-byte read-only and zero mutation)`  
+Implementation: `COMPLETE (Commit 21I Observed Property Canonical Key Identity Closure: (1) In app/ui/index.html, repaired loadGlossaryList to iterate real inventory property records from S.inventory.properties array using pdata.key rather than numeric array indexes produced by Object.entries(array); fails closed on missing/empty canonical keys; preserves deduplication precedence with builtin catalog and user overrides; retains real usage_count and dominant_type metadata; and maintains raw canonical YAML key identity across locales; (2) In tests/test_v12_human_acceptance_repairs.py, added test_ha_f19_observed_property_canonical_key_identity_in_node covering TESTS A-F in real Node.js: real inventory array records custom_alpha and custom_beta rendered without numeric index fallback; metadata correctly attached without cross-wiring; builtin status and override shared_override_key deduplicated; malformed entries ignored fail-closed; and locale switch preserves canonical key identity)`  
+Automated Verification: `PASS (244/244 tests pass, 5,040-note benchmark verified, Vault 100% byte-for-byte read-only and zero mutation)`  
 Human Verified Acceptance: `NOT YET VERIFIED`  
 Release Readiness: `READY_FOR_HUMAN_RETEST` (Human Owner UI Walkthrough: `NOT YET VERIFIED`)  
 Accepted Limitation: `Windows 11 AMD64 native verification recorded as NOT YET VERIFIED due to test host unavailability (accepted non-blocking release limitation per human approved contract).`  
@@ -306,7 +306,7 @@ Status: `IN_PROGRESS`
 Execute complete Workflow Closure Matrix validation, run full regression suite and 5,000-note benchmark, verify Vault byte-for-byte read-only integrity, conduct human walkthrough on Windows 10 production UI, verify P0 completion and P1 implementation, and package v1.2.0 release artifacts.
 
 ### Tasks
-- [x] `M022-T01` Execute complete Workflow Closure Matrix automated test suite (243/243 tests PASS, includes `tests/test_v12_human_acceptance_repairs.py` validating 21 regression tests across HA-F01 ~ HA-F18, real JS Node.js execution of SemVer bumper and compareSchemaVersions, Save Modal multi-version sort, state isolation, workspace reconciliation banner locale rerender, drift exact-path click navigation, and storage closure invariants).
+- [x] `M022-T01` Execute complete Workflow Closure Matrix automated test suite (244/244 tests PASS, includes `tests/test_v12_human_acceptance_repairs.py` validating 22 regression tests across HA-F01 ~ HA-F19, real JS Node.js execution of SemVer bumper and compareSchemaVersions, Save Modal multi-version sort, state isolation, workspace reconciliation banner locale rerender, drift exact-path click navigation, personal glossary observed key identity, and storage closure invariants).
 - [x] `M022-T02` Run 5,000-note performance benchmark and record in `evidence/integration/m022_v120_benchmark.json` (authoritative: 5.844s analysis / 5.667s scan over 5,040 notes). `evidence/benchmark.json` is the latest local benchmark (non-authoritative, overwritten each run).
 - [x] `M022-T03` Verify Vault byte-for-byte read-only integrity across all v1.2 workflows (`evidence/integration/m022_v120_vault_readonly.json`).
 - [ ] `M022-T04` Conduct Windows 10 production UI walkthrough acceptance with Human Owner (Dr. J).
@@ -315,7 +315,7 @@ Execute complete Workflow Closure Matrix validation, run full regression suite a
 - [x] `M022-T07` Generate release packaging and record formal release verdict (`scripts/package_v120_release.py`).
 
 ### Acceptance Criteria
-- [x] `M022-AC01` All automated regression and closure tests PASS (243/243).
+- [x] `M022-AC01` All automated regression and closure tests PASS (244/244).
 - [x] `M022-AC02` 5,000-note benchmark recorded (authoritative: `evidence/integration/m022_v120_benchmark.json` — 5.844s analysis / 5.667s scan over 5,040 notes).
 - [x] `M022-AC03` Vault remains byte-for-byte untouched and zero directory created on violation.
 - [ ] `M022-AC04` Human Owner walkthrough PASS (Reserved for Human Owner Dr. J).
