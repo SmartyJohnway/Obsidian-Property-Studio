@@ -850,7 +850,7 @@ def test_ha_f16_update_schema_collision_guard():
 # ==============================================================================
 
 def _get_node_harness_prefix() -> str:
-    return """
+    return r"""
 const elements = {};
 function createMockEl(id) {
   const classes = new Set();
@@ -884,6 +884,30 @@ function createMockEl(id) {
     removeChild: () => {},
     setAttribute: () => {},
     getAttribute: () => "",
+    dataset: {},
+    querySelectorAll: function(sel) {
+      if (sel === ".drift-reconcile-btn") {
+        if (this._cachedButtons && this._cachedButtonsHtml === this._innerHTML) {
+          return this._cachedButtons;
+        }
+        const matches = [];
+        const tagRegex = /<button\s+([^>]*)>/g;
+        let m;
+        while ((m = tagRegex.exec(this._innerHTML)) !== null) {
+          const attrs = m[1];
+          if (attrs.includes("drift-reconcile-btn")) {
+            const idxMatch = /data-finding-index=["'](\d+)["']/.exec(attrs);
+            const btnEl = createMockEl("btn-" + (idxMatch ? idxMatch[1] : matches.length));
+            btnEl.dataset = { findingIndex: idxMatch ? idxMatch[1] : "" };
+            matches.push(btnEl);
+          }
+        }
+        this._cachedButtons = matches;
+        this._cachedButtonsHtml = this._innerHTML;
+        return matches;
+      }
+      return [];
+    },
     _innerHTML: "",
     get innerHTML() { return this._innerHTML; },
     set innerHTML(val) {
@@ -1419,3 +1443,175 @@ def test_ha_f08_workspace_reconciliation_banner_locale_rerender_in_js():
     assert res["afterCancelHasNoteLoaded"] is True
     assert res["afterCancelNoReconcile"] is True
     assert res["afterCancelRecResultCleared"] is True
+
+
+# ==============================================================================
+# HA-F12: Production JavaScript Exact-Path Drift Click Navigation (TESTS A-D)
+# ==============================================================================
+def test_ha_f12_actual_js_drift_click_navigation_in_node():
+    """Verify in Node.js runtime that openDriftDetailsDrawer binds click listeners via DOM
+    and passes the exact, uncorrupted canonical path to drilldownToNoteWorkspace without
+    breaking on apostrophes, double quotes, ampersands, or Unicode characters (TESTS A-D).
+    """
+    import subprocess
+    import json
+    from pathlib import Path
+
+    html_content = Path("app/ui/index.html").read_text(encoding="utf-8")
+    js_start = html_content.find("<script>") + len("<script>")
+    js_end = html_content.find("</script>", js_start)
+    full_js = html_content[js_start:js_end]
+
+    node_script = f"""
+    {_get_node_harness_prefix()}
+    {full_js}
+
+    async function runDriftNavigationTests() {{
+      const results = {{
+        uncaughtErrors: [],
+        drilldownCalls: []
+      }};
+
+      global.drilldownToNoteWorkspace = function(path, anchor, propKey, mode, schemaId) {{
+        results.drilldownCalls.push({{ path, anchor, propKey, mode, schemaId }});
+      }};
+
+      // Setup Drift report with canonical findings covering TESTS A, B, C, D
+      const testFindings = [
+        // TEST A: Real filename with apostrophe, bullet, wikilink syntax, and Unicode
+        {{
+          note_path: "·\'![[台灣_美國通用採購流程使用手冊_v1.0.docx.md",
+          category: "missing_required",
+          property_key: "vendor",
+          detail: "Missing required property: vendor",
+          navigation_available: true
+        }},
+        // TEST B: Path with double quotes, ampersand, and Unicode
+        {{
+          note_path: '工程 "A&B" Review.md',
+          category: "type_mismatch",
+          property_key: "status",
+          detail: "Type mismatch on status",
+          navigation_available: true
+        }},
+        // TEST C: Normal path regression
+        {{
+          note_path: "00_Home/HOME.md",
+          category: "value_drift",
+          property_key: "tags",
+          detail: "Unexpected tag value",
+          navigation_available: true
+        }},
+        // TEST D: Two notes with identical basename in different folders
+        {{
+          note_path: "FolderA/Item.md",
+          category: "unexpected_property",
+          property_key: "extra",
+          detail: "Extra property in FolderA",
+          navigation_available: true
+        }},
+        {{
+          note_path: "FolderB/Item.md",
+          category: "unexpected_property",
+          property_key: "extra",
+          detail: "Extra property in FolderB",
+          navigation_available: true
+        }}
+      ];
+
+      S.lastDriftReport = {{
+        schema_id: "schema-procurement-v1",
+        schema_name: "Procurement Schema",
+        compliance_rate: "75%",
+        findings: testFindings
+      }};
+
+      try {{
+        openDriftDetailsDrawer();
+      }} catch (err) {{
+        results.uncaughtErrors.push("openDriftDetailsDrawer error: " + err.message);
+      }}
+
+      const drawerBody = elements["drawerBody"];
+      const buttons = drawerBody ? drawerBody.querySelectorAll(".drift-reconcile-btn") : [];
+      results.btnCount = buttons.length;
+
+      // Verify zero inline onclick attributes with drilldownToNoteWorkspace
+      const innerHtml = drawerBody ? drawerBody.innerHTML : "";
+      results.hasInlineOnClickDrilldown = innerHtml.includes("drilldownToNoteWorkspace");
+
+      // TEST A: Click button 0 (apostrophe + special characters)
+      try {{
+        if (buttons[0]) buttons[0].dispatchEvent("click");
+      }} catch (err) {{
+        results.uncaughtErrors.push("TEST A click error: " + err.message);
+      }}
+
+      // TEST B: Click button 1 (double quotes + ampersand + Unicode)
+      try {{
+        if (buttons[1]) buttons[1].dispatchEvent("click");
+      }} catch (err) {{
+        results.uncaughtErrors.push("TEST B click error: " + err.message);
+      }}
+
+      // TEST C: Click button 2 (normal path)
+      try {{
+        if (buttons[2]) buttons[2].dispatchEvent("click");
+      }} catch (err) {{
+        results.uncaughtErrors.push("TEST C click error: " + err.message);
+      }}
+
+      // TEST D: Click button 4 (FolderB/Item.md, distinguishing duplicate basename)
+      try {{
+        if (buttons[4]) buttons[4].dispatchEvent("click");
+      }} catch (err) {{
+        results.uncaughtErrors.push("TEST D click error: " + err.message);
+      }}
+
+      console.log(JSON.stringify(results));
+    }}
+
+    runDriftNavigationTests().catch(err => {{
+      console.error(err);
+      process.exit(1);
+    }});
+    """
+
+    proc = subprocess.run(["node"], input=node_script, capture_output=True, text=True, check=True, encoding="utf-8")
+    res = json.loads(proc.stdout.strip())
+
+    # Verify zero errors and zero inline onclick injection
+    assert res["uncaughtErrors"] == [], f"Uncaught errors during execution: {res['uncaughtErrors']}"
+    assert res["hasInlineOnClickDrilldown"] is False, "Inline onclick drilldown must NOT be present in rendered HTML"
+    assert res["btnCount"] == 5
+
+    calls = res["drilldownCalls"]
+    assert len(calls) == 4, f"Expected 4 drilldown calls, got {len(calls)}"
+
+    # TEST A: Exact match for apostrophe, bullet, brackets, and Unicode
+    expected_a = "·'![[台灣_美國通用採購流程使用手冊_v1.0.docx.md"
+    assert calls[0]["path"] == expected_a, f"TEST A path mismatch: {calls[0]['path']} != {expected_a}"
+    assert calls[0]["propKey"] == "vendor"
+    assert calls[0]["mode"] == "drift_finding"
+    assert calls[0]["schemaId"] == "schema-procurement-v1"
+
+    # TEST B: Exact match for double quotes, ampersand, and Unicode
+    expected_b = '工程 "A&B" Review.md'
+    assert calls[1]["path"] == expected_b, f"TEST B path mismatch: {calls[1]['path']} != {expected_b}"
+    assert calls[1]["propKey"] == "status"
+    assert calls[1]["mode"] == "drift_finding"
+    assert calls[1]["schemaId"] == "schema-procurement-v1"
+
+    # TEST C: Normal path regression
+    expected_c = "00_Home/HOME.md"
+    assert calls[2]["path"] == expected_c, f"TEST C path mismatch: {calls[2]['path']} != {expected_c}"
+    assert calls[2]["propKey"] == "tags"
+    assert calls[2]["mode"] == "drift_finding"
+    assert calls[2]["schemaId"] == "schema-procurement-v1"
+
+    # TEST D: Exact FolderB path received, NOT FolderA
+    expected_d = "FolderB/Item.md"
+    assert calls[3]["path"] == expected_d, f"TEST D path mismatch: {calls[3]['path']} != {expected_d}"
+    assert calls[3]["propKey"] == "extra"
+    assert calls[3]["mode"] == "drift_finding"
+    assert calls[3]["schemaId"] == "schema-procurement-v1"

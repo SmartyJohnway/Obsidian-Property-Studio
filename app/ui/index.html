@@ -4240,13 +4240,13 @@ window.openDriftDetailsDrawer = function() {
     return `<span class="pill">${esc(I18N.t("drift.category_unexpected"))}</span>`;
   };
 
-  const rows = findings.map(f => {
+  const rows = findings.map((f, idx) => {
     let actionColHtml = "";
     if (f.navigation_available === false) {
       actionColHtml = `<span class="pill muted" title="${esc(f.navigation_reason || '')}">🚫 ${esc(I18N.t("drift.not_navigable"))}</span>`;
     } else {
       actionColHtml = `
-        <button class="primary" style="font-size:11px; padding:2px 7px" onclick="drilldownToNoteWorkspace('${esc(f.note_path)}', null, '${esc(f.property_key)}', 'drift_finding', '${esc(rep.schema_id)}')">
+        <button class="primary drift-reconcile-btn" style="font-size:11px; padding:2px 7px" data-finding-index="${idx}">
           ${esc(I18N.t("drift.btn_reconcile"))} ↗
         </button>
       `;
@@ -4290,6 +4290,25 @@ window.openDriftDetailsDrawer = function() {
   `;
 
   openDrawer(I18N.t("drift.drawer_title"), html, "drift");
+
+  const drawerBody = $("drawerBody");
+  if (drawerBody) {
+    drawerBody.querySelectorAll(".drift-reconcile-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const idx = Number(btn.dataset.findingIndex);
+        const finding = findings[idx];
+        if (finding) {
+          drilldownToNoteWorkspace(
+            finding.note_path,
+            null,
+            finding.property_key,
+            "drift_finding",
+            rep.schema_id
+          );
+        }
+      });
+    });
+  }
 };
 
 function setupHealthHandlers() {
