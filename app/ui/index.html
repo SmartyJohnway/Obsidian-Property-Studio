@@ -1356,6 +1356,27 @@ async function loadGlossaryCatalog() {
   }
 }
 
+// Canonical complex-value display formatter (HA-F14)
+function formatPropertyValueForDisplay(val) {
+  if (val === null || val === undefined) return "";
+  if (typeof val === "boolean" || typeof val === "number") return String(val);
+  if (typeof val === "string") return val;
+  if (Array.isArray(val)) {
+    // If every item is scalar, join with comma
+    const allScalar = val.every(item => item === null || typeof item !== "object");
+    if (allScalar) {
+      return val.map(item => (item === null ? "" : String(item))).join(", ");
+    }
+    // Nested array or array of objects: deterministic JSON representation
+    return JSON.stringify(val);
+  }
+  if (typeof val === "object") {
+    // Plain object / mapping: deterministic JSON representation
+    return JSON.stringify(val);
+  }
+  return String(val);
+}
+
 function formatPropertyLabel(canonicalKey) {
   if (!canonicalKey) return "";
   const k = canonicalKey.trim();
@@ -3442,7 +3463,7 @@ window.renderWorkspaceStatusBanner = function(statusData) {
       <tr style="${it.state === 'conflict' ? 'background:var(--red-soft)' : it.state === 'missing' ? 'background:var(--amber-soft)' : ''}">
         <td>${statePill(it.state)}</td>
         <td><strong>${esc(it.name)}</strong> ${it.required ? '<span style="color:var(--red)">*</span>' : ''}</td>
-        <td><code>${esc(it.current_value == null ? I18N.t("workspace.val_none") : (Array.isArray(it.current_value) ? it.current_value.join(", ") : it.current_value))}</code></td>
+        <td><code>${esc(it.current_value == null ? I18N.t("workspace.val_none") : formatPropertyValueForDisplay(it.current_value))}</code></td>
         <td><span class="pill" style="font-size:11px">${esc(it.expected_type || '\u2014')}</span></td>
         <td style="font-size:12px; color:var(--muted)">${esc(it.conflict_reason || (it.state === 'outside_schema' ? I18N.t("reconcile.state_preserved") : ''))}</td>
         <td>
@@ -3571,16 +3592,24 @@ function renderWorkspaceFields(propsMap, preserveTouched = false) {
     S.wsTouchedKeys = new Set();
   }
   const container = $("wsPropFields");
-  container.innerHTML = Object.entries(propsMap).map(([k, v]) => `
+  container.innerHTML = Object.entries(propsMap).map(([k, v]) => {
+    const isComplex = (typeof v === 'object' && v !== null);
+    const displayVal = formatPropertyValueForDisplay(v);
+    const complexBadge = isComplex ? ` <span class="pill" style="font-size:10.5px; opacity:0.85" title="${esc(I18N.t("workspace.complex_val_preserved"))}">${esc(I18N.t("workspace.complex_val_preserved"))}</span>` : '';
+    const readOnlyAttr = isComplex ? 'readonly style="background:var(--bg); cursor:default; font-family:monospace; font-size:11.5px"' : '';
+    const complexAttr = isComplex ? 'data-is-complex="true"' : '';
+    return `
     <div class="ws-prop-row" data-key="${esc(k)}" style="display:grid; grid-template-columns:220px 1fr 36px; gap:8px; align-items:center; margin-bottom:8px; padding:6px 8px; background:var(--panel2); border-radius:var(--radius-sm)">
       <div style="display:flex; align-items:center; overflow:hidden">
         <input type="hidden" class="ws-prop-key" value="${esc(k)}" />
         ${renderPropertyBadge(k)}
+        ${complexBadge}
       </div>
-      <input type="text" class="ws-prop-val form-control" value="${esc(Array.isArray(v) ? v.join(", ") : ((typeof v === 'object' && v !== null) ? JSON.stringify(v) : (v == null ? "" : String(v))))}" placeholder="${esc(I18N.t("workspace.val_placeholder"))}" />
+      <input type="text" class="ws-prop-val form-control" ${complexAttr} ${readOnlyAttr} value="${esc(displayVal)}" placeholder="${isComplex ? esc(I18N.t("workspace.complex_val_preserved")) : esc(I18N.t("workspace.val_placeholder"))}" />
       <button class="ghost ws-prop-del" title="${esc(I18N.t("workspace.del_prop_title"))}" style="color:var(--red); padding:4px; font-weight:bold">✕</button>
     </div>
-  `).join("");
+    `;
+  }).join("");
 
   document.querySelectorAll(".ws-prop-val").forEach(input => {
     input.oninput = (e) => {
@@ -3698,10 +3727,16 @@ async function updateWorkspacePreview() {
   const presentKeys = new Set();
   document.querySelectorAll(".ws-prop-row").forEach(row => {
     const k = row.querySelector(".ws-prop-key").value.trim();
-    const v = row.querySelector(".ws-prop-val").value;
+    const valInput = row.querySelector(".ws-prop-val");
     if (k) {
-      values[k] = v;
       presentKeys.add(k);
+      const isComplex = valInput && valInput.getAttribute("data-is-complex") === "true";
+      if (isComplex && (!S.wsTouchedKeys || !S.wsTouchedKeys.has(k)) && S.currentNote.original_properties && (k in S.currentNote.original_properties)) {
+        // Untouched complex object: preserve 100% native dict/array without string coercion (HA-F14)
+        values[k] = S.currentNote.original_properties[k];
+      } else {
+        values[k] = valInput ? valInput.value : "";
+      }
     }
   });
 
@@ -3717,16 +3752,23 @@ async function updateWorkspacePreview() {
       touched_keys: Array.from(S.wsTouchedKeys || [])
     });
 
-    // Render Semantic Diff
+    // Render Semantic Diff (HA-F14: canonical display formatter)
     $("wsDiffView").innerHTML = `
       <div class="diff-box">
-        ${res.diffs.map(d => `
+        ${res.diffs.map(d => {
+          const oldFormatted = formatPropertyValueForDisplay(d.old_value);
+          const newFormatted = formatPropertyValueForDisplay(d.new_value);
+          const valDisplay = d.change_type === 'modified' 
+            ? `${esc(oldFormatted)} → ${esc(newFormatted)}` 
+            : esc(newFormatted || oldFormatted || '');
+          return `
           <div class="diff-row ${esc(d.change_type)}">
             <div>${renderPropertyBadge(d.key)}</div>
             <div><span class="pill ${d.change_type === 'added' ? 'ok' : d.change_type === 'deleted' ? 'bad' : d.change_type === 'modified' ? 'warn' : ''}">${esc(d.change_type)}</span></div>
-            <div class="muted" style="font-size:12px">${d.change_type === 'modified' ? esc(d.old_value) + ' → ' + esc(d.new_value) : esc(d.new_value || d.old_value || '')}</div>
+            <div class="muted" style="font-size:12px">${valDisplay}</div>
           </div>
-        `).join("")}
+          `;
+        }).join("")}
       </div>
     `;
 

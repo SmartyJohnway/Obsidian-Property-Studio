@@ -2681,3 +2681,386 @@ runTests().catch(e => { console.error(e); process.exit(1); });
     assert data["banner_contains_v11_zh"] is True
     assert data["banner_contains_v11_en"] is True
     assert data["transient_no_v_prefix"] is True
+
+# ==============================================================================
+# Commit 21M: HA-F14 Complex / Nested YAML Value Rendering Closure Tests
+# ==============================================================================
+
+def test_ha_f14_complex_yaml_diff_and_serialization_tests_a_to_f():
+    """TEST A to F: Comprehensive validation of complex/nested YAML mappings, arrays of objects,
+    native scalars, untouched preservation, and YAML round-trip serialization in Workspace.
+    """
+    import yaml
+    from app.core.note_workspace import compute_workspace_diff_and_frontmatter
+    from app.core.model import Note, PropertyValue, StorageType, ParseStatus
+
+    # TEST A: Flat mapping (e.g. location)
+    note_a = Note(
+        path="LocationNote.md",
+        properties={
+            "location": PropertyValue(
+                "location",
+                {"city": "Dayton", "state": "Texas", "county": "Liberty County"},
+                StorageType.UNSUPPORTED,
+                (),
+                ""
+            )
+        },
+        parse_status=ParseStatus.OK,
+    )
+    res_a = compute_workspace_diff_and_frontmatter(
+        original_note=note_a,
+        updated_values={"location": {"city": "Dayton", "state": "Texas", "county": "Liberty County"}},
+        touched_keys=[]
+    )
+    assert res_a.valid is True
+    assert res_a.merged_properties["location"] == {"city": "Dayton", "state": "Texas", "county": "Liberty County"}
+    assert isinstance(res_a.merged_properties["location"], dict)
+    diff_a = next(d for d in res_a.diffs if d.key == "location")
+    assert diff_a.change_type == "preserved"
+    assert diff_a.old_value == {"city": "Dayton", "state": "Texas", "county": "Liberty County"}
+    assert "[object Object]" not in str(diff_a.old_value)
+
+    # TEST B: Nested mapping (e.g. equipment -> motor)
+    note_b = Note(
+        path="Equipment.md",
+        properties={
+            "equipment": PropertyValue(
+                "equipment",
+                {"motor": {"voltage": 480, "phase": 3}},
+                StorageType.UNSUPPORTED,
+                (),
+                ""
+            )
+        },
+        parse_status=ParseStatus.OK,
+    )
+    res_b = compute_workspace_diff_and_frontmatter(
+        original_note=note_b,
+        updated_values={"equipment": {"motor": {"voltage": 480, "phase": 3}}},
+        touched_keys=[]
+    )
+    assert res_b.valid is True
+    assert res_b.merged_properties["equipment"]["motor"]["voltage"] == 480
+    assert res_b.merged_properties["equipment"]["motor"]["phase"] == 3
+
+    # TEST C: Array of objects
+    note_c = Note(
+        path="ArrayOfObjects.md",
+        properties={
+            "items": PropertyValue(
+                "items",
+                [{"name": "A", "status": "active"}, {"name": "B", "status": "hold"}],
+                StorageType.UNSUPPORTED,
+                (),
+                ""
+            )
+        },
+        parse_status=ParseStatus.OK,
+    )
+    res_c = compute_workspace_diff_and_frontmatter(
+        original_note=note_c,
+        updated_values={"items": [{"name": "A", "status": "active"}, {"name": "B", "status": "hold"}]},
+        touched_keys=[]
+    )
+    assert res_c.valid is True
+    assert len(res_c.merged_properties["items"]) == 2
+    assert res_c.merged_properties["items"][0]["status"] == "active"
+    assert "[object Object]" not in str(res_c.merged_properties["items"])
+
+    # TEST D: Native scalar regression (string, number, boolean, date-like, list of strings, tags, aliases)
+    note_d = Note(
+        path="Scalars.md",
+        properties={
+            "title": PropertyValue("title", "My Title", StorageType.TEXT, ("My Title",), "My Title"),
+            "count": PropertyValue("count", 42, StorageType.NUMBER, (42,), 42),
+            "published": PropertyValue("published", True, StorageType.CHECKBOX, (True,), True),
+            "date": PropertyValue("date", "2026-09-07", StorageType.DATE, ("2026-09-07",), "2026-09-07"),
+            "tags": PropertyValue("tags", ["obsidian", "property"], StorageType.LIST, ("obsidian", "property"), ["obsidian", "property"]),
+            "aliases": PropertyValue("aliases", ["Home", "Main"], StorageType.LIST, ("Home", "Main"), ["Home", "Main"]),
+        },
+        parse_status=ParseStatus.OK,
+    )
+    res_d = compute_workspace_diff_and_frontmatter(
+        original_note=note_d,
+        updated_values={
+            "title": "My Title",
+            "count": 42,
+            "published": True,
+            "date": "2026-09-07",
+            "tags": ["obsidian", "property"],
+            "aliases": ["Home", "Main"],
+        },
+        touched_keys=[]
+    )
+    assert res_d.valid is True
+    assert res_d.merged_properties["title"] == "My Title"
+    assert res_d.merged_properties["count"] == 42
+    assert res_d.merged_properties["published"] is True
+    assert res_d.merged_properties["date"] == "2026-09-07"
+    assert res_d.merged_properties["tags"] == ["obsidian", "property"]
+    assert res_d.merged_properties["aliases"] == ["Home", "Main"]
+
+    # TEST E: Untouched semantic preservation (no coercion from object to string)
+    assert isinstance(res_a.merged_properties["location"], dict)
+    assert isinstance(res_b.merged_properties["equipment"], dict)
+    assert isinstance(res_c.merged_properties["items"], list)
+
+    # TEST F: YAML serialization and roundtrip readback
+    def extract_yaml_docs(fm_text: str) -> dict:
+        lines = fm_text.strip().splitlines()
+        content_lines = [l for l in lines if l.strip() != "---"]
+        return yaml.safe_load("\n".join(content_lines))
+
+    parsed_a = extract_yaml_docs(res_a.frontmatter_preview)
+    assert parsed_a["location"] == {
+        "city": "Dayton",
+        "state": "Texas",
+        "county": "Liberty County",
+    }
+    assert isinstance(parsed_a["location"], dict)
+
+    parsed_b = extract_yaml_docs(res_b.frontmatter_preview)
+    assert parsed_b["equipment"] == {"motor": {"voltage": 480, "phase": 3}}
+    assert isinstance(parsed_b["equipment"]["motor"], dict)
+
+    parsed_c = extract_yaml_docs(res_c.frontmatter_preview)
+    assert parsed_c["items"] == [{"name": "A", "status": "active"}, {"name": "B", "status": "hold"}]
+    assert isinstance(parsed_c["items"], list)
+
+
+def test_ha_f14_production_javascript_rendering_in_node():
+    """TEST HA-F14: Production UI JavaScript complex-value rendering in Node.js."""
+    import subprocess
+    import json
+    from pathlib import Path
+
+    html_content = Path("app/ui/index.html").read_text(encoding="utf-8")
+    js_start = html_content.find("<script>") + len("<script>")
+    js_end = html_content.find("</script>", js_start)
+    full_js = html_content[js_start:js_end]
+
+    harness = """
+const elements = {};
+function createMockEl(id) {
+  const classes = new Set();
+  const listeners = {};
+  const el = {
+    id: id,
+    style: {},
+    dataset: {},
+    classList: {
+      add: (c) => classes.add(c),
+      remove: (c) => classes.delete(c),
+      contains: (c) => classes.has(c),
+      toggle: (c, force) => {
+        if (force !== undefined) {
+          if (force) classes.add(c); else classes.delete(c);
+          return force;
+        }
+        if (classes.has(c)) { classes.delete(c); return false; }
+        classes.add(c); return true;
+      }
+    },
+    addEventListener: (evt, fn) => {
+      listeners[evt] = listeners[evt] || [];
+      listeners[evt].push(fn);
+    },
+    dispatchEvent: (evt) => {
+      const fns = listeners[evt.type || evt] || [];
+      const evObj = typeof evt === 'string' ? { target: el, type: evt } : evt;
+      fns.forEach(fn => fn(evObj));
+    },
+    appendChild: (child) => {},
+    removeChild: () => {},
+    setAttribute: (k, v) => { el[k] = v; },
+    getAttribute: (k) => el[k] || '',
+    _innerHTML: '',
+    get innerHTML() { return this._innerHTML; },
+    set innerHTML(val) {
+      this._innerHTML = val;
+      const idMatches = val.matchAll(/id=["']([^"']+)["']/g);
+      for (const m of idMatches) {
+        if (!elements[m[1]]) {
+          elements[m[1]] = createMockEl(m[1]);
+        }
+      }
+    },
+    textContent: '',
+    value: '',
+    focus: () => {}
+  };
+  return el;
+}
+function getEl(id) { return elements[id] || null; }
+function ensureEl(id) {
+  if (!elements[id]) elements[id] = createMockEl(id);
+  return elements[id];
+}
+const noop = () => {};
+global.window = global;
+global.window.addEventListener = noop;
+global.window.scrollTo = noop;
+global.document = {
+  getElementById: (id) => getEl(id),
+  querySelectorAll: (sel) => [],
+  querySelector: (sel) => getEl(sel.replace('#', '')),
+  createElement: (tag) => createMockEl(tag),
+  addEventListener: noop,
+  documentElement: ensureEl('html'),
+  body: ensureEl('body')
+};
+
+let currentLocale = "zh-Hant";
+global.localStorage = {
+  getItem: (k) => k === "ps_locale" ? currentLocale : null,
+  setItem: (k, v) => { if (k === "ps_locale") currentLocale = v; }
+};
+global.navigator = { clipboard: { writeText: () => Promise.resolve() } };
+
+global.esc = (s) => String(s);
+global.renderPropertyBadge = (name) => `<span>${name}</span>`;
+global.I18N = {
+  t: (k, p) => {
+    if (k === "workspace.complex_val_preserved") return currentLocale.startsWith("en") ? "Complex value — preserved" : "複合值 — 保留原值";
+    if (k === "workspace.val_placeholder") return "屬性值...";
+    if (k === "workspace.del_prop_title") return "刪除";
+    if (k === "workspace.val_none") return "(無)";
+    return k;
+  },
+  init: noop,
+  setLocale: (l) => { currentLocale = l; },
+  applyLocale: noop
+};
+global.StateTransfer = { setPending: noop, hasPending: () => false, consumePending: () => null };
+global.toast = noop;
+
+ensureEl('wsPropFields');
+ensureEl('wsDiffView');
+ensureEl('wsYamlPreview');
+ensureEl('wsRoundtripStatus');
+ensureEl('wsCopyBtn');
+ensureEl('wsNoteStatusBanner');
+ensureEl('wsAddPropBtn');
+"""
+
+    test_driver = """
+async function runTests() {
+  const results = {};
+
+  // TEST 1: formatPropertyValueForDisplay
+  const flatObj = { city: "Dayton", state: "Texas", county: "Liberty County" };
+  const nestedObj = { equipment: { motor: { voltage: 480, phase: 3 } } };
+  const arrObj = [{ name: "A", status: "active" }, { name: "B", status: "hold" }];
+  const flatArr = ["apple", "banana", "cherry"];
+  const scalarStr = "Hello World";
+  const scalarNum = 123.45;
+  const scalarBool = true;
+  const valNull = null;
+
+  results.format_flatObj = formatPropertyValueForDisplay(flatObj);
+  results.format_nestedObj = formatPropertyValueForDisplay(nestedObj);
+  results.format_arrObj = formatPropertyValueForDisplay(arrObj);
+  results.format_flatArr = formatPropertyValueForDisplay(flatArr);
+  results.format_scalarStr = formatPropertyValueForDisplay(scalarStr);
+  results.format_scalarNum = formatPropertyValueForDisplay(scalarNum);
+  results.format_scalarBool = formatPropertyValueForDisplay(scalarBool);
+  results.format_valNull = formatPropertyValueForDisplay(valNull);
+
+  // Check no [object Object] anywhere in format results
+  results.has_object_object = [
+    results.format_flatObj,
+    results.format_nestedObj,
+    results.format_arrObj,
+    results.format_flatArr
+  ].some(str => str.includes("[object Object]") || str.includes("[object Array]"));
+
+  // TEST 2: renderWorkspaceFields on complex object
+  renderWorkspaceFields({
+    location: flatObj,
+    title: "Simple Note"
+  });
+  const fieldsHtml = getEl('wsPropFields').innerHTML;
+  results.fields_has_object_object = fieldsHtml.includes("[object Object]");
+  results.fields_has_complex_badge = fieldsHtml.includes("複合值 — 保留原值");
+  results.fields_has_dayton = fieldsHtml.includes("Dayton");
+
+  // TEST 3: updateWorkspacePreview without user edits preserves original native object
+  S.currentNote = {
+    note_path: "Notes/Location.md",
+    original_properties: {
+      location: flatObj,
+      title: "Simple Note"
+    }
+  };
+  S.wsTouchedKeys = new Set(); // untouched
+
+  let capturedPayload = null;
+  global.api = async (endpoint, payload) => {
+    if (endpoint === "/api/workspace/preview") {
+      capturedPayload = payload;
+      return {
+        diffs: [
+          { key: "location", change_type: "preserved", old_value: flatObj, new_value: flatObj },
+          { key: "title", change_type: "preserved", old_value: "Simple Note", new_value: "Simple Note" }
+        ],
+        frontmatter_preview: "---\\nlocation:\\n  city: Dayton\\n---\\n",
+        can_copy: true,
+        roundtrip_matches: true,
+        valid: true,
+        errors: []
+      };
+    }
+    return {};
+  };
+
+  // Mock document.querySelectorAll for .ws-prop-row
+  const rowLoc = createMockEl("rowLoc");
+  const keyLoc = createMockEl("keyLoc");
+  keyLoc.value = "location";
+  const valLoc = createMockEl("valLoc");
+  valLoc.value = JSON.stringify(flatObj);
+  valLoc.setAttribute("data-is-complex", "true");
+  rowLoc.querySelector = (sel) => sel.includes("ws-prop-key") ? keyLoc : valLoc;
+
+  const rowTitle = createMockEl("rowTitle");
+  const keyTitle = createMockEl("keyTitle");
+  keyTitle.value = "title";
+  const valTitle = createMockEl("valTitle");
+  valTitle.value = "Simple Note";
+  rowTitle.querySelector = (sel) => sel.includes("ws-prop-key") ? keyTitle : valTitle;
+
+  document.querySelectorAll = (sel) => {
+    if (sel === ".ws-prop-row") return [rowLoc, rowTitle];
+    return [];
+  };
+
+  await updateWorkspacePreview();
+
+  // Verify that untouched complex property was passed as native object to /api/workspace/preview
+  results.captured_location_type = typeof capturedPayload.values.location;
+  results.captured_location_is_object = (typeof capturedPayload.values.location === "object" && capturedPayload.values.location !== null);
+  results.captured_location_city = capturedPayload.values.location.city;
+
+  // Verify diff rendering
+  const diffHtml = getEl('wsDiffView').innerHTML;
+  results.diff_has_object_object = diffHtml.includes("[object Object]");
+  results.diff_has_dayton = diffHtml.includes("Dayton");
+
+  console.log(JSON.stringify(results));
+}
+
+runTests().catch(e => { console.error(e); process.exit(1); });
+"""
+
+    proc = subprocess.run(["node"], input=harness + full_js + test_driver, capture_output=True, text=True, check=True, encoding="utf-8")
+    data = json.loads(proc.stdout.strip())
+
+    assert data["has_object_object"] is False
+    assert data["fields_has_object_object"] is False
+    assert data["fields_has_complex_badge"] is True
+    assert data["fields_has_dayton"] is True
+    assert data["captured_location_is_object"] is True
+    assert data["captured_location_city"] == "Dayton"
+    assert data["diff_has_object_object"] is False
+    assert data["diff_has_dayton"] is True

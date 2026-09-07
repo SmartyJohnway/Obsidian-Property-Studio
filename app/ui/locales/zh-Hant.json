@@ -543,5 +543,6 @@
   "st.list": "List (清單)",
   "st.tags": "Tags (標籤清單)",
   "st.note_link": "Note Link (筆記連結 [[...]])",
-  "st.note_link_list": "Note Link List (筆記連結清單)"
+  "st.note_link_list": "Note Link List (筆記連結清單)",
+  "workspace.complex_val_preserved": "複合值 — 保留原值"
 }

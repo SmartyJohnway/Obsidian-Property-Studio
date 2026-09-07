@@ -543,5 +543,6 @@
   "st.list": "List",
   "st.tags": "Tags",
   "st.note_link": "Note Link ([[...]])",
-  "st.note_link_list": "Note Link List"
+  "st.note_link_list": "Note Link List",
+  "workspace.complex_val_preserved": "Complex value — preserved"
 }
