@@ -11,7 +11,7 @@ Active Milestone: `M022`
 Active Milestone Status: `IN_PROGRESS`  
 Current Task: `M022-T04` (Human Owner Windows 10 Production UI Walkthrough Acceptance Retest)  
 Last Verified Gate: `M021 — Schema Naming, Versioning, Migration & Governance Profile PASS`  
-Last Verified Implementation Commit: `95de866` (Commit 21L – HA-F21 & HA-F23 Schema Context & Version Identity Closure)  
+Last Verified Implementation Commit: `0b00658` (Commit 21M – HA-F14 Complex / Nested YAML Value Rendering Closure)  
 GitHub PR: `PR #2 (Draft, feat(v1.2): Personal Property Governance System)`  
 Authoritative Specification: `docs/specs/Obsidian_Property_Studio_v1.2.0_Spec.md`  
 Archived v1.1 Roadmap: `docs/archive/ROADMAP_v1.1.0.md`  
@@ -59,7 +59,18 @@ All autonomous implementation and verification milestones from M016 through M021
   - 4 dedicated unit tests (`tests/test_v12_migration.py`, `tests/test_v12_governance_profile.py`) PASS.
 
 - **M022: Release Acceptance & Packaging — IN_PROGRESS**
-- **Commit 21L: HA-F21 & HA-F23 Schema Context & Version Identity Closure — CURRENT HEAD**
+- **Commit 21M: HA-F14 Complex / Nested YAML Value Rendering Closure — CURRENT HEAD**
+  - **Canonical Display Formatter (`formatPropertyValueForDisplay`)**: In `app/ui/index.html`, added a reusable, pure-display formatter handling null, boolean, number, string, flat array, nested array, plain object / mapping, and array of objects. Produces deterministic, safely escaped string representations with zero `[object Object]` and zero `[object Array]`.
+  - **Property Editor Fail-Safe Rendering**: In `renderWorkspaceFields()`, complex objects/mappings are formatted with `formatPropertyValueForDisplay()` into a read-only input, tagged with `data-is-complex="true"`, and displayed with a localized badge (`workspace.complex_val_preserved`).
+  - **Zero Object-to-String Coercion on Untouched Properties**: In `updateWorkspacePreview()`, harvesting inputs checks `data-is-complex="true"`: if the key is not in `S.wsTouchedKeys`, the 100% native dict/array is drawn directly from `S.currentNote.original_properties[k]`, completely avoiding `.value` stringification.
+  - **Semantic Diff Formatter**: In `updateWorkspacePreview()`, formatted `d.old_value` and `d.new_value` using `formatPropertyValueForDisplay()`, displaying `location preserved { readable structured value }` without `[object Object]`.
+  - **Status Banner Formatter**: Updated `renderWorkspaceStatusBanner()` to display `it.current_value` via `formatPropertyValueForDisplay()`.
+  - **Bilingual i18n Symmetry**: Added `workspace.complex_val_preserved` ("複合值 — 保留原值" / "Complex value — preserved") symmetrically to `app/ui/locales/zh-Hant.json` and `app/ui/locales/en.json` (546 symmetric keys).
+  - **Automated Verification**:
+    - `test_ha_f14_complex_yaml_diff_and_serialization_tests_a_to_f`: Covers flat mapping (location), nested mapping (equipment -> motor), array of objects (items), native scalar regression (string, number, boolean, date, list of strings, tags, aliases), untouched preservation, and YAML roundtrip readback.
+    - `test_ha_f14_production_javascript_rendering_in_node`: Real Node.js execution of production JS verifying zero `[object Object]` in display, fields, and diff.
+    - **251/251 tests PASS** in 18.38s. Vault 100% byte-for-byte read-only.
+- **Commit 21L: HA-F21 & HA-F23 Schema Context & Version Identity Closure — COMPLETED**
   - **HA-F23 Blank Note Schema Authority**: Decoupled `S.blankNoteSchema` (Blank Note authority) from `S.currentSchema` (Designer transient authority).
     - Mode 1 (Designer handoff): Clicking `designGoToFill` explicitly sets `S.blankNoteSchema = S.currentSchema` and `S.blankNoteEntrySource = "designer"`, navigating to `fill`.
     - Mode 2 (Direct Blank Note Navigation): Sidebar click or direct navigation sets `S.blankNoteEntrySource = "direct"`. In `setTab("fill")`, `resolveBlankNoteSchemaForScope()` resolves active Scope expected schema via `getCanonicalScopeKey()` -> `/api/scope/schema/current` -> `assignment.schema_id` -> `/api/schemas/get` -> sets `S.blankNoteSchema = exact Named Schema`.
