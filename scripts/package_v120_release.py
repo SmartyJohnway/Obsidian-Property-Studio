@@ -199,12 +199,12 @@ def main() -> None:
         "app": "Obsidian Property Studio",
         "version": VERSION,
         "release_timestamp_utc": datetime.now(timezone.utc).isoformat(),
-        "formal_verdict": "PROPERTY_STUDIO_V1_2_0_RELEASE_CANDIDATE",
+        "formal_verdict": "PROPERTY_STUDIO_V1_2_0_READY_FOR_MERGE_AND_RELEASE_DECISION",
         "verdict_rationale": (
-            "All autonomous implementation and verification gates PASS (200 tests pass, "
-            "5,000-note benchmark recorded at 4.5s total analysis, Vault 100% byte-for-byte read-only). "
-            "Windows 10 native UI walkthrough reserved for Human Owner (Dr. J) acceptance "
-            "marked as NOT YET VERIFIED per governance instructions."
+            "All autonomous implementation and verification gates PASS (253 tests pass, "
+            "5,000-note benchmark recorded, Vault 100% byte-for-byte read-only). "
+            "Windows 10 native UI walkthrough verified by Human Owner (Dr. J) on 2026-09-07 "
+            "with all findings HA-F01~HA-F23 closed and finding backlog CLEAR."
         ),
         "git_commit_head": git_head,
         "packaging_verification": {
