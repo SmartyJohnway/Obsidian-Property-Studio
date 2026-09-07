@@ -1,6 +1,6 @@
 # Handoff
 
-Updated: `2026-09-05`  
+Updated: `2026-09-07`  
 From: `Antigravity — v1.2.0 Autonomous Implementation Agent`  
 To / Intended Next Executor: `Dr. J (Human Owner) / Verification Auditor`  
 Formal Project Root: `D:\Antigravity-Workspace\Obsidian-Property-Studio\Obsidian-Property-Studio-v1.0.0`  
@@ -11,7 +11,7 @@ Active Milestone: `M022`
 Active Milestone Status: `IN_PROGRESS`  
 Current Task: `M022-T04` (Human Owner Windows 10 Production UI Walkthrough Acceptance Retest)  
 Last Verified Gate: `M021 — Schema Naming, Versioning, Migration & Governance Profile PASS`  
-Last Verified Implementation Commit: `22743ff` (Commit 21G — Drift Canonical Path Authority Closure)  
+Last Verified Implementation Commit: `49217dc` (Commit 21H — Drift Exact-Path Click Navigation Closure)  
 GitHub PR: `PR #2 (Draft, feat(v1.2): Personal Property Governance System)`  
 Authoritative Specification: `docs/specs/Obsidian_Property_Studio_v1.2.0_Spec.md`  
 Archived v1.1 Roadmap: `docs/archive/ROADMAP_v1.1.0.md`  
@@ -59,7 +59,17 @@ All autonomous implementation and verification milestones from M016 through M021
   - 4 dedicated unit tests (`tests/test_v12_migration.py`, `tests/test_v12_governance_profile.py`) PASS.
 
 - **M022: Release Acceptance & Packaging — IN_PROGRESS**
-- **Commit 21G: Drift Canonical Path Authority Closure (HA-F12) — CURRENT HEAD**
+- **Commit 21H: Drift Exact-Path Click Navigation Closure (HA-F12) — CURRENT HEAD**
+  - **DOM Event Binding & Zero Inline JS Injection**: In `app/ui/index.html` (`window.openDriftDetailsDrawer`), removed untrusted/canonical `note_path` strings from inline `onclick="drilldownToNoteWorkspace('${esc(f.note_path)}', ...)"`. Rendered buttons with class `.drift-reconcile-btn` and `data-finding-index="${idx}"`, and attached DOM event listeners via `drawerBody.querySelectorAll(".drift-reconcile-btn")` after drawer rendering.
+  - **Exact Path Preserved**: Clicking "Reconcile Note" retrieves `findings[idx].note_path` directly from state, passing the exact canonical string (including apostrophes `'`, double quotes `"`, ampersands `&`, square brackets `[[`, and Chinese Unicode characters) to `drilldownToNoteWorkspace`. Completely eliminated browser `SyntaxError` / silent handler failures on paths like `·'![[台灣_美國通用採購流程使用手冊_v1.0.docx.md`.
+  - **Automated Node.js Test Coverage (TESTS A-D)**: In `tests/test_v12_human_acceptance_repairs.py`, added `test_ha_f12_actual_js_drift_click_navigation_in_node()`:
+    - TEST A: Real filename with apostrophe, bullet, wikilink syntax, and Unicode (`·'![[台灣_美國通用採購流程使用手冊_v1.0.docx.md`) renders button, click fires without error, 0 exceptions, passes exact string to `drilldownToNoteWorkspace`.
+    - TEST B: Double quotes, ampersand, and Unicode (`工程 "A&B" Review.md`) clicks and passes exact string.
+    - TEST C: Normal path regression (`00_Home/HOME.md`) clicks and passes exact string.
+    - TEST D: Duplicate basename in different folders (`FolderA/Item.md` vs `FolderB/Item.md`), clicking FolderB row passes exact `FolderB/Item.md`.
+    - Zero inline onclick injection verified (`drilldownToNoteWorkspace` not in `innerHtml`).
+  - **Automated Verification**: **243/243 tests PASS** in 17.95s. Vault 100% byte-for-byte read-only.
+- **Commit 21G: Drift Canonical Path Authority Closure (HA-F12) — SUPERSEDED BY 21H**
   - **Bound Drift Path Authority to Active VaultScan**: Repaired `is_canonical_navigable_path` in `app/core/drift.py` by removing ad-hoc filename string heuristics (which previously rejected filenames starting with `·`, `![[`, `*`, `-`, `+`). Canonical note identity is bound to membership in active `VaultScan` (scanned filesystem notes) while enforcing `.md` extension and blocking path traversal / non-relative paths fail-closed.
   - **CASE A Verified**: Scanned notes with unusual but legitimate filenames (such as `· ![[台灣_美國通用採購流程使用手冊_v1.0.docx.md`) now evaluate to `navigation_available: True` and enable direct one-click Reconcile Note navigation.
   - **CASE B Preserved**: Truly unresolvable or unscanned paths (or malformed non-markdown inputs) fail closed (`navigation_available: False`) while preserving the raw string in findings for transparent diagnosis.
