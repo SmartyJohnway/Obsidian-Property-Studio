@@ -8,13 +8,20 @@ Published Baseline: `v1.1.0 — CLOSED (cca408c)`
 Current Target: `v1.2.0`  
 Active Branch: `feature/v1.2.0`  
 Active Milestone: `M022`  
-Active Milestone Status: `IN_PROGRESS`  
-Current Task: `M022-T04` (Human Owner Windows 10 Production UI Walkthrough Acceptance Retest)  
-Last Verified Gate: `M021 — Schema Naming, Versioning, Migration & Governance Profile PASS`  
-Last Verified Implementation Commit: `ae86b8c` (Commit 21N – HA-F18 Governance Profile Concrete Change-Set Preview Closure)  
-GitHub PR: `PR #2 (Draft, feat(v1.2): Personal Property Governance System)`  
+Active Milestone Status: `PASS`  
+Current Task: `NONE`  
+Last Verified Gate: `M022 — Full Workflow Closure, Human Acceptance & Release Gate PASS`  
+Last Verified Implementation Commit: `589a07e` (chore(v1.2): prepare release notes and packaging configuration)  
+GitHub PR: `PR #2 (feat(v1.2): Personal Property Governance System)`  
 Authoritative Specification: `docs/specs/Obsidian_Property_Studio_v1.2.0_Spec.md`  
+Completed Roadmap Archive: `docs/archive/ROADMAP_v1.2.0.md` (SHA-256: `48707ccd278b5cecbd8fc19b2849daedd6c4bcd70e6efc95077336cd8c0767b3`)  
 Archived v1.1 Roadmap: `docs/archive/ROADMAP_v1.1.0.md`  
+Release Staging State: `READY_FOR_MERGE_AND_RELEASE_DECISION`  
+Human Acceptance: `PASS` (M022-T04 / M022-AC04 PASS; Human Verified by Dr. J on Windows 10 Build 19045+)  
+Finding Backlog: `CLEAR` (HA-F01 ~ HA-F23 fully closed)  
+Automated Verification: `PASS (253/253 tests pass in 18.29s)`  
+Vault Read-Only: `PASS (100% byte-for-byte read-only, zero mutation)`  
+Consistency Gate: `PASS (PROJECT.md, ROADMAP.md, HANDOFF.md, AGENTS.md aligned)`  
 
 ---
 
@@ -58,8 +65,16 @@ All autonomous implementation and verification milestones from M016 through M021
   - Integrated Migration Planner drawer and Profile export/import in UI.
   - 4 dedicated unit tests (`tests/test_v12_migration.py`, `tests/test_v12_governance_profile.py`) PASS.
 
-- **M022: Release Acceptance & Packaging — IN_PROGRESS**
-- **Commit 21N: HA-F18 Governance Profile Concrete Change-Set Preview Closure — CURRENT HEAD**
+- **M022: Full Workflow Closure, Human Acceptance & Release Gate — PASS**
+  - **Human Acceptance Verified**: Formally verified by Human Owner (Dr. J) on Windows 10 (Build 19045 AMD64) on 2026-09-07 (`evidence/integration/m022_v120_windows10_native_acceptance.json`).
+  - **Finding Backlog Closed (CLEAR)**: All 23 human acceptance findings (HA-F01 through HA-F23) fully resolved and verified.
+  - **Closure Smoke Gates (1~6)**: Runtime F5 rehydration (Gate 1), Named Schema -> Workspace identity/version (Gate 2), Workspace untouched complex YAML preservation (Gate 3), Blank Note Scope schema authority (Gate 4), Drift exact navigation (Gate 5), and Governance Profile export/import/preview (Gate 6) all PASS.
+  - **Full Automated Suite**: 253/253 tests PASS in 18.29s.
+  - **Authoritative Benchmark**: Measured and recorded on 5,040 notes (5.844s total analysis / 5.667s scan, Vault 100% byte-for-byte read-only).
+  - **Release Artifacts Staged**: Source ZIP (`Obsidian-Property-Studio-v1.2.0-source.zip`, 509,509 bytes, SHA-256 `5ad50b620288077e4ed1efa682de6dcd457a2e5975084b9707b417e65d628f67`), Git Bundle (`Obsidian-Property-Studio-v1.2.0.bundle`, 812,292 bytes, SHA-256 `e0870b18c13cb9fa0774174273e654306d2623f8fdf83470c80987be8d0592a0`), and `RELEASE_MANIFEST.json` verified with zero errors.
+  - **Roadmap Archived**: Authoritative v1.2.0 Roadmap copied to `docs/archive/ROADMAP_v1.2.0.md` (SHA-256: `48707ccd278b5cecbd8fc19b2849daedd6c4bcd70e6efc95077336cd8c0767b3`); root `ROADMAP.md` set to active release-staging pointer.
+  - **Release Notes Drafted**: `docs/releases/v1.2.0-release-notes.md`.
+- **Commit 21N: HA-F18 Governance Profile Concrete Change-Set Preview Closure — COMPLETED**
   - **Backend Deterministic Per-Entity Plan Engine**: In `app/core/governance_profile.py`, implemented `compute_concrete_changeset(profile_data, mode="merge")`. Generates deterministic per-entity change records across all 5 profile categories (`schemas`, `scope_assignments`, `glossary`, `saved_checks`, and `preferences`). Each entity record defines `action` (`add`, `update`, `conflict`, `unchanged`, `remove`, `retained`), `identity`, `display_name`, `before`, `after`, and human-readable `reason`.
   - **Dual Mode Pre-calculation in Validation Report**: In `validate_governance_profile()`, pre-calculates and embeds concrete plans for both modes under `plans: {"merge": ..., "replace": ...}` without mutating storage or disk.
   - **Dynamic UI Projection with Monospace Keys & Action Pills**: In `app/ui/index.html`, added concrete per-entity change-set rendering in `renderProfilePreviewArea()`. Visualizes items with color-coded status badges (`新增`, `更新`, `衝突`, `移除`, `保留`, `無變更`), monospace identifier codes, clear before $\to$ after details, and localized rationale strings.
@@ -229,4 +244,7 @@ Read order:
 
 ## Immediate Next Action
 
-Submit the v1.2.0 Release Candidate to Human Owner (**Dr. J**) for final Windows 10 production UI walkthrough acceptance (`M022-T04` / `M022-AC04`). All autonomous implementation, testing, benchmarking, and evidence generation are complete.
+Human Owner (**Dr. J**) review final release package, staged artifacts, and PR #2:
+1. Review staged release notes (`docs/releases/v1.2.0-release-notes.md`) and packaging manifest (`dist/RELEASE_MANIFEST.json`).
+2. Approve merge of PR #2 into `main`.
+3. Create git tag `v1.2.0` and publish formal release only after owner approval.
