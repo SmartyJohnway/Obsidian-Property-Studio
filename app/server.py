@@ -141,6 +141,35 @@ def api_meta(_body: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def api_runtime_context(_body: dict[str, Any]) -> dict[str, Any]:
+    """Report current in-memory backend scan and scope authority without scanning disk (HA-F22)."""
+    with STORE.lock:
+        if STORE.scan is None:
+            return {
+                "scan_loaded": False,
+                "vault_path": None,
+                "vault_name": None,
+                "scope": None,
+                "notes_in_scope": 0,
+                "total_vault_notes": 0,
+            }
+        scan = STORE.scan
+        vault_path = scan.vault_path if hasattr(scan, "vault_path") else None
+        vault_name = os.path.basename(os.path.normpath(vault_path)) if vault_path else None
+        scope_dict = STORE.scope.to_dict() if STORE.scope else None
+        total_notes = scan.note_count
+
+    scoped_scan = STORE.get_scoped_scan()
+    return {
+        "scan_loaded": True,
+        "vault_path": vault_path,
+        "vault_name": vault_name,
+        "scope": scope_dict,
+        "notes_in_scope": scoped_scan.note_count,
+        "total_vault_notes": total_notes,
+    }
+
+
 def api_scan(body: dict[str, Any]) -> dict[str, Any]:
     path = body.get("vault_path", "")
     from app.storage.local_storage import VaultIsolationError, set_active_vault_path, migrate_legacy_storage_paths
@@ -1078,6 +1107,7 @@ def api_preferences_set(body: dict[str, Any]) -> dict[str, Any]:
 # --------------------------------------------------------------------------
 ROUTES: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "/api/meta": api_meta,
+    "/api/runtime/context": api_runtime_context,
     "/api/scan": api_scan,
     "/api/discovery": api_discovery,
     "/api/property": api_property_detail,

@@ -1895,3 +1895,336 @@ def test_ha_f19_observed_property_canonical_key_identity_in_node():
     assert beta_en["key"] == "custom_beta", "Canonical key must remain 'custom_beta' in English"
     assert beta_en["source"] == "Observed"
     assert beta_en["guidance"] == "Observed in 12 vault notes (dominant type: date)"
+
+
+# ==============================================================================
+# Commit 21J: HA-F22 Active Vault Runtime Context Rehydration Tests
+# ==============================================================================
+
+def test_ha_f22_backend_runtime_context_active_and_empty(tmp_path: Path):
+    """TEST A & B: Verify /api/runtime/context reflects active scan in-memory and empty state."""
+    from app import server
+    from app.server import STORE, api_runtime_context, api_scan
+
+    # 1. TEST B: Empty state (before scan or after reset)
+    original_scan = STORE.scan
+    original_scope = STORE.scope
+    original_manifest = STORE.baseline_manifest
+    try:
+        STORE.scan = None
+        STORE.scope = None
+        STORE.baseline_manifest = None
+
+        res_empty = api_runtime_context({})
+        assert res_empty["scan_loaded"] is False
+        assert res_empty["vault_path"] is None
+        assert res_empty["vault_name"] is None
+        assert res_empty["scope"] is None
+        assert res_empty["notes_in_scope"] == 0
+        assert res_empty["total_vault_notes"] == 0
+
+        # 2. TEST A: Active scan state
+        vault_dir = tmp_path / "My Test Vault"
+        vault_dir.mkdir(parents=True, exist_ok=True)
+        (vault_dir / "Note1.md").write_text("---\ntitle: Test\n---\n# Content", encoding="utf-8")
+        (vault_dir / "Note2.md").write_text("---\nstatus: done\n---\n# Done", encoding="utf-8")
+
+        scan_payload = {
+            "vault_path": str(vault_dir),
+            "scope": {
+                "mode": "entire_vault",
+                "folders": [],
+                "include_subfolders": True,
+                "note_path": None,
+            },
+        }
+        scan_res = api_scan(scan_payload)
+        assert scan_res["summary"]["note_count"] == 2
+
+        # Record mtime of files to prove ZERO disk rescan
+        mtimes_before = {p: p.stat().st_mtime_ns for p in vault_dir.glob("*.md")}
+
+        res_active = api_runtime_context({})
+        assert res_active["scan_loaded"] is True
+        assert res_active["vault_path"] == str(vault_dir)
+        assert res_active["vault_name"] == "My Test Vault"
+        assert res_active["scope"]["mode"] == "entire_vault"
+        assert res_active["notes_in_scope"] == 2
+        assert res_active["total_vault_notes"] == 2
+
+        # Verify zero disk rescan occurred (mtimes identical, no new files)
+        mtimes_after = {p: p.stat().st_mtime_ns for p in vault_dir.glob("*.md")}
+        assert mtimes_before == mtimes_after
+    finally:
+        STORE.scan = original_scan
+        STORE.scope = original_scope
+        STORE.baseline_manifest = original_manifest
+
+
+def test_ha_f22_frontend_runtime_context_rehydration_in_node():
+    """TESTS C, D, E, F, G: Production UI JavaScript context rehydration executed in Node.js."""
+    import subprocess
+    import json
+    from pathlib import Path
+
+    html_content = Path("app/ui/index.html").read_text(encoding="utf-8")
+    js_start = html_content.find("<script>") + len("<script>")
+    js_end = html_content.find("</script>", js_start)
+    full_js = html_content[js_start:js_end]
+
+    harness = """
+const elements = {};
+function createMockEl(id) {
+  const classes = new Set();
+  const listeners = {};
+  const el = {
+    id: id,
+    style: {},
+    dataset: {},
+    classList: {
+      add: (c) => classes.add(c),
+      remove: (c) => classes.delete(c),
+      contains: (c) => classes.has(c),
+      toggle: (c, force) => {
+        if (force !== undefined) {
+          if (force) classes.add(c); else classes.delete(c);
+          return force;
+        }
+        if (classes.has(c)) { classes.delete(c); return false; }
+        classes.add(c); return true;
+      }
+    },
+    addEventListener: (evt, fn) => {
+      listeners[evt] = listeners[evt] || [];
+      listeners[evt].push(fn);
+    },
+    dispatchEvent: (evt) => {
+      const fns = listeners[evt.type || evt] || [];
+      const evObj = typeof evt === 'string' ? { target: el, type: evt } : evt;
+      fns.forEach(fn => fn(evObj));
+    },
+    appendChild: () => {},
+    removeChild: () => {},
+    setAttribute: () => {},
+    getAttribute: () => '',
+    _innerHTML: '',
+    get innerHTML() { return this._innerHTML; },
+    set innerHTML(val) {
+      this._innerHTML = val;
+      const idMatches = val.matchAll(/id=["']([^"']+)["']/g);
+      for (const m of idMatches) {
+        if (!elements[m[1]]) {
+          elements[m[1]] = createMockEl(m[1]);
+        }
+      }
+    },
+    textContent: '',
+    value: '',
+    focus: () => {}
+  };
+  return el;
+}
+function getEl(id) { return elements[id] || null; }
+function ensureEl(id) {
+  if (!elements[id]) elements[id] = createMockEl(id);
+  return elements[id];
+}
+const noop = () => {};
+global.window = global;
+global.window.addEventListener = noop;
+global.window.scrollTo = noop;
+global.document = {
+  getElementById: (id) => getEl(id),
+  querySelectorAll: (sel) => [],
+  querySelector: (sel) => getEl(sel.replace('#', '')),
+  createElement: (tag) => createMockEl(tag),
+  addEventListener: noop,
+  documentElement: ensureEl('html'),
+  body: ensureEl('body')
+};
+
+let currentLocale = "zh-Hant";
+global.localStorage = {
+  getItem: (k) => k === "ps_locale" ? currentLocale : null,
+  setItem: (k, v) => { if (k === "ps_locale") currentLocale = v; }
+};
+global.navigator = { clipboard: { writeText: () => Promise.resolve() } };
+
+global.esc = (s) => String(s);
+global.I18N = {
+  t: (k, p) => {
+    if (k === "context.no_vault") return currentLocale.startsWith("en") ? "No vault loaded" : "尚未載入知識庫";
+    if (k === "context.entire_vault") return currentLocale.startsWith("en") ? "Entire Vault" : "整個知識庫";
+    if (k === "context.single_note_summary") return currentLocale.startsWith("en") ? `Single Note: ${p.path}` : `單一筆記: ${p.path}`;
+    if (k === "context.folders_summary") return currentLocale.startsWith("en") ? `Folders (${p.count})` : `資料夾 (${p.count})`;
+    let s = k;
+    if (p) { Object.entries(p).forEach(([pk, pv]) => { s += ` [${pk}:${pv}]`; }); }
+    return s;
+  },
+  init: noop,
+  setLocale: (l) => { currentLocale = l; },
+  applyLocale: noop
+};
+global.StateTransfer = { setPending: noop, hasPending: () => false, consumePending: () => null };
+global.setTab = noop;
+global.toast = noop;
+
+ensureEl('currentVaultLabel');
+ensureEl('currentScopeLabel');
+ensureEl('currentNoteLabel');
+ensureEl('refactorPropSelect');
+ensureEl('refactorTargetSelect');
+ensureEl('relPropFilter');
+ensureEl('healthCard');
+ensureEl('healthSummary');
+ensureEl('discoveryInventoryTable');
+ensureEl('savedChecksList');
+ensureEl('scanMsg');
+ensureEl('glossaryTableBody');
+ensureEl('glossarySearchInput');
+ensureEl('schemasListTable');
+"""
+
+    test_driver = """
+async function runTests() {
+  global.loadDiscovery = () => Promise.resolve();
+  global.loadHealth = () => Promise.resolve();
+  global.loadSavedChecks = () => Promise.resolve();
+  global.populateRelPropFilterOptions = () => {};
+  global.populateRefactorSourceOptions = () => {};
+  global.populateRefactorTargetOptions = () => {};
+  global.loadSchemasList = () => Promise.resolve();
+  global.loadGlossaryList = () => Promise.resolve();
+
+  const results = {};
+
+  let mockRuntimeContext = {
+    scan_loaded: true,
+    vault_name: "Obsidian Vault",
+    vault_path: "C:/Users/test/Obsidian Vault",
+    scope: { mode: "entire_vault", folders: [], include_subfolders: true, note_path: null },
+    notes_in_scope: 397,
+    total_vault_notes: 397
+  };
+
+  global.api = async function(path, payload) {
+    if (path === "/api/runtime/context") {
+      return mockRuntimeContext;
+    }
+    return {};
+  };
+
+  // TEST C: Fresh browser F5 rehydration
+  S.scanned = false;
+  S.vaultPath = "";
+  S.vaultName = "";
+  S.scope = { mode: "entire_vault", folders: [], include_subfolders: true, note_path: null };
+
+  currentLocale = "zh-Hant";
+  await rehydrateRuntimeContext();
+
+  results.testC_scanned = S.scanned;
+  results.testC_vaultPath = S.vaultPath;
+  results.testC_vaultName = S.vaultName;
+  results.testC_vaultLabel = $("currentVaultLabel").textContent;
+  results.testC_scopeLabel = $("currentScopeLabel").textContent;
+
+  // TEST D: Locale rerender preserves active Vault identity
+  currentLocale = "en";
+  renderAllDynamicViews();
+  results.testD_en_vaultLabel = $("currentVaultLabel").textContent;
+  results.testD_en_scopeLabel = $("currentScopeLabel").textContent;
+  results.testD_en_scanned = S.scanned;
+  results.testD_en_vaultPath = S.vaultPath;
+
+  currentLocale = "zh-Hant";
+  renderAllDynamicViews();
+  results.testD_zh_vaultLabel = $("currentVaultLabel").textContent;
+  results.testD_zh_scopeLabel = $("currentScopeLabel").textContent;
+  results.testD_zh_scanned = S.scanned;
+  results.testD_zh_vaultPath = S.vaultPath;
+
+  // TEST E: Loaded Note + active Vault coexist
+  S.currentNote = { name: "HOME", note_path: "00_Home/HOME.md" };
+  updateContextBarLabels();
+  results.testE_vaultLabel = $("currentVaultLabel").textContent;
+  results.testE_noteLabel = $("currentNoteLabel").textContent;
+
+  // TEST F: Server restart / no backend scan
+  mockRuntimeContext = {
+    scan_loaded: false,
+    vault_name: null,
+    vault_path: null,
+    scope: null,
+    notes_in_scope: 0,
+    total_vault_notes: 0
+  };
+  S.scanned = false;
+  S.vaultPath = "";
+  S.vaultName = "";
+  currentLocale = "en";
+  await rehydrateRuntimeContext();
+
+  results.testF_scanned = S.scanned;
+  results.testF_vaultLabel = $("currentVaultLabel").textContent;
+  results.testF_scopeLabel = $("currentScopeLabel").textContent;
+
+  // TEST G: Scope authority (non-default scope: single_note)
+  mockRuntimeContext = {
+    scan_loaded: true,
+    vault_name: "Obsidian Vault",
+    vault_path: "C:/Users/test/Obsidian Vault",
+    scope: { mode: "single_note", folders: [], include_subfolders: true, note_path: "00_Home/HOME.md" },
+    notes_in_scope: 1,
+    total_vault_notes: 397
+  };
+  currentLocale = "en";
+  await rehydrateRuntimeContext();
+
+  results.testG_scanned = S.scanned;
+  results.testG_scopeMode = S.scope.mode;
+  results.testG_scopePath = S.scope.note_path;
+  results.testG_scopeLabel = $("currentScopeLabel").textContent;
+
+  console.log(JSON.stringify(results));
+}
+
+runTests().catch(err => {
+  console.error("TEST ERROR:", err);
+  process.exit(1);
+});
+"""
+
+    proc = subprocess.run(["node"], input=harness + full_js + test_driver, capture_output=True, text=True, check=True, encoding="utf-8")
+    res = json.loads(proc.stdout.strip())
+
+    # Assert TEST C
+    assert res["testC_scanned"] is True
+    assert res["testC_vaultPath"] == "C:/Users/test/Obsidian Vault"
+    assert res["testC_vaultName"] == "Obsidian Vault"
+    assert res["testC_vaultLabel"] == "Obsidian Vault"
+    assert res["testC_scopeLabel"] == "整個知識庫"
+
+    # Assert TEST D
+    assert res["testD_en_vaultLabel"] == "Obsidian Vault"
+    assert res["testD_en_scopeLabel"] == "Entire Vault"
+    assert res["testD_en_scanned"] is True
+    assert res["testD_en_vaultPath"] == "C:/Users/test/Obsidian Vault"
+    assert res["testD_zh_vaultLabel"] == "Obsidian Vault"
+    assert res["testD_zh_scopeLabel"] == "整個知識庫"
+    assert res["testD_zh_scanned"] is True
+
+    # Assert TEST E
+    assert res["testE_vaultLabel"] == "Obsidian Vault"
+    assert res["testE_noteLabel"] == "HOME"
+
+    # Assert TEST F
+    assert res["testF_scanned"] is False
+    assert res["testF_vaultLabel"] == "No vault loaded"
+    assert res["testF_scopeLabel"] == "No vault loaded"
+
+    # Assert TEST G
+    assert res["testG_scanned"] is True
+    assert res["testG_scopeMode"] == "single_note"
+    assert res["testG_scopePath"] == "00_Home/HOME.md"
+    assert res["testG_scopeLabel"] == "Single Note: 00_Home/HOME.md"

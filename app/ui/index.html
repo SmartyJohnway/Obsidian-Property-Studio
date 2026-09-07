@@ -1213,6 +1213,7 @@
    ============================================================ */
 const S = {
   vaultPath: "",
+  vaultName: "",
   scanned: false,
   scope: { mode: "entire_vault", folders: [], include_subfolders: true, note_path: null },
   notesInScope: 0,
@@ -2573,6 +2574,32 @@ async function migrateLegacyStateIfNeeded() {
   }
 }
 
+async function rehydrateRuntimeContext() {
+  try {
+    const ctx = await api("/api/runtime/context");
+    if (ctx && ctx.scan_loaded) {
+      S.scanned = true;
+      S.vaultPath = ctx.vault_path || "";
+      S.vaultName = ctx.vault_name || (S.vaultPath ? S.vaultPath.split(/[/\\]/).pop() : "");
+      if (ctx.scope) {
+        S.scope = ctx.scope;
+      }
+      S.notesInScope = typeof ctx.notes_in_scope === "number" ? ctx.notes_in_scope : 0;
+    } else {
+      S.scanned = false;
+      S.vaultPath = "";
+      S.vaultName = "";
+    }
+  } catch (e) {
+    console.warn("Failed to query /api/runtime/context:", e);
+    S.scanned = false;
+    S.vaultPath = "";
+    S.vaultName = "";
+  }
+  updateContextBarLabels();
+}
+window.rehydrateRuntimeContext = rehydrateRuntimeContext;
+
 async function init() {
   // Load meta first to populate version badge and verify backend compatibility
   try {
@@ -2591,6 +2618,7 @@ async function init() {
   await I18N.init();
   await migrateLegacyStateIfNeeded();
   await syncPreferencesFromServer();
+  await rehydrateRuntimeContext();
   await loadGlossaryCatalog();
 
   // Navigation handlers
@@ -2674,6 +2702,10 @@ function updateContextBarLabels() {
     if ($("currentVaultLabel")) $("currentVaultLabel").textContent = I18N.t("context.no_vault");
     if ($("currentScopeLabel")) $("currentScopeLabel").textContent = I18N.t("context.no_vault");
     return;
+  }
+  if ($("currentVaultLabel")) {
+    const vName = S.vaultName || (S.vaultPath ? S.vaultPath.split(/[/\\]/).pop() : "");
+    $("currentVaultLabel").textContent = vName || I18N.t("context.no_vault");
   }
   const scope = S.scope || { mode: "entire_vault" };
   if (scope.mode === "entire_vault") {
@@ -2764,9 +2796,10 @@ function setupVaultHandlers() {
       $("scanMsg").innerHTML = `<div class="hint">${I18N.t("safety.read_only")}...</div>`;
       const res = await api("/api/scan", { vault_path: path });
       S.vaultPath = path;
+      S.vaultName = path.split(/[/\\]/).pop() || path;
       S.scanned = true;
       S.lastScanSeconds = res.scan_seconds;
-      $("currentVaultLabel").textContent = path.split(/[/\\]/).pop() || path;
+      updateContextBarLabels();
       $("vaultBadge").className = "chip ok";
 
       $("statNotesTotal").textContent = res.summary.note_count;
