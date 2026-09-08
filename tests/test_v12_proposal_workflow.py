@@ -125,3 +125,100 @@ def test_v12_prp_004_four_way_comparison_and_compatibility():
     new_item = next(i for i in four_way if i["name"] == "brand_new_prop")
     assert new_item["compatibility_state"] == "new_property"
 
+
+def test_v12_prp_005_sk_f01_proposal_compatibility_matrix():
+    """Regression test for SK-F01: Proposal Contract pre-output validation matrix.
+
+    Validates that:
+    1. Known Claude failure (storage_type='text', ui_control='note_link_list') is rejected.
+    2. Corrected pair (storage_type='list', ui_control='note_link_list') is accepted.
+    3. Entire authoritative compatibility matrix is enforced deterministically by validate_proposal.
+    """
+    # 1. Known Claude failure: text + note_link_list must fail closed
+    failing_proposal = {
+        "proposal_version": "1.1",
+        "schema_name": "claude_failed_proposal",
+        "properties": [
+            {
+                "name": "related_tools",
+                "storage_type": "text",
+                "ui_control": "note_link_list",
+            }
+        ],
+    }
+    res_fail = validate_proposal(failing_proposal)
+    assert res_fail["valid"] is False
+    assert any(
+        "ui_control 'note_link_list' is not compatible with storage_type 'text'" in err
+        for err in res_fail["errors"]
+    )
+
+    # 2. Corrected proposal: list + note_link_list must pass
+    valid_proposal = {
+        "proposal_version": "1.1",
+        "schema_name": "corrected_proposal",
+        "properties": [
+            {
+                "name": "related_tools",
+                "storage_type": "list",
+                "ui_control": "note_link_list",
+            }
+        ],
+    }
+    res_pass = validate_proposal(valid_proposal)
+    assert res_pass["valid"] is True
+    assert len(res_pass["errors"]) == 0
+
+    # 3. Single wikilink picker: note_link requires storage_type='text'
+    link_valid = {
+        "proposal_version": "1.1",
+        "schema_name": "note_link_valid",
+        "properties": [
+            {
+                "name": "lead_architect",
+                "storage_type": "text",
+                "ui_control": "note_link",
+            }
+        ],
+    }
+    assert validate_proposal(link_valid)["valid"] is True
+
+    link_invalid = {
+        "proposal_version": "1.1",
+        "schema_name": "note_link_invalid",
+        "properties": [
+            {
+                "name": "lead_architect",
+                "storage_type": "list",
+                "ui_control": "note_link",
+            }
+        ],
+    }
+    res_link_inv = validate_proposal(link_invalid)
+    assert res_link_inv["valid"] is False
+    assert any(
+        "ui_control 'note_link' is not compatible with storage_type 'list'" in err
+        for err in res_link_inv["errors"]
+    )
+
+    # 4. Choice controls compatibility
+    single_choice_invalid = {
+        "proposal_version": "1.1",
+        "schema_name": "choice_invalid",
+        "properties": [
+            {
+                "name": "status",
+                "storage_type": "list",
+                "ui_control": "single_choice",
+                "allowed_values": ["active", "completed"],
+            }
+        ],
+    }
+    res_sc_inv = validate_proposal(single_choice_invalid)
+    assert res_sc_inv["valid"] is False
+    assert any(
+        "ui_control 'single_choice' is not compatible with storage_type 'list'" in err
+        for err in res_sc_inv["errors"]
+    )
+
+
