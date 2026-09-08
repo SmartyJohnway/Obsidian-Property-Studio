@@ -69,6 +69,9 @@ const I18N = {
       langBtn.textContent = locale === "zh-Hant" ? "EN" : "繁中";
       langBtn.title = locale === "zh-Hant" ? "Switch to English" : "切換至繁體中文";
     }
+    try {
+      window.dispatchEvent(new CustomEvent("ps:localeChanged", { detail: { locale } }));
+    } catch (e) {}
   }
 };
 

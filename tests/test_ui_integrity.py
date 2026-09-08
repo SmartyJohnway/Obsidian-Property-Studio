@@ -197,6 +197,15 @@ global.localStorage = {{
 }};
 
 global.fetch = async (url, opts) => {{
+  if (url.includes('/api/meta')) {{
+    return {{
+      ok: true,
+      json: async () => ({{
+        app: 'Obsidian Property Studio',
+        version: '1.2.0'
+      }})
+    }};
+  }}
   if (url.includes('/api/design/presets')) {{
     return {{
       ok: true,

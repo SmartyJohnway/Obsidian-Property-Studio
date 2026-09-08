@@ -23,7 +23,7 @@ def init_store_with_main_vault(main_vault: str):
 def test_api_meta_contract():
     meta = ROUTES["/api/meta"]({})
     assert meta["app"] == "Obsidian Property Studio"
-    assert meta["version"] == "1.1.0"
+    assert meta["version"] == "1.2.0"
     assert meta["vault_write_capability"] is False
     assert meta["requires_network"] is False
     assert meta["requires_api_key"] is False

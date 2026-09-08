@@ -1,0 +1,71 @@
+{
+  "contract": "M022_V120_HUMAN_ACCEPTANCE_AND_NATIVE_VERIFICATION",
+  "app": "Obsidian Property Studio",
+  "version": "1.2.0",
+  "evidence_id": "M022-WIN10-NATIVE-ACCEPTANCE",
+  "timestamp": "2026-09-07T18:30:00+08:00",
+  "platform": {
+    "system": "Windows",
+    "release": "10",
+    "version": "10.0.19045",
+    "machine": "AMD64",
+    "python_version": "3.13.7"
+  },
+  "launcher_verified": {
+    "script": "run_windows.bat",
+    "exists": true,
+    "executable_entry": "python -m app",
+    "native_execution_verified": true
+  },
+  "automated_verification": {
+    "status": "PASS",
+    "total_tests": 253,
+    "passed_tests": 253,
+    "failed_tests": 0,
+    "duration_seconds": 18.29
+  },
+  "vault_safety": {
+    "status": "PASS",
+    "byte_for_byte_unchanged": true,
+    "files_created": 0,
+    "files_modified": 0,
+    "files_deleted": 0
+  },
+  "human_verification": {
+    "status": "PASS",
+    "method": "Human Owner production-browser walkthrough",
+    "platform": "Windows 10 Build 19045+",
+    "verified_by": "Human Owner (Dr. J)",
+    "verified_at": "2026-09-07T18:00:00+08:00",
+    "finding_backlog": "CLEAR",
+    "closed_findings": [
+      "HA-F01",
+      "HA-F08",
+      "HA-F09",
+      "HA-F10",
+      "HA-F11",
+      "HA-F12",
+      "HA-F13",
+      "HA-F14",
+      "HA-F15",
+      "HA-F16",
+      "HA-F17",
+      "HA-F18",
+      "HA-F19",
+      "HA-F21",
+      "HA-F22",
+      "HA-F23"
+    ],
+    "closure_smoke_gates": {
+      "gate_1_runtime_f5_rehydration": "PASS",
+      "gate_2_named_schema_workspace_exact_identity_version": "PASS",
+      "gate_3_workspace_untouched_preservation_complex_yaml": "PASS",
+      "gate_4_blank_note_exact_scope_schema_authority": "PASS",
+      "gate_5_drift_exact_reconcile_note_navigation": "PASS",
+      "gate_6_governance_profile_export_import_preview": "PASS"
+    }
+  },
+  "windows_native_http_acceptance": "PASS",
+  "windows_native_launcher_invocation": "PASS",
+  "windows_11_status": "NOT YET VERIFIED (accepted non-blocking release limitation)"
+}

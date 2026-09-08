@@ -2,11 +2,11 @@
 
 > Project: `Obsidian Property Studio`  
 > Governance Standard: `Project Four-File Governance v2.1`  
-> Product Stage: `v1.1.0 Development Cycle`  
-> Target Product Release: `v1.1.0`  
-> Baseline: `v1.0.0 Formal Mainline (Agent B recipient + harvested A/C/D capabilities)`  
+> Product Stage: `v1.2.0 Development Cycle`  
+> Target Product Release: `v1.2.0`  
+> Baseline: `v1.1.0 Formal Mainline (Published release cca408c / 176/176 tests PASS)`  
 > Primary Platform: `Windows 10 (Build 19045+) / Windows 11 (64-bit AMD64)`  
-> Product Principle: **Property governance without requiring the user to understand YAML.**
+> Product Principle: **Build and govern your own Property system — without surrendering control of your Vault.** (繁中：建立並治理屬於你自己的 Property 系統，同時讓 Vault 始終掌握在你手上。)
 
 ---
 
@@ -25,17 +25,16 @@ Obsidian 的 Properties 可以把 Markdown Vault 從單純的文件集合提升�
 - 整個 Vault 的主題與資料夾分類可能很多元，不同子資料夾的 Property 詞彙與慣例各不相同；
 - 使用者常需要針對「特定資料夾範圍（Scope）」或「單篇 Note」進行精確的 Property 檢視、編輯、校驗與 frontmatter 產生；
 - 在分析筆記間的關聯時，使用者希望在多個 Source 資料夾與 Target 資料夾之間進行 ad-hoc 分析，並可依需要將有用的分析條件儲存起來重複執行，而不是被強加預設的分類規則；
-- 介面需要真正支援繁體中文與 English 的雙語切換與 Light / Dark 主題，而不是將中英文全部堆疊在單一 HTML 檔案中。
+- 介面需要真正支援繁體中文與 English 的雙語切換與 Light / Dark 主題，而不是將中英文全部堆疊在單一 HTML 檔案中；
+- **[v1.2.0 核心演進]**：
+  - 使用者需要建立並維護自己的一套屬性詞彙庫（User Property Glossary）與可重用的具名架構庫（Named Schema Library）；
+  - 使用者需要將設計好的 Named Schema 指派為特定 Scope 的預期規範（Scope → Expected Schema），並在健康分析中精確檢視「預期 vs 實際」的架構漂移（Desired vs Actual Schema Drift）；
+  - 使用者在設計或選取 Schema 後，需要能直接與既有筆記進行架構調和（Reconciliation），明確辨識相符、缺漏、衝突與架構外保留屬性；
+  - 健檢發現的問題需要能一鍵鑽取（Drilldown）至確切筆記工作區並攜帶問題情境；
+  - 外部 AI / Agent 產生的 Schema 建議需要完整的人性化審查工作流程（可檢視、編輯、接受為具名架構或拒絕），並搭配獨立的 Obsidian Property Advisor Companion Skill；
+  - 架構演進時支援版本化與跨版本遷移規劃（Migration Planning），以及整體治理設定檔（Governance Profile）的匯出/匯入與本機持久化。
 
-本專案建立一個 **獨立、local-first、read-only-by-default 的 Obsidian Property Studio**，讓使用者可以透過 GUI / local Web App：
-
-1. 看懂目前 Vault / Scope 的 Property 結構；
-2. 用「我想管理什麼」而不是 YAML 語法設計 Property schema；
-3. 在單篇筆記工作區（Note Properties Workspace）或全新填表模式下填寫、校驗 Property values，並產生合法 Frontmatter / YAML；
-4. 找出 Property naming/value/type/schema drift；
-5. 在選定 Scope 下規劃 Property rename / merge / normalization / type migration；
-6. 在自訂 Source Scope 與 Target Scope 之間分析 Property Links 與 Body Wikilinks 關聯，並可將分析條件儲存為 Reusable Relationship Checks；
-7. 匯入外部 AI/Agent 產生的 schema proposal，但核心產品不依賴任何 LLM。
+本專案建立一個 **獨立、local-first、read-only-by-default 的 Personal Property Governance System**，讓使用者可以透過 GUI / local Web App 建立並治理屬於自己的 Property 系統，同時嚴格保持 Vault 的安全唯讀。
 
 ---
 
@@ -44,12 +43,23 @@ Obsidian 的 Properties 可以把 Markdown Vault 從單純的文件集合提升�
 交付一個可直接在 Windows 10 (Build 19045+) 或 Windows 11 使用的 standalone local application，使不懂 YAML 的使用者能在 Vault、Scope、Note 三種尺度下完成：
 
 ```text
-Discover
-→ Design
-→ Note Properties Workspace (Fill & Diff)
-→ Refactor Plan
-→ Relationship Analysis (Source Scope → Target Scope)
-→ Govern & Health
+User Property Glossary
+        +
+Named Schema Library
+        +
+Scope → Expected Schema
+        +
+Desired vs Actual Drift
+        +
+Existing Note Reconciliation
+        +
+Migration Planning [P1]
+        +
+External AI Proposal Review
+        +
+Optional AI Property Advisor Skill
+        =
+Personal Property Governance System
 ```
 
 而不需要：
@@ -62,7 +72,7 @@ Discover
 - 接受應用程式替自己生成 Markdown 正文或寫作模板；
 - 被強加任何預設的知識本體（ontology）或強制的關聯規則。
 
-v1.0.0 / v1.1.0 的核心安全承諾：
+核心安全承諾與邊界：
 
 > **The application may analyze the Property layer, but it does not own the user's prose.**
 
@@ -70,10 +80,17 @@ v1.0.0 / v1.1.0 的核心安全承諾：
 
 > **The selected Vault is an input source, not a writable workspace.**
 
+以及：
+
+> **Local deterministic governance + Human decision + Read-only Vault safety.**
+
+AI 可以提供建議（AI may advise），確定性工具進行校驗（Deterministic tooling validates），人類做最終決定（Human decides）。應用程式絕不靜默寫入 Vault。
+
 ---
 
-## 2A. Historical Integration Baseline (v1.0.0 Provenance)
+## 2A. Historical Integration Baseline (v1.0.0 & v1.1.0 Provenance)
 
+### v1.0.0 Provenance
 v1.0.0 階段已透過嚴格的黑箱評測與四文件治理完成正式整合：
 
 | Candidate | Formal Integration Role | Round 2 Product Result | Primary Reason |
@@ -83,180 +100,100 @@ v1.0.0 階段已透過嚴格的黑箱評測與四文件治理完成正式整合�
 | **Agent A** | **READ-ONLY DONOR** | `HOLD` | Strong refactor/manual-review propagation despite ambiguity defects elsewhere |
 | **Agent D** | **READ-ONLY DONOR** | `HOLD` | Strong governance/evidence/export-readback patterns despite hidden semantic defects |
 
-此歷史事實與決策在 v1.1.0 週期中保持有效。
-
-### v1.1.0 UI/UX Donor Roles
-
-在 v1.1.0 開發週期中，上層目錄保留的兩個 Arena 前端檔案的角色被嚴格限定為：
-
-- `index_areaagentB.html`: **UX donor only**（參考其 beginner-friendly 導引、Light/Dark 主題、Next Action 導航、載入狀態）
-- `index_areaagentD.html`: **Visual / interaction donor only**（參考其視覺層次、卡片樣式、右側 Drawer 抽屜、詳細指標呈現、麵包屑）
-
-**Donor 檔案絕對不得作為功能 Source of Truth，不得覆蓋正式前端，亦不得將 mock/demo API 搬入正式產品。**
+### v1.1.0 Release Baseline
+v1.1.0 開發週期已於 2026-09-02 完成正式發布與封存（Release tag: `v1.1.0`, Commit: `cca408c0456e1fe94e8224bd6550cf30c7274926`），所有 176 項自動化測試通過，並在 Windows 10 生產環境完成真人驗收。其歷史事實、發布資產與封存路線圖（`docs/archive/ROADMAP_v1.1.0.md`）保持不可變。
 
 ---
 
 ## 3. Success Criteria
 
-### SC-01 — Beginner usability
-不懂 YAML 的使用者可透過 UI 選擇 Vault、理解 Properties、設計 Schema、填值並複製合法 frontmatter。
+### [v1.0.0 Retained Success Criteria]
+- **SC-01 — Beginner usability**: 不懂 YAML 的使用者可透過 UI 選擇 Vault、理解 Properties、設計 Schema、填值並複製合法 frontmatter。
+- **SC-02 — Vault safety**: 對選定 Vault 保持嚴格 read-only：不建立、修改、重命名、移動或刪除任何筆記與附件，不修改 `.obsidian/`，不自動套用遷移。任何分析與建議皆不改變 Vault bytes。
+- **SC-03 — Accurate discovery**: 掃描 Vault Frontmatter，提供 note count、notes-with-properties count、property inventory、usage counts、storage types、naming variants、value distributions 與 malformed frontmatter warnings。解析失敗不得靜默當作「無 Property」。
+- **SC-04 — Property design without YAML knowledge**: 提供以目標/用途為導向的 Property/Schema 設計流程，支援既有屬性重用、新型態設定、必填/選填意圖與受控值建議。
+- **SC-05 — Native Obsidian-aware output**: 輸出對齊 Obsidian/Markdown frontmatter 語意，支援 Text, List, Number, Checkbox/Boolean, Date, Date & time, Tags 等 storage concepts，高階控制項（如 note-link picker）具備明確序列化語意。
+- **SC-06 — Existing-schema reuse**: 新增或編輯屬性時，主動比對現有 Vault 庫存並警示重複或相近名稱，允許直接重用。
+- **SC-07 — Safe Property refactor planning**: 提供 Rename, Merge, Normalize Values, Type Conversion feasibility, Required/Optional 變更衝擊與衝突偵測之唯讀規劃分析，不直接套用至 Vault。
+- **SC-08 — Relationship Inbox & Analysis**: 能辨識 plain-text 屬性值對應既有筆記的候選、unresolved/broken 連結、ambiguous 實體目標與關係漂移。
+- **SC-09 — Property Health**: 提供透明、可解釋的健康檢查，涵蓋 naming drift、value drift、type conflicts、missing properties、unexpected properties 與 relationship issues。
+- **SC-10 — External AI interoperability**: 核心 App 完全不依賴 AI；可匯入外部 Agent/Skill 產生的版本化 schema proposal JSON 並進行本機校驗與比對。
+- **SC-11 — Local-first**: 核心工作流程無須連網、無須雲端帳號、無須 API key，不傳輸 Vault 內容，無預設遙測。
+- **SC-12 — Deterministic and auditable**: 相同 Vault 快照與設定產生一致且可由測試/read-back 驗證的分析結果。
+- **SC-13 — Integrated ambiguity propagation**: 當 note-link 解析至多個同名候選時，行為必須 fail-closed，不自動猜測，必須要求使用者明確選擇。
+- **SC-14 — Cross-module ambiguity consistency**: 解析層發現的歧義與問題必須貫穿 Fill, Refactor, Relationships, Health 與 Export，不得在中途靜默消失。
+- **SC-15 — Formal evidence regeneration**: 正式發布時必須在整合庫中重新執行並生成全部自動化測試、唯讀性驗證、確定性與讀回測試證據。
 
-### SC-02 — Vault safety
-對選定 Vault 保持嚴格 read-only：不建立、修改、重命名、移動或刪除任何筆記與附件，不修改 `.obsidian/`，不自動套用遷移。任何分析與建議皆不改變 Vault bytes。
-
-### SC-03 — Accurate discovery
-掃描 Vault Frontmatter，提供 note count、notes-with-properties count、property inventory、usage counts、storage types、naming variants、value distributions 與 malformed frontmatter warnings。解析失敗不得靜默當作「無 Property」。
-
-### SC-04 — Property design without YAML knowledge
-提供以目標/用途為導向的 Property/Schema 設計流程，支援既有屬性重用、新型態設定、必填/選填意圖與受控值建議。
-
-### SC-05 — Native Obsidian-aware output
-輸出對齊 Obsidian/Markdown frontmatter 語意，支援 Text, List, Number, Checkbox/Boolean, Date, Date & time, Tags 等 storage concepts，高階控制項（如 note-link picker）具備明確序列化語意。
-
-### SC-06 — Existing-schema reuse
-新增或編輯屬性時，主動比對現有 Vault 庫存並警示重複或相近名稱，允許直接重用。
-
-### SC-07 — Safe Property refactor planning
-提供 Rename, Merge, Normalize Values, Type Conversion feasibility, Required/Optional 變更衝擊與衝突偵測之唯讀規劃分析，不直接套用至 Vault。
-
-### SC-08 — Relationship Inbox & Analysis
-能辨識 plain-text 屬性值對應既有筆記的候選、unresolved/broken 連結、ambiguous 實體目標與關係漂移。
-
-### SC-09 — Property Health
-提供透明、可解釋的健康檢查，涵蓋 naming drift、value drift、type conflicts、missing properties、unexpected properties 與 relationship issues。
-
-### SC-10 — External AI interoperability
-核心 App 完全不依賴 AI；可匯入外部 Agent/Skill 產生的版本化 schema proposal JSON 並進行本機校驗與比對。
-
-### SC-11 — Local-first
-核心工作流程無須連網、無須雲端帳號、無須 API key，不傳輸 Vault 內容，無預設遙測。
-
-### SC-12 — Deterministic and auditable
-相同 Vault 快照與設定產生一致且可由測試/read-back 驗證的分析結果。
-
-### SC-13 — Integrated ambiguity propagation
-當 note-link 解析至多個同名候選時，行為必須 fail-closed，不自動猜測，必須要求使用者明確選擇。
-
-### SC-14 — Cross-module ambiguity consistency
-解析層發現的歧義與問題必須貫穿 Fill, Refactor, Relationships, Health 與 Export，不得在中途靜默消失。
-
-### SC-15 — Formal evidence regeneration
-正式發布時必須在整合庫中重新執行並生成全部自動化測試、唯讀性驗證、確定性與讀回測試證據。
+### [v1.1.0 Retained Success Criteria]
+- **SC-16 — True Lightweight Bilingual i18n**: UI 支援繁體中文（zh-Hant）與 English 即時無縫切換，偏好記錄於本機儲存（localStorage）。所有語系檔（JSON）皆為 local 資源，無 CDN 依賴，靜態文字、動態訊息與錯誤代碼均走 i18n 鍵值，UI 不得在同一畫面堆疊兩套中英文 DOM。
+- **SC-17 — Clean Theme System (Light / Dark)**: 支援 Light 與 Dark 主題，偏好記錄於本機儲存，顏色採用 design tokens 管理，在兩種主題下皆滿足可讀性與對比度要求。
+- **SC-18 — Multi-level Context Model & Multi-folder Scope**: 正式建立 `Vault → Scope → Note → Schema` 四層工作模型。Scope 支援「整個 Vault（Entire Vault）」、「單一資料夾（One Folder）」、「多資料夾組合（Multiple Folders）」與「單篇筆記（Single Note）」，支援包含子資料夾（include_subfolders）選項。資料夾重疊時自動去重。切換 Scope 時優先基於記憶體索引過濾，不重複掃描整個硬碟 Vault。
+- **SC-19 — Note Properties Workspace (Existing Note & Blank Modes)**: 提供單篇筆記屬性工作區。支援全 Vault 筆記搜尋與樹狀目錄瀏覽（清楚標示同名路徑歧義），能讀入既有屬性、進行表單編輯、對比語意 Diff、依全域/區域 Schema 進行校驗，並產生 Frontmatter 預覽與複製。遇 duplicate keys / malformed 時 fail-closed。
+- **SC-20 — Scope-Aware Relationship Analysis & Separation**: 關聯分析支援自訂 `Source Scope` 與 `Target Scope`。清楚區分並分開呈現「Property Links」與「Body Wikilinks」分析結果（`VALID`、`BROKEN`、`AMBIGUOUS`、`OUTSIDE SELECTED TARGET`）。
+- **SC-21 — Body Wikilink Analysis (Strict Read-Only)**: 可分析 Markdown 正文中的 Wikilinks 關聯，但正文內容僅供讀取解析，嚴禁修改、替換、修復正文或重寫反向連結。
+- **SC-22 — User-Initiated Saved Relationship Checks**: 系統不內建任何預設的關聯規則或知識本體假設。Ad-hoc 關聯分析為預設流程；使用者可主動將分析條件儲存為「已儲存的關聯檢查」，設定檔儲存於 Vault 外部。
 
 ---
 
-### v1.1.0 Success Criteria (New)
+### [v1.2.0 New Success Criteria]
 
-### SC-16 — True Lightweight Bilingual i18n
-UI 支援繁體中文（zh-Hant）與 English 即時無縫切換，偏好記錄於本機儲存（localStorage）。所有語系檔（JSON）皆為 local 資源，無 CDN 依賴，靜態文字、動態訊息與錯誤代碼均走 i18n 鍵值，UI 不得在同一畫面堆疊兩套中英文 DOM。
+#### P0 Success Criteria (Must Ship)
+- **SC-23 — Workflow Closure & Zero Dead-End CTA**: 所有主要 CTA 必須具備完整的工作流程閉環（Starting State → User Intent → Action → State Transfer → Deterministic Processing → Visible Result → Terminal Artifact / Meaningful Next Action），並納入受治理的 Workflow Closure Matrix，不接受僅更換畫面或僅回傳 HTTP 200 作為完成。
+- **SC-24 — User-Editable Property Glossary**: 使用者可自訂與管理個人屬性詞彙庫（Canonical Key, 繁中標籤, 英文標籤, 說明, 使用指引, 範例值, 別名, 分類），遵循 `內建詞彙 → 使用者覆寫 → 觀察到的事實` 優先序，且保證 Canonical YAML Key 永遠不被翻譯或修改。
+- **SC-25 — Named Schema Library**: 使用者可將採用的屬性架構儲存為具名架構（Named Schema），包含版本、屬性清單、必填/選填標示與中繼資料，支援 CRUD 操作並持久化於 Vault 外部。
+- **SC-26 — Schema to Existing Note Reconciliation**: 支援將 Named Schema 或 Current Schema 套用至既有筆記，呈現「相符 Matches」、「缺漏 Missing」、「衝突 Conflict」與「架構外保留 Outside Schema」四種調和狀態，保留無關屬性，輸出語意 Diff 與驗證通過的 Frontmatter。
+- **SC-27 — Scope to Expected Schema Assignment & Drift Analysis**: 支援將特定 Scope 指派預期 Named Schema，Property Health 能精確對比 Desired vs Actual，檢視缺少預期屬性、型態不符、數值漂移、非預期屬性等架構漂移情況。
+- **SC-28 — External AI Proposal Review & Schema Candidate Workflow**: 外部 AI Proposal JSON 匯入後，提供完整的人性化審查工作介面（呈現與當前 Scope、全庫、詞彙庫及架構庫的比對結果），支援接受為具名架構、線上編輯候選架構或明確拒絕。
+- **SC-29 — Obsidian Property Advisor Companion Skill**: 提供獨立、解耦的 AI Companion Skill，遵循明確的觸發情境、意圖釐清原則與屬性建議規範，產出符合 Proposal Contract 的建議，核心 App 完全不依賴 Skill。
+- **SC-30 — Health Finding to Exact Note Drilldown**: Health 診斷問題可一鍵鑽取至確切筆記工作區，並跨視圖完整傳遞問題情境（finding_id, property_key, finding_type, expected_schema_id），在工作區高亮標示相關問題。
+- **SC-31 — App-Local Governance Persistence**: 所有治理狀態（詞彙庫、架構庫、Scope 指派、Saved Checks、偏好設定）持久化於 Vault 外部的應用程式目錄中。
+- **SC-32 — Fail-Closed Backward Compatibility (Safety Invariant)**: 完整相容 v1.1 資料結構與測試基準，遇到毀損或不相容的設定時 fail-closed 拒絕載入並提示修復，絕不靜默丟棄或強制覆寫使用者資料。
 
-### SC-17 — Clean Theme System (Light / Dark)
-支援 Light 與 Dark 主題，偏好記錄於本機儲存，顏色採用 design tokens 管理，在兩種主題下皆滿足可讀性與對比度要求。
-
-### SC-18 — Multi-level Context Model & Multi-folder Scope
-正式建立 `Vault → Scope → Note → Schema` 四層工作模型。Scope 支援「整個 Vault（Entire Vault）」、「單一資料夾（One Folder）」、「多資料夾組合（Multiple Folders）」與「單篇筆記（Single Note）」，支援包含子資料夾（include_subfolders）選項。資料夾重疊時自動去重（deduplicate）。切換 Scope 時優先基於記憶體索引過濾，不重複掃描整個硬碟 Vault。主畫面上方持續顯示當前 Context（Vault / Scope / Note）。
-
-### SC-19 — Note Properties Workspace (Existing Note & Blank Modes)
-提供單篇筆記屬性工作區。支援全 Vault 筆記搜尋與選擇（清楚標示同名路徑歧義），能讀入既有屬性、進行表單編輯、對比語意 Diff、依全域/區域 Schema 進行校驗，並產生 Frontmatter 預覽與複製。若筆記 frontmatter 存在 malformed 或 duplicate keys，必須 fail-closed 拒絕編輯並揭露原因。絕不修改或覆寫硬碟上的筆記。
-
-### SC-20 — Scope-Aware Relationship Analysis & Separation
-關聯分析支援自訂 `Source Scope`（支援多資料夾）與 `Target Scope`（支援多資料夾）。清楚區分並分開呈現「Property Links」與「Body Wikilinks」分析結果。分析結果清楚分類為：`VALID`、`BROKEN`、`AMBIGUOUS` 與 `OUTSIDE SELECTED TARGET`（連結存在但目標落在所選 Target Scope 之外）。
-
-### SC-21 — Body Wikilink Analysis (Strict Read-Only)
-可分析 Markdown 正文中的 Wikilinks 關聯，但正文內容僅供讀取解析，**嚴禁修改、替換、修復正文或重寫反向連結**。
-
-### SC-22 — User-Initiated Saved Relationship Checks
-系統**不內建任何預設的關聯規則或知識本體假設**。Ad-hoc 關聯分析為預設流程；使用者可主動將有價值的分析條件命名、添加備註並儲存為「已儲存的關聯檢查（Saved Relationship Check）」，供未來重新執行。檢查結果僅具建議性質（advisory），且設定檔儲存於 Vault 外部（如本機應用程式儲存/localStorage），絕不寫入 Vault。
+#### P1 Success Criteria (Should Ship / Eligible for Human-Approved Deferral)
+- **SC-33 — Schema Versioning & Migration Planning [P1]**: Named Schema 支援跨版本對比（新增、刪除、型態變更、數值詞彙變更、必填變更），Migration Planner 能針對選定 Scope 產出結構化遷移計畫（純唯讀規劃，不自動套用至 Vault）。若未完成，必須取得 Human Owner 明確核准延期，不得靜默遺漏。
+- **SC-34 — Governance Profile Import / Export [P1]**: 支援整份 Governance Profile JSON 的匯出與匯入（含版本檢查、變更預覽與 fail-closed 驗證）。若未完成，必須取得 Human Owner 明確核准延期，不得靜默遺漏。
 
 ---
 
 ## 4. Scope
 
-### In Scope
+### In Scope (v1.2.0)
 
-#### A. Vault Discovery vNext
-- 選擇本機 Obsidian Vault 資料夾。
-- 遞迴掃描 Markdown notes，解析 frontmatter Property layer。
-- **Scope-aware Inventory**：依當前 Scope 計算筆記數、屬性統計、型態分布與問題清單，同時提供全 Vault 全域背景比對。
-- **Property Drawer**：點擊屬性開啟右側抽屜查看詳細資訊、受影響筆記清單，並可點擊跳轉至 Note Properties Workspace。
-- 預設排除 `.obsidian/` 與 `.trash/`。
+#### P0 Modules (Must Ship)
+- **A. User Property Glossary Management (REQ-041)**: 展示層詞彙與中繼資料 CRUD，優先層次 `System Built-in → User Override → Observed Vault Facts`，Help Drawer 整合，Canonical Key 不變性。
+- **B. Named Schema Library & CRUD (REQ-042)**: 具名架構庫管理介面與後端引擎，支援建立、讀取、編輯、刪除與中繼資料儲存，儲存於 Vault 外部。
+- **C. Schema → Existing Note Reconciliation Workspace (REQ-043)**: 4 種調和狀態（`✓ Matches`, `＋ Missing`, `⚠ Conflict`, `• Outside Schema Preserved`），保留無關屬性，語意 Diff 與 Frontmatter 預覽/複製。
+- **D. Scope → Expected Schema Assignment & Drift Detection (REQ-044, REQ-045)**: 手動指派預期架構，Property Health 支援 Desired vs Actual 架構漂移診斷。
+- **E. External AI Proposal Review Workspace (REQ-046)**: Proposal 審查 UI，對比 Scope/Vault/Glossary/Schemas，支援 `[Accept as Named Schema]`, `[Edit Candidate]`, `[Reject Proposal]`。
+- **F. Obsidian Property Advisor Companion Skill (REQ-047)**: 獨立 Companion Skill 規格與範例（`skills/obsidian-property-advisor/`），產出符合 Proposal Contract 建議，核心 App 零相依。
+- **G. Health Finding → Exact Note Drilldown (REQ-048)**: Health 問題一鍵跳轉至 Note Properties Workspace 並攜帶情境。
+- **H. App-Local Governance Persistence (REQ-051)**: 本機儲存架構（`%APPDATA%/ObsidianPropertyStudio/` 或 `~/.property_studio/`），獨立於 Vault。
+- **I. Workflow Closure Contract & Zero Dead-End CTAs (REQ-040)**: 維護全 CTA 工作流程閉環矩陣與驗證測試。
+- **J. Backward Compatibility & Fail-Closed Safety (REQ-052)**: 跨模組強制安全性不變性。
 
-#### B. Property Design vNext
-- Beginner Property Builder，支援「我想管理什麼」意圖引導。
-- 同時結合 User Goal + 當前 Scope 庫存 + 全域 Vault 庫存推薦屬性。
-- 清楚區分「Scope 內既有」、「Vault 其他位置既有」、「全新屬性」與「可能重複」。
-
-#### C. Note Properties Workspace
-- **Existing Note Mode**：搜尋/選擇特定筆記（支援同名路徑消歧義），讀入解析後屬性，支援編輯、刪除、新增屬性值，顯示前後語意 Diff，支援複製更新後的 Frontmatter。遇 duplicate keys / malformed 時 fail-closed。
-- **New / Blank Mode**：保留既有基於 Schema 填寫全新 frontmatter 並複製的流程。
-- 預覽無效時 Copy 動作 disabled。
-
-#### D. Property Refactor Planner vNext
-- Rename, Merge, Normalize, Type Conversion feasibility 分析。
-- **Scope-aware Refactor**：明確標示當前 Scope 內受影響筆記數量，以及 Scope 外存在該屬性的筆記數量；規劃遷移計劃時嚴格限制於所選 Scope，**絕不隱性擴大範圍**。
-
-#### E. Relationships vNext (Scope-Aware)
-- 支援多資料夾 `Source Scope` 與多資料夾 `Target Scope`。
-- 預設 Ad-hoc 分析模式，無預設強加規則。
-- 判定結果：`VALID`, `BROKEN`, `AMBIGUOUS`, `OUTSIDE SELECTED TARGET`。
-- 支援 Property Links 分析。
-
-#### F. Body Wikilink Analysis (Analysis-Only)
-- 讀取 Markdown 正文中的 `[[Wikilink]]` 並分析其連結有效性與目標範圍。
-- **嚴格唯讀，絕不修改或覆寫正文內容**。
-- 與 Property Links 結果分開呈現。
-
-#### G. Saved Relationship Checks
-- 使用者主動儲存關聯分析條件（名稱、備註、Source Scope、Target Scope、關聯來源、屬性名稱）。
-- 支援重新執行、編輯備註與刪除/封存。
-- 儲存於 Vault 外部，結果僅為諮詢建議（advisory）。
-
-#### H. Property Health vNext
-- **Scope-aware Health**：僅以當前 Scope 內的筆記計算健康指標與問題清單，可選全 Vault 對比。
-- 所有 issue 均可 drill-down 至具體筆記並支援跳轉至 Note Properties Workspace。
-
-#### I. UI / UX Overhaul & i18n
-- 繁體中文（zh-Hant）與 English 雙語系，架構式 i18n，無 CDN。
-- Light / Dark 雙主題支援，design tokens 管理。
-- 整合式工作區版面（Sidebar 分組：Overview, Context, Create, Govern, Advanced；頂部 Persistent Context Bar；右側 Drawer；清晰的 Initial / Loading / Ready / Empty / Blocked / Error 狀態）。
-
-#### J. Outputs / Interchange
-- 複製 Frontmatter / YAML。
-- 匯出 Schema 定義、Health 報告、Refactor 計劃。
-- 匯出 / 匯入 Saved Relationship Checks。
-- 匯入外部 AI / Agent Schema Proposal JSON。
-
-#### K. Testing & Evidence
-- 保留全部 v1.0.0 回歸測試（95 項）。
-- 新增 v1.1.0 專屬回歸測試套件（V11-001 ~ V11-018）。
-- 5,000 篇筆記基準測試、Vault 唯讀雜湊驗證與 Windows 10/11 本機測試。
+#### P1 Modules (Should Ship / Eligible for Human-Approved Deferral)
+- **K. Schema Versioning & Migration Planning [P1] (REQ-049)**: 具名架構版本比對與 Scope 唯讀遷移影響計畫。
+- **L. Governance Profile Import / Export [P1] (REQ-050)**: Governance Profile JSON 匯出與匯入（含架構校驗、變更預覽與 fail-closed 防護）。
 
 ---
 
 ### Out of Scope (Non-goals)
 
-以下在 v1.1.0 明確不做：
+以下在 v1.2.0 明確不做：
 
-1. Obsidian community plugin。
-2. 自動修改任何 Vault note。
-3. 自動建立、重命名、移動或刪除檔案。
-4. 自動 apply Property migration / Refactor。
-5. Markdown 正文寫作與編輯。
-6. Markdown 正文改寫（Body rewriting）。
-7. 自動修復正文 Wikilinks（Body link repair）。
-8. 正文/寫作/標題模板（Writing / Heading templates）。
-9. AI 生成筆記正文。
-10. 合併筆記實體或合併筆記內文。
-11. 全 Vault 正文反向連結改寫。
-12. 附件/媒體檔案重構與清理。
-13. Dataview / Bases 替代品。
-14. 雲端同步、多使用者協作或 SaaS。
-15. 核心 App 內嵌必要 AI / LLM / API key。
-16. 強制預設的關聯規則或知識本體（Enforced Ontology）。
-17. 使用者自訂屬性詞彙編輯器（User-editable Property Glossary，正式延期至 v1.1.1）。
-18. 自動將使用者資料夾進行分類或自動重組 Vault 結構。
-19. Graph database 或向量嵌入 / RAG。
-
+1. 自動寫入或修改 Vault 筆記（No automatic Vault mutation）。
+2. 自動執行架構遷移（No Apply Migration to Vault）。
+3. 自動在 Vault 建立、重命名、移動或刪除檔案。
+4. Markdown 正文寫作、改寫或正文模板（No body/prose ownership）。
+5. 自動修復正文 Wikilinks（No body link rewriting）。
+6. AI 自動採用或自動套用建議（No AI auto-acceptance）。
+7. 核心 App 依賴強制 LLM、API Key 或雲端服務。
+8. 雲端同步、多使用者協作或 SaaS 帳號。
+9. Vector Database / RAG 子系統。
+10. Graph Database。
+11. Obsidian Community Plugin 改寫。
+12. 強制預設的關聯規則、分類法或知識本體（No forced ontology）。
+13. 自動重組或分類使用者的資料夾結構。
 
 ---
 
@@ -289,120 +226,109 @@ UI 支援繁體中文（zh-Hant）與 English 即時無縫切換，偏好記錄�
 
 ---
 
-### [v1.1.0 New Requirements]
+### [v1.1.0 Retained Requirements]
+- `REQ-024` True Lightweight Bilingual i18n Layer (`locales/zh-Hant.json`, `locales/en.json`, no CDN, localStorage).
+- `REQ-025` Design Token Based Theme Support (Light / Dark).
+- `REQ-026` Formal Scope Domain Model (Entire Vault, One Folder, Multi-Folder, Single Note, include_subfolders).
+- `REQ-027` In-Memory Scope Derivation (no full disk rescan on scope switch).
+- `REQ-028` Persistent Context Navigation (Topbar context chip, grouped sidebar).
+- `REQ-029` Note Properties Workspace (Existing Note & Blank modes, semantic diff, fail-closed corrupted YAML).
+- `REQ-030` Scope-Aware Relationship Analysis (Multi-folder Source & Target, 4-state classification).
+- `REQ-031` Body Wikilink Read-Only Analysis (strictly analysis-only, never mutate prose).
+- `REQ-032` No Default Relationship Rules (ad-hoc discovery by default).
+- `REQ-033` User-Initiated Saved Relationship Checks (stored outside Vault, advisory only).
+- `REQ-034` Scope-Aware Refactor & Health (strictly scoped calculations).
+- `REQ-035` Universal Module States & Drawer Drill-Down.
+- `REQ-036` Note Properties Search & Hierarchical Folder Tree (no note truncation limits, path disambiguation).
+- `REQ-037` Structured Multi-Select Schema Inputs & Adopt Next Actions.
+- `REQ-038` Controlled Vocabulary Refactor Planner & Human-Readable Primary View.
+- `REQ-039` Human-Readable Property Vocabulary Layer (Presentation layer bilingual labels, canonical key immutability).
 
-### REQ-024 — True Lightweight Bilingual i18n Layer
-前端必須具備獨立的 i18n 模組與本地 JSON 語系檔（`locales/zh-Hant.json`, `locales/en.json`）。不得在 HTML 內重複中英文 DOM；語言偏好儲存於 localStorage；切換語言無需重新整理頁面，`<html lang>` 屬性同步更新；離線環境下完整可用。
+---
 
-### REQ-025 — Design Token Based Theme Support
-提供 Light 與 Dark 主題，樣式統一以 CSS Custom Properties (Design Tokens) 管理，支援系統偏好與使用者手動切換（儲存於 localStorage），符合無障礙對比標準。
+### [v1.2.0 Formal Requirements]
 
-### REQ-026 — Formal Scope Domain Model
-後端與領域層必須正式支援 Scope 定義（支援 Entire Vault、One Folder、Multiple Folders、Single Note 與 include_subfolders）。多資料夾選取時以聯集（Union）計算並自動去重。
+#### P0 Requirements (Must Ship)
+- `REQ-040` **Workflow Closure Contract**: Every primary CTA must be represented in a maintained Workflow Closure Matrix defining Starting State, User Intent, Action, State Transfer, Processing, Visible Result, Terminal Outcome / Next Action, Failure Path, Automated Verification, and Human Verification. A CTA cannot PASS merely because a handler exists or an API returns HTTP 200.
+- `REQ-041` **User-editable Property Glossary**: Users may manage personal display and advisory metadata for canonical Property keys (Traditional Chinese label, English label, description, usage guidance, examples, aliases, category). Precedence is strictly enforced: `System Built-in Glossary → User Override → Observed Vault Facts`. Canonical YAML Property keys must never be mutated or translated.
+- `REQ-042` **Named Schema Library**: Users can save adopted Schemas as reusable named governance objects (stable schema ID, display name, version, description, Property definitions, required/recommended flags, creation/update metadata) stored outside the selected Vault, with full CRUD support.
+- `REQ-043` **Schema → Existing Note Reconciliation**: Provide a dedicated reconciliation flow when applying a Named or Current Schema to an existing Note. The UI must explicitly present four distinct reconciliation states: `✓ Existing & Matches`, `＋ Missing from Note`, `⚠ Existing but Conflicts with Schema`, and `• Existing Note Property outside Schema (Preserved)`. The flow must generate a semantic diff, a validated frontmatter preview, and clipboard copy without writing to the Vault.
+- `REQ-044` **Scope → Expected Schema Assignment**: A Scope may be associated with an Expected/Desired Named Schema as user-defined governance metadata (no default assignments, strictly advisory).
+- `REQ-045` **Desired vs Actual Schema Drift**: When an Expected Schema is assigned to a Scope, Property Health must compare Desired vs Actual state, detecting missing expected properties, type mismatches, governed value drift, unmanaged properties, and missing required relationships in an explainable, read-only diagnostic view.
+- `REQ-046` **External AI Proposal → Schema Candidate Workflow**: Replace the raw JSON validation endpoint with a complete Proposal Review workspace. The UI compares proposed properties against Current Scope, Whole Vault, Property Glossary, and Named Schema Library, surfacing compatibility status, type conflicts, value vocabulary conflicts, and alias warnings. Users can choose to `[Accept as Named Schema]`, `[Edit Candidate]`, `[Reject Proposal]`, or `[Reconcile with Existing Note]`.
+- `REQ-047` **Obsidian Property Advisor Skill**: Provide an independent, decoupled AI companion skill (`obsidian-property-advisor`) with clear trigger guidelines, management purpose clarification rules, property design principles, and validated Proposal JSON outputs conforming strictly to the authoritative Proposal Contract. Core application workflows must not depend on this Skill.
+- `REQ-048` **Health Finding → Note Drilldown**: Health diagnostic findings for affected notes must provide one-click drilldown into Note Properties Workspace, carrying full finding context across navigation (`finding_id`, `property_key`, `finding_type`, `note_path`, `expected_schema_id`) and highlighting the relevant issue in the workspace.
+- `REQ-051` **App-local Governance Persistence**: All governance state must persist across sessions in application-local storage outside the selected Vault. Vault content, governance/app state, temporary session state, and export artifacts must remain strictly separated.
+- `REQ-052` **Backward Compatibility & Fail-Closed Upgrade (Safety Invariant)**: v1.2 must transparently read v1.1-compatible state and contracts. If safe migration or parsing of corrupted state is impossible, the application must fail closed, display an explanatory error, and offer recovery guidance without silently coercing or discarding data.
 
-### REQ-027 — In-Memory Scope Derivation
-切換 Scope 時必須基於記憶體中的筆記與屬性索引進行過濾與衍生計算，不得在切換 Scope 時重新掃描整個磁碟 Vault。重新掃描 Vault 時自動使 Scope 衍生快取失效。
-
-### REQ-028 — Persistent Context Navigation
-UI 必須包含永久顯示的 Context Bar（呈現當前 Vault, Scope, Note），以及分組結構清晰的導航欄（Overview, Context, Create, Govern, Advanced）。
-
-### REQ-029 — Note Properties Workspace
-提供 Existing Note 與 New/Blank 兩種模式。在 Existing Note 模式下：
-- 能依檔名或相對路徑搜尋筆記，並清楚區分同名筆記；
-- 載入並解析現有屬性，允許編輯值與對照 Schema；
-- 提供語意 Diff 預覽；
-- 若筆記存在 malformed frontmatter 或 duplicate keys，必須 fail-closed 拒絕編輯並顯示明確原因；
-- 預覽無效時 Copy 動作 disabled；
-- 絕不直接修改磁碟上的筆記。
-
-### REQ-030 — Scope-Aware Relationship Analysis
-關係分析必須支援使用者指定的 Source Scope（多資料夾）與 Target Scope（多資料夾）。狀態分類必須涵蓋 `VALID`、`BROKEN`、`AMBIGUOUS` 與 `OUTSIDE SELECTED TARGET`。
-
-### REQ-031 — Body Wikilink Read-Only Analysis
-可分析 Markdown 正文中的 Wikilinks，但嚴格限制為唯讀分析。絕不得修改正文內容、修復連結或重寫反向連結。分析結果必須與 Property Links 明確分開標示。
-
-### REQ-032 — No Default Relationship Rules
-系統不得內建任何預設的資料夾關聯規則或知識本體假設。所有關聯分析以 Ad-hoc 探索為預設起點。
-
-### REQ-033 — User-Initiated Saved Relationship Checks
-使用者可將滿意的關聯分析條件主動儲存為 Saved Relationship Check（包含名稱、備註、Source/Target Scope、屬性）。設定必須儲存於 Vault 外部，結果僅具諮詢性質（advisory），不作強制規則。
-
-### REQ-034 — Scope-Aware Refactor & Health
-Refactor Planner 與 Property Health 必須嚴格根據當前選定的 Scope 進行影響計算與呈現。Refactor 規劃絕不得隱性擴大到 Scope 外部的筆記；Health 指標不得將 Scope 內外數據混算。
-
-### REQ-035 — Universal Module States & Drawer Drill-Down
-主要模組皆需定義明確的 Initial, Loading, Ready, Empty, Blocked, Error 狀態。Discover 與 Health 提供右側 Drawer 抽屜供深入檢視，並提供開啟至 Note Properties Workspace 的快捷操作。
-
-### REQ-036 — Note Properties Search & Hierarchical Folder Tree
-Note Properties Workspace 必須同時支援即時路徑搜尋（Search）與全知識庫層級資料夾樹狀目錄瀏覽（Hierarchical Folder Tree with Expand/Collapse-All），移除人為筆記筆數上限限制。呈現筆記時標示 Scope 關聯性與資料夾路徑；同名筆記必須呈現完整相對路徑以消歧義，絕不自動猜測同名 Note。
-
-### REQ-037 — Structured Multi-Select Schema Inputs & Adopt Next Actions
-Schema Designer 必須提供結構化的「管理對象（Management Objects）」與「管理需求（Management Needs）」確定性預設複選清單，自由文字降為選填輔助；產生的建議屬性清單支援個別勾選/剔除，並提供明確的「採用此屬性架構 (Adopt Schema)」CTA。採用後建立 Current Schema，並導引至「套用到既有筆記」或「建立新筆記 Frontmatter」；Blank Note 模式在未選擇 Schema 時提供清晰的 Empty State 與前往設計器導引，採用後動態渲染可用表單控制項。所有建議標籤與原因透過 i18n 完全在地化。
-
-### REQ-038 — Controlled Vocabulary Refactor Planner & Human-Readable Primary View
-Refactor Planner 的操作輸入（來源屬性、目標型態、屬性值正規化受控對照）必須最大程度使用 Scope 既有屬性/值之下拉選單、多選方塊或受控對照表，避免要求手動輸入已知資料；Rename 目標衝突需即時警告；空目標嚴格 fail-closed。計畫產出以直觀的統計摘要、Scope 範圍與受影響筆記清單為第一主視圖，原始 JSON 計畫作為進階/證據視圖折疊提供。維持 Planning-only，絕不執行寫入。
-
-### REQ-039 — Human-Readable Property Vocabulary Layer
-v1.1.0 必須提供純展示層（Presentation Layer）的雙語屬性標籤、用途說明、典型儲存型態/輸入元件與範例值，並在全站各模組提供情境式 Help Drawer 引導，同時維持 Canonical YAML Property Keys 原始不可變與不翻譯。對於未預先定義的未知/自訂屬性，系統絕不得臆測語意，僅呈現知識庫中觀察到的客觀數據事實。
-
-
+#### P1 Requirements (Should Ship / Eligible for Human-Approved Deferral)
+- `REQ-049` **Schema Versioning & Migration Planning [P1]**: Named Schemas support explicit versioning. Schema comparison identifies added, removed, type-changed, value-changed, and requirement-changed properties. The Migration Planner evaluates selected Scope and produces a human-readable migration plan without automatically executing any writes to Vault notes.
+- `REQ-050` **Governance Profile Import / Export [P1]**: Users can export and import complete governance state (User Glossary, Named Schemas, Scope assignments, Saved Checks, preferences) as a structured Governance Profile JSON. Import must support schema validation, change preview, and fail-closed handling of malformed profiles without silent overwrites.
 
 ---
 
 ## 6. Constraints / Non-negotiables
 
-1. **Vault is read-only in v1.0.0 and v1.1.0.**
-2. **No automatic Vault mutation.**
-3. **No Markdown body/template ownership.**
-4. **No Obsidian plugin in v1.1.0.**
-5. **No required AI/LLM/API.**
+1. **Vault is strictly read-only across v1.0.0, v1.1.0, and v1.2.0.**
+2. **No automatic Vault mutation under any workflow.**
+3. **No Markdown body/prose ownership or writing template enforcement.**
+4. **No Obsidian plugin requirement in v1.2.0.**
+5. **No mandatory AI/LLM/API key in core application workflows.**
 6. **No telemetry by default.**
-7. **No silent parse failure.**
-8. **No silent Property merge.**
-9. **No silent entity/link resolution.**
-10. **Ambiguity must remain visible.**
-11. **Property refactor is planning-only in v1.1.0.**
-12. **Relationship analysis distinguishes Property Links and Body Wikilinks.**
-13. **Body Wikilink analysis is strictly read-only; never mutates prose.**
-14. **No default relationship rules or enforced ontology.**
-15. **Saved Relationship Checks are user-defined and stored outside Vault.**
-16. **Note Properties Workspace fails closed on malformed frontmatter or duplicate keys.**
-17. **Scope switching must not trigger full Vault rescan.**
-18. **i18n must be architecture-driven without duplicating complete HTML files.**
-19. **Arena B / D are donors only (UX / Visual) without functional authority.**
-20. **No developer-specific absolute path in shipped product.**
-21. **No evidence, no PASS.**
-22. **No contradictory evidence, no PASS.**
-23. **Known ambiguity must propagate across modules until resolved.**
-24. **Formal evidence must be regenerated in the formal repository.**
+7. **No silent parse failure or silent property drops.**
+8. **No silent Property merge or ambiguous resolution.**
+9. **Ambiguity must remain visible and fail closed.**
+10. **Property refactor and migration planning are strictly read-only.**
+11. **Relationship analysis clearly distinguishes Property Links and Body Wikilinks.**
+12. **Body Wikilink analysis is strictly read-only; never mutates prose.**
+13. **No default relationship rules or enforced ontology.**
+14. **Saved Relationship Checks and governance state are stored outside Vault.**
+15. **Note Properties Workspace fails closed on malformed frontmatter or duplicate keys.**
+16. **Scope switching operates in-memory without full Vault disk rescans.**
+17. **i18n is architecture-driven without duplicating HTML DOM trees.**
+18. **Arena candidate files are historical read-only donors without functional authority.**
+19. **No developer-specific absolute paths in shipped code or artifacts.**
+20. **No evidence, no PASS; no contradictory evidence, no PASS.**
+21. **Known ambiguity must propagate across modules until resolved.**
+22. **Formal evidence must be regenerated in the formal repository.**
+23. **No Dead-End CTA: every primary CTA must reach a meaningful result or explicit next action.**
+24. **Cross-module workflows must transfer context explicitly rather than relying on accidental global state.**
+25. **Canonical Property keys remain strictly immutable; display labels must never overwrite YAML keys.**
+26. **AI proposals are advisory only; deterministic validation and human decision are mandatory before adopting.**
+27. **Schema migration planning is planning-only; never automatically executes writes to Vault notes.**
 
 ---
 
 ## 7. Deliverables
 
-v1.1.0 發布必須包含至少：
+v1.2.0 發布必須包含至少：
 
+### P0 Deliverables (Mandatory)
 1. 獨立本機應用程式原始碼（Python + 本機 Web UI）；
 2. 現代化 UI Shell（整合 Context Bar、Sidebar 分組、右側 Drawer、完整狀態處理）；
-3. 輕量雙語 i18n 模組（`app/ui/i18n.js`, `locales/zh-Hant.json`, `locales/en.json`）；
+3. 輕量雙語 i18n 模組（`locales/zh-Hant.json`, `locales/en.json`）；
 4. Light / Dark 主題支援；
-5. Scope 領域模型與引擎（支援 Entire Vault, One Folder, Multi-Folder, Single Note, include_subfolders）；
-6. Scope-aware Discover、Property Health 與 Refactor Planner；
-7. Note Properties Workspace（Existing Note 模式 + New/Blank 模式，含語意 Diff 與 fail-closed 保護）；
-8. Scope-aware Relationship Analysis（Source Scope → Target Scope, Property Links 分析）；
-9. Body Wikilink Analysis 模組（純唯讀正文分析）；
-10. Saved Relationship Checks 管理模組（外部儲存、重跑、備註）；
-11. 保留並通過全套 v1.0.0 回歸測試（95 項）；
-12. 全套 v1.1.0 回歸測試套件（V11-001 ~ V11-018 全部通過）；
-13. ≥5,000 篇筆記基準測試數據；
-14. Vault 唯讀雜湊驗證與 Windows 10/11 本機測試證據；
-15. 更新後之使用者手冊與 README；
-16. 唯四根目錄治理權威檔案：
-    - `PROJECT.md`
-    - `ROADMAP.md`
-    - `HANDOFF.md`
-    - `AGENTS.md`
-    以及歷史封存檔 `docs/archive/ROADMAP_v1.0.0.md`（唯讀快照）。
+5. Scope 領域模型與引擎（Entire Vault, One Folder, Multi-Folder, Single Note, include_subfolders）；
+6. 使用者屬性詞彙庫管理模組（User Property Glossary CRUD & Persistence）；
+7. 具名架構庫管理模組（Named Schema Library CRUD & Persistence）；
+8. 架構調和工作區（Schema → Existing Note Reconciliation Workspace）；
+9. 範圍預期架構與漂移分析引擎（Scope Expected Schema & Drift Diagnostics）；
+10. 外部 AI Proposal 審查工作區（Proposal Review, Compatibility Check, Accept/Edit/Reject）；
+11. 獨立 Companion Skill 規格與測試用例（`skills/obsidian-property-advisor/`）；
+12. 健檢問題一鍵鑽取至筆記工作區（Health Finding → Note Drilldown）；
+13. 本機外部持久化儲存層（App-local storage outside Vault）；
+14. 全套 176 項 v1.1.0 回歸測試通過；
+15. 全套 v1.2.0 P0 回歸測試套件通過；
+16. 受治理之 Workflow Closure Matrix 驗證報告；
+17. ≥5,000 篇筆記基準測試數據；
+18. Vault 唯讀雜湊驗證與 Windows 10/11 本機測試證據；
+19. 更新後之使用者手冊與 README；
+20. 唯四根目錄治理權威檔案（`PROJECT.md`, `ROADMAP.md`, `HANDOFF.md`, `AGENTS.md`）及架構規格書。
+
+### P1 Deliverables (Should Ship / Eligible for Human-Approved Deferral)
+21. 架構版本比對與遷移規劃引擎（Schema Versioning & Migration Planner [P1]）；
+22. 治理設定檔匯入/匯出模組（Governance Profile Import/Export [P1]）。
+*(註：P1 項目若未在 v1.2.0 實作，必須取得 Human Owner (Dr. J) 之明確核准並記錄於決策中，不得靜默遺漏。)*
 
 ---
 
@@ -433,73 +359,75 @@ v1.1.0 發布必須包含至少：
 ---
 
 ### [v1.1.0 Accepted Key Decisions]
+- `DEC-021` Four-Level Context Architecture (`Vault → Scope → Note → Schema`) (ACCEPTED)
+- `DEC-022` Multi-Folder Scope Support (ACCEPTED)
+- `DEC-023` Architecture-Driven Lightweight i18n (ACCEPTED)
+- `DEC-024` Ad-Hoc Relationship Analysis with Optional Saved Checks (ACCEPTED)
+- `DEC-025` Body Wikilink Analysis is Strictly Read-Only (ACCEPTED)
+- `DEC-026` Arena B/D as UI/UX Donors Without Functional Authority (ACCEPTED)
+- `DEC-027` Saved Checks Stored Outside Vault (ACCEPTED)
+- `DEC-028` Note Properties Workspace Fails Closed on Corrupted Frontmatter (ACCEPTED)
+- `DEC-029` In-Memory Scope Indexing (ACCEPTED)
 
-### DEC-021 — Four-Level Context Architecture
-**Decision:** 產品由 Whole-Vault Analysis 工具演進為 `Vault → Scope → Note → Schema` 四層 Context 模型。  
-**Reason:** 滿足使用者在不同子資料夾群與單篇筆記尺度下的細緻治理需求。  
+---
+
+### [v1.2.0 Accepted Key Decisions]
+
+### DEC-030 — Personal Property Governance Architecture
+**Decision:** 產品定位由「Property 輔助分析工具」升級為「個人屬性治理系統（Personal Property Governance System）」，核心由「詞彙庫 + 具名架構庫 + 預期架構指派 + 漂移診斷 + 既有筆記調和 + 遷移規劃 + AI 建議審查」構成。  
 **Status:** ACCEPTED
 
-### DEC-022 — Multi-Folder Scope Support
-**Decision:** Scope 支援選取多個資料夾 root，以聯集與路徑去重計算筆記集合。  
-**Reason:** 真實 PKM Vault 常有多個資料夾屬於同一專案或業務範疇。  
+### DEC-031 — Zero Dead-End CTA & Workflow Closure Contract
+**Decision:** 所有主要 CTA 必須具備從使用者意圖到終端產物/明確下一步的完整工作流程閉環，嚴禁畫面跳轉後無操作承接或輸出 raw JSON 的斷頭操作。  
 **Status:** ACCEPTED
 
-### DEC-023 — Architecture-Driven Lightweight i18n
-**Decision:** 採用輕量原生 JavaScript i18n 模組與獨立 JSON 語系檔，不使用大型框架或 CDN，不重複 HTML DOM。  
-**Reason:** 保持 local-first、高效能與易維護性。  
+### DEC-032 — Governance State Persisted Outside Vault
+**Decision:** 使用者自訂詞彙庫、具名架構庫、Scope 預期架構關聯、已存檢查與偏好設定均儲存於 Vault 外部本機應用程式目錄，嚴禁在 Vault 內產生中繼資料檔案。  
 **Status:** ACCEPTED
 
-### DEC-024 — Ad-Hoc Relationship Analysis with Optional Saved Checks
-**Decision:** 關聯分析預設為 Ad-hoc 模式，不預設任何關聯規則；使用者可主動將分析條件保存為 Saved Relationship Checks。  
-**Reason:** 尊重使用者的知識結構探索過程，不強加假想的 ontology。  
+### DEC-033 — Canonical Key Immutability across Presentation & AI Layers
+**Decision:** 人性化或雙語標籤僅存在於展示層與審查層，底層 Canonical YAML Property Key 永遠保持原始字串不可變，不進行語意翻譯或替換。  
 **Status:** ACCEPTED
 
-### DEC-025 — Body Wikilink Analysis is Strictly Read-Only
-**Decision:** 允許讀取正文解析 Wikilinks 並分析關聯，但嚴格禁止任何修改正文或自動修復連結的操作。  
-**Reason:** 嚴格遵守「不擁有使用者正文」與「Vault 唯讀」的核心安全契約。  
+### DEC-034 — Deterministic AI Proposal Review & Validation Gate
+**Decision:** 外部 AI 建議必須經過確定性契約校驗，並在人性化 UI 中與真實 Vault 庫存/詞彙庫進行對比，由人類進行採納、編輯或拒絕，不允許 AI 自動套用。  
 **Status:** ACCEPTED
 
-### DEC-026 — Arena B/D as UI/UX Donors Without Functional Authority
-**Decision:** Arena B 作為 UX donor、Arena D 作為視覺/互動 donor，正式功能與安全真理完全以正式 repo 與 v1.1.0 規格為準。  
+### DEC-035 — Independent Companion Skill Decoupling
+**Decision:** Obsidian Property Advisor Skill 作為外部伴隨 Skill 獨立發布，核心 App 完全不依賴 Skill，維持 100% 離線可用。  
 **Status:** ACCEPTED
 
-### DEC-027 — Saved Checks Stored Outside Vault
-**Decision:** Saved Relationship Checks 儲存於 Vault 外部（如應用程式設定或 localStorage），嚴禁寫入 Vault。  
+### DEC-036 — Planning-Only Migration Guarantee
+**Decision:** 架構版本遷移規劃（Migration Planner）維持純分析與規劃產出，絕不提供一鍵批次修改 Vault 筆記之寫入操作。  
 **Status:** ACCEPTED
 
-### DEC-028 — Note Properties Workspace Fails Closed on Corrupted Frontmatter
-**Decision:** Existing Note 模式遇到 duplicate keys 或 malformed YAML 時必須 fail-closed 拒絕編輯並揭示原因。  
-**Reason:** 避免因不完整解析導致使用者既有屬性被無意損壞。  
-**Status:** ACCEPTED
-
-### DEC-029 — In-Memory Scope Indexing
-**Decision:** 切換 Scope 僅在記憶體索引中進行過濾，不觸發硬碟全 Vault 重新掃描。  
-**Reason:** 保證大庫（≥5,000 筆記）切換 Scope 時的即時響應。  
+### DEC-037 — P0 / P1 Scope Fidelity & Deferral Governance
+**Decision:** 嚴格區分 P0 (Must Ship) 與 P1 (Should Ship)。P1 項目（Schema Versioning, Migration Planning, Governance Profile I/O）若未在 v1.2.0 完成，必須經 Human Owner 明確核准延期，不得進行無意識的 Scope 擴大或靜默遺漏。  
 **Status:** ACCEPTED
 
 ---
 
 ## 9. Global Definition of Done
 
-The project (v1.1.0) is done when:
+The project (v1.2.0) is done when:
 
-- all in-scope v1.1.0 modules are implemented；
-- the selected Vault remains byte-for-byte read-only under all product flows；
-- true zh-Hant / English i18n works seamlessly without DOM duplication or CDN；
-- Light / Dark theme works seamlessly with verified contrast；
-- Multi-level Context Model (Vault / Scope / Note / Schema) is functional end-to-end；
-- Multi-folder Scope correctly unions and deduplicates notes without full Vault rescan；
-- Discover, Health, and Refactor Planner correctly respect Scope boundaries without silent scope leakage；
-- Note Properties Workspace supports Existing Note (with semantic diff & fail-closed protection) and New/Blank Fill without touching note bodies；
-- Scope-aware Relationship Analysis supports Multi-folder Source/Target with correct status categorization (`VALID`, `BROKEN`, `AMBIGUOUS`, `OUTSIDE_SELECTED_TARGET`)；
-- Body Wikilink analysis functions as strict read-only without modifying note prose；
-- No default relationship rules exist; user-initiated Saved Relationship Checks persist outside Vault；
-- all 95 retained v1.0.0 regression tests pass；
-- all 18 new v1.1.0 regression tests (`V11-001` ~ `V11-018`) pass；
+- all in-scope v1.2.0 **P0 requirements** (REQ-040 ~ REQ-048, REQ-051, REQ-052) are fully implemented；
+- **P1 requirements** (REQ-049, REQ-050) are either fully implemented (PASS) OR formally approved for deferral by the Human Owner (Dr. J) with recorded governance decision；
+- all primary workflows achieve full closure without dead-end CTAs as verified in the Workflow Closure Matrix；
+- the selected Vault remains byte-for-byte read-only across all workflows；
+- User Property Glossary is editable, respects precedence, and preserves canonical key immutability；
+- Named Schema Library supports full CRUD and persistence outside Vault；
+- Schema → Existing Note Reconciliation cleanly presents matches, missing, conflicts, and outside-schema properties with valid Frontmatter preview & copy；
+- Scope → Expected Schema assignment correctly diagnoses Desired vs Actual schema drift in Property Health；
+- Health findings drill down cleanly into exact Note Workspace preserving diagnostic context；
+- External AI Proposal workflow provides human-readable review, Vault/Glossary comparisons, and Accept/Edit/Reject actions；
+- Obsidian Property Advisor Skill is fully specified and validated against fixtures without core App dependency；
+- all 176 retained v1.1.0 regression tests pass；
+- all new v1.2.0 regression tests pass；
 - large-Vault (≥5,000 notes) performance benchmark is measured and recorded；
-- Windows 10 (Build 19045+) native launcher and UI acceptance freshly verified; Windows 11 (64-bit AMD64) is a supported target with native verification allowed to remain NOT YET VERIFIED as an accepted non-blocking limitation if no test machine is available (Windows 10 evidence must never be represented as Windows 11 evidence)；
-- documentation (README, User Guide) reflects v1.1.0 capabilities；
+- Windows 10 (Build 19045+) native launcher and UI acceptance freshly verified; Windows 11 (64-bit AMD64) status accurately recorded；
+- documentation (README, User Guide, Specs) reflects v1.2.0 capabilities；
 - all four root governance files are mutually consistent；
-- final ROADMAP v1.1.0 release gate is `PASS` with non-contradictory evidence.
+- final ROADMAP v1.2.0 release gate is `PASS` with non-contradictory evidence.
 
 Completion state is tracked only in `ROADMAP.md`.

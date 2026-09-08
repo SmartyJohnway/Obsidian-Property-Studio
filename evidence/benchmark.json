@@ -11,16 +11,16 @@
     "files_hashed": 5041,
     "vault_bytes": 848296,
     "generator": "scripts/make_benchmark_vault.py (seeded, deterministic)",
-    "generate_seconds": 1.882
+    "generate_seconds": 2.273
   },
   "measurements_seconds": {
-    "scan": 4.272,
-    "inventory": 0.02,
-    "discovery_report": 0.006,
-    "relationship_inbox": 0.05,
-    "health_report": 0.058,
-    "type_conversion_plan": 0.006,
-    "total_analysis": 4.413
+    "scan": 4.946,
+    "inventory": 0.052,
+    "discovery_report": 0.01,
+    "relationship_inbox": 0.066,
+    "health_report": 0.074,
+    "type_conversion_plan": 0.009,
+    "total_analysis": 5.158
   },
   "observations": {
     "peak_rss_mb_after_run": null,
