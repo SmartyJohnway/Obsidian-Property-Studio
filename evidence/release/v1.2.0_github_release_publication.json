@@ -1,0 +1,75 @@
+{
+  "contract": "V120_GITHUB_RELEASE_PUBLICATION_EVIDENCE",
+  "version": "1.2.0",
+  "tag": "v1.2.0",
+  "release_commit": "6f969fc3a9b83d7e652df4c4e9a69c003a33963d",
+  "release_url": "https://github.com/SmartyJohnway/Obsidian-Property-Studio/releases/tag/v1.2.0",
+  "published_at": "2026-09-08T02:24:11Z",
+  "formal_verdict": "PROPERTY_STUDIO_V1_2_0_RELEASE_PASS_WITH_LIMITATIONS",
+  "tag_identity": "PASS",
+  "release_publication": "PASS",
+  "artifacts": {
+    "source_zip": {
+      "filename": "Obsidian-Property-Studio-v1.2.0-source.zip",
+      "size_bytes": 518529,
+      "sha256": "640c9563c17a84ba1b6e0fc4001fa98194f54c1698125b8ff9fa06acc3cb003c",
+      "github_digest_verified": "sha256:640c9563c17a84ba1b6e0fc4001fa98194f54c1698125b8ff9fa06acc3cb003c",
+      "github_size_verified": 518529
+    },
+    "git_bundle": {
+      "filename": "Obsidian-Property-Studio-v1.2.0.bundle",
+      "size_bytes": 842221,
+      "sha256": "13ea606b3dc7d1c5d0e9176845dcc8fd081004a23e9ece54e011de52ed131fef",
+      "github_digest_verified": "sha256:13ea606b3dc7d1c5d0e9176845dcc8fd081004a23e9ece54e011de52ed131fef",
+      "github_size_verified": 842221
+    },
+    "manifest": {
+      "filename": "RELEASE_MANIFEST.json",
+      "size_bytes": 1674,
+      "sha256": "3a5a0c662631f2e0a1015cc4235ec41329a31a3b88cd3bf67252266522359c76",
+      "github_digest_verified": "sha256:3a5a0c662631f2e0a1015cc4235ec41329a31a3b88cd3bf67252266522359c76",
+      "github_size_verified": 1674
+    }
+  },
+  "automated_tests": {
+    "total_tests": 253,
+    "passed_tests": 253,
+    "failed_tests": 0,
+    "status": "PASS"
+  },
+  "benchmark": {
+    "notes": 5040,
+    "scan_seconds": 5.667,
+    "total_analysis_seconds": 5.844,
+    "vault_unchanged": true
+  },
+  "human_acceptance": {
+    "status": "PASS",
+    "platform": "Windows 10 Build 19045+",
+    "verified_by": "Human Owner (Dr. J)",
+    "verified_at": "2026-09-07T18:00:00+08:00",
+    "finding_backlog": "CLEAR",
+    "closed_findings_count": 16,
+    "closed_findings": [
+      "HA-F01",
+      "HA-F08",
+      "HA-F09",
+      "HA-F10",
+      "HA-F11",
+      "HA-F12",
+      "HA-F13",
+      "HA-F14",
+      "HA-F15",
+      "HA-F16",
+      "HA-F17",
+      "HA-F18",
+      "HA-F19",
+      "HA-F21",
+      "HA-F22",
+      "HA-F23"
+    ]
+  },
+  "accepted_limitations": {
+    "windows_11_amd64_native": "NOT YET VERIFIED"
+  }
+}

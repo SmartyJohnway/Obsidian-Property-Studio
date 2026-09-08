@@ -4,22 +4,27 @@ Updated: `2026-09-08`
 From: `Antigravity — v1.2.0 Autonomous Implementation Agent`  
 To / Intended Next Executor: `Dr. J (Human Owner) / Verification Auditor`  
 Formal Project Root: `D:\Antigravity-Workspace\Obsidian-Property-Studio\Obsidian-Property-Studio-v1.0.0`  
-Published Baseline: `v1.1.0 — CLOSED (cca408c)`  
+Published Baseline: `v1.2.0 — PUBLISHED (6f969fc)`  
 Current Target: `v1.2.0`  
 Active Branch: `main`  
-Active Milestone: `M022`  
+Active Milestone: `NONE`  
 Active Milestone Status: `PASS`  
-Current Task: `Final documentation audit / tag / release publication`  
+Current Task: `NONE`  
+Current Development: `NONE`  
+Future Version Scope: `NOT YET OPENED`  
 Last Verified Gate: `M022 — Full Workflow Closure, Human Acceptance & Release Gate PASS`  
-Last Verified Implementation Commit: `7e3c03d` (docs(v1.2): correct final release closure metadata)  
+Release Tag: `v1.2.0` (Annotated tag pointing to `6f969fc3a9b83d7e652df4c4e9a69c003a33963d`)  
+Release Status: `PUBLISHED`  
+GitHub Release URL: `https://github.com/SmartyJohnway/Obsidian-Property-Studio/releases/tag/v1.2.0`  
+Publication Evidence: `evidence/release/v1.2.0_github_release_publication.json`  
 GitHub PR: `PR #2 (feat(v1.2): Personal Property Governance System — MERGED c652894)`  
 Authoritative Specification: `docs/specs/Obsidian_Property_Studio_v1.2.0_Spec.md`  
 Completed Roadmap Archive: `docs/archive/ROADMAP_v1.2.0.md` (SHA-256: `c976c5385ece1593d6f340d0dc8c14c76fbccdc8c488a623de5d3839afbaf61f`)  
 Archived v1.1 Roadmap: `docs/archive/ROADMAP_v1.1.0.md`  
-Release Staging State: `PR_MERGED_PRE_TAG`  
+Operational State: `EXTENDED_REAL_WORLD_OBSERVATION`  
 Human Acceptance: `PASS` (M022-T04 / M022-AC04 PASS; Human Verified by Dr. J on Windows 10 Build 19045+)  
 Finding Backlog: `CLEAR` (All 16 recorded Human Acceptance findings closed: HA-F01, HA-F08~HA-F19, HA-F21~HA-F23)  
-Automated Verification: `PASS (253/253 tests pass in 18.29s)`  
+Automated Verification: `PASS (253/253 tests pass)`  
 Vault Read-Only: `PASS (100% byte-for-byte read-only, zero mutation)`  
 Consistency Gate: `PASS (PROJECT.md, ROADMAP.md, HANDOFF.md, AGENTS.md aligned)`  
 
@@ -248,10 +253,14 @@ Read order:
 
 ## Immediate Next Action
 
-1. Verify all test suites and vault read-only integrity on main.
-2. Commit documentation updates to `main`.
-3. Create local annotated tag `v1.2.0`.
-4. Generate final packaging (`dist/Obsidian-Property-Studio-v1.2.0-source.zip`, `dist/Obsidian-Property-Studio-v1.2.0.bundle`, `dist/RELEASE_MANIFEST.json`).
-5. Push annotated tag `v1.2.0` to `origin`.
-6. Publish GitHub Release `v1.2.0` with assets.
-7. Record publication evidence in `evidence/release/v1.2.0_github_release_publication.json` and enter extended operational observation mode.
+1. **Extended Operational Observation / Dogfooding:**
+   - Use Obsidian Property Studio v1.2.0 in real daily and weekly personal knowledge management workflows over an extended observation period.
+   - Record actual user friction, recurring workflows, edge cases, and maintenance experience.
+2. **Future Decision Gate (Explicitly Deferred):**
+   - After sufficient real-world usage evidence is accumulated, the Human Owner (Dr. J) will evaluate whether to:
+     - **Option A:** Keep standalone architecture as-is.
+     - **Option B:** Keep standalone and make targeted refinements.
+     - **Option C:** Build an Obsidian community plugin version.
+     - **Option D:** Stop development because v1.2.0 already fulfills the personal property governance need.
+   - No option is pre-selected or preferred in advance.
+   - No v1.3.0 scope is authorized.
