@@ -3,11 +3,11 @@
 > Project: `Obsidian Property Studio`  
 > Governance Standard: `Project Four-File Governance v2.1`  
 > Current Released/Staged Line: `v1.2.0`  
-> Status: `HUMAN ACCEPTANCE COMPLETE / RELEASE STAGING / READY_FOR_MERGE_AND_RELEASE_DECISION`  
+> Status: `PR #2 MERGED / FINAL DOCUMENTATION AUDIT & RELEASE PUBLICATION PREPARATION`  
 > Archived Completed Roadmap: `docs/archive/ROADMAP_v1.2.0.md`  
 > Archive SHA-256: `c976c5385ece1593d6f340d0dc8c14c76fbccdc8c488a623de5d3839afbaf61f`  
 > Historical v1.1.0 Roadmap: `docs/archive/ROADMAP_v1.1.0.md` (SHA-256: `d68f8ac57411896dd1b2b10b0716629f2d12c46b1e0bb6a2a1368c961ee7ac2a`)  
-> GitHub PR: `#2` (`feat(v1.2): Personal Property Governance System`)  
+> GitHub PR: `#2` (`feat(v1.2): Personal Property Governance System` — MERGED `c652894`)  
 
 ---
 
@@ -17,17 +17,17 @@ Project State: `ACTIVE`
 Current Target: `v1.2.0`  
 Current Milestone: `NONE`  
 Current Milestone Status: `PASS`  
-Current Task: `NONE`  
+Current Task: `Final documentation audit / tag / release publication`  
 Last Verified Gate: `M022 — Full Workflow Closure, Human Acceptance & Release Gate PASS`  
 Current Blocker: `NONE`  
-Next Action: `Final source & release artifact audit -> Human Owner (Dr. J) merge decision -> tag/release if approved.`  
+Next Action: `Final documentation audit -> Annotated tag v1.2.0 -> GitHub Release publication -> enter extended operational observation.`  
 Implementation: `COMPLETE (v1.2.0 Personal Property Governance System fully implemented across M016~M022 and Commit 21A~21N human acceptance closures)`  
 Automated Verification: `PASS (253/253 tests pass, 5,040-note benchmark verified, Vault 100% byte-for-byte read-only and zero mutation)`  
 Human Verified Acceptance: `PASS — Human Verified (Dr. J external Windows 10 production UI walkthrough verified on 2026-09-07; all 16 recorded Human Acceptance findings closed: HA-F01, HA-F08~HA-F19, HA-F21~HA-F23; findings backlog CLEAR; Gate 1~Gate 6 smoke gates PASS)`  
-Release Readiness: `READY_FOR_MERGE_AND_RELEASE_DECISION`  
+Release Readiness: `PR_MERGED_PRE_TAG`  
 Accepted Limitation: `Windows 11 AMD64 native verification recorded as NOT YET VERIFIED due to test host unavailability (accepted non-blocking release limitation per human approved contract).`  
 Future Version Scope: `NOT YET OPENED`  
-Last Updated: `2026-09-07`
+Last Updated: `2026-09-08`
 
 ---
 

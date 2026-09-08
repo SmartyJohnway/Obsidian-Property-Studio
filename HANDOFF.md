@@ -1,22 +1,22 @@
 # Handoff
 
-Updated: `2026-09-07`  
+Updated: `2026-09-08`  
 From: `Antigravity — v1.2.0 Autonomous Implementation Agent`  
 To / Intended Next Executor: `Dr. J (Human Owner) / Verification Auditor`  
 Formal Project Root: `D:\Antigravity-Workspace\Obsidian-Property-Studio\Obsidian-Property-Studio-v1.0.0`  
 Published Baseline: `v1.1.0 — CLOSED (cca408c)`  
 Current Target: `v1.2.0`  
-Active Branch: `feature/v1.2.0`  
+Active Branch: `main`  
 Active Milestone: `M022`  
 Active Milestone Status: `PASS`  
-Current Task: `NONE`  
+Current Task: `Final documentation audit / tag / release publication`  
 Last Verified Gate: `M022 — Full Workflow Closure, Human Acceptance & Release Gate PASS`  
-Last Verified Implementation Commit: `589a07e` (chore(v1.2): prepare release notes and packaging configuration)  
-GitHub PR: `PR #2 (feat(v1.2): Personal Property Governance System)`  
+Last Verified Implementation Commit: `7e3c03d` (docs(v1.2): correct final release closure metadata)  
+GitHub PR: `PR #2 (feat(v1.2): Personal Property Governance System — MERGED c652894)`  
 Authoritative Specification: `docs/specs/Obsidian_Property_Studio_v1.2.0_Spec.md`  
 Completed Roadmap Archive: `docs/archive/ROADMAP_v1.2.0.md` (SHA-256: `c976c5385ece1593d6f340d0dc8c14c76fbccdc8c488a623de5d3839afbaf61f`)  
 Archived v1.1 Roadmap: `docs/archive/ROADMAP_v1.1.0.md`  
-Release Staging State: `READY_FOR_MERGE_AND_RELEASE_DECISION`  
+Release Staging State: `PR_MERGED_PRE_TAG`  
 Human Acceptance: `PASS` (M022-T04 / M022-AC04 PASS; Human Verified by Dr. J on Windows 10 Build 19045+)  
 Finding Backlog: `CLEAR` (All 16 recorded Human Acceptance findings closed: HA-F01, HA-F08~HA-F19, HA-F21~HA-F23)  
 Automated Verification: `PASS (253/253 tests pass in 18.29s)`  
@@ -248,7 +248,10 @@ Read order:
 
 ## Immediate Next Action
 
-Human Owner (**Dr. J**) review final release package, staged artifacts, and PR #2:
-1. Review staged release notes (`docs/releases/v1.2.0-release-notes.md`) and packaging manifest (`dist/RELEASE_MANIFEST.json`).
-2. Approve merge of PR #2 into `main`.
-3. Create git tag `v1.2.0` and publish formal release only after owner approval.
+1. Verify all test suites and vault read-only integrity on main.
+2. Commit documentation updates to `main`.
+3. Create local annotated tag `v1.2.0`.
+4. Generate final packaging (`dist/Obsidian-Property-Studio-v1.2.0-source.zip`, `dist/Obsidian-Property-Studio-v1.2.0.bundle`, `dist/RELEASE_MANIFEST.json`).
+5. Push annotated tag `v1.2.0` to `origin`.
+6. Publish GitHub Release `v1.2.0` with assets.
+7. Record publication evidence in `evidence/release/v1.2.0_github_release_publication.json` and enter extended operational observation mode.

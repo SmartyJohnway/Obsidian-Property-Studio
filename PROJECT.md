@@ -2,7 +2,7 @@
 
 > Project: `Obsidian Property Studio`  
 > Governance Standard: `Project Four-File Governance v2.1`  
-> Product Stage: `v1.2.0 Development Cycle`  
+> Product Stage: `v1.2.0 Stable Standalone Release Line / Final Publication Preparation`  
 > Target Product Release: `v1.2.0`  
 > Baseline: `v1.1.0 Formal Mainline (Published release cca408c / 176/176 tests PASS)`  
 > Primary Platform: `Windows 10 (Build 19045+) / Windows 11 (64-bit AMD64)`  

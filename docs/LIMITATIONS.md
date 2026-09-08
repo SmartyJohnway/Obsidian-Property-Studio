@@ -1,60 +1,57 @@
-# Known limitations — v1.0.0
+# Known Limitations — v1.2.0
 
-These are deliberate boundaries or honest gaps. Nothing here is hidden behind a friendly default.
+These are deliberate architectural boundaries and honest functional limitations of **Obsidian Property Studio v1.2.0**. Nothing here is hidden behind misleading defaults.
 
-## Out of scope by decision (PROJECT.md §4, DEC-001…DEC-008)
+---
 
-1. **No Obsidian plugin.** Property Studio is a standalone local app; it does not integrate with the
-   Obsidian plugin API.
-2. **No vault modification of any kind.** There is no “apply migration”, no note creation, no
-   rename/move/delete, no `.obsidian/` editing. Every change is something *you* paste in yourself.
-3. **No note body, heading, section or writing template generation.** The product governs the
-   property layer only; your prose stays yours.
-4. **No note merging / note identity resolution.**
-5. **No attachment or media management** (no orphan cleanup, no attachment rename/move).
-6. **No body-text backlink rewriting.** The Relationship Inbox only looks at property values.
-7. **Not a Dataview or Bases replacement**, and not a task manager.
-8. **No cloud sync, no SaaS, no telemetry, no required LLM/API key.**
+## 1. Out of Scope by Decision (PROJECT.md §4, DEC-001…DEC-032)
 
-## Functional limitations you should know about
+1. **Standalone Application (Not an Obsidian Plugin):** Property Studio is a standalone local application running via Python and your web browser; it does not integrate with the Obsidian Community Plugin API.
+2. **No Automatic Vault Writes:** There is no "Apply Migration" button, no automatic note creation, no file rename/move/delete, and no `.obsidian/` configuration tampering. All frontmatter updates are previewed, diffed, and copied by the user manually.
+3. **No Prose or Note Body Generation:** The application governs the frontmatter property layer only; note body text, headings, sections, and writing templates are strictly out of scope.
+4. **No Note Merging or Entity Unification:** The system does not merge notes together or resolve physical entity identities across files.
+5. **No Attachment or Media Management:** The tool does not manage binary files, image attachments, or orphaned media.
+6. **No Body Wikilink Rewriting:** Body Wikilink analysis (`[[Wikilinks]]`) is strictly read-only diagnostics; the application never rewrites Markdown note bodies.
+7. **Not a Dataview or Bases Replacement:** Property Studio focuses on property schema design, health, and governance, not real-time query rendering or database table views.
+8. **No Cloud Sync, SaaS, Telemetry, or Required LLM:** Property Studio runs 100% offline and local-first with zero telemetry and zero required external API keys.
+9. **No Installer Executable:** Packaged as clean source ZIP and Git bundle archives, executed via standard Python runtime (`run_windows.bat` or `python -m app`).
 
-* **Property discovery is frontmatter-only.** Inline `key:: value` (Dataview-style) fields in note
-  bodies are not parsed, because they are not Obsidian Properties.
-* **Semantic similarity is deliberately shallow.** `project` vs `project_name` is reported as a
-  *possible overlap* using name-token/edit-distance heuristics; the product never claims two
-  differently-named properties mean the same thing, and never merges them.
-* **Value normalization groups case/whitespace variants only.** `active`/`Active`/`ACTIVE` group;
-  `active` and `in progress` never do.
-* **Duplicate YAML keys fail closed.** A note that defines the same property twice is excluded from
-  plans that depend on that property, and is reported as an ambiguity instead.
-* **Note-link resolution uses note name and vault-relative path.** Obsidian's "shortest path when
-  possible" resolution and per-vault link settings are not simulated; ambiguous names are reported
-  as ambiguous rather than resolved with a guess.
-* **Only the first 256 KB of a note is inspected** when locating the frontmatter block. A note whose
-  frontmatter is not closed within that window is reported as unterminated.
-* **Non-UTF-8 notes are reported as unreadable**, not silently skipped or re-encoded.
-* **Hidden folders (names starting with `.`) are skipped**, as Obsidian itself ignores them. Each
-  skipped path is listed with a reason.
-* **Symlinks / junctions are never followed.** A symlinked file or folder inside the vault is listed
-  as skipped; nothing outside the vault is scanned.
-* **The health score is a heuristic summary**, not a verdict. The published formula and every
-  weight/cap are shown next to the score; the findings, not the number, are the real output.
-* **The schema you design lives in the browser session.** Export it to JSON to keep it; there is no
-  hidden database, and nothing is stored inside your vault.
-* **Clipboard copy needs a secure context.** On `http://localhost` browsers allow it; if the
-  clipboard API is blocked, the app falls back to a manual selection copy and tells you.
-* **Single-user local app.** No authentication is implemented, which is why it binds to
-  `127.0.0.1` by default. Do not expose it to a network with `--host`.
+---
 
-## Measured performance (not a guarantee)
+## 2. Functional Limitations You Should Know About
 
-`evidence/integration/m009_benchmark.json` records a 5,040-note synthetic vault run with the environment, fixture
-size and per-stage timings. PROJECT.md deliberately sets **no accepted seconds threshold** for v1,
-so these numbers are evidence, not a pass/fail gate. Runtime scales roughly linearly with note
-count; the dominant cost is reading and YAML-parsing each note's frontmatter.
+* **Frontmatter-Only Property Discovery:** Inline Dataview-style `key:: value` annotations in note bodies are deliberately not parsed, as they are not native Obsidian frontmatter properties.
+* **Semantic Similarity is Advisory and Heuristic:** Detecting potential property overlap (e.g. `project` vs `project_name`) relies on tokenized edit-distance heuristics; the application never merges properties or asserts they mean the same thing.
+* **Value Normalization Groups Exact Case/Whitespace Variants:** Normalization groups variants like `active`, `Active`, and `ACTIVE`; it will never infer that `active` and `in progress` are the same value.
+* **Duplicate YAML Keys Fail Closed:** Notes defining duplicate YAML keys fail closed: they are excluded from refactor plans and reported as ambiguity findings rather than parsed with an arbitrary winner.
+* **Note-Link Resolution Uses Vault-Relative Paths:** Obsidian's "shortest path when possible" heuristic and custom per-vault link settings are not simulated; ambiguous note basenames fail closed as ambiguous.
+* **Frontmatter Scan Window:** Only the first 256 KB of a note is inspected when locating the frontmatter block. A note whose frontmatter is not closed within that window is reported as unterminated.
+* **Non-UTF-8 Notes Reported as Unreadable:** Files with character encoding failures are reported as unreadable parse failures rather than silently re-encoded or corrupted.
+* **Hidden Folders Skipped:** Dot-prefixed folders (e.g. `.obsidian/`, `.trash/`) are ignored by default, mirroring Obsidian's core behavior.
+* **Symlinks and Junctions Not Followed:** Symlinked files or directories inside the vault are skipped to prevent directory loops and unexpected mutations.
+* **Health Score is an Explainable Heuristic:** The 0–100 health score is a transparent weighted indicator; individual diagnostic findings, not the composite number, are the real actionable output.
+* **Governance Storage Lives Outside the Vault:** 
+  - Unsaved Designer schemas live only in transient browser session memory.
+  - Saved Named Schemas, Scope assignments, Glossary overrides, and Saved Checks persist safely in application-local storage outside the Vault (`%APPDATA%\ObsidianPropertyStudio\` on Windows or `~/.property_studio/` on macOS/Linux).
+* **Governance Profile UX Workflow:**
+  - Exporting a Governance Profile copies or downloads the validated whole-system JSON package rather than opening a native operating system Save-As file dialog.
+  - Governance Profiles are full-governance snapshots (encompassing schemas, scopes, glossary overrides, saved checks, and preferences); selective partial-entity exporting is not supported.
+* **Single-User Local Application:** No authentication is implemented, which is why the server binds strictly to `127.0.0.1` (loopback) by default. It should not be exposed to a public network.
 
-## Platform verification status
+---
 
-* **Windows 10 (Build 19045 AMD64)**: Automated test suite (95 tests), performance benchmark (5,040 notes), and end-to-end UI smoke natively executed and verified (`PASS`).
-* **Windows 11 (64-bit)**: `NOT YET VERIFIED` — no Windows 11 test machine currently available (accepted non-blocking release limitation).
-* Windows-native behavior (drive-letter paths, `run_windows.bat`, `py` / `python` launcher, loopback binding) is fully implemented and tested. Unicode filenames, Traditional Chinese values, spaces in paths, nested folders and CRLF notes are verified by fixtures and live server smoke tests.
+## 3. Measured Performance (Evidence, Not a Hard Gate)
+
+Authoritative performance benchmarks are recorded in [m022_v120_benchmark.json](../evidence/integration/m022_v120_benchmark.json):
+* **Fixture Size:** 5,040 synthetic notes.
+* **Total Analysis Time:** ~5.844 seconds (Scan time: ~5.667 seconds).
+* **Vault Integrity:** 100% byte-for-byte read-only (0 files created, 0 modified, 0 deleted).
+* **Policy Reminder:** `PROJECT.md` sets no arbitrary seconds threshold; runtime scales roughly linearly with note count and frontmatter complexity.
+
+---
+
+## 4. Platform Verification Status
+
+* **Windows 10 (Build 19045+, 64-bit AMD64):** `PASS — Human Verified` (253 automated tests, 5,040-note benchmark, and all 16 recorded human acceptance findings verified by Human Owner Dr. J).
+* **Windows 11 (64-bit AMD64):** Supported target platform. Native execution verification has not yet been executed due to test host machine availability (accepted non-blocking release limitation).
+* **macOS / Linux:** Expected to run cleanly via standard Python (`python3 -m app` / `run.sh`); native human acceptance for v1.2.0 was performed on Windows 10.
