@@ -204,7 +204,9 @@ def main() -> None:
             "All autonomous implementation and verification gates PASS (253 tests pass, "
             "5,000-note benchmark recorded, Vault 100% byte-for-byte read-only). "
             "Windows 10 native UI walkthrough verified by Human Owner (Dr. J) on 2026-09-07 "
-            "with all findings HA-F01~HA-F23 closed and finding backlog CLEAR."
+            "with all 16 recorded Human Acceptance findings closed (HA-F01, HA-F08~HA-F19, HA-F21~HA-F23) "
+            "and finding backlog CLEAR; canonical finding identities are recorded in "
+            "evidence/integration/m022_v120_windows10_native_acceptance.json."
         ),
         "git_commit_head": git_head,
         "packaging_verification": {

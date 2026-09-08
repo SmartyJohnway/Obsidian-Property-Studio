@@ -14,11 +14,11 @@ Last Verified Gate: `M022 — Full Workflow Closure, Human Acceptance & Release 
 Last Verified Implementation Commit: `589a07e` (chore(v1.2): prepare release notes and packaging configuration)  
 GitHub PR: `PR #2 (feat(v1.2): Personal Property Governance System)`  
 Authoritative Specification: `docs/specs/Obsidian_Property_Studio_v1.2.0_Spec.md`  
-Completed Roadmap Archive: `docs/archive/ROADMAP_v1.2.0.md` (SHA-256: `48707ccd278b5cecbd8fc19b2849daedd6c4bcd70e6efc95077336cd8c0767b3`)  
+Completed Roadmap Archive: `docs/archive/ROADMAP_v1.2.0.md` (SHA-256: `c976c5385ece1593d6f340d0dc8c14c76fbccdc8c488a623de5d3839afbaf61f`)  
 Archived v1.1 Roadmap: `docs/archive/ROADMAP_v1.1.0.md`  
 Release Staging State: `READY_FOR_MERGE_AND_RELEASE_DECISION`  
 Human Acceptance: `PASS` (M022-T04 / M022-AC04 PASS; Human Verified by Dr. J on Windows 10 Build 19045+)  
-Finding Backlog: `CLEAR` (HA-F01 ~ HA-F23 fully closed)  
+Finding Backlog: `CLEAR` (All 16 recorded Human Acceptance findings closed: HA-F01, HA-F08~HA-F19, HA-F21~HA-F23)  
 Automated Verification: `PASS (253/253 tests pass in 18.29s)`  
 Vault Read-Only: `PASS (100% byte-for-byte read-only, zero mutation)`  
 Consistency Gate: `PASS (PROJECT.md, ROADMAP.md, HANDOFF.md, AGENTS.md aligned)`  
@@ -67,12 +67,16 @@ All autonomous implementation and verification milestones from M016 through M021
 
 - **M022: Full Workflow Closure, Human Acceptance & Release Gate — PASS**
   - **Human Acceptance Verified**: Formally verified by Human Owner (Dr. J) on Windows 10 (Build 19045 AMD64) on 2026-09-07 (`evidence/integration/m022_v120_windows10_native_acceptance.json`).
-  - **Finding Backlog Closed (CLEAR)**: All 23 human acceptance findings (HA-F01 through HA-F23) fully resolved and verified.
+  - **Finding Backlog Closed (CLEAR)**: All 16 recorded human acceptance findings (HA-F01, HA-F08~HA-F19, HA-F21~HA-F23) fully resolved and verified.
   - **Closure Smoke Gates (1~6)**: Runtime F5 rehydration (Gate 1), Named Schema -> Workspace identity/version (Gate 2), Workspace untouched complex YAML preservation (Gate 3), Blank Note Scope schema authority (Gate 4), Drift exact navigation (Gate 5), and Governance Profile export/import/preview (Gate 6) all PASS.
   - **Full Automated Suite**: 253/253 tests PASS in 18.29s.
   - **Authoritative Benchmark**: Measured and recorded on 5,040 notes (5.844s total analysis / 5.667s scan, Vault 100% byte-for-byte read-only).
-  - **Release Artifacts Staged**: Source ZIP (`Obsidian-Property-Studio-v1.2.0-source.zip`, 509,509 bytes, SHA-256 `5ad50b620288077e4ed1efa682de6dcd457a2e5975084b9707b417e65d628f67`), Git Bundle (`Obsidian-Property-Studio-v1.2.0.bundle`, 812,292 bytes, SHA-256 `e0870b18c13cb9fa0774174273e654306d2623f8fdf83470c80987be8d0592a0`), and `RELEASE_MANIFEST.json` verified with zero errors.
-  - **Roadmap Archived**: Authoritative v1.2.0 Roadmap copied to `docs/archive/ROADMAP_v1.2.0.md` (SHA-256: `48707ccd278b5cecbd8fc19b2849daedd6c4bcd70e6efc95077336cd8c0767b3`); root `ROADMAP.md` set to active release-staging pointer.
+  - **Release Artifacts Staged**:
+    - `dist/Obsidian-Property-Studio-v1.2.0-source.zip`
+    - `dist/Obsidian-Property-Studio-v1.2.0.bundle`
+    - `dist/RELEASE_MANIFEST.json`
+    (Final artifact sizes and SHA-256 are authoritative in the externally generated `dist/RELEASE_MANIFEST.json` and final release publication evidence; packaging verification PASS).
+  - **Roadmap Archived**: Authoritative v1.2.0 Roadmap copied to `docs/archive/ROADMAP_v1.2.0.md` (SHA-256: `c976c5385ece1593d6f340d0dc8c14c76fbccdc8c488a623de5d3839afbaf61f`); root `ROADMAP.md` set to active release-staging pointer.
   - **Release Notes Drafted**: `docs/releases/v1.2.0-release-notes.md`.
 - **Commit 21N: HA-F18 Governance Profile Concrete Change-Set Preview Closure — COMPLETED**
   - **Backend Deterministic Per-Entity Plan Engine**: In `app/core/governance_profile.py`, implemented `compute_concrete_changeset(profile_data, mode="merge")`. Generates deterministic per-entity change records across all 5 profile categories (`schemas`, `scope_assignments`, `glossary`, `saved_checks`, and `preferences`). Each entity record defines `action` (`add`, `update`, `conflict`, `unchanged`, `remove`, `retained`), `identity`, `display_name`, `before`, `after`, and human-readable `reason`.
