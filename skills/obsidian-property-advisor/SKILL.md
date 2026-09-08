@@ -109,7 +109,102 @@ Example Proposal (v1.1):
 
 ---
 
-## 7. Package References & Fixtures
+## 7. Mandatory Pre-Output Contract Validation
+
+Before emitting ANY Proposal Contract JSON, the Advisor MUST validate every Property object against the authoritative compatibility matrix.
+
+### Exact Compatibility Matrix
+
+- `plain`
+  - `text`
+  - `list`
+  - `number`
+  - `checkbox`
+  - `date`
+  - `datetime`
+  - `tags`
+- `single_choice`
+  - `text`
+  - `number`
+  - `date`
+  - `datetime`
+- `multi_choice`
+  - `list`
+  - `tags`
+- `note_link`
+  - `text`
+- `note_link_list`
+  - `list`
+
+### Normative Enforcement Rules
+
+- **Never emit an incompatible `storage_type` / `ui_control` pair.**
+- **If an incompatibility is detected during drafting, repair it BEFORE presenting JSON to the user.**
+- **Do not ask Property Studio to repair an invalid proposal.** Property Studio validation is a safety net for users, not a substitute for Advisor self-validation.
+- **If the Advisor cannot determine a compatible pair, fall back to a simpler valid representation** (e.g. `storage_type: "text"` with `ui_control: "plain"`) or ask the user for clarification.
+
+### Concrete Forbidden vs Valid Examples
+
+#### INVALID (Forbidden — rejected by Property Studio):
+```json
+{
+  "name": "related_tools",
+  "storage_type": "text",
+  "ui_control": "note_link_list"
+}
+```
+*Why this is invalid:* `note_link_list` represents multiple note links and strictly requires `storage_type: "list"`. It can never be paired with `text`.
+
+#### VALID:
+```json
+{
+  "name": "related_tools",
+  "storage_type": "list",
+  "ui_control": "note_link_list"
+}
+```
+
+### Internal Consistency between Proposal JSON and Example YAML Frontmatter
+
+The declared `storage_type` in the Proposal JSON MUST be internally consistent with the shape of any accompanying YAML frontmatter example or note Markdown.
+
+For example, if the YAML output is:
+```yaml
+related_tools:
+  - "[[Notion]]"
+  - "[[Bear]]"
+```
+then the Proposal `storage_type` MUST be `list` (paired with `ui_control: "note_link_list"` or `"plain"`), NEVER `text`.
+
+Conversely, if the YAML output is a single scalar wikilink:
+```yaml
+lead_architect: "[[Alice]]"
+```
+then the Proposal `storage_type` MUST be `text` (paired with `ui_control: "note_link"` or `"plain"`), NEVER `list`.
+
+---
+
+## 8. Final Self-Check Checklist
+
+Immediately before emitting the final response containing a Proposal Contract JSON, the Advisor MUST verify every item in this checklist:
+
+- [ ] `proposal_version` is `'1.0'` or `'1.1'`
+- [ ] `schema_name` is non-empty string
+- [ ] `properties` is non-empty list
+- [ ] every property `name` is non-empty, stripped, and unique within the proposal
+- [ ] every `storage_type` is supported (`text`, `number`, `date`, `datetime`, `checkbox`, `list`, `tags`)
+- [ ] every `ui_control` is supported (`plain`, `single_choice`, `multi_choice`, `note_link`, `note_link_list`)
+- [ ] every `storage_type` / `ui_control` pair is strictly compatible according to the matrix
+- [ ] choice controls (`single_choice`, `multi_choice`) contain a non-empty `allowed_values` list of scalars
+- [ ] `required` is a boolean (`true` or `false`)
+- [ ] generated YAML/example value shape matches declared `storage_type`
+- [ ] Proposal JSON is syntactically valid JSON
+
+**Instruction:** If ANY item fails: **DO NOT emit the Proposal.** Repair it first.
+
+---
+
+## 9. Package References & Fixtures
 For detailed specifications and domain examples, refer to:
 - `references/proposal-contract.md`: Formal specification of the Proposal Contract.
 - `references/property-design-principles.md`: Core property design guidelines.
@@ -117,3 +212,4 @@ For detailed specifications and domain examples, refer to:
 - `examples/project.json`: Project management schema fixture.
 - `examples/equipment.json`: Equipment tracking schema fixture.
 - `examples/regulation.json`: Legal/compliance regulation schema fixture.
+
