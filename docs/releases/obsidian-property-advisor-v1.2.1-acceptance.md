@@ -43,13 +43,17 @@
 
 ## 2. Combined Runtime Acceptance Summary
 
-| Verification Gate | Agent / Tool | Result |
-|---|---|---|
-| Contract Compatibility (SK-F01) | Claude 3.5 Sonnet / Claude 3.7 | PASS |
-| Purpose Clarification & Restraint (SK-F02) | Claude 3.5 Sonnet / Claude 3.7 | PASS |
-| Purpose Clarification & Restraint (SK-F02) | Hermes 3 / Llama 3.1 | PASS |
-| Multi-Agent Portability | Claude + Hermes | PASS |
-| Property Studio Interoperability | Property Studio v1.2.0 Proposal Parser | PASS |
+| Verification Gate | Agent / Runtime | Model Used | Result |
+|---|---|---|---|
+| Contract Compatibility (SK-F01) | Claude | Haiku 4.5 | PASS |
+| Purpose Clarification & Restraint (SK-F02) | Claude | Haiku 4.5 | PASS |
+| Contract Compatibility (SK-F01) | Hermes | nous:upstage/solar-pro4:free | PASS |
+| Purpose Clarification & Restraint (SK-F02) | Hermes | nous:upstage/solar-pro4:free | PASS |
+| Multi-Agent Portability | Claude + Hermes | Haiku 4.5 + nous:upstage/solar-pro4:free | PASS |
+| Property Studio Interoperability | Property Studio v1.2.0 | deterministic local validator | PASS |
+
+> **Provenance Note:**  
+> Model selections above were supplied by the Human Evaluator from the actual Human Agent Runtime Acceptance sessions and are recorded as tested runtime configuration rather than inferred from Agent output.
 
 ---
 
@@ -59,3 +63,4 @@ Different AI models may propose different candidate property names (e.g. `source
 - The Companion Skill operates strictly in an **advisory capacity**.
 - The Advisor does NOT claim that any proposed property name is canonical across the user's vault.
 - **Obsidian Property Studio** remains the single deterministic authority for evaluating Existing keys, New keys, Type conflicts, Glossary definitions, and Schema library comparisons upon import.
+
