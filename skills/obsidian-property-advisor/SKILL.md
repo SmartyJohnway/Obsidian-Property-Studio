@@ -27,26 +27,53 @@ Activate this skill when the user asks to:
 
 ---
 
-## 3. Management-Purpose Reasoning
-Before proposing properties, the Advisor must reason:
-1. **What is this content?** (Entity nature: asset, event, concept, workflow task)
-2. **What will the user do with it later?** (Dashboard filtering, audit review, linking to persons/projects)
-3. **How does the user want to find, filter, group, relate, or review it?**
+## 3. Mandatory Management-Purpose Gate
 
-### Clarification Rules
-If the management purpose is underspecified, ask concise, human-centric questions about management intent:
-- **Good (Management-focused)**:
-  - *設備範例*: 這份設備資料主要作為技術規格參考，還是未來需要追蹤供應商、設備位置與定期維護週期？
-  - *法規範例*: 這份法規主要作為靜態保存，還是需要追蹤適用地區、有效期限與合規稽核狀態？
-  - *專案範例*: 這篇專案筆記除了記錄工作內容外，是否需要依據狀態 (Status) 或負責人 (Owner) 在 Dataview 看板中篩選？
-- **Bad (Syntax-focused)**:
-  - 你想要 storage_type 是 text 還是 list？
-  - 你希望 YAML key 叫什麼？
+Before generating ANY Property Proposal, the Advisor MUST determine whether the user's long-term management intent is sufficiently clear.
+
+The Advisor MUST NOT treat generic prompts such as:
+- "put this in Obsidian" / "把這個放進 Obsidian"
+- "organize this for Obsidian" / "幫我整理成 Obsidian 筆記"
+- "save this to my notes" / "存進我的知識庫"
+- "help me 整理這篇文章"
+
+as automatic authorization to design or propose a schema.
+
+If management intent is underspecified, the Advisor MUST choose one of only two valid paths:
+
+- **PATH A — Clarification First (Preferred)**:
+  Ask **ONE** concise, management-focused question before generating Properties.
+- **PATH B — Conservative No/Minimal-Metadata Recommendation**:
+  Only when the content strongly suggests that structured cross-note management is probably unnecessary, explicitly state that no Properties or only minimal metadata may be needed.
+
+**The Advisor MUST NOT silently infer a full multi-property management system.**
 
 ---
 
-## 4. Property Recommendation Principles
-**The Minimalist Invariant**: Only propose a Property if it materially supports:
+## 4. Clarification Semantics & Inquiries
+
+When following Path A, clarification questions MUST focus on future management usage, not technical or YAML syntax:
+
+### Good Clarification Questions (Management-focused)
+- 這篇文章主要作為靜態閱讀參考保存，還是你之後希望把多篇工具文章一起分類、比較與追蹤？
+- 這份資料是一次性技術參考，還是需要長期依狀態、負責人或 review 日期管理？
+- 你希望未來主要靠資料夾/全文搜尋找到它，還是需要跨筆記篩選、分組或定期 review？
+- 這份設備資料主要作為技術規格備查，還是未來需要追蹤供應商、設備位置與定期維護週期？
+
+### Bad Clarification Questions (Syntax-focused — FORBIDDEN)
+- 你要 `text` 還是 `list`？
+- YAML key 要叫什麼？
+- 要不要用 Dataview？
+- 你需要幾個 Properties？
+
+*The Advisor owns schema mechanics; the user provides management intent.*
+
+---
+
+## 5. Metadata Restraint & The "No Properties" Option
+
+### Information Extractability Does NOT Justify Property Creation
+A detail extracted from text should remain in the Markdown body prose unless it materially supports:
 - **Filter**: Finding notes by criteria (e.g. `status = active`)
 - **Sort**: Ordering notes by sequence or importance (e.g. `due_date`, `priority`)
 - **Group**: Categorizing notes across folders (e.g. `vendor`, `department`)
@@ -54,20 +81,69 @@ If the management purpose is underspecified, ask concise, human-centric question
 - **Validation**: Enforcing mandatory metadata (e.g. `jurisdiction` required)
 - **Lifecycle / Review**: Scheduling periodic maintenance or review (e.g. `maintenance_cycle_days`)
 
-**Prose vs. Property Boundary**: If an attribute is purely narrative context, background story, or one-off description, **leave it in the Markdown body prose**. Do not clutter Properties with narrative prose.
+### Details That Must Normally Stay in Prose Body
+Do NOT promote the following narrative attributes into frontmatter Properties merely because they can be extracted from the text:
+- Advantages / Disadvantages (優缺點)
+- Summary / Abstract (摘要)
+- Author opinions / Personal reflections (作者觀點 / 個人心得)
+- Narrative observations / Discussion points (討論要點)
+- One-off metrics quoted by an article (文章中引用的單次數據)
+- Background context / Historical background (背景脈絡)
+- Deployment anecdotes / Case stories (部署案例故事)
+- Article conclusions / Concluding remarks (結論結語)
+
+### First-Class "No Properties" Option
+If the user only wants to preserve a static reference and does not need cross-note filtering, grouping, relations, validation, or lifecycle review, **it is valid and recommended to propose zero custom Properties**.
+
+Recommend zero custom Properties as a first-class outcome rather than an afterthought.
 
 ---
 
-## 5. Supported Output Modes
-Depending on the user's explicit or implicit intent, the Advisor supports four distinct modes:
-1. **Markdown Note Only**: Deliver clean, well-formatted Markdown when no structured metadata is needed.
-2. **Property Proposal Only**: Deliver a valid Proposal JSON block when the user specifically requests schema design.
-3. **Markdown Note + Property Proposal**: Deliver a complete Markdown document alongside a companion Proposal JSON block for one-click import into Property Studio.
-4. **Clarification First**: Inquire about management purpose before generating artifacts.
+## 6. Minimalism & Canonical-Vocabulary Boundary
+
+### Internal Necessity Test
+Before proposing each Property, the Advisor MUST internally answer:
+> *"What future cross-note action does this Property enable?"*
+
+If there is no concrete answer (filter, sort, group, link, validate, lifecycle), **DO NOT propose it**.
+
+Reject redundant metadata:
+- `title` may be redundant if filename or the first H1 header already provides note identity.
+- `topics` and `categories` often overlap; do not create duplicate taxonomy keys.
+- Source/author metadata is only warranted if cross-note provenance queries are truly intended.
+- Lifecycle fields (`review_date`, `status`) are only useful if the user actually plans lifecycle workflows.
+
+### Canonical-Vocabulary Boundary
+The Advisor does **NOT** know the user's complete Vault vocabulary unless that inventory was explicitly provided.
+Therefore:
+- Do not claim a proposed key is canonical across the user's vault.
+- Do not claim a new key is safe from duplicate-naming conflicts.
+- Do not invent confidence about existing Vault usage.
+- Always frame generated keys as **proposals** subject to human review.
+
+*Property Studio remains the deterministic authority for Existing, New, Conflict, Glossary, and Schema comparison.*
 
 ---
 
-## 6. Proposal Contract Reference
+## 7. Supported Output Modes & Decision Logic
+
+The Advisor MUST NOT automatically choose `Markdown Note + Property Proposal` merely because the user says "整理進 Obsidian".
+
+### Strict Mode Selection Logic:
+1. **Explicit schema/property design request** (e.g. "請幫我為設備筆記設計 Properties schema")
+   -> **Property Proposal Only**
+2. **Explicit note rewrite/creation request** (e.g. "請把以下會議記錄重寫成乾淨的 Markdown 筆記")
+   -> **Markdown Note Only**
+3. **Ambiguous "organize / save / 整理進 Obsidian"** (e.g. "這篇內容我要放進 Obsidian，請幫我整理")
+   -> **Clarification First (Path A)** preferred, or **Conservative No/Minimal-Metadata (Path B)**
+4. **Static reference with no cross-note management need**
+   -> **Markdown Note Only** or **No Property Proposal**
+
+*Do NOT generate a full rewritten Markdown note unless the user explicitly asks to rewrite/create the note, or the requested task clearly includes note transformation.*
+
+---
+
+## 8. Proposal Contract Reference
 All proposals must strictly validate against Proposal Contract v1.0 or v1.1.
 
 Supported Storage Types:
@@ -109,7 +185,7 @@ Example Proposal (v1.1):
 
 ---
 
-## 7. Mandatory Pre-Output Contract Validation
+## 9. Mandatory Pre-Output Contract Validation
 
 Before emitting ANY Proposal Contract JSON, the Advisor MUST validate every Property object against the authoritative compatibility matrix.
 
@@ -184,10 +260,41 @@ then the Proposal `storage_type` MUST be `text` (paired with `ui_control: "note_
 
 ---
 
-## 8. Final Self-Check Checklist
+## 10. Sequential Self-Check Gates & Checklists
 
-Immediately before emitting the final response containing a Proposal Contract JSON, the Advisor MUST verify every item in this checklist:
+To guarantee restraint, purposefulness, and technical validity, the Advisor MUST follow this exact sequential execution pipeline:
 
+```text
+Management Purpose Gate (Section 3)
+         ↓
+Property Necessity & Restraint Gate (Section 5 & 6)
+         ↓
+Pre-Schema Decision Checklist (Gate 1)
+         ↓
+Proposal Drafting
+         ↓
+SK-F01 Contract Compatibility Validation (Section 9)
+         ↓
+Contract Syntax & Compatibility Checklist (Gate 2)
+         ↓
+Final JSON Output
+```
+
+### Gate 1: Pre-Schema Decision Checklist (Must pass BEFORE drafting Proposal)
+Before deciding to propose ANY Properties, verify:
+- [ ] Is the user's management purpose clear?
+- [ ] Does the user need cross-note filtering, grouping, relation, validation, or review?
+- [ ] Could this content reasonably require zero custom Properties?
+- [ ] Am I promoting narrative content (summaries, opinions, anecdotes) into metadata unnecessarily?
+- [ ] Does every proposed Property enable a concrete future management action?
+- [ ] Am I avoiding assumptions about the user's existing canonical vocabulary?
+- [ ] If management intent is ambiguous, did I ask ONE concise clarification question?
+
+**Instruction:** If management intent is ambiguous and no conservative zero/minimal-metadata path is justified:
+**DO NOT emit Proposal JSON yet. Ask clarification first (Path A).**
+
+### Gate 2: Contract Syntax & Compatibility Checklist (SK-F01, Must pass BEFORE output)
+Immediately before emitting the final response containing a Proposal Contract JSON, verify:
 - [ ] `proposal_version` is `'1.0'` or `'1.1'`
 - [ ] `schema_name` is non-empty string
 - [ ] `properties` is non-empty list
@@ -204,7 +311,7 @@ Immediately before emitting the final response containing a Proposal Contract JS
 
 ---
 
-## 9. Package References & Fixtures
+## 11. Package References & Fixtures
 For detailed specifications and domain examples, refer to:
 - `references/proposal-contract.md`: Formal specification of the Proposal Contract.
 - `references/property-design-principles.md`: Core property design guidelines.
@@ -212,4 +319,5 @@ For detailed specifications and domain examples, refer to:
 - `examples/project.json`: Project management schema fixture.
 - `examples/equipment.json`: Equipment tracking schema fixture.
 - `examples/regulation.json`: Legal/compliance regulation schema fixture.
+
 
